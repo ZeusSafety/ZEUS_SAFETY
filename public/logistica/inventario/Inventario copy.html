@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventario Zeus Safety - Dashboard</title>
+
+<!-- Google Fonts: Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Bootstrap CSS (solo para sistema de rejilla y utilidades, no componentes) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<!-- jsPDF + autotable -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+
+<!-- SheetJS para Excel (XLSX/XLS) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Chart.js para dashboard (tendencias/rotación) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- html2canvas para capturas tipo imagen en PDF -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+  :root {
+    /* Paleta de Colores Principal (Azul marino de marca) */
+    --primary-color: #0B3B8C; /* Azul marino */
+    --primary-color-light: #e6eefb;
+    --primary-color-dark: #072a63;
+
+    /* Colores de Estado */
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+
+    /* Paleta de Grises Neutros */
+    --bg-color: #F8F9FA;          /* Fondo general muy claro */
+    --surface-color: #FFFFFF;      /* Color para tarjetas y modales */
+    --border-color: #E9ECEF;      /* Bordes sutiles */
+    --text-primary: #212529;      /* Texto principal oscuro */
+    --text-secondary: #6C757D;    /* Texto secundario más claro */
+    
+    /* Sombras */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+  }
+
+  /* --- Reseteo y Estilos Base --- */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+  }
+  .invis { display: none !important; }
+  .cursor-pointer { cursor: pointer; }
+  .mini-hint { font-size:.85rem; color: var(--text-secondary); }
+
+  /* --- Estructura del Dashboard --- */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    transition: width 0.3s ease;
+  }
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding: 0 0.5rem;
+  }
+  .sidebar-header i {
+    font-size: 2rem;
+    color: var(--primary-color);
+  }
+  .sidebar-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+  }
+  .nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    margin-bottom: 0.25rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+  .nav-item:hover {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+  }
+  .nav-item.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+  .nav-item.active i {
+    color: white;
+  }
+  .nav-item i {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+  }
+  .nav-item:hover i {
+    color: var(--primary-color);
+  }
+  .sidebar-footer {
+    padding: 1rem 0.5rem 0;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .main-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 2rem;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .sesion-banner-top{
+    font-size: 1rem; /* antes .9rem */
+    font-weight: 600;
+    background-color: var(--primary-color-light);
+    color: var(--primary-color-dark);
+    padding: .45rem 1rem; /* más alto */
+    border-radius: 10px;
+  }
+  /* Buscador estilo grande (como en ejemplo) */
+  .search-xl{ border-radius:14px; padding:.8rem 1rem; box-shadow: inset 0 0 0 1px #dbe5f6; transition: box-shadow .15s ease; }
+  .search-xl:focus{ box-shadow: 0 0 0 4px rgba(59,130,246,.35), inset 0 0 0 1px #60a5fa; }
+
+  .content-wrapper {
+    padding: 2rem;
+  }
+  .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+  }
+  .view-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+  }
+  .view-header .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+  }
+
+  /* --- Componentes Rediseñados --- */
+  .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  .btn-primary:hover {
+    background-color: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
+  }
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  .btn-primary-soft {
+      background-color: var(--primary-color-light);
+      color: var(--primary-color);
+      border: 1px solid transparent;
+  }
+  .btn-primary-soft:hover {
+      background-color: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+  }
+  .zs-card, .card {
+    border: none;
+    box-shadow: var(--shadow-md);
+    border-radius: 12px;
+    background-color: var(--surface-color);
+    overflow: hidden;
+  }
+  
+  /* --- Tablas --- */
+  .table {
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Espacio entre filas */
+    margin-top: -8px;
+  }
+  .table thead th {
+    background: transparent;
+    border: none;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: .5rem 1rem;
+    position: sticky; top: 0; z-index: 1;
+    background: #f1f5ff; /* sticky visible */
+    box-shadow: 0 1px 0 rgba(16,24,40,.06);
+  }
+  .table tbody tr {
+    background: linear-gradient(180deg, #ffffff, #f8fbff); /* leve degradado */
+    box-shadow: var(--shadow-sm);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  .table tbody tr:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    background: linear-gradient(180deg, #fdfefe, #eef6ff);
+  }
+  /* Forzar color en tablas de Callao y Malvinas (vista y modal) */
+  #tbl-callao tbody tr, #tbl-malvinas tbody tr,
+  #md-cons-callao tbody tr, #md-cons-malvinas tbody tr,
+  .modal .table tbody tr{
+    background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  }
+  #tbl-callao thead th, #tbl-malvinas thead th,
+  #md-cons-callao thead th, #md-cons-malvinas thead th{
+    background:#f1f5ff !important; color:#1f2a44; border-radius:8px; }
+  /* Zebra striping para mejor lectura */
+  #tbl-callao tbody tr:nth-child(odd), #tbl-malvinas tbody tr:nth-child(odd){
+    background: linear-gradient(180deg, #fbfdff, #f1f6ff) !important;
+  }
+  .table td, .table th {
+    border: none;
+    vertical-align: middle;
+    padding: .75rem 1rem;
+  }
+  /* Chips estado en Observaciones */
+  .badge-pendiente{ background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; padding:.35rem .6rem; border-radius:999px; font-weight:700; letter-spacing:.2px; }
+  /* Inputs de cantidad con foco azul suave */
+  #tbl-callao input[type=number], #tbl-malvinas input[type=number], #tbl-comparacion input[type=number]{ box-shadow:none; border:1px solid #e7eef8; }
+  #tbl-callao input[type=number]:focus, #tbl-malvinas input[type=number]:focus, #tbl-comparacion input[type=number]:focus{ border-color:#90b4ff; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .table-sm td, .table-sm th {
+    padding: .5rem .75rem;
+  }
+  .table td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+  .table td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+  .table-responsive {
+    padding: 2px; /* Espacio para sombras */
+  }
+
+  /* --- Formularios --- */
+  .form-control, .form-select {
+    border-radius: 8px;
+    border-color: var(--border-color);
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 .25rem var(--primary-color-light);
+  }
+
+  /* --- Modales --- */
+  .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,.1);
+  }
+  .modal-header {
+    border-bottom-color: var(--border-color);
+  }
+  .modal-footer {
+    border-top-color: var(--border-color);
+  }
+
+  /* --- Estilos específicos de la app adaptados --- */
+  .status-dot{ width:.6rem; height:.6rem; display:inline-block; border-radius:50%; margin-right:.35rem; vertical-align:middle;}
+  .status-green{ background:var(--success-color); }
+  .status-red{ background:var(--danger-color); }
+  .status-orange{ background:var(--warning-color); }
+  
+  #sesion-banner{ background:#e6eefb; border:1px solid #cfdbf5; border-radius:.75rem; padding:.65rem 1rem; }
+
+  /* Ajustes para mini-menu y otros elementos personalizados */
+  .mini-menu{ position:absolute; top:calc(100% + 6px); right:0; left:auto; width: clamp(240px, 28vw, 320px); opacity:0; transform: translateY(6px); transition: opacity .12s ease, transform .12s ease; pointer-events:auto; z-index:200000; }
+  .mini-menu .mm-item{ white-space: nowrap; }
+  .mini-menu.show{ opacity:1; transform: translateY(0); }
+  .mini-menu .mm-item{ width:100%; display:flex; align-items:center; gap:.55rem; padding:.72rem 1rem; border-radius:10px; border:1px solid transparent; background:linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.75)); color:#334155; font-weight:700; letter-spacing:.2px; cursor:pointer; }
+  .mini-menu .mm-item:hover{ background: linear-gradient(180deg, rgba(37,99,235,.10), rgba(37,99,235,.06)); color:#1e40af; border-color: rgba(37,99,235,.20); }
+  .mini-menu .mm-item:active{ background: linear-gradient(180deg, rgba(37,99,235,.16), rgba(37,99,235,.10)); }
+  .mini-menu .mm-item i{ color:#1e40af; }
+  
+  .btn-edit{ background: linear-gradient(135deg, #2563eb, #1e40af); color:#fff !important; border:1px solid rgba(37, 99, 235, .35); border-radius:999px; padding:.32rem .78rem; font-weight:700; box-shadow:0 6px 14px rgba(37,99,235,.22), 0 3px 8px rgba(16,30,54,.12); }
+  .btn-edit:hover{ filter:brightness(.98); box-shadow:0 10px 22px rgba(37,99,235,.28), 0 6px 12px rgba(16,30,54,.14); transform: translateY(-1px); }
+  .btn-edit.active{ background: linear-gradient(135deg, #1e40af, #1d4ed8); box-shadow:0 12px 26px rgba(29,78,216,.30), 0 8px 14px rgba(16,30,54,.16); }
+
+  /* === Estilos para modal de Verificación (match referencia) === */
+  .blk{ border:1px solid var(--border-color); border-radius:10px; background:#fff; box-shadow: var(--shadow-sm); overflow:hidden; }
+  .blk + .blk{ margin-top:1rem; }
+  .blk-header{ font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:.55rem .9rem; }
+  .blk-body{ padding: .9rem; background:#fff; }
+  .blk-blue{ background:#0d6efd; color:#fff; }
+  .blk-amber{ background:#ffc107; color:#212529; }
+  .blk-green{ background:#198754; color:#fff; }
+  .subttl{ font-weight:700; margin-bottom:.35rem; color:#0d6efd; }
+  #modalVerificacion .form-floating>.form-control[disabled],
+  #modalVerificacion .form-floating>.form-control:disabled{
+    background:#f1f3f5; color:#495057; border-color:#e9ecef;
+  }
+  #modalVerificacion .form-floating>.form-control,
+  #modalVerificacion .form-floating>.form-select{
+    border-radius:10px;
+  }
+  #modalVerificacion .badge-amarillo{ background:#ffc107; color:#212529; }
+  #modalVerificacion .badge-naranja{ background:#fd7e14; color:#fff; }
+  #modalVerificacion .zs-btn{ font-weight:700; }
+
+  /* === Ancho ampliado para modal de Registro (Consolidado) === */
+  #modalRegDetalle .modal-dialog{ max-width:96vw; width:96vw; }
+  #regdet-cons-wrap{ overflow-x:auto; }
+  #regdet-cons-wrap .row{ flex-wrap:nowrap; }
+  /* Tabs del modal de registro pegados arriba */
+  #regdet-tabs{ position: sticky; top: 0; background:#fff; z-index: 2; padding:6px 0; border-bottom:1px solid #eee; }
+  #regdet-tabs .fw-semibold{ white-space: nowrap; }
+  #regdet-cons-wrap .col-12, #regdet-cons-wrap .col-lg-4{ flex:0 0 33.333%; max-width:33.333%; }
+
+  /* === Elevate mini-menu above all content (including modals) === */
+  .mini-menu{ z-index: 12000; }
+  .modal .mini-menu{ z-index: 14000; }
+  /* Prevent clipping inside table cells */
+  table.table td, table.table th{ overflow: visible; position: relative; }
+
+  /* === Fix mini-menu stacking/clipping in Comparar === */
+  #panel-comparacion .card, #panel-comparacion .card-body, #panel-comparacion .table-responsive{ overflow: visible !important; }
+  #panel-comparacion .table{ overflow: visible; }
+  .mini-menu{ z-index: 99999; }
+  .modal .mini-menu{ z-index: 100001; }
+
+  /* === Estilos Comparar: encabezados y fila activa === */
+  #tbl-comparacion thead th{ font-weight:700; }
+  #tbl-comparacion tbody tr.cmp-row-active{ background:#eef4ff; }
+
+  /* === Buscador Comparar: tamaño y sugerencias === */
+  .cmp-search-wrap{ position:relative; flex:1 1 560px; max-width:720px; }
+  #cmp-search{ padding:.7rem .9rem; border-radius:12px; font-size:.95rem; height:44px; }
+  #cmp-search.filter-active{ box-shadow:0 0 0 3px rgba(37,99,235,.15), inset 0 0 0 1px #90b4ff; border-color:#90b4ff; }
+  .cmp-suggest{ position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; z-index:10010; box-shadow:0 12px 24px rgba(16,24,40,.12), 0 6px 12px rgba(16,24,40,.08); max-height:260px; overflow:auto; }
+  .cmp-suggest .item{ padding:.5rem .75rem; cursor:pointer; }
+  .cmp-suggest .item:hover{ background:#eef4ff; }
+
+  /* === Mini-menu: fondo opaco (sin transparencia) === */
+  .mini-menu{ background:#ffffff !important; backdrop-filter:none !important; border:1px solid rgba(16,24,40,.14); box-shadow:0 12px 24px rgba(16,24,40,.18), 0 6px 12px rgba(16,24,40,.10); }
+  .mini-menu .mm-item{ background:#ffffff !important; }
+  .mini-menu .mm-item:hover{ background:#eef2ff !important; }
+
+  /* Encabezados consolidado (modal) */
+  .cons-head{ text-align:center; font-weight:800; border-radius:12px; padding:.9rem 1rem; margin-bottom:.75rem; color:#fff; box-shadow:var(--shadow-sm); letter-spacing:.2px; }
+  .cons-blue{ background:#0B3B8C; }
+  .cons-yellow{ background:#F4B400; color:#1f2937; }
+  .cons-green{ background:#198754; }
+
+  /* === Procedimiento (formato guía) === */
+  #modalProcedimiento .modal-header{ background: linear-gradient(90deg,#2563eb,#0ea5e9); color:#fff; }
+  #modalProcedimiento .modal-header .btn-close{ filter: invert(1); opacity:.85; }
+  #modalProcedimiento .proc-sec{ border:1px solid #e5e7eb; background:#ffffff; border-radius:12px; padding:14px 16px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
+  #modalProcedimiento .proc-sec h6{ margin:0 0 .35rem 0; display:flex; align-items:center; gap:.5rem; font-weight:800; color:#0f172a; }
+  #modalProcedimiento .proc-sec ul{ margin:0 0 .25rem 1.1rem; }
+  #modalProcedimiento .proc-note{ background:#e7f0ff; border-left:4px solid #3b82f6; padding:.65rem .85rem; border-radius:10px; color:#0f172a; }
+</style>
+</head>
+<body>
+
+<!-- Barra de Navegación Lateral (Sidebar) -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <i class="bi bi-shield-check"></i>
+    <h3>Zeus Safety</h3>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#" class="nav-item active" data-view="callao"><i class="bi bi-building"></i> <span>Almacén Callao</span></a></li>
+    <li><a href="#" class="nav-item" data-view="malvinas"><i class="bi bi-shop"></i> <span>Almacén Malvinas</span></a></li>
+    <li><a href="#" class="nav-item" data-view="comparar"><i class="bi bi-arrow-left-right"></i> <span>Comparar</span></a></li>
+    <li><a href="#" class="nav-item" data-view="consolidado"><i class="bi bi-diagram-3"></i> <span>Consolidado</span></a></li>
+    <li><a href="#" class="nav-item" data-view="registro"><i class="bi bi-archive"></i> <span>Registro</span></a></li>
+    <li><a href="#" class="nav-item" data-view="proformas"><i class="bi bi-receipt"></i> <span>Proformas</span></a></li>
+  </ul>
+  <div class="sidebar-footer d-none"></div>
+</nav>
+
+<!-- Contenido Principal -->
+<main class="main-content">
+  <header class="main-header">
+    <div class="header-left">
+      <div id="sesion-banner-global"></div>
+    </div>
+    <div class="header-right">
+       <label class="btn btn-sm btn-success me-2 mb-0" for="inputProductos"><i class="bi bi-upload"></i> Subir Productos</label>
+       <input id="inputProductos" type="file" accept=".json,.csv,.xlsx,.xls" class="d-none">
+       <span id="badgeProductos" class="badge bg-secondary align-self-center me-2">Productos: 0</span>
+       <button class="btn btn-sm btn-outline-primary" onclick="openSesionNumeroModal()" title="Asignar N° Inventario"><i class="bi bi-clipboard2"></i> Asignar N°</button>
+       <button class="btn btn-sm btn-outline-success" onclick="openUnirseModal()" title="Unirse a un N° asignado"><i class="bi bi-link-45deg"></i> Unirse N°</button>
+       <button class="btn btn-sm btn-outline-secondary" onclick="openProcedimientoModal()" title="Procedimiento"><i class="bi bi-journal-text"></i></button>
+       <button class="btn btn-sm btn-outline-danger" onclick="resetApp()" title="Restablecer datos"><i class="bi bi-x-circle"></i></button>
+    </div>
+  </header>
+
+  <div class="content-wrapper">
+    <!-- ============== VISTA CALLAO ============== -->
+    <div id="view-callao">
+        <header class="view-header">
+            <h1><i class="bi bi-building"></i>Almacén Callao</h1>
+            <div class="header-actions">
+              <button class="btn btn-primary-soft" onclick="openInventarioModal('callao','cajas')">
+                <i class="bi bi-box-seam"></i> Conteo por Cajas
+              </button>
+              <button class="btn btn-primary-soft" onclick="openInventarioModal('callao','stand')">
+                <i class="bi bi-columns-gap"></i> Conteo de Stand
+              </button>
+            </div>
+        </header>
+
+      <div id="panel-callao" class="invis">
+        <div class="card mb-3">
+          <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+            <div id="sesion-banner" class="invis"></div>
+            <div class="fw-bold mt-1">Inventario actual: <span id="callao-numero"></span></div>
+            <div class="mini-hint">Registrado por: <span id="callao-registrado"></span> · Inicio: <span id="callao-inicio"></span></div>
+            </div>
+            <div class="d-flex gap-2">
+              <input id="emg-callao" type="file" accept=".xlsx,.xls,.csv" class="d-none" onchange="onEmergFileChange('callao', this)">
+              <button class="btn btn-warning" onclick="dispararEmergencia('callao')"><i class="bi bi-file-earmark-arrow-up"></i> Subir (Emergencia)</button>
+              <button class="btn btn-success" id="btnStartCallao" onclick="mostrarTablaInventario('callao')"><i class="bi bi-play-circle"></i> Empezar Inventario</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabla-callao" class="card invis">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-callao">
+                <thead>
+                  <tr>
+                    <th>Item</th><th>Producto</th><th>Código</th><th>Cantidad</th><th>Unidad de Medida</th><th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <button class="btn btn-primary" onclick="registrarInventario('callao')"><i class="bi bi-check2-circle"></i> Registrar Inventario</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h5 class="mb-0">Listado de Conteo – Callao</h5>
+            <div class="d-flex gap-2">
+              <input id="filtro-list-callao" class="form-control form-control-sm" placeholder="Buscar...">
+              <button class="btn btn-outline-dark btn-sm" onclick="pdfListado('callao')"><i class="bi bi-file-earmark-pdf"></i> Generar reporte</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm" id="list-callao">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Fecha y Hora (inicio)</th><th>N° Inventario</th><th>Registrado por</th><th>Archivo</th><th>Hora Final</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== VISTA MALVINAS ============== -->
+    <div id="view-malvinas" class="invis">
+      <header class="view-header">
+        <h1><i class="bi bi-shop"></i>Almacén Malvinas</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary-soft" onclick="openInventarioModal('malvinas','cajas')">
+            <i class="bi bi-box-seam"></i> Conteo por Cajas
+          </button>
+          <button class="btn btn-primary-soft" onclick="openInventarioModal('malvinas','stand')">
+            <i class="bi bi-columns-gap"></i> Conteo de Stand
+          </button>
+        </div>
+      </header>
+      
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="fw-bold mb-2">Estado de Tiendas</div>
+          <div id="status-tiendas" class="d-flex flex-wrap gap-3"></div>
+        </div>
+      </div>
+
+      <div id="panel-malvinas" class="invis">
+        <div class="card mb-3">
+          <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <div class="fw-bold">Inventario actual: <span id="malvinas-numero"></span></div>
+              <div class="mini-hint">Registrado por: <span id="malvinas-registrado"></span> · Inicio: <span id="malvinas-inicio"></span> · Tienda: <span id="malvinas-tienda"></span></div>
+            </div>
+            <div class="d-flex gap-2">
+              <input id="emg-malvinas" type="file" accept=".xlsx,.xls,.csv" class="d-none" onchange="onEmergFileChange('malvinas', this)">
+              <button class="btn btn-warning" onclick="dispararEmergencia('malvinas')"><i class="bi bi-file-earmark-arrow-up"></i> Subir (Emergencia)</button>
+              <button class="btn btn-success" id="btnStartMalvinas" onclick="mostrarTablaInventario('malvinas')"><i class="bi bi-play-circle"></i> Empezar Inventario</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabla-malvinas" class="card invis">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-malvinas">
+                <thead>
+                  <tr>
+                    <th>Item</th><th>Producto</th><th>Código</th><th>Cantidad</th><th>Unidad de Medida</th><th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-end gap-2 my-3">
+              <button class="btn btn-primary" onclick="registrarInventario('malvinas')"><i class="bi bi-check2-circle"></i> Registrar Inventario</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h5 class="mb-0">Listado de Conteo – Malvinas</h5>
+            <div class="d-flex gap-2">
+              <input id="filtro-list-malvinas" class="form-control form-control-sm" placeholder="Buscar...">
+              <button class="btn btn-outline-dark btn-sm" onclick="pdfListado('malvinas')"><i class="bi bi-file-earmark-pdf"></i> Generar reporte</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm" id="list-malvinas">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Fecha y Hora (inicio)</th><th>N° Inventario</th><th>Tienda</th><th>Registrado por</th><th>Archivo</th><th>Hora Final</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== VISTA COMPARAR ============== -->
+    <div id="view-comparar" class="invis">
+        <header class="view-header">
+            <h1><i class="bi bi-arrow-left-right"></i>Comparación de Inventario</h1>
+            <div class="header-actions">
+                <label class="btn btn-primary-soft mb-0">
+                    <i class="bi bi-upload"></i> Subir Sistema Callao
+                    <input type="file" accept=".json,.csv,.xlsx,.xls" class="d-none" onchange="cargarSistema(event,'callao')">
+                </label>
+                <button id="btn-alm-callao" class="btn btn-primary" onclick="abrirComparacion('callao')"><i class="bi bi-building"></i> Almacén Callao</button>
+                <label class="btn btn-primary-soft mb-0 ms-2">
+                    <i class="bi bi-upload"></i> Subir Sistema Malvinas
+                    <input type="file" accept=".json,.csv,.xlsx,.xls" class="d-none" onchange="cargarSistema(event,'malvinas')">
+                </label>
+                <button id="btn-alm-malvinas" class="btn btn-primary" onclick="abrirComparacion('malvinas')"><i class="bi bi-shop"></i> Almacén Malvinas</button>
+            </div>
+        </header>
+
+      <div id="panel-comparacion" class="invis">
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 flex-wrap mb-2">
+              <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Almacén:</span><b id="cmp-almacen"></b></div>
+              <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Inventario:</span><b id="cmp-numero"></b></div>
+              <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Fecha:</span><b id="cmp-fecha"></b></div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <div class="btn-group me-1">
+                <button class="btn btn-outline-dark btn-sm" onclick="exportComparacionPDF()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                <button class="btn btn-success btn-sm" onclick="exportComparacionExcel()"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+              </div>
+              <div class="cmp-search-wrap">
+                <input id="cmp-search" class="form-control form-control-sm" placeholder="Buscar código o producto..." oninput="(debounceCmp||debounce(()=>{},0))(event)" />
+                <div id="cmp-suggest" class="cmp-suggest d-none"></div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="cmpMostrarTodos()">Todos</button>
+              <span id="cmp-badge-ok" class="badge text-bg-success badge-click" onclick="setCmpEstado(cmpEstado==='OK'?'ALL':'OK')">Correctos: <span id="cmp-correctos">0</span></span>
+              <span id="cmp-badge-bad" class="badge text-bg-danger badge-click" onclick="setCmpEstado(cmpEstado==='BAD'?'ALL':'BAD')">Incorrectos: <span id="cmp-incorrectos">0</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle" id="tbl-comparacion">
+            <thead>
+              <tr>
+                <th>Item</th><th>Producto</th><th>Código</th>
+                <th>Cantidad Sistema</th><th>Cantidad Física</th>
+                <th>Resultado</th><th>Estado</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <h5 class="mb-0">Listado de Acciones</h5>
+              <div class="d-flex gap-2">
+                <input id="filtro-acciones" class="form-control form-control-sm" placeholder="Buscar...">
+                <button class="btn btn-outline-dark btn-sm" onclick="pdfAcciones()"><i class="bi bi-file-earmark-pdf"></i> Reporte PDF</button>
+              </div>
+            </div>
+            <div class="table-responsive mt-2">
+              <table class="table table-sm" id="tbl-acciones">
+                <thead>
+                <tr>
+                  <th>Item/Producto</th><th>Fecha y Hora</th><th>Registrado por</th><th>Almacén</th><th>Motivo</th><th>Cantidad</th><th>Error de</th><th>Observaciones</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ============== VISTA CONSOLIDADO ============== -->
+    <div id="view-consolidado" class="invis">
+        <header class="view-header">
+            <h1><i class="bi bi-diagram-3"></i>Consolidado de Inventarios</h1>
+            <div class="header-actions">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="cons-show-cod" onchange="renderConsolidado()">
+                <label class="form-check-label" for="cons-show-cod">Mostrar códigos</label>
+              </div>
+            </div>
+        </header>
+
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="cons-head cons-blue">Inventario Callao</div>
+              <div class="table-responsive">
+                <table class="table consolidado-table" id="cons-callao">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Producto</th>
+                      <th>Sistema</th>
+                      <th>Físico</th>
+                      <th>Diferencia</th>
+                    </tr>
+                  </thead><tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="cons-head cons-yellow">Inventario Malvinas</div>
+              <div class="table-responsive">
+                <table class="table consolidado-table" id="cons-malvinas">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Sistema</th>
+                      <th>Físico</th>
+                      <th>Diferencia</th>
+                    </tr>
+                  </thead><tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="cons-head cons-green">Conteo General</div>
+              <div class="table-responsive">
+                <table class="table consolidado-table text-center" id="cons-general">
+                  <thead>
+                    <tr><th>Total Sistema</th><th>Total Físico</th><th>Diferencia</th><th>Resultado</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== VISTA REGISTRO ============== -->
+    <div id="view-registro" class="invis">
+      <header class="view-header">
+          <h1><i class="bi bi-archive"></i>Registro de Inventarios</h1>
+          <div class="header-actions d-flex gap-2 align-items-center">
+            <input id="reg-desde" type="date" class="form-control form-control-sm" style="width:auto">
+            <input id="reg-hasta" type="date" class="form-control form-control-sm" style="width:auto">
+            <select id="reg-presets" class="form-select form-select-sm" style="width:auto">
+              <option value="">Rango rápido</option>
+              <option value="este_mes">Este mes</option>
+              <option value="mes_pasado">Mes pasado</option>
+              <option value="anio_actual">Año actual</option>
+              <option value="anio_pasado">Año pasado</option>
+            </select>
+            <button class="btn btn-outline-dark btn-sm" onclick="regExportPDF()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+          </div>
+      </header>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle" id="tbl-registro">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Almacén</th>
+                  <th>N° Inventario</th>
+                  <th>Tipo/Tienda</th>
+                  <th>Registrado</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Comparar</th>
+                  <th>Consolidado</th>
+                  <th>Proformas</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== VISTA PROFORMAS ============== -->
+    <div id="view-proformas" class="invis">
+        <header class="view-header">
+            <h1><i class="bi bi-receipt"></i>Simulación de Proformas</h1>
+            <div class="header-actions">
+              <button class="btn btn-primary" onclick="openProformaModal()"><i class="bi bi-plus-circle"></i> Nuevo Registro</button>
+            </div>
+        </header>
+
+      <div id="panel-proforma" class="invis">
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <select id="pf-asesor" class="form-select">
+                    <option>Hervin</option><option>Evelyn</option><option>Alvaro</option><option>Kimberly</option><option>Otro</option>
+                  </select>
+                  <label>Asesor</label>
+                </div>
+                <input id="pf-asesor-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre">
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <select id="pf-almacen" class="form-select">
+                    <option value="callao">Almacén Callao</option><option value="malvinas">Almacén Malvinas</option>
+                  </select>
+                  <label>Almacén</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <select id="pf-registrado" class="form-select">
+                    <option>Joseph</option><option>Joselyn</option><option>Manuel</option><option>Otro</option>
+                  </select>
+                  <label>Registrado por</label>
+                </div>
+                <input id="pf-registrado-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre">
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input id="pf-num" class="form-control" placeholder="N° Proforma">
+                  <label>Número de Proforma</label>
+                </div>
+              </div>
+            </div>
+            <hr>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-proforma">
+                <thead>
+                  <tr>
+                    <th>Producto</th><th>Unidad de Medida</th><th>Cantidad</th><th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+              <datalist id="pf-productos"></datalist>
+            </div>
+            <div class="d-flex justify-content-between">
+              <button class="btn btn-outline-primary" onclick="addLineaProforma()"><i class="bi bi-plus-lg"></i> Agregar</button>
+              <button class="btn btn-success" onclick="registrarProforma()"><i class="bi bi-check2-circle"></i> Registrar Proforma</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h5 class="mb-0">Listado de Simulación de Proformas</h5>
+            <div class="d-flex gap-2">
+              <input id="filtro-proformas" class="form-control form-control-sm" placeholder="Buscar...">
+              <button class="btn btn-outline-dark btn-sm" onclick="pdfProformas()"><i class="bi bi-file-earmark-pdf"></i> Reporte PDF</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm" id="tbl-list-proformas">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Fecha y Hora</th><th>Asesor</th><th>Registrado</th><th>Almacén</th><th>N° Proforma</th><th>Archivo</th><th>Acciones</th>
+                </tr>
+              </thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ============== VISTA GERENCIA ============== -->
+    <div id="view-gerencia" class="invis">
+      <!-- El contenido de gerencia se mantiene igual -->
+    </div>
+  </div>
+</main>
+
+<!-- ============== MODALES (se mantienen igual) ================= -->
+<div class="modal fade" id="modalRegDetalle" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="true">
+  <div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h6 class="modal-title" id="regdet-title">Detalle</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModal('#modalRegDetalle')"></button></div><div id="regdet-head" class="px-3 pt-2"></div><div class="modal-body"><div id="regdet-body"></div></div><div class="modal-footer"><button class="btn btn-outline-dark" onclick="regdetExportPDFCurrent()"><i class="bi bi-file-earmark-pdf"></i> PDF</button><button class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeModal('#modalRegDetalle')">Cerrar</button></div></div></div>
+</div>
+<div class="modal fade" id="modalAviso" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Aviso de Prioridad de Conteo</h6>
+        <button type="button" class="btn-close" onclick="closeModal('#modalAviso')"></button>
+      </div>
+      <div class="modal-body">
+        <div class="p-2">
+          <p class="mb-2">A partir de este momento el inventario está <b>en curso</b>. Toda digitación tiene <b>prioridad operativa</b>.</p>
+          <ul class="mb-2" style="margin-left:1rem">
+            <li>Verifique <b>código</b> y <b>descripción</b> del producto antes de registrar.</li>
+            <li>Ingrese la <b>cantidad exacta</b> y confirme visualmente el valor.</li>
+            <li>Evite correcciones repetidas y mantenga <b>concentración</b> durante el conteo.</li>
+            <li>Ante cualquier duda, <b>deténgase</b> y consulte al responsable.</li>
+          </ul>
+          <p class="text-secondary small mb-0">El incumplimiento del procedimiento puede generar observaciones o sanciones conforme a las políticas internas. Al continuar usted declara conocer y cumplir el procedimiento.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('#modalAviso')"><i class="bi bi-check2"></i> Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modalSesionNumero" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-clipboard2"></i> Asignar N° Inventario</h6><button type="button" class="btn-close" onclick="closeModal('#modalSesionNumero')"></button></div><div class="modal-body"><div class="mb-2 text-secondary">Ingrese la contraseña del jefe, el N° de inventario y quién autoriza.</div><input id="sn-pwd" type="password" class="form-control mb-2" placeholder="Contraseña"><input id="sn-num" class="form-control mb-2" placeholder="Ej: INV-2025-214"><div class="form-floating mb-2"><select id="sn-area" class="form-select"><option value="Administración">Administración</option><option value="Logística">Logística</option><option value="Otro">Otro</option></select><label>Área</label></div><div class="form-floating mb-2"><select id="sn-persona" class="form-select"><option value="Hervin">Hervin</option><option value="Kimberly">Kimberly</option><option value="Joseph">Joseph</option><option value="Otro">Otro</option></select><label>Autorizado por</label></div><input id="sn-otro" class="form-control d-none" placeholder="Especifique nombre"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalSesionNumero')">Cancelar</button><button class="btn btn-primary" onclick="guardarSesionNumero()"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
+</div>
+<div class="modal fade" id="modalUnirse" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-link-45deg"></i> Unirse a Inventario</h6><button type="button" class="btn-close" onclick="closeModal('#modalUnirse')"></button></div><div class="modal-body"><div class="mb-2 text-secondary">Ingresa el N° de inventario asignado por el jefe para participar.</div><input id="join-num" class="form-control mb-2" placeholder="Ej: INV-2025-214"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalUnirse')">Cancelar</button><button class="btn btn-primary" onclick="guardarUnirse()"><i class="bi bi-check2"></i> Unirse</button></div></div></div>
+</div>
+<div class="modal fade" id="modalProcedimiento" tabindex="-1">
+  <div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-journal-text"></i> Procedimientos – Inventario</h6><button type="button" class="btn-close" onclick="closeModal('#modalProcedimiento')"></button></div><div class="modal-body">
+    <div class="proc-sec">
+      <h6><i class="bi bi-info-circle"></i> Instrucciones Generales</h6>
+      <ul>
+        <li>Trabajamos por <b>N° de Inventario</b>. Debe ser asignado por el jefe antes de registrar.</li>
+        <li>Los datos se guardan localmente; cada equipo puede <b>unirse</b> al mismo número.</li>
+        <li>Siempre valide <b>código</b>, <b>descripción</b> y <b>cantidad</b> antes de confirmar.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-clipboard2"></i> Asignar N° Inventario</h6>
+      <ul>
+        <li>Ubicación: botón <b>Asignar N°</b> en la barra superior.</li>
+        <li>Campos: Contraseña del jefe, N° (ej. INV-2025-01), Área y Autorizado.</li>
+        <li>Resultado: crea la sesión y habilita el registro en ambos almacenes.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-link-45deg"></i> Unirse a Inventario</h6>
+      <ul>
+        <li>Ubicación: botón <b>Unirse N°</b>.</li>
+        <li>Ingresa el mismo N° asignado para trabajar en paralelo desde otro equipo.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-clipboard2-check"></i> Datos de Inventario</h6>
+      <ul>
+        <li>Define <b>Registrado por</b>, <b>Fecha/Hora</b> y (en Malvinas) <b>Tienda</b>.</li>
+        <li>Requisito: debe existir N° de inventario activo.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-funnel"></i> Filtro de productos</h6>
+      <ul>
+        <li>Opciones: <b>Ocultar sin stock</b> y <b>Excluir códigos</b> (separados por coma).</li>
+        <li>Aplica a las vistas y a la comparación para enfocarse en lo relevante.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-arrow-left-right"></i> Comparar (Físico vs Sistema)</h6>
+      <ul>
+        <li>Campo de búsqueda para código o producto con sugerencias.</li>
+        <li>Estados: <b>CONFORME</b>, <b>SOBRANTE</b>, <b>FALTANTE</b>. Resultado = fis − sis.</li>
+        <li>Mini-menú por fila:
+          <ul>
+            <li><b>Editar Cantidad/Motivo</b>: corrige físico y registra motivo.</li>
+            <li><b>Editar Sistema</b>: corrige stock del sistema y motivo (compra/venta).</li>
+            <li><b>Editar Verificación</b>: formulario de compras/ventas y resultado final.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-pencil-square"></i> Editar Cantidad / Motivo</h6>
+      <ul>
+        <li>Campos: Cantidad Física, Motivo, Registrado por, Error de, Traslado (opcional) y Observaciones.</li>
+        <li>Guarda un registro en <b>Acciones</b> con toda la trazabilidad.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-database-gear"></i> Editar Sistema</h6>
+      <ul>
+        <li>Permite ajustar <b>Cantidad Sistema</b> indicando si proviene de una compra o venta.</li>
+        <li>También registra <b>responsables</b> y <b>observaciones</b>.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-check2-square"></i> Verificación</h6>
+      <ul>
+        <li>Completa fechas/horas de descargas de inventario y de ventas.</li>
+        <li>Calcula automáticamente el <b>resultado</b> y genera reporte en PDF.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-diagram-3"></i> Consolidado</h6>
+      <ul>
+        <li>Muestra Callao, Malvinas y General alineados por filas para comparación rápida.</li>
+        <li>Exporta a PDF desde el modal de detalle.</li>
+      </ul>
+    </div>
+    <div class="proc-sec">
+      <h6><i class="bi bi-journal-text"></i> Acciones y Proformas</h6>
+      <ul>
+        <li>Acciones: historial de ediciones con exportación a PDF.</li>
+        <li>Proformas: descarga PDF y opción de marcar como Emitido (ajusta sistema).</li>
+      </ul>
+    </div>
+    <div class="proc-note">Consejo: use el buscador de Comparar y los filtros para encontrar rápidamente discrepancias, y documente cada corrección con motivo y responsable.</div>
+  </div><div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('#modalProcedimiento')"><i class="bi bi-check2"></i> Entendido</button></div></div></div>
+</div>
+<div class="modal fade" id="modalPwdVerif" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-shield-lock"></i> Acceso restringido</h6><button type="button" class="btn-close" onclick="closeModal('#modalPwdVerif')"></button></div><div class="modal-body"><div class="mb-2">Ingrese la contraseña de área administrativa:</div><input id="pwd-verif" type="password" class="form-control" placeholder="••••" onkeydown="if(event.key==='Enter'){ validarPwdVerif(); }"><div id="pwd-error" class="text-danger mt-2 d-none">Contraseña incorrecta.</div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalPwdVerif')">Cancelar</button><button class="btn btn-primary" onclick="validarPwdVerif()"><i class="bi bi-unlock"></i> Continuar</button></div></div></div>
+</div>
+<div class="modal fade" id="modalInventario" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-clipboard2-check"></i> Datos de Inventario</h5><button class="btn-close" onclick="closeModal('#modalInventario')"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-4"><div class="form-floating"><input id="inv-numero" class="form-control" placeholder="N° Inventario"><label>Número de Inventario</label></div></div><div class="col-md-4"><div class="form-floating"><select id="inv-registrado" class="form-select"><option>Joseph</option><option>Joselyn</option><option>Manuel</option><option>Otro</option></select><label>Registrado por</label></div><input id="inv-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre"></div><div class="col-md-4"><div class="form-floating"><input id="inv-inicio" class="form-control" disabled placeholder="Inicio"><label>Fecha y Hora (inicio)</label></div></div><div class="col-md-12 d-none" id="bloque-tiendas"><label class="form-label mb-1">Seleccionar Tienda (solo Malvinas):</label><div class="d-flex flex-wrap gap-2"><div class="form-check me-3"><input class="form-check-input" type="radio" name="inv-tienda" id="t3006" value="TIENDA 3006"><label class="form-check-label" for="t3006">TIENDA 3006</label></div><div class="form-check"><input class="form-check-input" type="radio" name="inv-tienda" id="t3006b" value="TIENDA 3006 B"><label class="form-check-label" for="t3006b">TIENDA 3006 B</label></div><div class="form-check me-3"><input class="form-check-input" type="radio" name="inv-tienda" id="t3131" value="TIENDA 3131"><label class="form-check-label" for="t3131">TIENDA 3131</label></div><div class="form-check me-3"><input class="form-check-input" type="radio" name="inv-tienda" id="t3133" value="TIENDA 3133"><label class="form-check-label" for="t3133">TIENDA 3133</label></div><div class="form-check me-3"><input class="form-check-input" type="radio" name="inv-tienda" id="t412a" value="TIENDA 412-A"><label class="form-check-label" for="t412a">TIENDA 412-A</label></div></div></div><input type="hidden" id="inv-almacen"><input type="hidden" id="inv-tipo"></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalInventario')">Cancelar</button><button class="btn btn-primary" onclick="guardarModalInventario()"><i class="bi bi-save2"></i> Guardar</button></div></div></div>
+</div>
+<!-- ... Resto de modales sin cambios ... -->
+<div class="modal fade" id="modalFiltro" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-funnel"></i> Filtro de productos</h6><button class="btn-close" onclick="closeModal('#modalFiltro')"></button></div><div class="modal-body"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="f-ocultar-cero"><label class="form-check-label" for="f-ocultar-cero">Ocultar productos sin stock (cantidad_sistema ≤ 0)</label></div><div class="mini-hint">También puedes excluir manualmente códigos:</div><div class="input-group"><input id="f-excluir-codigos" class="form-control" placeholder="Códigos separados por coma (ej: ABC-1,ABC-2)"><button class="btn btn-outline-secondary" onclick="aplicarFiltroProductos()"><i class="bi bi-check2"></i> Aplicar</button></div></div></div></div></div>
+<div class="modal fade" id="modalEditarCmp" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Cantidad / Motivo</h6><button class="btn-close" onclick="closeModal('#modalEditarCmp')"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-4"><div class="form-floating"><input id="cmp-codigo" class="form-control" disabled placeholder="Código"><label>Código</label></div></div><div class="col-md-4"><div class="form-floating"><input id="cmp-cant" type="number" class="form-control" placeholder="Cantidad Física"><label>Cantidad Física (corregir)</label></div></div><div class="col-md-4"><div class="form-floating"><select id="cmp-motivo" class="form-select" onchange="toggleTraslado()"><option>Error de conteo</option><option>Otro</option></select><label>Motivo</label></div></div><div class="col-md-4"><div class="form-floating"><select id="cmp-registrado-por" class="form-select" onchange="onChangeRegistradoPor()"><option>Joseph</option><option>Joselyn</option><option>Otro</option></select><label>Registrado por</label></div><input id="cmp-registrado-otro" class="form-control mt-2 d-none" placeholder="Otro nombre (auto)" disabled></div><div class="col-md-4"><div class="form-floating"><select id="cmp-error-de" class="form-select" onchange="onChangeErrorDe()"><option>Joseph</option><option>Joselyn</option><option>Otro</option></select><label>Error de</label></div><input id="cmp-error-otro" class="form-control mt-2 d-none" placeholder="Otro nombre (auto)" disabled></div><div id="bloque-traslado" class="row g-3 d-none"><div class="col-md-4"><div class="form-floating"><select id="tr-de" class="form-select"><option value="callao">Almacén Callao</option><option value="malvinas">Almacén Malvinas</option></select><label>De</label></div></div><div class="col-md-4"><div class="form-floating"><select id="tr-hacia" class="form-select"><option value="callao">Almacén Callao</option><option value="malvinas">Almacén Malvinas</option></select><label>Hacia</label></div></div><div class="col-md-4"><div class="form-floating"><input id="tr-cantidad" type="number" class="form-control" placeholder="Cantidad"><label>Cantidad</label></div></div></div><div class="col-12"><div class="form-floating"><textarea id="cmp-obs" class="form-control" style="height:90px" placeholder="Observaciones"></textarea><label>Observaciones</label></div></div><input type="hidden" id="cmp-rowkey"></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalEditarCmp')">Cancelar</button><button class="btn btn-primary zs-btn" onclick="guardarEdicionCmp()"><i class="bi bi-save"></i> Guardar cambios</button></div></div></div></div>
+<div class="modal fade" id="modalEditarSistema" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-database-gear"></i> Editar Sistema</h6><button class="btn-close" onclick="closeModal('#modalEditarSistema')"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-4"><div class="form-floating"><input id="es-codigo" class="form-control" disabled placeholder="Código"><label>Código</label></div></div><div class="col-md-4"><div class="form-floating"><input id="es-cant" type="number" class="form-control" placeholder="Cantidad Sistema (corregir)"><label>Cantidad Sistema (corregir)</label></div></div><div class="col-md-4"><div class="form-floating"><select id="es-mov" class="form-select"><option value="COMPRA">UNA COMPRA</option><option value="VENTA">UNA VENTA</option></select><label>Motivo</label></div></div><div class="col-md-4"><div class="form-floating"><select id="es-registrado" class="form-select" onchange="onEsRegistradoChange()"><option>Joseph</option><option>Joselyn</option><option>Otro</option></select><label>Registrado por</label></div><input id="es-registrado-otro" class="form-control mt-2 d-none" placeholder="Otro nombre" disabled></div><div class="col-md-4"><div class="form-floating"><select id="es-error" class="form-select" onchange="onEsErrorChange()"><option>Joseph</option><option>Joselyn</option><option>Otro</option></select><label>Error de</label></div><input id="es-error-otro" class="form-control mt-2 d-none" placeholder="Otro nombre" disabled></div><div class="col-12"><div class="form-floating"><textarea id="es-obs" class="form-control" style="height:90px" placeholder="Observaciones"></textarea><label>Observaciones</label></div></div><input type="hidden" id="es-rowkey"></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('#modalEditarSistema')">Cancelar</button><button class="btn btn-primary zs-btn" onclick="guardarEdicionSistema()"><i class="bi bi-save"></i> Guardar cambios</button></div></div></div></div>
+<div class="modal fade" id="modalObs" tabindex="-1"><div class="modal-dialog modal-md"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-eye"></i> Observaciones</h6><button class="btn-close" onclick="closeModal('#modalObs')"></button></div><div class="modal-body"><div id="obs-contenido" class="text-secondary"></div></div></div></div></div>
+<div class="modal fade" id="modalVerificacion" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-check2-square"></i> Editar Verificación</h6><button class="btn-close" onclick="closeModal('#modalVerificacion')"></button></div><div class="modal-body"><input type="hidden" id="verif-rowkey"><div class="row g-3"><div class="col-12"><div class="blk"><div class="blk-header blk-blue">Compras y Ventas</div><div class="blk-body"><div class="row g-3"><div class="col-6"><div class="subttl">Compras</div><div class="row g-2"><div class="col-6"><div class="form-floating"><input id="v-c-fecha-ing" type="date" class="form-control" placeholder="Fecha ingreso"><label>Fecha ingreso inventario</label></div></div><div class="col-6"><div class="form-floating"><input id="v-c-hora-ing" type="time" class="form-control" placeholder="Hora ingreso"><label>Hora ingreso</label></div></div><div class="col-12"><div class="form-floating"><input id="v-c-num-acta" class="form-control" placeholder="Número de acta"><label>Número de acta</label></div></div><div class="col-6"><div class="form-floating"><input id="v-c-fecha-desc" type="date" class="form-control" placeholder="Fecha descarga inventario"><label>Fecha descarga inventario</label></div></div><div class="col-6"><div class="form-floating"><input id="v-c-hora-desc" type="time" class="form-control" placeholder="Hora descarga inventario"><label>Hora descarga inventario</label></div></div></div></div><div class="col-6"><div class="subttl">Ventas</div><div class="row g-2"><div class="col-6"><div class="form-floating"><input id="v-v-fecha-desc-ventas" type="date" class="form-control" placeholder="Fecha descarga ventas"><label>Fecha descarga ventas</label></div></div><div class="col-6"><div class="form-floating"><input id="v-v-hora-desc-ventas" type="time" class="form-control" placeholder="Hora descarga ventas"><label>Hora descarga ventas</label></div></div><div class="col-6"><div class="form-floating"><input id="v-v-fecha-desc-sis" type="date" class="form-control" placeholder="Fecha descarga sistema"><label>Fecha descarga sistema</label></div></div><div class="col-6"><div class="form-floating"><input id="v-v-hora-desc-sis" type="time" class="form-control" placeholder="Hora descarga sistema"><label>Hora descarga sistema</label></div></div></div></div></div></div></div><div class="col-12"><div class="blk"><div class="blk-header blk-amber">Resultado general</div><div class="blk-body"><div class="row g-2"><div class="col-md-4"><div class="form-floating"><input id="v-res-compras" type="number" class="form-control" placeholder="Compras Totales" oninput="recalcularVerificacion()"><label>Compras Totales</label></div></div><div class="col-md-4"><div class="form-floating"><input id="v-res-ventas" type="number" class="form-control" placeholder="Ventas Totales" oninput="recalcularVerificacion()"><label>Ventas Totales</label></div></div><div class="col-md-4"><div class="form-floating"><input id="v-res-exist" type="number" class="form-control" placeholder="Stock de Existencias" disabled><label>Stock de Existencias</label></div></div></div></div></div><div class="col-12"><div class="blk"><div class="blk-header blk-green">Resultado de verificación</div><div class="blk-body"><div class="row g-2"><div class="col-md-4"><div class="form-floating"><input id="v-stock-fis" type="number" class="form-control" placeholder="Stock Físico" disabled><label>Stock Físico</label></div></div><div class="col-md-4"><div class="form-floating"><input id="v-stock-sis" type="number" class="form-control" placeholder="Stock Sistema" disabled><label>Stock Sistema</label></div></div><div class="col-md-4 d-flex align-items-center"><div id="v-resultado" class="w-100 text-center fw-semibold"></div></div></div></div></div></div></div><div class="modal-footer"><button class="btn btn-outline-primary" onclick="pdfVerificacion()"><i class="bi bi-file-earmark-pdf"></i> Descargar reporte en PDF</button><span id="verif-fecha-guardado" class="badge text-bg-secondary ms-2">Sin guardar</span><button class="btn btn-secondary" onclick="closeModal('#modalVerificacion')">Cerrar</button><button class="btn btn-primary zs-btn" onclick="guardarVerificacion()"><i class="bi bi-save2"></i> Guardar</button></div></div></div></div>
+<div class="modal fade" id="modalOtroNombre" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-header"><h6 class="modal-title"><i class="bi bi-person-plus"></i> Ingresar nombre</h6><button class="btn-close" onclick="closeModal('#modalOtroNombre')"></button></div><div class="modal-body"><div class="form-floating"><input id="otro-nombre-input" class="form-control" placeholder="Nombre"><label>Nombre</label></div><div class="mini-hint mt-2">Escribe el nombre y guarda.</div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cancelarOtroNombre()">Cancelar</button><button class="btn btn-primary zs-btn" onclick="guardarOtroNombre()"><i class="bi bi-check2"></i> Guardar</button></div></div></div></div>
+<div id="modal-backdrop" class="modal-backdrop fade" style="display:none"></div>
+
+<script>
+// SCRIPT COMPLETO Y CORREGIDO
+
+/********************
+ * HELPERS & ESTADO *
+ ********************/ 
+const q = (sel, ctx=document) => ctx.querySelector(sel);
+const qa = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+const $ = (id) => document.getElementById(id);
+const fmt12 = (d=new Date())=>{
+  const pad=n=>n.toString().padStart(2,'0');
+  let h=d.getHours(), m=pad(d.getMinutes()), ampm = h>=12?'PM':'AM';
+  h = h%12; if(h===0) h=12;
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()} ${pad(h)}:${m} ${ampm}`;
+};
+const uid = () => Math.random().toString(36).slice(2,10);
+const ls = { get:k => JSON.parse(localStorage.getItem(k) || 'null'), set:(k,v)=> localStorage.setItem(k, JSON.stringify(v)) };
+
+const AppState = {
+  productos: [],
+  filtro: { ocultarCero:false, excluirCodigos:[] },
+  sesiones: { callao:[], malvinas:[] },
+  sistema: { callao:[], malvinas:[] },
+  comparacion: { almacen:null, filas:[] },
+  acciones: [],
+  proformas: [],
+  verificacion: {},
+  sesionActual: { numero: null, creadoPor: null, inicio: null, activo: false }
+};
+
+const JEFE_PWD = '0427';
+let cmpFiltroTxt='';
+let cmpEstado='ALL';
+let inventarioCtx = { almacen:null, tipo:null };
+let _charts={};
+
+
+/*******************
+ * FUNCIONES APP
+ *******************/
+
+function resetApp(){
+  if(!confirm('Esto borrará Productos, Sesiones, Sistema, Comparación, Acciones y Proformas. ¿Continuar?')) return;
+  try { localStorage.removeItem('zs_app'); }catch{}
+  try { sessionStorage.removeItem('zs_app'); }catch{}
+  // Recargar el estado inicial
+  Object.assign(AppState, {
+    productos: [],
+    filtro: { ocultarCero:false, excluirCodigos:[] },
+    sesiones: { callao:[], malvinas:[] },
+    sistema: { callao:[], malvinas:[] },
+    comparacion: { almacen:null, filas:[] },
+    acciones: [],
+    proformas: [],
+    verificacion: {},
+    sesionActual: { numero: null, creadoPor: null, inicio: null, activo: false }
+  });
+  actualizarBadgeProductos();
+  try{ ['callao','malvinas'].forEach(a=>{ const tb=$(`tbl-${a}`)?.querySelector('tbody'); if(tb) tb.innerHTML=''; }); }catch{}
+  try{ const tb=$('tbl-comparacion')?.querySelector('tbody'); if(tb) tb.innerHTML=''; }catch{}
+  renderListado('callao'); renderListado('malvinas'); renderAcciones();
+  renderSesionBanner();
+  toast('Datos reiniciados. Ya puedes cargar tu nuevo archivo.','info');
+}
+
+function loadLS(){ const a=ls.get('zs_app'); if(a) Object.assign(AppState,a); }
+function saveLS(){ ls.set('zs_app', AppState); }
+function openSesionNumeroModal(){ $('sn-pwd').value=''; $('sn-num').value = AppState.sesionActual?.numero || ''; $('sn-area').value='Administración'; $('sn-persona').value='Hervin'; $('sn-otro').classList.add('d-none'); openModal('#modalSesionNumero'); }
+function guardarSesionNumero(){ const pwd=$('sn-pwd').value||''; if(pwd!==JEFE_PWD){ alert('Contraseña incorrecta'); return; } const num=($('sn-num').value||'').trim(); if(!num){ alert('Ingrese el N° de inventario'); return; } const area=$('sn-area').value; let persona=$('sn-persona').value; if(persona==='Otro'){ persona = ($('sn-otro').value||'').trim(); if(!persona){ alert('Especifique el nombre'); return; } }
+  AppState.sesionActual.numero = num; AppState.sesionActual.creadoPor = `${area} • ${persona}`; AppState.sesionActual.inicio = fmt12(); AppState.sesionActual.activo = true; saveLS(); closeModal('#modalSesionNumero'); renderSesionBanner(); openModal('#modalAviso'); toast('Número de inventario asignado.','success'); }
+function renderSesionBanner(){
+  try{
+    const s=AppState.sesionActual||{};
+    const cont2=document.getElementById('sesion-banner-global');
+    if(!cont2) return;
+    if(!s.numero){ cont2.innerHTML=''; return; }
+    // Estado visual del candado:
+    // - Verde (abierto) cuando el inventario está asignado/activo
+    // - Rojo (cerrado) cuando el inventario está cerrado (no se puede registrar)
+    const btn = s.activo
+      ? '<button class="btn btn-sm btn-success ms-2" onclick="cerrarSesionNumero()" title="Inventario abierto (clic para cerrar)"><i class="bi bi-unlock-fill"></i></button>'
+      : '<button class="btn btn-sm btn-danger ms-2" disabled title="Inventario cerrado"><i class="bi bi-lock-fill"></i></button>';
+    cont2.innerHTML = `
+      <div class="sesion-banner-top">
+        Inventario: <strong>${s.numero}</strong> · Creado por: ${s.creadoPor||'-'} · Inicio: ${s.inicio||'-'}
+        ${btn}
+      </div>`;
+  }catch{}
+}
+function openUnirseModal(){ $('join-num').value = AppState.sesionActual?.numero || ''; openModal('#modalUnirse'); }
+function guardarUnirse(){ const num = ($('join-num').value||'').trim(); if(!num){ alert('Ingresa el N° de inventario'); return; } AppState.sesionActual.numero = num; AppState.sesionActual.activo = true; AppState.sesionActual.inicio = AppState.sesionActual.inicio || fmt12(); saveLS(); closeModal('#modalUnirse'); renderSesionBanner(); openModal('#modalAviso'); toast('Unido al inventario '+num,'success'); }
+function cerrarSesionNumero(){ const pwd = prompt('Contraseña para cerrar inventario'); if(pwd!==JEFE_PWD){ alert('Contraseña incorrecta'); return; } if(!confirm('¿Cerrar el inventario actual? No se podrán iniciar nuevos conteos con este número.')) return; AppState.sesionActual.activo=false; saveLS(); renderSesionBanner(); toast('Inventario cerrado.','success'); }
+
+function showView(v){
+  qa('.sidebar .nav-item').forEach(link => {
+    link.classList.toggle('active', link.getAttribute('data-view') === v);
+  });
+  ['callao','malvinas','comparar','consolidado','registro','proformas', 'gerencia'].forEach(id=>{
+    const el = $(`view-${id}`); if(el) el.classList.toggle('invis', id!==v);
+  });
+  if(v==='callao'){ renderListado('callao'); }
+  if(v==='malvinas'){ renderTiendas(); renderListado('malvinas'); }
+  if(v==='consolidado'){ renderConsolidado(); }
+  if(v==='registro'){ renderRegistro(); }
+  if(v==='proformas'){ renderListadoProformas(); }
+  if(v==='gerencia'){ try{ renderGerencia(); }catch{} }
+}
+
+// Abrir Comparar desde el modal de Registro y cerrar el modal
+function openCompararDesdeRegistro(almacen){
+  try{ closeModal('#modalRegDetalle'); }catch{}
+  setTimeout(()=>{ abrirComparacion(almacen); showView('comparar'); }, 50);
+}
+
+function openModal(sel){
+  const m=q(sel); if(!m) return;
+  try {
+    // Evitar reabrir si ya está visible
+    if(m.classList.contains('show')) return;
+    // Cerrar minimenús que puedan quedar abiertos
+    try{ cerrarTodosMiniMenus && cerrarTodosMiniMenus(); }catch{}
+    m.style.display='block';
+    // Forzar reflow antes de agregar 'show' para transición correcta
+    void m.offsetWidth;
+    m.classList.add('show');
+    const bd=$('modal-backdrop');
+    if(bd){
+      bd.style.display='block';
+      // Forzar reflow antes de agregar 'show'
+      void bd.offsetWidth;
+      bd.classList.add('show');
+    }
+  }catch{}
+}
+function closeModal(sel){
+  const m=q(sel); if(!m) return;
+  try {
+    if(!m.classList.contains('show')){ // ya cerrado
+      const bd=$('modal-backdrop');
+      if(bd){ bd.classList.remove('show'); setTimeout(()=>{bd.style.display='none';},150); }
+      m.style.display='none';
+      return;
+    }
+    m.classList.remove('show');
+    setTimeout(()=>{ m.style.display='none'; }, 150);
+    const bd=$('modal-backdrop');
+    if(bd){ bd.classList.remove('show'); setTimeout(()=>{bd.style.display='none';},150); }
+  }catch{}
+}
+
+async function leerArchivoGenerico(file){
+  if(!file) throw new Error('Archivo no seleccionado');
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.json')){ const txt = await file.text(); return JSON.parse(txt); }
+  if(name.endsWith('.csv')){ const txt = await file.text(); return parseCSV(txt); }
+  if(name.endsWith('.xlsx') || name.endsWith('.xls')){ const ab = await file.arrayBuffer(); return parseXLSX(ab); }
+  throw new Error('Formato no soportado. Use Excel (xlsx/xls), CSV o JSON.');
+}
+function parseCSV(txt){ const clean = txt.replace(/^\uFEFF/, '').trim(); if(!clean){ return []; } const lines = clean.split(/\r?\n/); const header = lines[0].split(','); const out=[]; for(let i=1;i<lines.length;i++){ if(!lines[i]) continue; const cols=lines[i].split(','); const obj={}; header.forEach((h,idx)=>{ obj[h.trim()]=cols[idx].trim(); }); out.push(obj); } return out; }
+function parseXLSX(arrayBuffer){ if(!window.XLSX) throw new Error('No se pudo cargar el lector de Excel.'); const wb = XLSX.read(arrayBuffer, {type:'array'}); const ws = wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json(ws); }
+function normalizarClave(k){ return String(k||'').toLowerCase().replace(/\s+/g,'_').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u'); }
+function cargarProductos(datos){ AppState.productos = (datos||[]).map((r,i)=>{ const m={}; Object.keys(r).forEach(k=> m[normalizarClave(k)]=r[k]); return { item:Number(m.item||i+1), producto:(m.producto||m.nombre||m.nombre_producto||m.descripcion||''), codigo:(m.codigo||m.cod||m.sku||'').toString(), unidad_medida:(m.unidad_medida||m.um||'UND'), cantidad_sistema:Number(m.cantidad_sistema||m.sistema||m.stock||0) }; }).filter(p=>p.codigo); saveLS(); actualizarBadgeProductos(); }
+
+function openInventarioModal(almacen, tipo){
+  if(AppState.productos.length===0){ alert('Primero sube el archivo de productos.'); return; }
+  if(!(AppState.sesionActual?.numero)){ alert('No hay N° de inventario activo. Asigna o únete a uno.'); return; }
+  if(almacen==='callao'){ const yaCerrado = (AppState.sesiones.callao||[]).some(s=> s && s.tipo===tipo && !!s.fin); if(yaCerrado){ toast(`El conteo por ${tipo} ya fue registrado.`, 'info'); return; } }
+  inventarioCtx = { almacen, tipo };
+  $('inv-inicio').value = fmt12();
+  $('inv-numero').value = AppState.sesionActual?.numero || `INV-${new Date().getFullYear()}-${(Math.floor(Math.random()*900)+100)}`;
+  if(AppState.sesionActual?.activo && AppState.sesionActual?.numero) $('inv-numero').setAttribute('disabled','disabled'); else $('inv-numero').removeAttribute('disabled');
+  $('inv-registrado').value = 'Joseph';
+  $('inv-otro').classList.add('d-none');
+  $('inv-almacen').value = almacen; $('inv-tipo').value = tipo;
+  q('#bloque-tiendas').classList.toggle('d-none', almacen!=='malvinas');
+  qa('input[name="inv-tienda"]').forEach(r=>{ r.checked=false; try{ const isCerrada = (AppState.sesiones.malvinas||[]).some(s=> s && s.fin && s.tienda===r.value); r.disabled = isCerrada; const lbl=document.querySelector(`label[for="${r.id}"]`); if(lbl){ lbl.classList.toggle('text-muted', isCerrada); } }catch{} });
+  openModal('#modalInventario');
+}
+function validarModalInventario(){ let ok=true; const n=$('inv-numero'), rr=$('inv-registrado'), ro=$('inv-otro'); [n].forEach(el=>{ if(!el.value.trim()){ el.classList.add('is-invalid'); ok=false; } else el.classList.remove('is-invalid'); }); if(rr.value==='Otro'){ if(!ro.value.trim()){ ro.classList.add('is-invalid'); ok=false; } else ro.classList.remove('is-invalid'); } if(inventarioCtx.almacen==='malvinas'){ const sel = qa('input[name="inv-tienda"]:checked')[0]; if(!sel){ alert('Seleccione una tienda.'); ok=false; } else { const yaRegistrada = (AppState.sesiones.malvinas||[]).some(s=> s && s.fin && s.tienda===sel.value); if(yaRegistrada){ alert('La tienda seleccionada ya fue registrada.'); ok=false; } } } return ok; }
+function guardarModalInventario(){ if(!validarModalInventario()) return; const numero = $('inv-numero').value.trim(); let registrado = $('inv-registrado').value; if(registrado==='Otro') registrado = $('inv-otro').value.trim(); const inicio = $('inv-inicio').value; const id=uid(); const base = { id, numero, registrado, inicio, fin:null, tipo: $('inv-tipo').value, filas:[], pdfUrl:null }; if(inventarioCtx.almacen==='malvinas') base.tienda = qa('input[name="inv-tienda"]:checked')[0].value; if(inventarioCtx.almacen==='malvinas'){ const yaRegistrada = (AppState.sesiones.malvinas||[]).some(s=> s && s.fin && s.tienda===base.tienda); if(yaRegistrada){ toast(`La tienda ${base.tienda} ya fue registrada.`, 'info'); return; } } AppState.sesiones[inventarioCtx.almacen].push(base); saveLS(); if(inventarioCtx.almacen==='callao'){ $('callao-numero').textContent = numero; $('callao-registrado').textContent = registrado; $('callao-inicio').textContent = inicio; $('panel-callao').classList.remove('invis'); $('tabla-callao').classList.add('invis'); } else { $('malvinas-numero').textContent = numero; $('malvinas-registrado').textContent = registrado; $('malvinas-inicio').textContent = inicio; $('malvinas-tienda').textContent = base.tienda; $('panel-malvinas').classList.remove('invis'); $('tabla-malvinas').classList.add('invis'); setTiendaStatus(base.tienda, 'en_proceso'); } closeModal('#modalInventario'); }
+function mostrarTablaInventario(almacen){
+  const sesion = ultimoInventario(almacen); if(!sesion){ alert('No hay sesión activa.'); return; }
+  const tbody = $(`tbl-${almacen}`).querySelector('tbody'); tbody.innerHTML='';
+  const wrap = $(`tabla-${almacen}`);
+  if(wrap && !document.getElementById(`inv-fwrap-${almacen}`)){
+    const bar = document.createElement('div');
+    bar.id = `inv-fwrap-${almacen}`;
+    bar.className = 'd-flex align-items-center gap-2 mb-3';
+    bar.innerHTML = `
+      <div class="position-relative flex-grow-1" style="max-width:520px">
+        <input id="inv-filtro-${almacen}" class="form-control form-control-sm ps-5 search-xl" placeholder="Buscar por producto o código">
+        <i class="bi bi-search position-absolute" style="left:12px; top:7px; color:#3b82f6; font-size:1.1rem"></i>
+      </div>
+      <button id="inv-clear-${almacen}" class="btn btn-outline-secondary btn-sm">Limpiar</button>`;
+    wrap.querySelector('.card-body').prepend(bar);
+    const inp = document.getElementById(`inv-filtro-${almacen}`);
+    const clr = document.getElementById(`inv-clear-${almacen}`);
+    if(inp) inp.addEventListener('input', ()=> filterTablaInventario(almacen));
+    if(clr) clr.addEventListener('click', ()=>{ inp.value=''; filterTablaInventario(almacen); inp.focus(); });
+  }
+  const excl = new Set(AppState.filtro.excluirCodigos.map(s=>s.trim()).filter(Boolean)); let fuente = [...AppState.productos]; if(AppState.filtro.ocultarCero) fuente = fuente.filter(p=>p.cantidad_sistema>0); fuente = fuente.filter(p=> !excl.has(p.codigo));
+  const mapCant = new Map((sesion.filas||[]).map(f=>[f.codigo, f.cantidad]));
+  fuente.forEach(p=>{ const tr = document.createElement('tr'); const val = mapCant.has(p.codigo) ? String(mapCant.get(p.codigo)) : ''; const estadoBadge = val==='' ? '<span class="badge text-bg-danger">PENDIENTE</span>' : '<span class="badge text-bg-success">REGISTRADO</span>'; tr.innerHTML = `<td>${p.item}</td><td>${p.producto}</td><td>${p.codigo}</td><td><input type="number" class="form-control form-control-sm" style="width:100px; text-align:center" min="0" data-codigo="${p.codigo}" value="${val}" oninput="syncObs(this)"></td><td>${p.unidad_medida}</td><td class="fw-semibold">${estadoBadge}</td>`; tbody.appendChild(tr); });
+  $(`tabla-${almacen}`).classList.remove('invis');
+}
+function syncObs(inp){ const tdObs=inp.closest('tr').children[5]; const val=inp.value.trim(); tdObs.innerHTML = val===''? `<span class="badge text-bg-danger">PENDIENTE</span>` : `<span class="badge text-bg-success">REGISTRADO</span>`; }
+function filterTablaInventario(almacen){ const q = (document.getElementById(`inv-filtro-${almacen}`)?.value||'').toLowerCase(); const tb = document.getElementById(`tbl-${almacen}`)?.querySelector('tbody'); if(!tb) return; Array.from(tb.children).forEach(tr=>{ const tds = tr.children; const producto = (tds[1]?.textContent||'').toLowerCase(); const codigo=(tds[2]?.textContent||'').toLowerCase(); const show = !q || producto.includes(q) || codigo.includes(q); tr.style.display = show? '' : 'none'; }); }
+function ultimoInventario(almacen){ const arr = AppState.sesiones[almacen]; return arr[arr.length-1] || null; }
+async function registrarInventario(almacen){
+  const sesion = ultimoInventario(almacen); if(!sesion){ alert('No hay sesión.'); return; }
+  const rows = $(`tbl-${almacen}`).querySelectorAll('tbody tr');
+  if(rows.length===0){ alert('No hay filas para registrar.'); return; }
+  const filas=[]; let faltantes=0;
+  rows.forEach(r=>{ const tds = r.children; const item=tds[0].textContent; const producto=tds[1].textContent; const codigo=tds[2].textContent; const cant=tds[3].querySelector('input').value; const um=tds[4].textContent; if(cant==='') faltantes++; filas.push({item,producto,codigo,unidad_medida:um,cantidad:Number(cant||0)}); });
+  if(faltantes>0){ if(!confirm(`Hay ${faltantes} sin cantidad. ¿Deseas continuar?`)) return; }
+  sesion.filas = filas; sesion.fin = fmt12(); saveLS();
+  sesion.pdfUrl = await generarPDFConteo(almacen, sesion); saveLS();
+  renderListado(almacen); if(almacen==='malvinas'){ setTiendaStatus(sesion.tienda,'listo'); }
+  renderConsolidado(); renderRegistro();
+  toast('Inventario registrado correctamente.','success');
+}
+function renderListado(almacen){ const tb = $(`list-${almacen}`).querySelector('tbody'); tb.innerHTML=''; const filtro = $(`filtro-list-${almacen}`)?.value?.toLowerCase() || ''; AppState.sesiones[almacen].forEach((s,idx)=>{ if(filtro && !(`${s.numero} ${s.registrado} ${s.inicio} ${s.tienda||''}`.toLowerCase().includes(filtro))) return; const tr = document.createElement('tr'); const pdf = s.pdfUrl? `<a class="link-primary" href="${s.pdfUrl}" target="_blank"><i class="bi bi-file-earmark-pdf"></i> PDF</a>`:'-'; tr.innerHTML = `${almacen==='malvinas'?`<td>${idx+1}</td><td>${s.inicio}</td><td>${s.numero}</td><td>${s.tienda||''}</td><td>${s.registrado}</td><td>${pdf}</td><td>${s.fin||'-'}</td>`:`<td>${idx+1}</td><td>${s.inicio}</td><td>${s.numero}</td><td>${s.registrado}</td><td>${pdf}</td><td>${s.fin||'-'}</td>`}`; tb.appendChild(tr); }); }
+async function generarPDFConteo(almacen, sesion){ const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text(`Inventario ${almacen.toUpperCase()} – ${sesion.numero}`, 40, 40); doc.setFontSize(10); doc.text(`Registrado por: ${sesion.registrado} · Inicio: ${sesion.inicio} · Fin: ${sesion.fin||''} ${sesion.tienda? '· Tienda: '+sesion.tienda:''}`, 40, 58); const body = sesion.filas.map(f=>[f.item, f.producto, f.codigo, f.cantidad.toString(), f.unidad_medida]); doc.autoTable({ startY:80, head:[["Item","Producto","Código","Cantidad","UM"]], body }); const blob = doc.output('blob'); return URL.createObjectURL(blob); }
+function pdfListado(almacen){ const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text(`Listado de Conteos – ${almacen.toUpperCase()}`, 40, 40); const arr = AppState.sesiones[almacen].map((s,i)=> [ i+1, s.inicio, s.numero, (almacen==='malvinas'?(s.tienda||''):'-'), s.fin||'-' ]); const head = (almacen==='malvinas')? [["ID","Inicio","N° Inventario","Tienda","Hora Final"]] : [["ID","Inicio","N° Inventario","Hora Final"]]; doc.autoTable({startY:60, head, body: arr}); doc.save(`listado_${almacen}.pdf`); }
+function toast(msg,type='info'){
+  // Toast flotante no intrusivo, no empuja el layout
+  const wrap=document.createElement('div');
+  wrap.className='toast-fixed';
+  wrap.style.position='fixed';
+  wrap.style.top='16px';
+  wrap.style.right='20px';
+  wrap.style.zIndex='200000';
+  wrap.style.pointerEvents='none';
+  wrap.innerHTML=`<div style="pointer-events:auto; border-radius:12px; padding:.65rem 1rem; box-shadow:0 10px 24px rgba(0,0,0,.12); background:${type==='success'?'#16a34a':'#0ea5e9'}; color:white; font-weight:600;">${msg}</div>`;
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(), 2200);
+}
+function actualizarBadgeProductos(){ const el=$('badgeProductos'); if(!el) return; const n=Array.isArray(AppState.productos)?AppState.productos.length:0; el.textContent = 'Productos: '+n; el.className = 'badge '+(n>0?'bg-success':'bg-secondary')+' align-self-center me-2'; }
+// ===== Helpers adicionales =====
+function toNumberSafe(v){
+  if(typeof v==='number' && isFinite(v)) return v;
+  if(typeof v==='string'){
+    let s = v.trim();
+    s = s.replace(/[^0-9,\.\-]/g, '');
+    if(!s) return 0;
+    const hasComma = s.includes(',');
+    const hasDot = s.includes('.');
+    if(hasComma && hasDot){
+      return Number(s.replace(/\./g,'').replace(/,/g,'.')) || 0;
+    }
+    if(hasComma && !hasDot){
+      return Number(s.replace(/,/g,'.')) || 0;
+    }
+    return Number(s) || 0;
+  }
+  return Number(v)||0;
+}
+
+function debounce(fn, wait){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,args), wait); }; }
+const debounceCmp = debounce(()=>{ const inp=document.getElementById('cmp-search'); if(!inp) return; const v=(inp.value||'').trim(); cmpFiltroTxt=v.toLowerCase(); inp.classList.toggle('filter-active', !!v); try{ pintarComparacion(); renderConsolidado(); setTimeout(()=>{ const first=document.querySelector('#tbl-comparacion tbody tr'); if(first){ document.querySelectorAll('#tbl-comparacion tbody tr').forEach(x=> x.classList.remove('cmp-highlight')); first.classList.add('cmp-highlight'); first.scrollIntoView({behavior:'smooth', block:'center'}); } }, 10); }catch{} showCmpSugerencias(); }, 200);
+document.addEventListener('click', (e)=>{ const s=document.getElementById('cmp-suggest'); const i=document.getElementById('cmp-search'); if(!s||!i) return; if(e.target!==s && !s.contains(e.target) && e.target!==i){ s.classList.add('d-none'); } });
+function setCmpEstado(next){ cmpEstado=next; const ok=document.getElementById('cmp-badge-ok'); const bad=document.getElementById('cmp-badge-bad'); ok?.classList.toggle('border', cmpEstado==='OK'); bad?.classList.toggle('border', cmpEstado==='BAD'); try{ pintarComparacion(); renderConsolidado(); }catch{} }
+function cmpMostrarTodos(){ cmpEstado='ALL'; cmpFiltroTxt=''; const inp=document.getElementById('cmp-search'); if(inp){ inp.value=''; inp.classList.remove('filter-active'); } const ok=document.getElementById('cmp-badge-ok'); const bad=document.getElementById('cmp-badge-bad'); ok?.classList.remove('border'); bad?.classList.remove('border'); try{ pintarComparacion(); renderConsolidado(); }catch{} }
+function buildCmpSugerencias(q){ const arr=(AppState.comparacion?.filas)||[]; const s=(q||'').toLowerCase(); const out=[]; const seen=new Set(); arr.forEach(r=>{ [String(r.codigo||''), String(r.producto||'')].forEach(v=>{ const vv=v.trim(); if(vv && vv.toLowerCase().includes(s) && !seen.has(vv)){ seen.add(vv); out.push(vv); } }); }); return out.slice(0,10); }
+function showCmpSugerencias(){ const box=document.getElementById('cmp-suggest'); const inp=document.getElementById('cmp-search'); if(!box||!inp) return; const q=(inp.value||'').trim(); if(!q){ box.classList.add('d-none'); box.innerHTML=''; return; } const items=buildCmpSugerencias(q); if(items.length===0){ box.classList.add('d-none'); box.innerHTML=''; return; } box.innerHTML = items.map(v=>`<div class="item" data-v="${v.replace(/\"/g,'&quot;')}">${v}</div>`).join(''); box.classList.remove('d-none'); box.querySelectorAll('.item').forEach(el=> el.addEventListener('click', ()=>{ const v=el.getAttribute('data-v')||''; inp.value=v; cmpFiltroTxt=v.toLowerCase(); inp.classList.add('filter-active'); box.classList.add('d-none'); try{ pintarComparacion(); renderConsolidado(); }catch{} })); }
+
+// ===== Acciones =====
+function renderAcciones(){ const tb=$('tbl-acciones')?.querySelector('tbody'); if(!tb) return; tb.innerHTML=''; const filtro=$('filtro-acciones')?.value?.toLowerCase()||''; const norm=(s)=>{ s=String(s||'').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1); }; (AppState.acciones||[]).forEach(a=>{ const key=`${a.fecha} ${a.registrado} ${a.motivo} ${a.errorDe||''} ${a.obs||''} ${a.producto||''} ${a.almacen||''}`.toLowerCase(); if(filtro && !key.includes(filtro)) return; const idRef = (a.item?`Item ${a.item}`:'') + (a.producto? (a.item?' · ':'')+a.producto : ''); const cant = (a.cantidad!==undefined && a.cantidad!==null && String(a.cantidad)!=='') ? a.cantidad : '-'; const tr=document.createElement('tr'); tr.innerHTML=`<td>${idRef||a.id}</td><td>${a.fecha}</td><td class="text-center">${norm(a.registrado)}</td><td>${norm(a.almacen)}</td><td>${norm(a.motivo)}</td><td>${cant}</td><td>${norm(a.errorDe)||'-'}</td><td class="text-center"><i class="bi bi-eye cursor-pointer" onclick="verObs('${a.id}')"></i></td>`; tb.appendChild(tr); }); }
+function pdfAcciones(){ const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'pt', format:'a4'}); const norm=(s)=>{ s=String(s||'').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1); }; doc.setFontSize(14); doc.text('Listado de Acciones', 40, 40); const body=(AppState.acciones||[]).map(a=>{ const idRef = (a.item?`Item ${a.item}`:'') + (a.producto? (a.item?' · ':'')+a.producto : ''); const cant = (a.cantidad!==undefined && a.cantidad!==null && String(a.cantidad)!=='') ? a.cantidad : '-'; return [idRef||a.id, a.fecha, norm(a.registrado), norm(a.almacen), norm(a.motivo), String(cant), norm(a.errorDe), (a.obs||'')]; }); doc.autoTable({startY:60, head:[["Item/Producto","Fecha y Hora","Registrado","Almacén","Motivo","Cantidad","Error de","Observaciones"]], body}); doc.save('acciones.pdf'); }
+function verObs(id){ const a=(AppState.acciones||[]).find(x=>String(x.id)===String(id)); const el=document.getElementById('obs-contenido'); if(el) el.textContent=a?.obs||'(Sin observaciones)'; openModal('#modalObs'); }
+
+// ===== Malvinas: estado de tiendas =====
+const TIENDAS=['TIENDA 3006','TIENDA 3006 B','TIENDA 3131','TIENDA 3133','TIENDA 412-A'];
+function renderTiendas(){ const cont=$('status-tiendas'); if(!cont) return; cont.innerHTML=''; TIENDAS.forEach(t=>{ const estado=getTiendaStatus(t); const dot= estado==='listo'?'status-green': (estado==='en_proceso'?'status-orange':'status-red'); const el=document.createElement('div'); el.innerHTML=`<span class="status-dot ${dot}"></span>${t}`; cont.appendChild(el); }); }
+function getTiendaStatus(tienda){ const ses = (AppState.sesiones.malvinas||[]).filter(s=>s.tienda===tienda); if(ses.some(s=>s.fin)) return 'listo'; if(ses.length>0) return 'en_proceso'; return 'pendiente'; }
+function setTiendaStatus(){ renderTiendas(); }
+
+// ===== Comparación =====
+function buildMapaFisicoAcumulado(almacen){ const map = new Map(); const sesiones = (AppState.sesiones[almacen]||[]).filter(s=> s && s.fin); sesiones.forEach(s=>{ (s.filas||[]).forEach(f=>{ const c=f.codigo; if(!c) return; const prev = map.get(c) || { item:f.item, producto:f.producto, unidad_medida:f.unidad_medida, fis:0 }; prev.fis = Number(prev.fis||0) + (Number(f.cantidad)||0); if(!prev.producto && f.producto) prev.producto = f.producto; if(!prev.item && f.item) prev.item = f.item; map.set(c, prev); }); }); return {map, sesiones}; }
+function cargarSistema(e, almacen){ (async ()=>{ try{ const file=e.target.files[0]; const arr= await leerArchivoGenerico(file); AppState.sistema[almacen] = (arr||[]).map((r,i)=>{ const m={}; Object.keys(r).forEach(k=> m[normalizarClave(k)]=r[k]); const item = toNumberSafe(m.item ?? i+1) || (i+1); const producto = (m.producto ?? m.nombre ?? m.nombre_producto ?? m.descripcion ?? m.descripcion_producto ?? m.detalle ?? m.detalle_producto ?? m.desc) || ''; const codigo = (m.codigo ?? m.cod ?? m.code ?? m.sku ?? m.codigo_producto ?? m.codigo_interno ?? m.codigo_zeus ?? m.codigo_item ?? m.codigoitem ?? '').toString(); const cantidadSistema = toNumberSafe(m.cantidad_sistema ?? m.cantidad_sis ?? m.sistema ?? m.stock ?? m.cantidad ?? m.existencia ?? m.cantidadtotal ?? m.cantidad_total ?? m.qty ?? 0); return { item, producto, codigo, cantidad_sistema: cantidadSistema }; }).filter(x=> x.codigo); saveLS(); toast(`Archivo de sistema (${almacen}) cargado: ${AppState.sistema[almacen].length} filas.`,'success'); try{ const cnt = AppState.sistema[almacen].length; const targetBtn = almacen==='callao' ? document.getElementById('btn-alm-callao') : document.getElementById('btn-alm-malvinas'); if(targetBtn){ const ex = targetBtn.querySelector('.sys-count'); if(ex) ex.textContent = ` (${cnt})`; else { const s=document.createElement('span'); s.className='sys-count'; s.textContent=` (${cnt})`; targetBtn.appendChild(s); } targetBtn.classList.add('active-alm'); setTimeout(()=> targetBtn.classList.remove('active-alm'), 1200); } }catch{} }catch(err){ alert('Error al leer archivo del sistema: '+err.message); } })(); }
+function abrirComparacion(almacen){ const {map:mapFisAcu, sesiones} = buildMapaFisicoAcumulado(almacen); if(!sesiones || sesiones.length===0){ alert('No hay inventarios registrados para comparar.'); return; } if((AppState.sistema[almacen]||[]).length===0){ alert('Carga primero el archivo del sistema.'); return; } $('cmp-almacen').textContent = almacen.toUpperCase(); if(sesiones.length===1){ $('cmp-numero').textContent = sesiones[0].numero; $('cmp-fecha').textContent = sesiones[0].fin || sesiones[0].inicio; } else { $('cmp-numero').textContent = `MÚLTIPLES (${sesiones.length})`; const ultima = sesiones[sesiones.length-1]; $('cmp-fecha').textContent = ultima.fin || ultima.inicio; } const mapSis = new Map((AppState.sistema[almacen]||[]).map(s=>[s.codigo, s])); const codigos = new Set([ ...mapSis.keys(), ...mapFisAcu.keys() ]); const filas=[]; codigos.forEach(c=>{ const s = mapSis.get(c); const f = mapFisAcu.get(c); const prod = (f?.producto) || (s?.producto) || ''; const item = (f?.item) || (s?.item) || ''; const sis = Number(s?.cantidad_sistema||0); const fis = Number(f?.fis||0); const res = fis - sis; const estado = res===0 ? 'CONFORME' : (res>0 ? 'SOBRANTE' : 'FALTANTE'); filas.push({ item, producto:prod, codigo:c, sis, fis, res, estado }); }); AppState.comparacion = { almacen, filas }; pintarComparacion(); renderConsolidado(); $('panel-comparacion').classList.remove('invis'); try{ document.querySelectorAll('#btn-alm-callao, #btn-alm-malvinas').forEach(b=> b.classList.remove('active-alm')); const selBtn = document.getElementById(almacen==='callao' ? 'btn-alm-callao' : 'btn-alm-malvinas'); selBtn?.classList.add('active-alm'); }catch{} try{ const inp=document.getElementById('cmp-search'); if(inp){ inp.value=''; inp.classList.remove('filter-active'); } cmpFiltroTxt=''; cmpEstado='ALL'; }catch{} try{ actualizarTotalesFisicosComparar(); }catch{} }
+function pintarComparacion(){ const tb=$('tbl-comparacion')?.querySelector('tbody'); if(!tb) return; tb.innerHTML=''; let ok=0,bad=0; const soloSis = !!document.getElementById('cmp-solo-sistema')?.checked; const setSis = new Set(((AppState.sistema[AppState.comparacion?.almacen]||[])).map(s=>s.codigo)); (AppState.comparacion?.filas||[]).forEach(r=>{ if(soloSis && !setSis.has(r.codigo)) return; if(cmpFiltroTxt){ const code=String(r.codigo||'').toLowerCase(); const prod=String(r.producto||'').toLowerCase(); if(!code.includes(cmpFiltroTxt) && !prod.includes(cmpFiltroTxt)) return; } if(cmpEstado==='OK' && r.res!==0) return; if(cmpEstado==='BAD' && r.res===0) return; if(r.res===0) ok++; else bad++; const resTxt = r.res>0?`+${r.res}`:(r.res<0?`${r.res}`:'0'); const estCls = r.estado==='CONFORME'?'text-bg-success':(r.estado==='FALTANTE'?'text-bg-danger':'text-bg-warning'); const resCls = estCls; const tr=document.createElement('tr'); tr.innerHTML = `<td>${r.item}</td><td>${r.producto}</td><td>${r.codigo}</td><td class="text-center">${r.sis}</td><td class="text-center">${r.fis}</td><td class="text-center"><span class="badge ${resCls}">${resTxt}</span></td><td><span class="badge ${estCls}">${r.estado}</span></td><td><div class="position-relative d-inline-block" data-codigo="${r.codigo}"><button class="btn btn-sm btn-edit" onclick="abrirMenuEditar(event,'${r.codigo}')">Editar <i class="bi bi-caret-down-fill ms-1"></i></button><div class="mini-menu d-none"><button class="mm-item" onclick="accionEditarCantidadDesdeMenu(event,this)">Editar Cantidad</button><button class="mm-item" onclick="accionEditarSistemaDesdeMenu(event,this)">Editar Sistema</button><button class="mm-item" onclick="accionEditarVerificacionDesdeMenu(event,this)">Editar Verificación</button></div></div></td>`; tb.appendChild(tr); }); $('cmp-correctos').textContent=ok; $('cmp-incorrectos').textContent=bad; saveLS(); try{ actualizarTotalesFisicosComparar(); }catch{} }
+
+// Mini menú de edición en Comparar
+let __miniMenuPortal = { menu:null, placeholder:null };
+function abrirMenuEditar(ev, codigo){
+  ev.stopPropagation();
+  cerrarTodosMiniMenus();
+  const btn = ev.currentTarget;
+  const wrap = btn.closest('.position-relative');
+  const menu = wrap?.querySelector('.mini-menu');
+  wrap?.setAttribute('data-codigo', codigo);
+  if(!menu) return;
+
+  // Crear placeholder y mover al body (portal) para evitar stacking y overflow
+  if(!__miniMenuPortal.placeholder){ __miniMenuPortal.placeholder = document.createElement('div'); __miniMenuPortal.placeholder.style.display='none'; }
+  if(menu.parentElement !== document.body){
+    wrap.insertBefore(__miniMenuPortal.placeholder, menu);
+    document.body.appendChild(menu);
+  }
+
+  // Mostrar y posicionar en coordenadas fijas
+  menu.classList.remove('d-none');
+  menu.style.position='fixed';
+  menu.style.top='0px'; menu.style.left='0px'; menu.style.right='auto';
+  menu.style.zIndex = '200000';
+  // Persistir el código en el propio menú para uso desde el portal
+  menu.dataset.codigo = String(codigo||'');
+  // Preparar para medir tamaño
+  menu.style.visibility='hidden';
+  void menu.offsetHeight;
+  const rect = btn.getBoundingClientRect();
+  const mW = Math.max(menu.offsetWidth || 260, 240);
+  const mH = menu.offsetHeight || 200;
+  let top = rect.bottom + 6;
+  let left = rect.right - mW; // alineado al borde derecho del botón
+  const pad = 8;
+  if(left < pad) left = pad;
+  if(top + mH > window.innerHeight - pad){ top = Math.max(pad, rect.top - mH - 6); }
+  if(left + mW > window.innerWidth - pad){ left = Math.max(pad, window.innerWidth - mW - pad); }
+  menu.style.visibility='';
+  menu.style.top = `${Math.round(top)}px`;
+  menu.style.left = `${Math.round(left)}px`;
+
+  // Evitar parpadeo: no cerrar por mousedown interno
+  menu.addEventListener('mousedown', (e)=> e.stopPropagation(), { once:false });
+  // Animación
+  void menu.offsetHeight; menu.classList.add('show');
+  setTimeout(()=> document.addEventListener('click', onDocClickMenu, { once:true }), 0);
+}
+function onDocClickMenu(e){ const menu = document.querySelector('.mini-menu.show'); if(!menu) return; if(!menu.contains(e.target)){ ocultarMiniMenu(menu); } }
+function accionEditarCantidadDesdeMenu(event, el){
+  event?.stopPropagation?.();
+  const menuEl = el.closest('.mini-menu') || document.querySelector('.mini-menu.show');
+  const codigo = menuEl?.dataset?.codigo || el.closest('[data-codigo]')?.getAttribute('data-codigo');
+  if(menuEl) ocultarMiniMenu(menuEl);
+  if(codigo) editarCmp(codigo);
+}
+function accionEditarSistemaDesdeMenu(event, el){
+  event?.stopPropagation?.();
+  const menuEl = el.closest('.mini-menu') || document.querySelector('.mini-menu.show');
+  const codigo = menuEl?.dataset?.codigo || el.closest('[data-codigo]')?.getAttribute('data-codigo');
+  if(menuEl) ocultarMiniMenu(menuEl);
+  if(codigo) editarSistema(codigo);
+}
+function accionEditarVerificacionDesdeMenu(event, el){
+  event?.stopPropagation?.();
+  const menuEl = el.closest('.mini-menu') || document.querySelector('.mini-menu.show');
+  const codigo = menuEl?.dataset?.codigo || el.closest('[data-codigo]')?.getAttribute('data-codigo');
+  if(menuEl) ocultarMiniMenu(menuEl);
+  if(codigo) editarVerificacion(codigo);
+}
+function ocultarMiniMenu(menu){
+  if(!menu) return; if(menu.classList.contains('d-none')) return;
+  menu.classList.remove('show');
+  const onEnd=()=>{
+    try{
+      menu.classList.add('d-none'); menu.removeEventListener('transitionend', onEnd);
+      // Restaurar menú a su contenedor original si fue portalizado
+      if(__miniMenuPortal.placeholder && __miniMenuPortal.placeholder.parentNode && menu.parentElement===document.body){
+        __miniMenuPortal.placeholder.parentNode.insertBefore(menu, __miniMenuPortal.placeholder);
+        __miniMenuPortal.placeholder.remove();
+      }
+      menu.style.position=''; menu.style.top=''; menu.style.left=''; menu.style.right='';
+    }catch{}
+  };
+  menu.addEventListener('transitionend', onEnd, { once:true });
+  setTimeout(onEnd, 160);
+}
+function cerrarTodosMiniMenus(){ try{ document.querySelectorAll('.mini-menu.show, .mini-menu:not(.d-none)').forEach(m=> ocultarMiniMenu(m)); }catch{} }
+
+function editarCmp(codigo){ if(!codigo) return; const r=(AppState.comparacion?.filas||[]).find(x=>x.codigo===codigo); if(!r) return; $('cmp-codigo').value=r.codigo; $('cmp-cant').value=r.fis; $('cmp-motivo').value='Error de conteo'; $('cmp-obs').value=''; $('cmp-rowkey').value=r.codigo; toggleTraslado(); openModal('#modalEditarCmp'); }
+function toggleTraslado(){ const show=false; $('bloque-traslado').classList.add('d-none'); }
+let otroNombreCtx = { target:null };
+function onChangeRegistradoPor(){ const sel=$('cmp-registrado-por').value; const otro=$('cmp-registrado-otro'); if(sel==='Otro'){ otroNombreCtx.target='registrado'; $('otro-nombre-input').value=''; openModal('#modalOtroNombre'); } else { otro.classList.add('d-none'); otro.value=''; } }
+function onChangeErrorDe(){ const sel=$('cmp-error-de').value; const otro=$('cmp-error-otro'); if(sel==='Otro'){ otroNombreCtx.target='error'; $('otro-nombre-input').value=''; openModal('#modalOtroNombre'); } else { otro.classList.add('d-none'); otro.value=''; } }
+function cancelarOtroNombre(){ if(otroNombreCtx.target==='registrado'){ $('cmp-registrado-por').value='Joseph'; } if(otroNombreCtx.target==='error'){ $('cmp-error-de').value='Joseph'; } closeModal('#modalOtroNombre'); }
+function guardarOtroNombre(){ const val=$('otro-nombre-input').value.trim(); if(!val){ alert('Ingrese un nombre'); return; } if(otroNombreCtx.target==='registrado'){ const otro=$('cmp-registrado-otro'); otro.value=val; otro.classList.remove('d-none'); } if(otroNombreCtx.target==='error'){ const otro=$('cmp-error-otro'); otro.value=val; otro.classList.remove('d-none'); } closeModal('#modalOtroNombre'); }
+function guardarEdicionCmp(){ const codigo=$('cmp-rowkey').value; const nuevoFis=Number($('cmp-cant').value||0); if(nuevoFis<0){ alert('Cantidad no puede ser negativa.'); return; } const motivoSel=$('cmp-motivo').value; const motivo = motivoSel; const obs=$('cmp-obs').value.trim(); const fila=(AppState.comparacion?.filas||[]).find(x=>x.codigo===codigo); if(!fila) return; const ses=ultimoInventario(AppState.comparacion?.almacen); const fSes=ses?.filas?.find(f=>f.codigo===codigo); if(fSes){ fSes.cantidad=nuevoFis; } let registradoPor=$('cmp-registrado-por').value; if(registradoPor==='Otro'){ registradoPor=$('cmp-registrado-otro').value.trim()||'Otro'; } let errorDe=$('cmp-error-de').value; if(errorDe==='Otro'){ errorDe=$('cmp-error-otro').value.trim()||'Otro'; } fila.fis=nuevoFis; fila.res=fila.fis-fila.sis; fila.estado= fila.res===0?'CONFORME':(fila.res>0?'SOBRANTE':'FALTANTE'); (AppState.acciones|| (AppState.acciones=[])).push({ id:(AppState.acciones?.length||0)+1, fecha: fmt12(), codigo, item: fila.item, producto: fila.producto, registrado: registradoPor, motivo, cantidad: nuevoFis, errorDe, obs, almacen: (AppState.comparacion?.almacen||'') }); pintarComparacion(); renderAcciones(); renderConsolidado(); saveLS(); closeModal('#modalEditarCmp'); toast('Cambios aplicados.','success'); }
+function editarSistema(codigo){ const r=(AppState.comparacion?.filas||[]).find(x=>x.codigo===codigo); if(!r) return; $('es-codigo').value = r.codigo; $('es-cant').value = ''; $('es-mov').value = 'COMPRA'; $('es-registrado').value = 'Joseph'; $('es-registrado-otro').value=''; $('es-registrado-otro').classList.add('d-none'); $('es-error').value = 'Joseph'; $('es-error-otro').value=''; $('es-error-otro').classList.add('d-none'); $('es-obs').value = ''; $('es-rowkey').value = r.codigo; openModal('#modalEditarSistema'); }
+function onEsRegistradoChange(){ const sel=$('es-registrado').value; const otro=$('es-registrado-otro'); if(sel==='Otro'){ otro.disabled=false; otro.classList.remove('d-none'); otro.focus(); } else { otro.value=''; otro.classList.add('d-none'); otro.disabled=true; } }
+function onEsErrorChange(){ const sel=$('es-error').value; const otro=$('es-error-otro'); if(sel==='Otro'){ otro.disabled=false; otro.classList.remove('d-none'); otro.focus(); } else { otro.value=''; otro.classList.add('d-none'); otro.disabled=true; } }
+function guardarEdicionSistema(){ const codigo=$('es-rowkey').value; const mov=$('es-mov').value; const delta=Number($('es-cant').value||0); if(!codigo) return; if(delta<=0 || !isFinite(delta)) { alert('Ingresa una cantidad válida (> 0).'); return; } const alm=AppState.comparacion?.almacen; if(!alm){ alert('No hay almacén activo.'); return; } const arr=AppState.sistema[alm]||[]; const row=arr.find(x=> String(x.codigo)===String(codigo)); if(!row){ alert('Código no existe en el sistema cargado.'); return; } const sign=(mov==='COMPRA')?+1:-1; row.cantidad_sistema=Math.max(0, Number(row.cantidad_sistema||0)+sign*delta); const fila=(AppState.comparacion?.filas||[]).find(f=> f.codigo===codigo); if(fila){ fila.sis=Number(row.cantidad_sistema||0); fila.res=Number(fila.fis||0)-Number(fila.sis||0); fila.estado = fila.res===0?'CONFORME':(fila.res>0?'SOBRANTE':'FALTANTE'); } const registrado = ($('es-registrado').value==='Otro')? ($('es-registrado-otro').value.trim()||'Otro') : $('es-registrado').value; const errorDe = ($('es-error').value==='Otro')? ($('es-error-otro').value.trim()||'Otro') : $('es-error').value; const obs=$('es-obs').value.trim(); (AppState.acciones||(AppState.acciones=[])).push({ id:(AppState.acciones?.length||0)+1, fecha:fmt12(), registrado, motivo:(mov==='COMPRA'?'UNA COMPRA':'UNA VENTA'), cantidad:delta, errorDe, obs, codigo, item:(fila?.item||''), producto:(fila?.producto||''), almacen:(AppState.comparacion?.almacen||'') }); saveLS(); try{ pintarComparacion(); renderConsolidado(); renderAcciones(); }catch{} closeModal('#modalEditarSistema'); toast('Sistema actualizado','success'); }
+
+function exportComparacionPDF(){ const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text('Comparación de Inventario', 40, 40); const alm = (AppState.comparacion?.almacen||'').toUpperCase(); const num = $('cmp-numero')?.textContent||''; const fecha=$('cmp-fecha')?.textContent||''; doc.setFontSize(10); doc.text(`Almacén: ${alm}   Inventario: ${num}   Fecha: ${fecha}`, 40, 58); const rows = (AppState.comparacion?.filas||[]).filter(f=>{ if(cmpFiltroTxt){ const code=String(f.codigo||'').toLowerCase(); const prod=String(f.producto||'').toLowerCase(); if(!code.includes(cmpFiltroTxt) && !prod.includes(cmpFiltroTxt)) return false; } if(cmpEstado==='OK' && f.res!==0) return false; if(cmpEstado==='BAD' && f.res===0) return false; return true; }).map(f=>[f.item, f.producto, f.codigo, String(f.sis), String(f.fis), String(f.res), f.estado]); doc.autoTable({startY:74, head:[["Item","Producto","Código","Sis","Fis","Res","Estado"]], body: rows}); doc.save(`Comparacion_${alm||'ALL'}.pdf`); }
+function exportComparacionExcel(){ try{ const data = (AppState.comparacion?.filas||[]).filter(f=>{ if(cmpFiltroTxt){ const code=String(f.codigo||'').toLowerCase(); const prod=String(f.producto||'').toLowerCase(); if(!code.includes(cmpFiltroTxt) && !prod.includes(cmpFiltroTxt)) return false; } if(cmpEstado==='OK' && f.res!==0) return false; if(cmpEstado==='BAD' && f.res===0) return false; return true; }).map(f=>({ Item:f.item, Producto:f.producto, Código:f.codigo, Sistema:f.sis, Físico:f.fis, Resultado:f.res, Estado:f.estado })); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Comparacion'); XLSX.writeFile(wb, 'Comparacion.xlsx'); }catch(e){ alert('No se pudo exportar a Excel'); } }
+function actualizarTotalesFisicosComparar(){ function sumFis(alm){ const map = buildMapaFisico(alm); let tot=0; map.forEach(v=>{ tot += Number(v.fis||0); }); return tot; } function ultimaFecha(alm){ const ses = (AppState.sesiones[alm]||[]).filter(s=>s && s.fin); if(ses.length===0) return ''; const u = ses[ses.length-1]; return (u.fin || u.inicio || '') + (u.tienda? ` · ${u.tienda}`: ''); } const totC = sumFis('callao'); const totM = sumFis('malvinas'); const elC = document.getElementById('cmp-tf-callao'); if(elC) elC.textContent = totC; const elM = document.getElementById('cmp-tf-malvinas'); if(elM) elM.textContent = totM; const fc = document.getElementById('cmp-tf-callao-fecha'); if(fc) fc.textContent = ultimaFecha('callao')||'No hay conteos registrados'; const fm = document.getElementById('cmp-tf-malvinas-fecha'); if(fm) fm.textContent = ultimaFecha('malvinas')||'No hay conteos registrados'; }
+
+// ===== Consolidado =====
+function buildMapaFisico(almacen){ const { map } = buildMapaFisicoAcumulado(almacen); return map; }
+function buildMapaSistema(almacen){ const map=new Map(); (AppState.sistema[almacen]||[]).forEach(s=> map.set(s.codigo, { item:s.item, producto:s.producto, sis:Number(s.cantidad_sistema)||0 }) ); return map; }
+function padConsolidadoRows(idA,idB,idC){
+  try{
+    const len = (id)=> document.querySelectorAll(`#${id} tbody tr`).length;
+    const a=len(idA), b=len(idB), c=len(idC);
+    const max=Math.max(a,b,c);
+    const padTable=(id)=>{
+      const tb=document.querySelector(`#${id} tbody`);
+      if(!tb) return;
+      const th=document.querySelectorAll(`#${id} thead tr th`).length;
+      const firstRowCols = tb.querySelector('tr')?.children?.length || th || 1;
+      const cols = Math.max(firstRowCols, th || 0, 1);
+      const cur=tb.children.length;
+      for(let i=cur;i<max;i++){
+        const tr=document.createElement('tr');
+        let tds='';
+        for(let j=0;j<cols;j++){ tds += '<td>&nbsp;</td>'; }
+        tr.innerHTML=tds;
+        tb.appendChild(tr);
+      }
+    };
+    padTable(idA);
+    padTable(idB);
+    padTable(idC);
+    setTimeout(()=> syncConsolidadoRowHeights(idA,idB,idC),0);
+  }catch{}
+}
+function pintarCons(almacen,tblId,idSis,idFis,idDif,mostrarItem,listaCodigos){ const tb=$(tblId)?.querySelector('tbody'); if(!tb) return; tb.innerHTML=''; const mapS=buildMapaSistema(almacen); const mapF=buildMapaFisico(almacen); const codigos = Array.isArray(listaCodigos) && listaCodigos.length>0 ? listaCodigos : Array.from(new Set([...mapS.keys(),...mapF.keys()])).sort(); codigos.forEach((c,idx)=>{ const s = mapS.get(c) || {item:'',producto:'',sis:0}; const f = mapF.get(c) || {fis:0}; const dif = (f.fis||0) - (s.sis||0); const nombre = (s.producto||f.producto||''); const isCallaoTbl = (tblId==='cons-callao' || tblId==='shot-cons-callao' || tblId==='shot2-cons-callao' || tblId==='md-cons-callao'); const leftCols = isCallaoTbl ? `<td class="text-end">${idx+1}</td><td class="cons-col-producto" title="${nombre}">${nombre}</td>` : `<td class="cons-col-producto" title="${nombre}">${nombre}</td>`; const tr=document.createElement('tr'); const cls = dif===0 ? 'text-bg-success' : (dif>0 ? 'text-bg-warning' : 'text-bg-danger'); const difTxt = dif>0?`+${dif}`:`${dif}`; tr.innerHTML = `${leftCols}<td>${s.sis||0}</td><td>${f.fis||0}</td><td class="cons-col-dif"><span class="badge ${cls}">${difTxt}</span></td>`; tb.appendChild(tr); }); }
+function renderConsolidado(){ const mapSCallao = buildMapaSistema('callao'); const mapSMalvinas = buildMapaSistema('malvinas'); const mapFCallao = buildMapaFisico('callao'); const mapFMalvinas = buildMapaFisico('malvinas'); const allCodes = new Set([ ...mapSCallao.keys(), ...mapSMalvinas.keys(), ...mapFCallao.keys(), ...mapFMalvinas.keys() ]); const cmpOrder = (AppState.comparacion && Array.isArray(AppState.comparacion.filas)) ? AppState.comparacion.filas.map(f=>f.codigo) : []; const cmpSet = new Set(cmpOrder); const remaining = Array.from(allCodes).filter(c=> !cmpSet.has(c)).sort((a,b)=> a.toString().localeCompare(b.toString())); const listaCodigos = [...cmpOrder.filter(c=> allCodes.has(c)), ...remaining]; pintarCons('callao','cons-callao',null,null,null, true, listaCodigos); pintarCons('malvinas','cons-malvinas',null,null,null, false, listaCodigos); const tb = $('cons-general')?.querySelector('tbody'); if(tb){ tb.innerHTML=''; } listaCodigos.forEach(c=>{ const s = (mapSCallao.get(c)?.sis||0) + (mapSMalvinas.get(c)?.sis||0); const f = (mapFCallao.get(c)?.fis||0) + (mapFMalvinas.get(c)?.fis||0); const dif = f - s; const res = dif===0 ? 'CONFORME' : (dif>0 ? 'SOBRANTE' : 'FALTANTE'); const cls = dif===0 ? 'text-bg-success' : (dif>0 ? 'text-bg-warning' : 'text-bg-danger'); if(tb){ const tr=document.createElement('tr'); const difTxt = dif>0?`+${dif}`:`${dif}`; tr.innerHTML = `<td>${s}</td><td>${f}</td><td class="cons-col-dif"><span class="badge ${cls}">${difTxt}</span></td><td><span class="badge ${cls}">${res}</span></td>`; tb.appendChild(tr); } }); setTimeout(()=>{ padConsolidadoRows('cons-callao','cons-malvinas','cons-general'); },0); }
+
+// ===== Registro =====
+function renderRegistro(){ const tbl=$('tbl-registro'); const tb=tbl?.querySelector('tbody'); if(!tb) return; tb.innerHTML=''; try{ const th=tbl.querySelector('thead'); if(th) th.classList.add('d-none'); }catch{} const desde = $('reg-desde')?.value ? new Date($('reg-desde').value+'T00:00:00') : null; const hasta = $('reg-hasta')?.value ? new Date($('reg-hasta').value+'T23:59:59') : null; const grupos = new Map(); [['callao'],['malvinas']].forEach(([almacen])=>{ (AppState.sesiones[almacen]||[]).forEach(s=>{ const finDate = s.fin ? new Date(s.fin.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3')) : null; const inicioDate = s.inicio ? new Date(s.inicio.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3')) : null; const comp = finDate || inicioDate; if(desde && comp && comp < desde) return; if(hasta && comp && comp > hasta) return; const tipoTienda = (almacen==='callao') ? s.tipo : (s.tienda||''); const g = grupos.get(s.numero) || { numero:s.numero, items:[] }; g.items.push({almacen, s, tipoTienda}); grupos.set(s.numero, g); }); }); const orden = Array.from(grupos.values()).sort((a,b)=>{ const na = parseInt(String(a.numero).split('-').pop()||'0',10); const nb = parseInt(String(b.numero).split('-').pop()||'0',10); return na-nb; }); let idx=1; orden.forEach(g=>{ const trH=document.createElement('tr'); trH.className='table-active'; trH.innerHTML = `<td>${idx++}</td><td colspan="8"><button class="btn btn-sm btn-outline-dark me-2" onclick="openRegistroCarpeta('${g.numero}')"><i class="bi bi-folder"></i></button><strong>${g.numero}</strong> <span class="text-secondary ms-2">${g.items.length} registro(s)</span></td>`; tb.appendChild(trH);
+  // Fila de acciones de encabezado (dos items)
+  const primero = g.items[0];
+  const trActions=document.createElement('tr'); trActions.className = `table-light reg-grp reg-grp-${CSS.escape(g.numero)} d-none`;
+  trActions.innerHTML = `<td></td><td colspan=\"8\"><div class=\"d-flex gap-2 flex-wrap\"><button class=\"btn btn-outline-secondary btn-sm\" onclick=\"openRegistroDetalle('${primero.almacen}','${primero.s.id}','acciones')\"><i class=\"bi bi-eye\"></i> Ver detalle de acciones</button><button class=\"btn btn-outline-primary btn-sm\" onclick=\"openRegistroDetalle('${primero.almacen}','${primero.s.id}','conteo')\"><i class=\"bi bi-eye\"></i> Conteos por almacén/tienda</button></div></td>`; tb.appendChild(trActions);
+  // Ya no se muestran sub-encabezados ni filas por grupo aquí
+}); }
+let regdetCtx = { almacen:null, sesionId:null, tipo:null };
+function openRegistroDetalle(almacen, sesionId, tipo){ const s=(AppState.sesiones[almacen]||[]).find(x=>x.id===sesionId); if(!s){ alert('Sesión no encontrada'); return; } regdetCtx = { almacen, sesionId, tipo }; let bodyHTML=''; const headerHTML = `<div id="regdet-tabs" class="d-flex align-items-center gap-2 flex-wrap mb-2"><div class="fw-semibold me-1">Consolidado</div><div class="btn-group btn-group-sm"><button class="btn btn-outline-secondary" title="Ver consolidado" onclick="openRegistroDetalle('${almacen}','${s.id}','consolidado')"><i class=\"bi bi-eye\"></i></button><button class="btn btn-outline-dark" title="PDF consolidado" onclick="regdetExportPDF('${almacen}','${s.id}','consolidado')"><i class=\"bi bi-file-earmark-pdf\"></i></button></div><span class="mx-1">·</span><div class="fw-semibold me-1">Proformas</div><div class="btn-group btn-group-sm"><button class="btn btn-outline-warning" title="Ver proformas" onclick="openRegistroDetalle('${almacen}','${s.id}','proformas')"><i class=\"bi bi-eye\"></i></button><button class="btn btn-outline-dark" title="PDF proformas" onclick="regdetExportPDF('${almacen}','${s.id}','proformas')"><i class=\"bi bi-file-earmark-pdf\"></i></button></div><span class="mx-1">·</span><div class="fw-semibold me-1">Verificaciones</div><div class="btn-group btn-group-sm"><button class="btn btn-outline-info" title="Ver verificaciones" onclick="openRegistroDetalle('${almacen}','${s.id}','verificaciones')"><i class=\"bi bi-eye\"></i></button><button class="btn btn-outline-dark" title="PDF verificaciones" onclick="regdetExportPDF('${almacen}','${s.id}','verificaciones')"><i class=\"bi bi-file-earmark-pdf\"></i></button></div><span class="mx-1">·</span><div class="fw-semibold me-1">Acciones</div><div class="btn-group btn-group-sm"><button class="btn btn-outline-secondary" title="Ver acciones" onclick="openRegistroDetalle('${almacen}','${s.id}','acciones')"><i class=\"bi bi-eye\"></i></button><button class="btn btn-outline-dark" title="PDF acciones" onclick="regdetExportPDF('${almacen}','${s.id}','acciones')"><i class=\"bi bi-file-earmark-pdf\"></i></button></div></div>`; function buildConteoHTML(){ const filas=[]; [['callao'],['malvinas']].forEach(([alm])=>{ (AppState.sesiones[alm]||[]).forEach(ss=>{ if(String(ss.numero)===String(s.numero)){ filas.push({ almacen: alm.toUpperCase(), numero: ss.numero, tipoTienda: alm==='callao' ? (ss.tipo||'') : (ss.tienda||''), registrado: ss.registrado, inicio: ss.inicio, fin: ss.fin||'-', responsable: ss.registrado, id: ss.id }); } }); }); if(filas.length===0) return ''; let out = '<div class="mt-3">'; out += '<div class="fw-semibold mb-1">Conteos por almacén/tienda</div>'; out += '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Almacén</th><th>N° Inventario</th><th>Tipo/Tienda</th><th>Registrado</th><th>Inicio</th><th>Fin</th><th>Responsable</th><th>Conteo</th></tr></thead><tbody>'; filas.forEach(row=>{ const btns = `<div class=\"btn-group btn-group-sm\"><button class=\"btn btn-outline-primary\" title=\"Ver conteo\" onclick=\"openRegistroDetalle('${row.almacen.toLowerCase()}','${row.id}','conteo_detalle')\"><i class=\"bi bi-eye\"></i></button><button class=\"btn btn-outline-dark\" title=\"PDF conteo\" onclick=\"regdetExportPDF('${row.almacen.toLowerCase()}','${row.id}','conteo')\"><i class=\"bi bi-file-earmark-pdf\"></i></button></div>`; out += `<tr><td>${row.almacen}</td><td>${row.numero}</td><td>${row.tipoTienda||'-'}</td><td>${row.registrado}</td><td>${row.inicio}</td><td>${row.fin}</td><td>${row.responsable}</td><td>${btns}</td></tr>`; }); out += '</tbody></table></div></div>'; return out; }
+  if(tipo==='consolidado'){
+    // Construir el contenido visible de 3 columnas dentro del modal
+    const mapSCallao = buildMapaSistema('callao');
+    const mapSMalvinas = buildMapaSistema('malvinas');
+    const mapFCallao = buildMapaFisico('callao');
+    const mapFMalvinas = buildMapaFisico('malvinas');
+    const allCodes = new Set([ ...mapSCallao.keys(), ...mapSMalvinas.keys(), ...mapFCallao.keys(), ...mapFMalvinas.keys() ]);
+    const cmpOrder = (AppState.comparacion && Array.isArray(AppState.comparacion.filas)) ? AppState.comparacion.filas.map(f=>f.codigo) : [];
+    const cmpSet = new Set(cmpOrder);
+    const remaining = Array.from(allCodes).filter(c=> !cmpSet.has(c)).sort((a,b)=> a.toString().localeCompare(b.toString()));
+    const listaCodigos = [...cmpOrder.filter(c=> allCodes.has(c)), ...remaining];
+    bodyHTML = `
+      <div id="regdet-cons-wrap">
+        <div class="row g-3" style="margin:0; padding:6px 2px 2px 2px">
+          <div class="col-12 col-lg-4">
+            <div class="cons-head cons-blue">Inventario Callao</div>
+            <div class="table-responsive"><table class="table consolidado-table" id="md-cons-callao"><thead><tr><th>Item</th><th class="cons-col-sis">Sistema</th><th class="cons-col-fis">Físico</th><th class="cons-col-dif">Diferencia</th></tr></thead><tbody></tbody></table></div>
+          </div>
+          <div class="col-12 col-lg-4">
+            <div class="cons-head cons-yellow">Inventario Malvinas</div>
+            <div class="table-responsive"><table class="table consolidado-table" id="md-cons-malvinas"><thead><tr><th>Producto</th><th class="cons-col-sis">Sistema</th><th class="cons-col-fis">Físico</th><th class="cons-col-dif">Diferencia</th></tr></thead><tbody></tbody></table></div>
+          </div>
+          <div class="col-12 col-lg-4">
+            <div class="cons-head cons-green">Conteo general</div>
+            <div class="table-responsive"><table class="table consolidado-table" id="md-cons-general"><thead><tr><th>Total Sistema</th><th>Total Físico</th><th>Diferencia</th><th>Resultado</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('regdet-title').textContent = `Consolidado de Inventarios`;
+    const head = document.getElementById('regdet-head'); if(head){ head.innerHTML = headerHTML; }
+    document.getElementById('regdet-body').innerHTML = `${bodyHTML}`;
+    // Pintar tablas visibles
+    try{
+      pintarCons('callao','md-cons-callao',null,null,null,true, listaCodigos);
+      pintarCons('malvinas','md-cons-malvinas',null,null,null,false, listaCodigos);
+      const tbG = document.getElementById('md-cons-general')?.querySelector('tbody'); if(tbG){ tbG.innerHTML=''; }
+      listaCodigos.forEach(c=>{
+        const sTot=(mapSCallao.get(c)?.sis||0)+(mapSMalvinas.get(c)?.sis||0);
+        const fTot=(mapFCallao.get(c)?.fis||0)+(mapFMalvinas.get(c)?.fis||0);
+        const dif=fTot - sTot; const cls = dif===0 ? 'text-bg-success' : (dif>0 ? 'text-bg-warning' : 'text-bg-danger'); const difTxt = dif>0?`+${dif}`:`${dif}`;
+        if(tbG){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${sTot}</td><td>${fTot}</td><td class="cons-col-dif"><span class="badge ${cls}">${difTxt}</span></td><td><span class="badge ${cls}">${dif===0?'CONFORME':(dif>0?'SOBRANTE':'FALTANTE')}</span></td>`; tbG.appendChild(tr); }
+      });
+      padConsolidadoRows('md-cons-callao','md-cons-malvinas','md-cons-general');
+      // Captura para exportación actual (PDF) sin bloquear UI
+      const live=document.getElementById('regdet-cons-wrap');
+      if(window.html2canvas && live){ html2canvas(live,{scale:2, backgroundColor:'#ffffff'}).then(cv=>{ regdetCtx.imgDataUrl = cv.toDataURL('image/png'); }).catch(()=>{ regdetCtx.imgDataUrl=null; }); }
+    }catch{}
+    openModal('#modalRegDetalle');
+    return; // evitar que caiga a otros bloques y dispare vistas/acciones adicionales
+  } else if(tipo==='conteo'){
+    // Mostrar solo el listado de conteos por almacén/tienda
+    bodyHTML = buildConteoHTML();
+    document.getElementById('regdet-title').textContent = `Conteos por almacén/tienda`;
+    const head = document.getElementById('regdet-head'); if(head){ head.innerHTML = ''; }
+    document.getElementById('regdet-body').innerHTML = `${bodyHTML}`;
+    try{ const m=document.getElementById('modalRegDetalle'); if(m && !m.classList.contains('show')) openModal('#modalRegDetalle'); }catch{}
+    return;
+  } else if(tipo==='conteo_detalle'){
+    // Detalle de productos del conteo seleccionado
+    const filas=(s.filas||[]).map(f=>`<tr><td>${f.item||''}</td><td>${f.producto||''}</td><td>${f.codigo||''}</td><td>${f.unidad_medida||''}</td><td>${f.cantidad||0}</td></tr>`).join(''); bodyHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Item</th><th>Producto</th><th>Código</th><th>UM</th><th>Cantidad</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    document.getElementById('regdet-title').textContent = `Detalle de conteo`;
+    const head = document.getElementById('regdet-head'); if(head){ head.innerHTML = ''; }
+    document.getElementById('regdet-body').innerHTML = `${bodyHTML}`;
+    try{ const m=document.getElementById('modalRegDetalle'); if(m && !m.classList.contains('show')) openModal('#modalRegDetalle'); }catch{}
+    return;
+  } else if(tipo==='proformas'){ const list=(AppState.proformas||[]).filter(p=> String(p.invNumero||'')===String(s.numero)); const rows=list.map((p,i)=>`<tr><td>${i+1}</td><td>${(p.almacen||'').toUpperCase()}</td><td>${p.fecha}</td><td>${p.asesor}</td><td>${p.registrado}</td><td>${p.num}</td><td>${p.estado}</td></tr>`).join(''); bodyHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>#</th><th>Almacén</th><th>Fecha</th><th>Asesor</th><th>Registrado</th><th>N° Proforma</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>`; } else if(tipo==='verificaciones'){ const rows=(s.filas||[]).filter(f=> !!(AppState.verificacion?.[f.codigo])).map(f=>{ const v=AppState.verificacion[f.codigo]||{}; const r=v.resumen||{}; return `<tr><td>${f.codigo}</td><td>${f.producto}</td><td>${r.compras_tot||0}</td><td>${r.ventas_tot||0}</td><td>${r.exist||0}</td><td>${r.stock_sis||0}</td><td>${r.stock_fis||0}</td><td>${r.resultado||''}</td></tr>`; }).join(''); bodyHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Código</th><th>Producto</th><th>Compras</th><th>Ventas</th><th>Exist</th><th>Sis</th><th>Fis</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table></div>`; } else if(tipo==='acciones'){ const rows=(AppState.acciones||[]).map((a,i)=>{ const cant = (a.motivo && a.motivo.toUpperCase().includes('COMPRA')) || (a.motivo && a.motivo.toUpperCase().includes('VENTA')) ? (a.cantidad||'-') : '-'; return `<tr><td>${i+1}</td><td>${a.fecha}</td><td>${a.registrado}</td><td>${a.motivo}</td><td>${cant}</td><td>${a.errorDe||''}</td><td>${a.obs||''}</td></tr>`; }).join(''); bodyHTML = `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>#</th><th>Fecha</th><th>Registrado</th><th>Motivo</th><th>Cantidad</th><th>Error de</th><th>Observaciones</th></tr></thead><tbody>${rows}</tbody></table></div>`; }
+  document.getElementById('regdet-title').textContent = `Consolidado de Inventarios`;
+  const head = document.getElementById('regdet-head'); if(head){ head.innerHTML = headerHTML; }
+  document.getElementById('regdet-body').innerHTML = `${bodyHTML}`;
+  // Abrir el modal sólo cuando se invoca desde UI (no automáticamente)
+  try{ const m=document.getElementById('modalRegDetalle'); if(m && !m.classList.contains('show')) openModal('#modalRegDetalle'); }catch{}
+}
+function openRegistroCarpeta(numero){
+  // Solo expandir/contraer el grupo; NO abrir ningún modal automáticamente
+  const filas = qa(`.reg-grp.reg-grp-${CSS.escape(numero)}`) || [];
+  if(!filas.length) return;
+  const debeMostrar = filas.some(r=> r.classList.contains('d-none'));
+  filas.forEach(r=> r.classList.toggle('d-none', !debeMostrar));
+}
+function regdetExportPDF(almacen, sesionId, tipo){ const s=(AppState.sesiones[almacen]||[]).find(x=>x.id===sesionId); if(!s){ alert('Sesión no encontrada'); return; } const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text(`Consolidado de Inventarios`, 40, 40); doc.setFontSize(10); doc.text(`Registrado: ${s.registrado}   Inicio: ${s.inicio}   Fin: ${s.fin||''}`, 40, 56); let head=[], body=[]; if(tipo==='consolidado' || tipo==='conteo'){ head=[["Item","Producto","Código","UM","Cantidad","Almacén","Tienda"]]; body=(s.filas||[]).map(f=>[f.item, f.producto, f.codigo, f.unidad_medida||'', String(f.cantidad||0), almacen.toUpperCase(), (s.tienda||'')]); } else if(tipo==='verificaciones'){ head=[["Código","Producto","Compras","Ventas","Exist","Sis","Fis","Resultado"]]; body=(s.filas||[]).filter(f=> !!(AppState.verificacion?.[f.codigo])).map(f=>{ const v=AppState.verificacion[f.codigo]||{}; const r=v.resumen||{}; return [f.codigo, f.producto, String(r.compras_tot||0), String(r.ventas_tot||0), String(r.exist||0), String(r.stock_sis||0), String(r.stock_fis||0), String(r.resultado||'')]; }); if(body.length===0){ alert('No hay verificaciones guardadas para esta sesión.'); return; } } else if(tipo==='proformas'){ const list=(AppState.proformas||[]).filter(p=> String(p.invNumero||'')===String(s.numero)); head=[["#","Almacén","Fecha","Asesor","Registrado","N° Proforma","Estado"]]; body=list.map((p,i)=> [String(i+1), (p.almacen||'').toUpperCase(), p.fecha, p.asesor, p.registrado, p.num, p.estado]); } else if(tipo==='acciones'){ head=[["#","Fecha","Registrado","Motivo","Cantidad","Error de","Observaciones"]]; body=(AppState.acciones||[]).map((a,i)=> { const cant = (a.motivo && a.motivo.toUpperCase().includes('COMPRA')) || (a.motivo && a.motivo.toUpperCase().includes('VENTA')) ? (a.cantidad||'-') : '-'; return [String(i+1), a.fecha, a.registrado, a.motivo, String(cant), a.errorDe||'', a.obs||'']; }); }
+  if(tipo==='consolidado'){ try{ const mapSCallao = buildMapaSistema('callao'); const mapSMalvinas = buildMapaSistema('malvinas'); const mapFCallao = buildMapaFisico('callao'); const mapFMalvinas = buildMapaFisico('malvinas'); const allCodes = new Set([ ...mapSCallao.keys(), ...mapSMalvinas.keys(), ...mapFCallao.keys(), ...mapFMalvinas.keys() ]); const cmpOrder = (AppState.comparacion && Array.isArray(AppState.comparacion.filas)) ? AppState.comparacion.filas.map(f=>f.codigo) : []; const cmpSet=new Set(cmpOrder); const remaining=Array.from(allCodes).filter(c=>!cmpSet.has(c)).sort((a,b)=> a.toString().localeCompare(b.toString())); const listaCodigos=[...cmpOrder.filter(c=>allCodes.has(c)), ...remaining]; const off=document.createElement('div'); off.style.position='fixed'; off.style.left='-99999px'; off.style.top='0'; off.style.width='1200px'; off.style.background='#fff'; off.innerHTML = `<div class="row g-2" style="margin:0; padding:12px"><div class="col-4"><div class="fw-semibold mb-1">Inventario Callao</div><div class="table-responsive"><table class="table consolidado-table" id="shot2-cons-callao"><thead><tr><th>Item</th><th>Producto</th><th class="cons-col-sis">Sistema</th><th class="cons-col-fis">Físico</th><th class="cons-col-dif">Diferencia</th></tr></thead><tbody></tbody></table></div></div><div class="col-4"><div class="fw-semibold mb-1">Inventario Malvinas</div><div class="table-responsive"><table class="table consolidado-table" id="shot2-cons-malvinas"><thead><tr><th>Producto</th><th class="cons-col-sis">Sistema</th><th class="cons-col-fis">Físico</th><th class="cons-col-dif">Diferencia</th></tr></thead><tbody></tbody></table></div></div><div class="col-4"><div class="fw-semibold mb-1">Conteo general</div><div class="table-responsive"><table class="table consolidado-table" id="shot2-cons-general"><thead><tr><th>Total Sistema</th><th>Total Físico</th><th>Diferencia</th><th>Resultado</th></tr></thead><tbody></tbody></table></div></div></div>`; document.body.appendChild(off); pintarCons('callao','shot2-cons-callao',null,null,null,true, listaCodigos); pintarCons('malvinas','shot2-cons-malvinas',null,null,null,false, listaCodigos); const tbG = document.getElementById('shot2-cons-general')?.querySelector('tbody'); if(tbG){ tbG.innerHTML=''; } listaCodigos.forEach(c=>{ const sTot=(mapSCallao.get(c)?.sis||0)+(mapSMalvinas.get(c)?.sis||0); const fTot=(mapFCallao.get(c)?.fis||0)+(mapFMalvinas.get(c)?.fis||0); const dif=fTot - sTot; const cls = dif===0 ? 'text-bg-success' : (dif>0 ? 'text-bg-warning' : 'text-bg-danger'); const difTxt = dif>0?`+${dif}`:`${dif}`; if(tbG){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${sTot}</td><td>${fTot}</td><td class=\"cons-col-dif\"><span class=\"badge ${cls}\">${difTxt}</span></td><td><span class=\"badge ${cls}\">${dif===0?'CONFORME':(dif>0?'SOBRANTE':'FALTANTE')}</span></td>`; tbG.appendChild(tr); } }); try{ syncConsolidadoRowHeights && syncConsolidadoRowHeights('shot2-cons-callao','shot2-cons-malvinas','shot2-cons-general'); }catch{} html2canvas(off, { scale:2, backgroundColor:'#ffffff' }).then(cv=>{ const pageW = doc.internal.pageSize.getWidth(); const pageH = doc.internal.pageSize.getHeight(); const marginL = 40, marginT = 72, marginB = 40; const availH = pageH - marginT - marginB; const scale = (pageW - marginL*2) / cv.width; const sliceH = Math.floor(availH / scale); let y = 0; let first=true; while(y < cv.height){ const h = Math.min(sliceH, cv.height - y); const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = h; const ctx2 = c2.getContext('2d'); ctx2.drawImage(cv, 0, y, cv.width, h, 0, 0, cv.width, h); const img = c2.toDataURL('image/png'); const imgW = (pageW - marginL*2); const imgH = h * scale; if(!first) doc.addPage(); doc.addImage(img, 'PNG', marginL, marginT, imgW, imgH); first=false; y += h; } doc.save(`${tipo}_${almacen}_${s.numero}.pdf`); document.body.removeChild(off); }).catch(()=>{ document.body.removeChild(off); }); return; }catch(e){ /* fallback */ } }
+  doc.autoTable({ startY: 72, head, body }); doc.save(`${tipo}_${almacen}_${s.numero}.pdf`); }
+function regdetExportPDFCurrent(){ if(!regdetCtx || !regdetCtx.almacen) return; if(regdetCtx.tipo==='consolidado'){ try{ const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text(`${regdetCtx.tipo.toUpperCase()} — ${regdetCtx.almacen.toUpperCase()}`, 40, 40); const img = regdetCtx.imgDataUrl; if(!img){ alert('Vista no lista para exportar. Vuelve a abrir el consolidado.'); return; } const imgTmp = new Image(); imgTmp.onload = function(){ const pageWidth = 595 - 80; const imgW = pageWidth; const imgH = imgTmp.height * (imgW / imgTmp.width); doc.addImage(img, 'PNG', 40, 56, imgW, imgH); doc.save(`consolidado_${regdetCtx.almacen}.pdf`); }; imgTmp.src = img; }catch(e){ alert('No se pudo generar el PDF del consolidado'); } return; } regdetExportPDF(regdetCtx.almacen, regdetCtx.sesionId, regdetCtx.tipo); }
+function regExportPDF(){ const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text('Registro de Inventarios', 40, 40); const rows=[]; (AppState.sesiones.callao||[]).forEach(s=> rows.push(['CALLAO', s.numero, s.tipo||'-', s.registrado, s.inicio, s.fin||'-'])); (AppState.sesiones.malvinas||[]).forEach(s=> rows.push(['MALVINAS', s.numero, s.tienda||'-', s.registrado, s.inicio, s.fin||'-'])); doc.autoTable({startY:60, head:[["Almacén","N° Inventario","Tipo/Tienda","Registrado","Inicio","Fin"]], body: rows}); doc.save('registro.pdf'); }
+
+// ===== Proformas =====
+function openProformaModal(){ $('panel-proforma').classList.remove('invis'); $('pf-asesor').value='Hervin'; $('pf-asesor-otro').classList.add('d-none'); $('pf-almacen').value='callao'; $('pf-registrado').value='Joseph'; $('pf-registrado-otro').classList.add('d-none'); $('pf-num').value=''; const tb=$('tbl-proforma').querySelector('tbody'); tb.innerHTML=''; addLineaProforma(); }
+$('pf-registrado')?.addEventListener('change',()=>{ $('pf-registrado-otro').classList.toggle('d-none', $('pf-registrado').value!=='Otro'); });
+$('pf-asesor')?.addEventListener('change',()=>{ $('pf-asesor-otro').classList.toggle('d-none', $('pf-asesor').value!=='Otro'); });
+function addLineaProforma(){ const tb=$('tbl-proforma').querySelector('tbody'); const tr=document.createElement('tr'); const listId='pf-productos'; const dl=$('pf-productos'); if(dl){ dl.innerHTML = (AppState.productos||[]).map(p=>`<option value="${p.producto||''}" data-code="${p.codigo}"></option>`).join(''); } tr.innerHTML=`<td><div class="input-group input-group-sm"><input autocomplete="off" spellcheck="false" list="${listId}" class="form-control pf-code-inp" placeholder="Código o producto" oninput="updatePFProductSuggestions(this)" onchange="onPickPFProducto(this,true)" onkeydown="if(event.key==='Enter'){onPickPFProducto(this,true)}" onblur="onPickPFProducto(this)"><button class="btn btn-outline-secondary" onclick="onPickPFProducto(this.previousElementSibling,true)"><i class="bi bi-check2"></i></button></div></td><td><input class="form-control form-control-sm pf-um" placeholder="UM" /></td><td><input type="number" min="0" class="form-control form-control-sm pf-cant"></td><td><button class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>`; tb.appendChild(tr); }
+function onPickPFProducto(inp,force){ const v=(inp.value||'').trim(); if(!v && !force) return; const row=inp.closest('tr'); let prod = (AppState.productos||[]).find(p=> (p.producto||'').toLowerCase()===v.toLowerCase()); if(!prod) prod = (AppState.productos||[]).find(p=> (p.producto||'').toLowerCase().includes(v.toLowerCase())); if(!prod) prod = (AppState.productos||[]).find(p=> String(p.codigo)===v); if(prod){ inp.value = prod.producto||prod.codigo; inp.dataset.code = prod.codigo; const um=row.querySelector('.pf-um'); if(um) um.value = prod.unidad_medida||''; const qty=row.querySelector('.pf-cant'); if(qty){ qty.focus(); try{ qty.select(); }catch{} } } }
+function updatePFProductSuggestions(inp){ const v=(inp.value||'').toLowerCase(); const dl=$('pf-productos'); if(!dl) return; if(!v){ dl.innerHTML=''; return; } const MAX=30; const items=(AppState.productos||[]).filter(p=> (p.producto||'').toLowerCase().includes(v) || String(p.codigo||'').toLowerCase().includes(v)).slice(0,MAX); dl.innerHTML = items.map(p=>`<option value="${p.producto||''}">${p.codigo}</option>`).join(''); }
+// Helper: ajustar sistema y refrescar Comparar si está abierto
+function _ajustarSistemaPorLineas(almacen, lineas, sign){
+  const listaSis = AppState.sistema[almacen]||[];
+  const norm = v=> String(v||'').trim().toLowerCase();
+  const normTxt = v=> String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  const mapSis = new Map(listaSis.map(x=>[norm(x.codigo), x]));
+  const mapProdSis = new Map(listaSis.map(x=>[normTxt(x.producto), x]));
+  const prodByCode = (code)=>{ const px = (AppState.productos||[]).find(p=>norm(p.codigo)===norm(code)); return px?.producto||''; };
+  const changed = new Set();
+  lineas.forEach(l=>{
+    let it = mapSis.get(norm(l.codigo));
+    if(!it){ const nombre = prodByCode(l.codigo); if(nombre){ it = mapProdSis.get(normTxt(nombre)); } }
+    if(it){ const factor=(String(l.um||'').toUpperCase()==='DOCENAS')?12:1; const delta = sign * factor * Number(l.cant||0); it.cantidad_sistema = Math.max(0, Number(it.cantidad_sistema||0) + delta); changed.add(String(it.codigo)); }
+  });
+  // Si el modal Comparar está abierto para este almacén, refrescar filas afectadas
+  try{
+    if(AppState.comparacion && AppState.comparacion.almacen===almacen){
+      const mapSis2 = new Map((AppState.sistema[almacen]||[]).map(s=>[String(s.codigo), Number(s.cantidad_sistema||0)]));
+      (AppState.comparacion.filas||[]).forEach(f=>{ if(changed.has(String(f.codigo))){ f.sis = mapSis2.get(String(f.codigo))||0; f.res = Number(f.fis||0) - Number(f.sis||0); f.estado = (f.res===0)?'CONFORME':(f.res>0?'SOBRANTE':'FALTANTE'); } });
+      pintarComparacion();
+    }
+  }catch(e){ console.warn('[ZS] No se pudo refrescar Comparar tras proforma:', e); }
+}
+
+async function registrarProforma(){ let asesor=$('pf-asesor').value; if(asesor==='Otro') asesor=$('pf-asesor-otro').value.trim(); let registrado=$('pf-registrado').value; if(registrado==='Otro') registrado=$('pf-registrado-otro').value.trim(); const almacen=$('pf-almacen').value; let num=$('pf-num').value.trim(); if(!num) num=`PF-${new Date().getFullYear()}-${(Math.floor(Math.random()*9000)+1000)}`; if(!asesor||!registrado){ alert('Completa Asesor y Registrado.'); return; } const lineas=[]; qa('#tbl-proforma tbody tr').forEach(r=>{ const inp=r.querySelector('.pf-code-inp'); const code=inp?.dataset?.code || inp?.value || ''; const prod = (AppState.productos||[]).find(p=> String(p.codigo)===String(code)) || (AppState.productos||[]).find(p=> (p.producto||'').toLowerCase()===String(inp?.value||'').toLowerCase()); const nombre = prod?.producto || String(inp?.value||''); const um=r.querySelector('.pf-um').value; const cant=Number(r.querySelector('.pf-cant').value||0); if((nombre||code) && cant>0) lineas.push({codigo:code, producto:nombre, um, cant}); }); if(lineas.length===0){ alert('Agrega al menos una línea.'); return; } const invNumero = (ultimoInventario(almacen)?.numero)||null; const pdfUrl=await generarPDFProforma({fecha:fmt12(), asesor, registrado, num, almacen, lineas}); const reg={ id:(AppState.proformas?.length||0)+1, fecha:fmt12(), asesor, registrado, num, almacen, lineas, pdfUrl, estado:'Ingreso', invNumero }; AppState.proformas.push(reg); try{ _ajustarSistemaPorLineas(almacen, lineas, -1); }catch(err){ console.warn('[ZS] No se pudo descontar del sistema por proforma:', err); } saveLS(); renderListadoProformas(); try{ $('pf-asesor').value='Hervin'; $('pf-asesor-otro').value=''; $('pf-asesor-otro').classList.add('d-none'); $('pf-almacen').value='callao'; $('pf-registrado').value='Joseph'; $('pf-registrado-otro').value=''; $('pf-registrado-otro').classList.add('d-none'); $('pf-num').value=''; const tb=$('tbl-proforma')?.querySelector('tbody'); if(tb){ tb.innerHTML=''; addLineaProforma(); } }catch{} renderConsolidado(); toast('Proforma registrada y descuento aplicado al SISTEMA.','success'); }
+async function generarPDFProforma(pf){ const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text(`Simulación de Proforma – ${pf.num}`, 40, 40); doc.setFontSize(10); doc.text(`Fecha: ${pf.fecha} · Asesor: ${pf.asesor} · Registrado: ${pf.registrado} · Almacén: ${pf.almacen.toUpperCase()}`, 40, 58); const body=pf.lineas.map(l=>[l.producto||l.codigo, l.um, l.cant.toString()]); doc.autoTable({startY:80, head:[["Producto","UM","Cantidad"]], body}); const blob=doc.output('blob'); return URL.createObjectURL(blob); }
+function renderListadoProformas(){ const tb=$('tbl-list-proformas')?.querySelector('tbody'); if(!tb) return; tb.innerHTML=''; const filtro=$('filtro-proformas')?.value?.toLowerCase()||''; (AppState.proformas||[]).forEach(p=>{ const key=`${p.num} ${p.asesor} ${p.registrado} ${p.fecha} ${p.almacen}`.toLowerCase(); if(filtro && !key.includes(filtro)) return; const pdf=p.pdfUrl?`<button class="btn btn-outline-dark btn-sm" onclick="openProformaPDF(${p.id})"><i class=\"bi bi-file-earmark-pdf\"></i> PDF</button>`:'-'; const estadoTxt = (p.estado==='Ingreso') ? 'PROFORMA INGRESADA' : 'TIENE COMPROBANTE'; const btn=`<div class="btn-group btn-group-sm"><button class="btn ${p.estado==='Ingreso'?'btn-danger':'btn-success'}" onclick="toggleEstadoProforma(${p.id})">${estadoTxt}</button></div>`; const tr=document.createElement('tr'); tr.innerHTML=`<td>${p.id}</td><td>${p.fecha}</td><td>${p.asesor}</td><td>${String(p.registrado||'').toUpperCase()}</td><td>${(p.almacen||'').toUpperCase()}</td><td>${p.num}</td><td>${pdf}</td><td>${btn}</td>`; tb.appendChild(tr); }); }
+function openProformaPDF(id){ const p=(AppState.proformas||[]).find(x=>x.id===id); if(!p||!p.pdfUrl){ alert('PDF no disponible'); return; } try{ const w=window.open(p.pdfUrl,'_blank','noopener'); if(!w){ const a=document.createElement('a'); a.href=p.pdfUrl; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); } }catch(e){ alert('No se pudo abrir el PDF'); } }
+$('filtro-acciones')?.addEventListener('input', renderAcciones);
+$('filtro-proformas')?.addEventListener('input', renderListadoProformas);
+function toggleEstadoProforma(id){ const p=(AppState.proformas||[]).find(x=>x.id===id); if(!p) return; p.estado = (p.estado==='Ingreso') ? 'Emitido' : 'Ingreso'; try{ const sign = (p.estado==='Emitido') ? +1 : -1; _ajustarSistemaPorLineas(p.almacen, p.lineas||[], sign); }catch(err){ console.warn('[ZS] No se pudo ajustar sistema al cambiar estado de proforma:', err); } saveLS(); renderListadoProformas(); try{ renderConsolidado(); }catch{} toast('Estado de proforma actualizado y sistema ajustado.','success'); }
+function pdfProformas(){ const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); doc.setFontSize(14); doc.text('Listado de Proformas', 40, 40); const body=(AppState.proformas||[]).map(p=>[p.id,p.fecha,p.asesor,String(p.registrado||'').toUpperCase(),(p.almacen||'').toUpperCase(),p.num,p.estado]); doc.autoTable({startY:60, head:[["ID","Fecha","Asesor","Registrado","Almacén","N°","Estado"]], body}); doc.save('proformas.pdf'); }
+
+// ===== Procedimiento =====
+function defaultProcedimiento(){
+  return (
+`PROCEDIMIENTO DE INVENTARIO – Zeus Safety (paso a paso y lógica)
+
+1) Preparación
+   - Subir productos desde el botón verde "Subir Productos".
+   - Fuente aceptada: .xlsx / .xls / .csv / .json. La app normaliza cabeceras.
+   - Resultado: AppState.productos se llena y el badge "Productos: N" refleja el total.
+
+2) Asignación del N° de Inventario (JEFE)
+   - Click "Asignar N°". Ingresar contraseña del JEFE, N° (ej: INV-2025-01), Área y Persona.
+   - La app guarda en AppState.sesionActual: { numero, creadoPor:"Área • Persona", inicio: hh:mm AM/PM, activo:true }.
+   - Lógica de candado:
+       • Activo (abierto): botón verde (unlock) → permite registrar.
+       • Cerrado: botón rojo (lock) y bloquea nuevos registros.
+
+3) Unirse desde otras computadoras
+   - Click "Unirse N°" e ingresar el mismo número asignado por el JEFE.
+   - La app marca AppState.sesionActual.numero y activo:true en ese equipo.
+
+4) Conteo – Callao
+   - Menú → "Almacén Callao" → elegir "Conteo por Cajas" o "Conteo de Stand".
+   - Requisito lógico: Debe existir AppState.sesionActual.numero (si está vacío no permite continuar).
+   - Cada registro va a AppState.sesiones.callao[...].filas: { item, producto, codigo, unidad_medida, cantidad }.
+   - Finalizado el conteo, se guarda fecha de fin.
+
+5) Conteo – Malvinas
+   - Menú → "Almacén Malvinas" → igual que Callao, pero seleccionar Tienda (3006, 3006 B, 3131, 3133, 412-A).
+   - La tienda se guarda dentro de la sesión para reportes posteriores.
+
+6) Comparar (Físico vs Sistema)
+   - Cargar archivo de Sistema para cada almacén.
+   - Ir a "Comparar" y abrir comparaciones por almacén.
+   - Lógica: Para cada código, fis = suma de conteos; sis = cantidad_sistema; res = fis - sis; estado = CONFORME / SOBRANTE / FALTANTE.
+   - Mini-menú por fila permite: Editar Cantidad (fis), Editar Sistema (sis) y Editar Verificación (formulario detallado).
+
+7) Consolidado
+   - Vista "Consolidado": muestra tres columnas (Callao, Malvinas, General) con encabezados de color.
+   - Lógica de sincronización: se empareja el alto de filas entre las 3 tablas para lectura cómoda.
+   - Exportación: se puede generar PDF del consolidado desde el modal.
+
+8) Verificación (compras/ventas)
+   - Desde Comparar → "Editar Verificación".
+   - Se capturan fechas/horas de descargas y se calcula Resultado: CONFORME / Error de Sistema / Error de Logística / Realizar nuevo conteo.
+   - La verificación se guarda en AppState.verificacion[codigo].
+
+9) Acciones
+   - Cada edición (cantidad/sistema/verificación) agrega un registro en AppState.acciones con fecha, motivo, responsable y observaciones.
+   - Reporte PDF disponible en "Acciones".
+
+10) Reportes
+   - Consolidado PDF, Acciones PDF, Verificación PDF.
+   - Exportación usa jsPDF + autoTable.
+
+11) Cierre de inventario (JEFE)
+   - Click en el candado verde (unlock) → se solicita contraseña; si confirma, AppState.sesionActual.activo=false.
+   - Desde ese momento no se aceptan nuevos conteos ni aperturas.
+
+12) Respaldo / Reset (sólo administración)
+   - El botón "Restablecer datos" limpia localStorage (productos, sesiones, sistema, comparaciones, acciones y proformas).
+   - Úsese únicamente al iniciar un ciclo completamente nuevo de inventario.
+
+Notas de lógica clave
+   - El registro exige sólo que exista un N° (sesionActual.numero). Si el JEFE cierra (activo=false), se bloquea.
+   - Los datos viven en localStorage por equipo; para trabajar en paralelo cada equipo se "une" al N°.
+   - Campos de sistema y físico son números enteros; las diferencias se muestran con badges de color.
+`);
+}
+function openProcedimientoModal(){ try{ let txt = (ls.get('zs_proc_texto')||'') || ''; if(!txt){ txt = defaultProcedimiento(); ls.set('zs_proc_texto', txt); } $('proc-texto').value = txt; }catch{} openModal('#modalProcedimiento'); }
+function guardarProcedimiento(){ try{ const val=$('proc-texto').value||''; if(!val.trim()){ if(!confirm('El texto está vacío. ¿Guardar de todas maneras?')) return; } ls.set('zs_proc_texto', val); toast('Procedimiento guardado.','success'); }catch{ alert('No se pudo guardar'); } closeModal('#modalProcedimiento'); }
+
+// ===== Emergencia =====
+function dispararEmergencia(almacen){ const pass = prompt('Contraseña de emergencia'); if(pass!==JEFE_PWD){ alert('Contraseña incorrecta'); return; } const inp = (almacen==='callao') ? $('emg-callao') : $('emg-malvinas'); if(!inp) return; const prevClass = inp.className; const prevPos = inp.style.position, prevLeft = inp.style.left, prevW = inp.style.width, prevH = inp.style.height, prevOp = inp.style.opacity, prevZ = inp.style.zIndex; inp.classList.remove('d-none'); inp.style.position='fixed'; inp.style.left='-9999px'; inp.style.width='1px'; inp.style.height='1px'; inp.style.opacity='0'; inp.style.zIndex='-1'; inp.click(); setTimeout(()=>{ inp.className = prevClass; inp.style.position=prevPos; inp.style.left=prevLeft; inp.style.width=prevW; inp.style.height=prevH; inp.style.opacity=prevOp; inp.style.zIndex=prevZ; }, 0); setTimeout(()=>{ if(!inp.files || inp.files.length===0){ toast('Operación cancelada. No se seleccionó archivo.','info'); } }, 800); }
+async function onEmergFileChange(almacen, input){ try{ const file=input.files[0]; if(!file) return; const arr = await leerArchivoGenerico(file); aplicarCargaEmergencia(almacen, arr); toast('Archivo de emergencia procesado.','success'); input.value=''; }catch(err){ alert('Error emergencia: '+err.message); } }
+function aplicarCargaEmergencia(almacen, datos){ const sesion = ultimoInventario(almacen); if(!sesion){ alert('Primero crea una sesión de inventario.'); return; } const normalizeCode = (c)=> String(c||'').trim(); const m = {}; (datos||[]).forEach(r=>{ const map={}; Object.keys(r).forEach(k=> map[normalizarClave(k)]=r[k]); const codigo = normalizeCode((map.codigo ?? map.cod ?? map.sku ?? map.codigo_producto ?? map.codigo_interno ?? map.codigo_zeus) || ''); const cantidad = Number(map.cantidad ?? map.cant ?? map.cantidad_fisica ?? map.stock ?? map.existencia ?? map.cantidadtotal ?? map.cantidad_total ?? 0); if(codigo){ m[codigo]=cantidad; } }); if(!Array.isArray(sesion.filas) || sesion.filas.length===0){ sesion.filas = (AppState.productos||[]).map(p=>({ item: p.item, producto: p.producto, codigo: normalizeCode(p.codigo), unidad_medida: p.unidad_medida, cantidad: Number(m[normalizeCode(p.codigo)]||0) })); } else { sesion.filas.forEach(f=>{ const c = normalizeCode(f.codigo); if(m[c] != null){ f.cantidad = Number(m[c])||0; } }); } saveLS(); mostrarTablaInventario(almacen); }
+
+// Placeholder de Gerencia (sin cambios)
+function renderGerencia() { /* sin implementación específica */ }
+
+/**************
+ * INICIO     *
+ **************/
+document.addEventListener('DOMContentLoaded', () => {
+    qa('.sidebar .nav-item').forEach(link => link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const view = link.getAttribute('data-view');
+        if (view) showView(view);
+    }));
+
+    $('filtro-list-callao')?.addEventListener('input', ()=>renderListado('callao'));
+    $('filtro-list-malvinas')?.addEventListener('input', ()=>renderListado('malvinas'));
+
+    // Subir Productos → leer archivo y cargar productos
+    const inpProd = $('inputProductos');
+    if (inpProd) {
+        inpProd.addEventListener('change', async (e) => {
+            try {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                const datos = await leerArchivoGenerico(file);
+                cargarProductos(datos);
+                toast(`Productos cargados: ${AppState.productos.length}`, 'success');
+                e.target.value = '';
+            } catch (err) {
+                alert('Error al cargar productos: ' + (err?.message || err));
+            }
+        });
+    }
+
+    loadLS();
+    showView('callao');
+    renderListado('callao');
+    renderListado('malvinas');
+    renderAcciones();
+    actualizarBadgeProductos();
+    try{ renderSesionBanner(); }catch{}
+    try{
+      $('sn-persona')?.addEventListener('change', ()=>{ const v=$('sn-persona').value; const el=$('sn-otro'); if(v==='Otro'){ el.classList.remove('d-none'); el.focus(); } else { el.classList.add('d-none'); el.value=''; } });
+      $('sn-area')?.addEventListener('change', ()=>{ const area=$('sn-area').value; const p=$('sn-persona'); if(!p) return; if(area==='Administración'){ p.innerHTML='<option>Hervin</option><option>Kimberly</option><option>Otro</option>'; }
+        else if(area==='Logística'){ p.innerHTML='<option>Joseph</option><option>Otro</option>'; }
+        else { p.innerHTML='<option>Otro</option>'; }
+    });
+    }catch{}
+});
+
+function editarVerificacion(codigo){ const r=(AppState.comparacion?.filas||[]).find(x=>x.codigo===codigo); if(!r) return; $('verif-rowkey').value=r.codigo; abrirPwdVerif(); }
+function abrirPwdVerif(){ const inp=$('pwd-verif'); if(inp) inp.value=''; const err=$('pwd-error'); if(err) err.classList.add('d-none'); openModal('#modalPwdVerif'); }
+function validarPwdVerif(){ const inp=$('pwd-verif'); const val=(inp?.value||'').trim(); if(val===JEFE_PWD){ $('pwd-error')?.classList.add('d-none'); closeModal('#modalPwdVerif'); openModal('#modalVerificacion'); try{ inicializarVerificacionTotales(); }catch{} const lab=$('verif-fecha-guardado'); if(lab){ lab.textContent='Sin guardar'; lab.classList.remove('text-bg-success'); lab.classList.add('text-bg-secondary'); } if(inp) inp.value=''; } else { $('pwd-error')?.classList.remove('d-none'); inp?.focus(); } }
+function inicializarVerificacionTotales(){ try{ const codigo=$('verif-rowkey')?.value||''; let fis=0, sis=0; if(codigo && AppState.comparacion && Array.isArray(AppState.comparacion.filas)){ const r=AppState.comparacion.filas.find(x=> String(x.codigo)===String(codigo)); if(r){ fis=Number(r.fis||0); sis=Number(r.sis||0); } }
+  if((fis===0 && sis===0) && codigo){ try{ const alm=AppState.comparacion?.almacen; const ses=alm? ultimoInventario(alm) : null; if(ses && Array.isArray(ses.filas)){ const f=ses.filas.find(x=> String(x.codigo)===String(codigo)); if(f){ fis=Number(f.cantidad||0); } } if(alm && Array.isArray(AppState.sistema[alm])){ const s=AppState.sistema[alm].find(x=> String(x.codigo)===String(codigo)); if(s){ sis=Number(s.cantidad_sistema||0); } } }catch{} }
+  $('v-stock-fis').value=fis; $('v-stock-sis').value=sis; recalcularVerificacion(); }catch{} }
+function recalcularVerificacion(){ const compras=Number($('v-res-compras')?.value||0); const ventas=Number($('v-res-ventas')?.value||0); const exist=Math.max(0, compras-ventas); $('v-res-exist').value=exist; const fis=Number($('v-stock-fis')?.value||0); const sis=Number($('v-stock-sis')?.value||0); const box=$('v-resultado'); let txt='', cls=''; if(exist===fis && exist!==sis){ txt='Error de Sistema'; cls='badge-naranja'; } else if(exist===sis && exist!==fis){ txt='Error de Logística'; cls='text-bg-danger'; } else if(exist!==fis && exist!==sis){ txt='Realizar nuevo conteo'; cls='badge-amarillo'; } else { txt='CONFORME'; cls='text-bg-success'; } if(box){ box.innerHTML=`<span class="badge ${cls}">${txt}</span>`; } }
+function guardarVerificacion(){ const codigo=$('verif-rowkey')?.value||''; const data={ compras:{ fecha_ing:$('v-c-fecha-ing').value||'', hora_ing:$('v-c-hora-ing').value||'', num_acta:$('v-c-num-acta').value||'', fecha_desc:$('v-c-fecha-desc').value||'', hora_desc:$('v-c-hora-desc').value||'' }, ventas:{ fecha_desc_ventas:$('v-v-fecha-desc-ventas').value||'', hora_desc_ventas:$('v-v-hora-desc-ventas').value||'', fecha_desc_sis:$('v-v-fecha-desc-sis').value||'', hora_desc_sis:$('v-v-hora-desc-sis').value||'' }, resumen:{ compras_tot:Number($('v-res-compras').value||0), ventas_tot:Number($('v-res-ventas').value||0), exist:Number($('v-res-exist').value||0), stock_fis:Number($('v-stock-fis').value||0), stock_sis:Number($('v-stock-sis').value||0), resultado:($('v-resultado').innerText||'').trim() }, fecha_guardado: fmt12() };
+  if(!AppState.verificacion) AppState.verificacion={}; AppState.verificacion[codigo]=data; saveLS(); try{ const fila=(AppState.comparacion?.filas||[]).find(f=> String(f.codigo)===String(codigo)); if(fila){ (AppState.acciones||(AppState.acciones=[])).push({ id:(AppState.acciones?.length||0)+1, fecha:fmt12(), registrado:'Joseph', motivo:'VERIFICACIÓN', cantidad:'-', errorDe:'-', obs:data.resumen?.resultado||'', codigo, item:(fila?.item||''), producto:(fila?.producto||''), almacen:(AppState.comparacion?.almacen||'') }); renderAcciones(); } }catch{}
+  const lab=$('verif-fecha-guardado'); if(lab){ lab.textContent='Guardado: '+(data.fecha_guardado||''); lab.classList.remove('text-bg-secondary'); lab.classList.add('text-bg-success'); } toast('Verificación guardada.','success'); }
+function pdfVerificacion(){ try{ const { jsPDF } = window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); const fechaEmision=fmt12(); doc.setFontSize(16); doc.text('Resultado de Verificación – Zeus Safety', 40, 44); doc.setFontSize(10); doc.text(`Emitido: ${fechaEmision}`, 40, 60); const compras=[[ 'Fecha ingreso', $('v-c-fecha-ing').value||'' ],[ 'Hora ingreso', $('v-c-hora-ing').value||'' ],[ 'N° acta', $('v-c-num-acta').value||'' ],[ 'Fecha descarga inv.', $('v-c-fecha-desc').value||'' ],[ 'Hora descarga inv.', $('v-c-hora-desc').value||'' ]]; const ventas=[[ 'Fecha desc. ventas', $('v-v-fecha-desc-ventas').value||'' ],[ 'Hora desc. ventas', $('v-v-hora-desc-ventas').value||'' ],[ 'Fecha desc. sistema', $('v-v-fecha-desc-sis').value||'' ],[ 'Hora desc. sistema', $('v-v-hora-desc-sis').value||'' ]]; doc.autoTable({startY:78, head:[['COMPRAS','VALOR']], body:compras, theme:'grid', styles:{fontSize:10}, headStyles:{fillColor:[13,110,253]}}); const y2=doc.lastAutoTable.finalY+8; doc.autoTable({startY:y2, head:[['VENTAS','VALOR']], body:ventas, theme:'grid', styles:{fontSize:10}, headStyles:{fillColor:[13,110,253]}}); const y3=doc.lastAutoTable.finalY+14; doc.setFontSize(12); doc.text('Resumen General', 40, y3); const comprasTot=Number($('v-res-compras').value||0), ventasTot=Number($('v-res-ventas').value||0), exist=Number($('v-res-exist').value||0), fis=Number($('v-stock-fis').value||0), sis=Number($('v-stock-sis').value||0); const y4=y3+6; doc.autoTable({startY:y4, head:[['MÉTRICA','VALOR']], body:[[ 'Compras Totales', comprasTot ],[ 'Ventas Totales', ventasTot ],[ 'Stock de Existencias', exist ],[ 'Stock Físico', fis ],[ 'Stock Sistema', sis ]], theme:'striped', styles:{fontSize:10}}); const y5=doc.lastAutoTable.finalY+14; doc.setFontSize(12); doc.text('Resultado de Verificación', 40, y5); const badgeTxt=$('v-resultado').innerText||''; const y6=y5+10; doc.setFontSize(11); doc.text(badgeTxt, 40, y6); doc.setFontSize(9); doc.text('Zeus Safety · Sistema de Inventario', 40, 820); doc.save('verificacion.pdf'); }catch(err){ alert('No se pudo generar el PDF de verificación: '+err.message); }
+}
+
+function syncConsolidadoRowHeights(idA,idB,idC){ try{ const ra=Array.from(document.querySelectorAll(`#${idA} tbody tr`)); const rb=Array.from(document.querySelectorAll(`#${idB} tbody tr`)); const rc=Array.from(document.querySelectorAll(`#${idC} tbody tr`)); const n=Math.max(ra.length, rb.length, rc.length); for(let i=0;i<n;i++){ const ha=ra[i]?.getBoundingClientRect().height||0; const hb=rb[i]?.getBoundingClientRect().height||0; const hc=rc[i]?.getBoundingClientRect().height||0; const h=Math.max(ha,hb,hc); if(ra[i]) ra[i].style.height=h+'px'; if(rb[i]) rb[i].style.height=h+'px'; if(rc[i]) rc[i].style.height=h+'px'; } }catch{} }
+</script>
+<script>
+window.addEventListener('error', function(e){ try{ console.error('[APP ERROR]', e.error||e.message||e); alert('Error: '+(e.error?.message||e.message||e)); }catch{} });
+</script>
+</body>
+</html>

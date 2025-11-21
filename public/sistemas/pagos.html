@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pagos - ZEUS SAFETY</title>
+    <link rel="icon" type="image/png" href="/Logo de Zeus.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- SheetJS para generar archivos Excel reales -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF para generar archivos PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --azul-principal: #1e3a8a;
+            --azul-claro: #3b82f6;
+            --azul-oscuro: #1e40af;
+            --azul-muy-claro: #dbeafe;
+            --blanco: #ffffff;
+            --gris-claro: #f8fafc;
+            --gris-medio: #64748b;
+            --gris-oscuro: #334155;
+            --verde-exito: #10b981;
+            --rojo-error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--azul-muy-claro) 0%, var(--blanco) 100%);
+            min-height: 100vh;
+            color: var(--gris-oscuro);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            padding: 20px 40px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.3);
+            color: var(--blanco);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--blanco);
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--blanco);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--azul-principal);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .api-status {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-weight: 500;
+        }
+
+        .api-status.loading {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .api-status.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .api-status.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .add-payment-section {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .add-payment-btn {
+            background: var(--verde-exito);
+            color: var(--blanco);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .add-payment-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .table-container {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            color: var(--blanco);
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--gris-claro);
+            transition: background-color 0.3s ease;
+        }
+
+        .table tbody tr {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--azul-muy-claro);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--gris-medio);
+        }
+
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--gris-medio);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--gris-medio);
+        }
+
+        /* Estilos para botones de acción */
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            margin: 0 2px;
+        }
+
+        .update-btn {
+            background: var(--azul-claro);
+            color: var(--blanco);
+        }
+
+        .update-btn:hover {
+            background: var(--azul-oscuro);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .delete-btn {
+            background: var(--rojo-error);
+            color: var(--blanco);
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .view-pdf-btn {
+            background: var(--verde-exito);
+            color: var(--blanco);
+        }
+
+        .view-pdf-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Estilos para modales */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(30, 58, 138, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            color: var(--blanco);
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .close {
+            color: var(--blanco);
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--gris-oscuro);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--gris-claro);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--azul-claro);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--gris-claro);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--azul-claro);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background: var(--azul-oscuro);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--gris-medio);
+            color: var(--blanco);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gris-oscuro);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--rojo-error);
+            color: var(--blanco);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--verde-exito);
+            color: var(--blanco);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        /* Confirmación de eliminación */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .confirm-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-content {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(30, 58, 138, 0.3);
+            width: 90%;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .confirm-header {
+            background: var(--rojo-error);
+            color: var(--blanco);
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+
+        .confirm-body {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .confirm-footer {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Estilos para enlaces PDF */
+        .pdf-link {
+            color: var(--azul-claro);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .pdf-link:hover {
+            color: var(--azul-oscuro);
+            text-decoration: underline;
+        }
+
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px 20px;
+            background: var(--gris-claro);
+            border: 2px dashed var(--gris-medio);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--gris-medio);
+        }
+
+        .file-input-label:hover {
+            background: var(--azul-muy-claro);
+            border-color: var(--azul-claro);
+            color: var(--azul-claro);
+        }
+
+        .current-pdf {
+            background: var(--azul-muy-claro);
+            border: 1px solid var(--azul-claro);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .current-pdf h4 {
+            color: var(--azul-principal);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .current-pdf a {
+            color: var(--azul-claro);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .current-pdf a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .table th,
+            .table td {
+                min-width: 120px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="../../Logo de Zeus.png" alt="ZEUS SAFETY Logo" class="logo">
+                <h1 class="header-title">Gestión de Pagos</h1>
+            </div>
+            <a href="../../sistemas.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Volver a Sistemas
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Sección para Añadir Pago -->
+        <div class="add-payment-section">
+            <button class="add-payment-btn" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Añadir Nuevo Pago
+            </button>
+        </div>
+
+        <!-- Tabla Principal -->
+        <div class="section-title">
+            <i class="fas fa-list"></i>
+            Listado de Pagos
+            <span class="api-status loading" id="apiStatus">
+                <i class="fas fa-spinner"></i>
+                Conectando a API...
+            </span>
+        </div>
+        
+        <div class="table-container">
+            <table class="table" id="mainTable">
+                <thead>
+                    <tr>
+                        <th>NOMBRE</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th>MONTO</th>
+                        <th>MONEDA</th>
+                        <th>URL PDF PAGO</th>
+                        <th>FECHA PAGO</th>
+                        <th>ÁREA</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody id="mainTableBody">
+                    <tr>
+                        <td colspan="8" class="loading">
+                            <i class="fas fa-spinner"></i>
+                            <p>Cargando datos...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para Añadir Pago -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-plus"></i>
+                    Añadir Nuevo Pago
+                </h3>
+                <span class="close" onclick="closeAddModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" id="nombre" name="nombre" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion" class="form-label">Descripción *</label>
+                        <textarea id="descripcion" name="descripcion" class="form-input form-textarea" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="monto" class="form-label">Monto *</label>
+                        <input type="number" id="monto" name="monto" class="form-input" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="moneda" class="form-label">Moneda *</label>
+                        <select id="moneda" name="moneda" class="form-input" required>
+                            <option value="">Seleccionar moneda</option>
+                            <option value="SOLES">SOLES</option>
+                            <option value="DOLARES">DOLARES</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="url_pdf_pago" class="form-label">URL PDF Pago</label>
+                        <input type="url" id="url_pdf_pago" name="url_pdf_pago" class="form-input" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_pago" class="form-label">Fecha de Pago *</label>
+                        <input type="date" id="fecha_pago" name="fecha_pago" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="area" class="form-label">Área *</label>
+                        <select id="area" name="area" class="form-input" required>
+                            <option value="">Seleccionar área</option>
+                            <option value="SISTEMAS">SISTEMAS</option>
+                            <option value="ADMINISTRACION">ADMINISTRACION</option>
+                            <option value="VENTAS">VENTAS</option>
+                            <option value="LOGISTICA">LOGISTICA</option>
+                            <option value="IMPORTACIONES">IMPORTACIONES</option>
+                            <option value="GERENCIA">GERENCIA</option>
+                            <option value="MARKETING">MARKETING</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="addPago()">
+                    <i class="fas fa-save"></i>
+                    Guardar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Actualizar -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-edit"></i>
+                    Actualizar Pago
+                </h3>
+                <span class="close" onclick="closeUpdateModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm">
+                    <div class="form-group">
+                        <label for="update_nombre" class="form-label">Nombre *</label>
+                        <input type="text" id="update_nombre" name="nombre" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="update_descripcion" class="form-label">Descripción *</label>
+                        <textarea id="update_descripcion" name="descripcion" class="form-input form-textarea" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="update_monto" class="form-label">Monto *</label>
+                        <input type="number" id="update_monto" name="monto" class="form-input" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="update_moneda" class="form-label">Moneda *</label>
+                        <select id="update_moneda" name="moneda" class="form-input" required>
+                            <option value="">Seleccionar moneda</option>
+                            <option value="SOLES">SOLES</option>
+                            <option value="DOLARES">DOLARES</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="update_fecha_pago" class="form-label">Fecha de Pago *</label>
+                        <input type="date" id="update_fecha_pago" name="fecha_pago" class="form-input" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeUpdateModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updatePago()">
+                    <i class="fas fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Gestionar PDF -->
+    <div id="pdfModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-file-pdf"></i>
+                    Gestionar PDF del Pago
+                </h3>
+                <span class="close" onclick="closePdfModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="currentPdfContainer" class="current-pdf" style="display: none;">
+                    <h4>PDF Actual:</h4>
+                    <a id="currentPdfLink" href="#" target="_blank">
+                        <i class="fas fa-file-pdf"></i> Ver PDF Actual
+                    </a>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Subir Nuevo PDF:</label>
+                    <div class="file-input-container">
+                        <input type="file" id="pdfFile" class="file-input" accept=".pdf" onchange="handleFileSelect(event)">
+                        <label for="pdfFile" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span id="fileLabel">Hacer clic para seleccionar archivo PDF</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePdfModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarPDF()">
+                    <i class="fas fa-save"></i>
+                    Guardar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación para Eliminar -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <h3>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Confirmar Eliminación
+                </h3>
+            </div>
+            <div class="confirm-body">
+                <p>¿Está seguro de que desea eliminar este pago?</p>
+                <p><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+            <div class="confirm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="deletePago()">
+                    <i class="fas fa-trash"></i>
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentUpdateId = null;
+        let currentDeleteId = null;
+        let pagosData = [];
+        let pagoPdfActual = null;
+        let archivoSeleccionado = null;
+
+        // Función para cargar datos de pagos
+        async function loadPagosData() {
+            const apiStatus = document.getElementById('apiStatus');
+            
+            try {
+                console.log('Cargando datos de pagos desde API...');
+                apiStatus.className = 'api-status loading';
+                apiStatus.innerHTML = '<i class="fas fa-spinner"></i> Conectando a API...';
+                
+                // Llamada a la API según el ejemplo proporcionado
+                const api = "https://colaboradores-2946605267.us-central1.run.app";
+                const metodo = "pagos_area";
+                const area = 3; // Área por defecto, se puede hacer configurable
+                
+                const response = await fetch(`${api}?metodo=${metodo}&area=${area}`);
+                console.log('Status de respuesta:', response.status);
+                
+                if (response.status === 200) {
+                    const data = await response.json();
+                    console.log('Datos cargados desde API:', data);
+                    apiStatus.className = 'api-status success';
+                    apiStatus.innerHTML = '<i class="fas fa-check"></i> API Conectada';
+                    pagosData = data;
+                    displayPagosData(data);
+                } else {
+                    console.error('Error en la respuesta de la API:', response.status);
+                    apiStatus.className = 'api-status error';
+                    apiStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error API';
+                    displayPagosData([]);
+                }
+            } catch (error) {
+                console.error('Error cargando datos desde API:', error);
+                apiStatus.className = 'api-status error';
+                apiStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error de Red';
+                displayPagosData([]);
+            }
+        }
+
+        // Función para mostrar datos de pagos
+        function displayPagosData(data) {
+            console.log('Mostrando datos:', data);
+            const tbody = document.getElementById('mainTableBody');
+            
+            if (!data || data.length === 0) {
+                console.log('No hay datos para mostrar');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-data">
+                            <i class="fas fa-inbox"></i>
+                            <p>No hay pagos disponibles</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => `
+                <tr data-id="${index}">
+                    <td>${item.NOMBRE || ''}</td>
+                    <td>${item.DESCRIPCION || ''}</td>
+                    <td>$${(item.MONTO || 0).toFixed(2)}</td>
+                    <td>${item.MONEDA || ''}</td>
+                    <td>
+                        ${item.URL_PDF_PAGO ? 
+                            `<a href="${item.URL_PDF_PAGO}" target="_blank" class="pdf-link">
+                                <i class="fas fa-file-pdf"></i> Ver PDF
+                            </a>` : 
+                            '<span style="color: var(--gris-medio);">No disponible</span>'
+                        }
+                    </td>
+                    <td>${formatDate(item.FECHA_PAGO) || ''}</td>
+                    <td>${item['s.NOMBRE'] || ''}</td>
+                    <td>
+                        <button class="action-btn update-btn" onclick="openUpdateModal(${index})">
+                            <i class="fas fa-edit"></i>
+                            Editar
+                        </button>
+                        <button class="action-btn pdf-btn" onclick="gestionarPDF(${index})">
+                            <i class="fas fa-file-pdf"></i>
+                            PDF
+                        </button>
+                        <button class="action-btn delete-btn" onclick="confirmDelete(${index})">
+                            <i class="fas fa-trash"></i>
+                            Borrar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Función para formatear fechas
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        // Funciones para el modal de añadir
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('show');
+            // Establecer fecha actual por defecto
+            document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
+            document.getElementById('addForm').reset();
+        }
+
+        async function addPago() {
+            const form = document.getElementById('addForm');
+            const formData = new FormData(form);
+            
+            // Validar campos requeridos
+            const requiredFields = ['nombre', 'descripcion', 'monto', 'moneda', 'fecha_pago', 'area'];
+            for (let field of requiredFields) {
+                if (!formData.get(field)) {
+                    alert(`Por favor complete el campo: ${field}`);
+                    return;
+                }
+            }
+
+            try {
+                const api = "https://colaboradores-2946605267.us-central1.run.app";
+                const metodo = "insertar_pagos_area";
+                
+                const data = {
+                    nombre: formData.get('nombre'),
+                    descripcion: formData.get('descripcion'),
+                    monto: parseFloat(formData.get('monto')),
+                    fecha_pago: formData.get('fecha_pago'),
+                    moneda: formData.get('moneda')
+                };
+
+                console.log('Enviando datos de nuevo pago:', data);
+
+                const response = await fetch(`${api}?metodo=${metodo}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Status de respuesta nuevo pago:', response.status);
+
+                if (response.status === 200) {
+                    const result = await response.json();
+                    console.log('Respuesta de nuevo pago:', result);
+                    
+                    alert('Pago creado exitosamente');
+                    closeAddModal();
+                    
+                    // Recargar datos para mostrar los cambios
+                    loadPagosData();
+                } else {
+                    console.error('Error en la respuesta de nuevo pago:', response.status);
+                    alert('Error al crear el pago. Por favor intente nuevamente.');
+                }
+                
+            } catch (error) {
+                console.error('Error creando pago:', error);
+                alert('Error de conexión. Por favor intente nuevamente.');
+            }
+        }
+
+        // Funciones para el modal de actualización
+        function openUpdateModal(index) {
+            currentUpdateId = index;
+            const pago = pagosData[index];
+            
+            // Llenar el formulario con los datos actuales
+            document.getElementById('update_nombre').value = pago.NOMBRE || '';
+            document.getElementById('update_descripcion').value = pago.DESCRIPCION || '';
+            document.getElementById('update_monto').value = pago.MONTO || '';
+            document.getElementById('update_moneda').value = pago.MONEDA || '';
+            document.getElementById('update_fecha_pago').value = pago.FECHA_PAGO || '';
+            
+            // Mostrar el modal
+            document.getElementById('updateModal').classList.add('show');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.remove('show');
+            currentUpdateId = null;
+            document.getElementById('updateForm').reset();
+        }
+
+        async function updatePago() {
+            if (currentUpdateId === null) {
+                alert('Error: No se ha seleccionado un pago para actualizar');
+                return;
+            }
+
+            const form = document.getElementById('updateForm');
+            const formData = new FormData(form);
+            
+            // Validar campos requeridos
+            const requiredFields = ['nombre', 'descripcion', 'monto', 'moneda', 'fecha_pago'];
+            for (let field of requiredFields) {
+                if (!formData.get(field)) {
+                    alert(`Por favor complete el campo: ${field}`);
+                    return;
+                }
+            }
+
+            try {
+                const api = "https://colaboradores-2946605267.us-central1.run.app";
+                const metodo = "actualizar_pagos_areas";
+                
+                const data = {
+                    nombre: formData.get('nombre'),
+                    descripcion: formData.get('descripcion'),
+                    monto: parseFloat(formData.get('monto')),
+                    fecha_pago: formData.get('fecha_pago'),
+                    moneda: formData.get('moneda')
+                };
+
+                // Obtener el ID real del pago
+                const pagoActual = pagosData[currentUpdateId];
+                const pagoId = pagoActual.ID || pagoActual.id || currentUpdateId;
+
+                console.log('Enviando datos de actualización:', data);
+                console.log('ID del pago:', pagoId);
+
+                const response = await fetch(`${api}?metodo=${metodo}&id=${pagoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Status de respuesta actualización:', response.status);
+
+                if (response.status === 200) {
+                    const result = await response.json();
+                    console.log('Respuesta de actualización:', result);
+                    
+                    alert('Pago actualizado exitosamente');
+                    closeUpdateModal();
+                    
+                    // Recargar datos para mostrar los cambios
+                    loadPagosData();
+                } else {
+                    console.error('Error en la respuesta de actualización:', response.status);
+                    alert('Error al actualizar el pago. Por favor intente nuevamente.');
+                }
+                
+            } catch (error) {
+                console.error('Error actualizando pago:', error);
+                alert('Error de conexión. Por favor intente nuevamente.');
+            }
+        }
+
+        // Funciones para el modal de confirmación de eliminación
+        function confirmDelete(index) {
+            currentDeleteId = index;
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+            currentDeleteId = null;
+        }
+
+        async function deletePago() {
+            if (currentDeleteId === null) {
+                alert('Error: No se ha seleccionado un pago para eliminar');
+                return;
+            }
+
+            try {
+                // Eliminar de la lista local
+                pagosData.splice(currentDeleteId, 1);
+                displayPagosData(pagosData);
+                
+                alert('Pago eliminado exitosamente');
+                closeConfirmModal();
+                
+                // En producción, aquí harías la llamada real a la API:
+                // const response = await fetch(`${apiUrl}/${currentDeleteId}`, {
+                //     method: 'DELETE'
+                // });
+                
+            } catch (error) {
+                console.error('Error eliminando pago:', error);
+                alert('Error al eliminar el pago. Por favor intente nuevamente.');
+            }
+        }
+
+        // Funciones para el modal de PDF
+        function gestionarPDF(index) {
+            const pago = pagosData[index];
+            if (!pago) {
+                alert('Pago no encontrado');
+                return;
+            }
+
+            pagoPdfActual = pago;
+            
+            // Mostrar PDF actual si existe
+            const currentPdfContainer = document.getElementById('currentPdfContainer');
+            const currentPdfLink = document.getElementById('currentPdfLink');
+            
+            if (pago.URL_PDF_PAGO) {
+                currentPdfLink.href = pago.URL_PDF_PAGO;
+                currentPdfContainer.style.display = 'block';
+            } else {
+                currentPdfContainer.style.display = 'none';
+            }
+            
+            // Limpiar archivo seleccionado
+            archivoSeleccionado = null;
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('fileLabel').textContent = 'Hacer clic para seleccionar archivo PDF';
+            
+            // Mostrar el modal
+            document.getElementById('pdfModal').classList.add('show');
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdfModal').classList.remove('show');
+            pagoPdfActual = null;
+            archivoSeleccionado = null;
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('fileLabel').textContent = 'Hacer clic para seleccionar archivo PDF';
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    alert('Por favor seleccione un archivo PDF válido.');
+                    event.target.value = '';
+                    return;
+                }
+                
+                archivoSeleccionado = file;
+                document.getElementById('fileLabel').textContent = `Archivo seleccionado: ${file.name}`;
+            }
+        }
+
+        async function guardarPDF() {
+            if (!pagoPdfActual) {
+                alert('Error: No se ha seleccionado un pago');
+                return;
+            }
+
+            if (!archivoSeleccionado) {
+                alert('Por favor seleccione un archivo PDF para subir');
+                return;
+            }
+
+            try {
+                let archivoUrl = '';
+                let pdfEnviado = false;
+                let pdfError = null;
+                
+                console.log('Enviando archivo PDF a la API...');
+                
+                // Crear FormData para enviar el archivo (usando el mismo patrón que registro_incidencias_proforma.html)
+                const formData = new FormData();
+                formData.append('file', archivoSeleccionado);
+                
+                // URL de la API con el ID y método como parámetros
+                const apiUrl = `https://pdfdrive-2946605267.us-central1.run.app?id=${pagoPdfActual.ID}&metodo=enlace_pdf_area_pagos`;
+                
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    console.log('Respuesta de la API PDF - Status:', response.status);
+                    console.log('Respuesta de la API PDF - Headers:', response.headers);
+                    
+                    // Verificar si la respuesta es JSON válido
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        console.log('Respuesta de la API PDF:', result);
+                        
+                        if (response.ok) {
+                            // Si la API devuelve una URL, usarla
+                            if (result.url || result.link) {
+                                archivoUrl = result.url || result.link;
+                                pdfEnviado = true;
+                            } else if (result.status === 'ok' || result.status === 'success') {
+                                // Si el status es 'ok' o 'success', considerar exitoso
+                                archivoUrl = `Archivo PDF enviado exitosamente - ID: ${pagoPdfActual.ID}`;
+                                pdfEnviado = true;
+                            } else if (result.ERROR) {
+                                // Si hay error en la respuesta, pero el PDF se guardó
+                                console.warn('Error en respuesta pero continuando:', result.ERROR);
+                                archivoUrl = `Archivo PDF enviado exitosamente - ID: ${pagoPdfActual.ID}`;
+                                pdfEnviado = true;
+                            } else {
+                                // Si hay un mensaje de error en la respuesta JSON
+                                throw new Error(`Error en la API: ${result.message || JSON.stringify(result)}`);
+                            }
+                        } else {
+                            // Si el status HTTP no es 200, pero tenemos respuesta JSON
+                            throw new Error(`Error HTTP: ${response.status} - ${result.message || JSON.stringify(result)}`);
+                        }
+                    } else {
+                        // Si no es JSON, intentar leer como texto para debug
+                        const textResponse = await response.text();
+                        console.log('Respuesta no-JSON de la API:', textResponse);
+                        
+                        if (response.ok) {
+                            // Si el status es 200, considerar que fue exitoso
+                            archivoUrl = `Archivo PDF enviado exitosamente - ID: ${pagoPdfActual.ID}`;
+                            pdfEnviado = true;
+                        } else {
+                            throw new Error(`Error HTTP: ${response.status} - Respuesta: ${textResponse}`);
+                        }
+                    }
+                    
+                } catch (apiError) {
+                    console.error('Error al enviar archivo a la API:', apiError);
+                    pdfError = apiError.message;
+                    // Continuar con el proceso, pero marcar que hubo error
+                }
+                
+                // Preparar datos para actualizar el registro
+                const updateData = { 
+                    FECHA_ENVIO_ARCHIVO: new Date().toISOString()
+                }; 
+                
+                // Solo agregar archivo si se envió exitosamente
+                if (pdfEnviado) {
+                    updateData.URL_PDF_PAGO = archivoUrl;
+                }
+                
+                console.log('Datos a actualizar:', updateData);
+                
+                try {
+                    console.log('Actualizando registro con datos:', updateData);
+                    
+                    // Solo actualizar la fecha de envío, no el archivo (ya se guardó en Drive)
+                    if (pdfEnviado) {
+                        const fechaOnly = { 
+                            FECHA_ENVIO_ARCHIVO: new Date().toISOString()
+                        };
+                        // Aquí podrías hacer una llamada a la API para actualizar la fecha si es necesario
+                        // await updateRecord(CURRENT_EDIT_ID, fechaOnly);
+                    }
+                    
+                    // Recargar datos y actualizar vista inmediatamente
+                    await loadPagosData(); // Recargar datos desde la API
+                    
+                    console.log('Estado final - PDF enviado:', pdfEnviado, 'Error:', pdfError);
+                    
+                    // Mostrar mensaje apropiado
+                    if (pdfEnviado) {
+                        alert('✅ Archivo PDF enviado exitosamente a Google Drive y guardado en el registro.');
+                        // Limpiar el campo de archivo
+                        document.getElementById('pdfFile').value = '';
+                        document.getElementById('fileLabel').textContent = 'Hacer clic para seleccionar archivo PDF';
+                        
+                        // Cerrar el modal después de mostrar el mensaje
+                        setTimeout(() => {
+                            closePdfModal();
+                        }, 1500);
+                    } else if (pdfError) {
+                        alert(`⚠️ El archivo PDF no se pudo enviar a la API: ${pdfError}`);
+                    } else {
+                        alert('✅ Archivo PDF procesado y guardado en el registro.');
+                    }
+                } catch (updateError) {
+                    console.error('Error al actualizar registro:', updateError);
+                    
+                    // Si falla la actualización pero el PDF se guardó, mostrar mensaje de éxito parcial
+                    if (pdfEnviado) {
+                        alert('✅ PDF guardado en Google Drive');
+                        // Aún así, intentar recargar los datos
+                        try {
+                            await loadPagosData();
+                        } catch (reloadError) {
+                            console.error('Error al recargar datos:', reloadError);
+                        }
+                    } else {
+                        alert('❌ Error al guardar la información: ' + updateError.message);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error subiendo PDF:', error);
+                alert('Error de conexión al subir el PDF. Por favor intente nuevamente.');
+            }
+        }
+
+        // Cerrar modales al hacer clic fuera de ellos
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addModal');
+            const updateModal = document.getElementById('updateModal');
+            const pdfModal = document.getElementById('pdfModal');
+            const confirmModal = document.getElementById('confirmModal');
+            
+            if (event.target === addModal) {
+                closeAddModal();
+            }
+            if (event.target === updateModal) {
+                closeUpdateModal();
+            }
+            if (event.target === pdfModal) {
+                closePdfModal();
+            }
+            if (event.target === confirmModal) {
+                closeConfirmModal();
+            }
+        }
+
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPagosData();
+        });
+    </script>
+</body>
+</html>

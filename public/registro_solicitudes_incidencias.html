@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Solicitudes e Incidencias</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://cibertecedgar.github.io/marcalogo/logozeus.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<style>
+    :root {
+        --azul-oscuro: #14213d;
+        --negro: #000;
+        --blanco: #fff;
+        --gris-fondo: #f4f6fa;
+    }
+
+    body {
+        background: var(--gris-fondo);
+    }
+
+    .card {
+        background: var(--blanco);
+        border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(20, 33, 61, 0.15);
+        border: none;
+        max-width: 700px;
+        /* más ancho */
+        margin: 40px auto;
+        padding: 30px;
+    }
+
+    .card h2 {
+        color: var(--azul-oscuro);
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 25px;
+        letter-spacing: 1px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--azul-oscuro);
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1.5px solid var(--azul-oscuro);
+        background: var(--blanco);
+        color: var(--negro);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--azul-oscuro);
+        box-shadow: 0 0 0 2px #14213d33;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #14213d, #1e4d7a);
+        border: none;
+        font-weight: 600;
+        letter-spacing: 1px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1e4d7a, #14213d);
+        transform: scale(1.02);
+    }
+
+    .input-group-text {
+        background: var(--azul-oscuro);
+        color: var(--blanco);
+        border: none;
+    }
+
+    header-logo {
+        display: flex;
+        align-items: center;
+    }
+
+    .header-logo img {
+        max-width: 150px;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+
+    .header-logo img:hover {
+        transform: scale(1.05);
+    }
+
+    .header-title {
+        flex: 1;
+        text-align: center;
+        margin: 0 20px;
+    }
+
+    .header-spacer {
+        width: 150px;
+        /* Mismo ancho que el logo para mantener centrado el título */
+    }
+
+    .header-title h1 {
+        color: white;
+        font-weight: 700;
+        font-size: 28px;
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+    }
+
+    /* Header */
+    .header-container {
+        background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+        box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+        padding-top: 1px;
+        padding-left: 20px;
+        padding-bottom: 0px;
+        padding-right: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-top: -20px;
+    }
+
+    .header-container::after {
+        content: "";
+        position: absolute;
+        bottom: -30px;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        background: url("https://www.svgrepo.com/show/488242/wave.svg") no-repeat center;
+        background-size: cover;
+        opacity: 0.2;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .btn-volver {
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .btn-listado-flotante {
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+
+        .card {
+            margin-top: 20px;
+        }
+
+        .header-container {
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            margin-top: -20px;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+        }
+
+        .header-logo img {
+            max-width: 110px;
+        }
+
+        .header-spacer {
+            display: none;
+        }
+    }
+
+    .alert {
+        border-radius: 12px;
+        padding: 15px 20px;
+        font-size: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .fade-in {
+        animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<body>
+    <!-- Header con Logo y Título -->
+    <div class="header-container">
+        <div class="header-logo">
+            <img src="https://cibertecedgar.github.io/marcalogo/logozeus.png" alt="Logo Zeus">
+        </div>
+        <div class="header-title">
+            <h1>REGISTRO DE SOLICITUDES E INCIDENCIAS</h1>
+        </div>
+        <div class="header-spacer"></div>
+    </div>
+
+    <button class="btn btn-danger text-white rounded-pill px-3 ms-2" style="background-color:#1a62c0; border:none;"
+        onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Volver
+    </button>
+
+    <button class="btn btn-info text-white rounded-pill px-3" style="background-color:#ffd342; border:none;"
+        onclick="window.location.href='mis_solicitudes_incidencias.html'">
+        <i class="fas fa-list-alt"></i> Mis Solicitudes/Incidencias
+    </button>
+
+    <div class="card p-4">
+        <!-- Botón Procedimientos -->
+        <button style="margin-left:70%" class="btn btn-primary me-3" data-bs-toggle="modal"
+            data-bs-target="#modalProcedimientos">
+            📘 Procedimientos
+        </button>
+        <form id="formSolicitudes" enctype="multipart/form-data" autocomplete="off">
+            <h5 class="text-primary mt-3 mb-2">(DATOS GENERALES)</h5>
+            <div class="mb-3">
+                <label for="FECHA_CONSULTA" class="form-label">Fecha y Hora de Consulta * </label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                    <input type="text" class="form-control" id="FECHA_CONSULTA" name="FECHA_CONSULTA" readonly>
+                </div>
+            </div>
+            <input type="hidden" id="NUMERO_SOLICITUD" name="NUMERO_SOLICITUD" value="">
+            <input type="hidden" id="ESTADO" name="ESTADO" value="PENDIENTE">
+            <div class="mb-3">
+                <label for="REGISTRADO_POR" class="form-label">Registrado Por: *</label>
+                <input type="text" class="form-control" id="REGISTRADO_POR" name="REGISTRADO_POR"
+                    placeholder="Escribe el nombre del colaborador..." required style="text-transform: uppercase;">
+                <datalist id="sugerenciasColaboradores">
+                    <option value="JOSEPH"></option>
+                    <option value="MANUEL"></option>
+                    <option value="HERVIN"></option>
+                    <option value="KIMBERLY"></option>
+                    <option value="EVELYN"></option>
+                    <option value="JHONSON"></option>
+                    <option value="ALVARO"></option>
+                    <option value="VICTOR"></option>
+                    <option value="ELIAS"></option>
+                    <option value="SEBASTIAN"></option>
+                    <option value="SANDRA"></option>
+                    <option value="JOAQUIN"></option>
+                    <option value="EDGAR"></option>
+                    <option value="LIZETH"></option>
+                    <option value="JOSELYN"></option>
+                    <option value="JOSÉ"></option>
+                    <option value="PEDRO"></option>
+                </datalist>
+            </div>
+            <div class="mb-3">
+                <label for="AREA" class="form-label">Área de Emisión *</label>
+                <select class="form-select" id="AREA" name="AREA" required>
+                    <option value="">Selecciona un Área...</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="VENTAS">VENTAS</option>
+                    <option value="FACTURACION">FACTURACIÓN</option>
+                    <option value="IMPORTACION">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="GERENCIA">GERENCIA</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                </select>
+            </div>
+            <h5 class="text-primary mt-3 mb-2">(PULSAR AQUI SI REGISTRARA INCIDENCIA)</h5>
+            <!-- Checkbox de incidencia -->
+            <div class="mb-3 form-check">
+                <input class="form-check-input" type="checkbox" id="incidencia" name="incidencia">
+            </div>
+
+            <!-- Campo oculto: Responsable de incidencia -->
+            <div class="mb-3" id="campoIncidencia" style="display:none;">
+                <label for="RES_INCIDENCIA" class="form-label">Responsable de la Incidencia</label>
+                <input type="text" class="form-control" id="RES_INCIDENCIA" name="RES_INCIDENCIA"
+                    placeholder="Nombre del responsable..." style="text-transform: uppercase;">
+                <datalist id="sugerenciasColaboradoresInci">
+                    <option value="JOSEPH"></option>
+                    <option value="MANUEL"></option>
+                    <option value="HERVIN"></option>
+                    <option value="KIMBERLY"></option>
+                    <option value="EVELYN"></option>
+                    <option value="JHONSON"></option>
+                    <option value="ALVARO"></option>
+                    <option value="VICTOR"></option>
+                    <option value="ELIAS"></option>
+                    <option value="SEBASTIAN"></option>
+                    <option value="SANDRA"></option>
+                    <option value="JOAQUIN"></option>
+                    <option value="EDGAR"></option>
+                    <option value="LIZETH"></option>
+                    <option value="JOSELYN"></option>
+                    <option value="JOSÉ"></option>
+                    <option value="PEDRO"></option>
+                </datalist>
+            </div>
+
+            <h5 class="text-primary mt-3 mb-2">(DETALLE DE SOLICITUD O INCIDENCIA )</h5>
+            <div class="mb-3">
+                <label for="REQUERIMIENTOS" class="form-label">Requerimientos *</label>
+                <textarea class="form-control" id="REQUERIMIENTOS" name="REQUERIMIENTOS" rows="3" required></textarea>
+            </div>
+            <h5 class="text-primary mt-3 mb-2">("OPCIONAL")</h5>
+            <div class="mb-3">
+                <label for="informe" class="form-label">Informe (PDF)</label>
+                <input type="file" class="form-control" id="informe" name="informe" accept="application/pdf,.pdf">
+            </div>
+            <h5 class="text-primary mt-3 mb-2">(ÁREA DE RECEPCIÓN)</h5>
+            <div class="mb-3">
+                <label for="AREA_RECEPCION" class="form-label">Área de Recepción *</label>
+                <select class="form-select" id="AREA_RECEPCION" name="AREA_RECEPCION" required>
+                    <option value="">Selecciona un Área a Enviar...</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="VENTAS">VENTAS</option>
+                    <option value="FACTURACION">FACTURACIÓN</option>
+                    <option value="IMPORTACION">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="GERENCIA">GERENCIA</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="submitButton">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" id="loadingSpinner"
+                    style="display:none;"></span>
+                <span id="submitButtonText">Registrar</span>
+            </button>
+        </form>
+        <div id="progressBarContainer" class="mt-3" style="display:none;">
+            <div class="progress">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    0%
+                </div>
+            </div>
+            <small class="text-muted" id="progressStatus">Preparando envío...</small>
+        </div>
+        <div id="mensaje" class="mt-3"></div>
+    </div>
+
+    <!-- Modal Procedimientos -->
+    <div class="modal fade" id="modalProcedimientos" tabindex="-1" aria-labelledby="modalProcedimientosLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalProcedimientosLabel">📘 Procedimientos del Registro</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>📌 Objetivo</h6>
+                    <p>
+                        Este formulario permite registrar <b>solicitudes</b> y <b>incidencias</b> de manera clara y
+                        organizada.
+                    </p>
+
+                    <h6>⚙️ Instrucciones</h6>
+                    <ul>
+                        <li>📝 <b>Completa todos los campos obligatorios</b> (marcados con *).</li>
+                        <h2></h2>
+                        <li>✅ <b>Incidencia:</b> Si corresponde, marca el check y coloca el nombre del responsable.</li>
+                        <h2></h2>
+                        <li>📎 <b>Informe:</b> Puedes adjuntar un archivo como soporte <b>PDF, .rar, .zip,
+                                etc</b>(opcional).</li>
+                        <h2></h2>
+                        <ul>
+                            📌Selecciona la opción marcada de rojo para que el sistema muestre todos tus archivos
+                            <h2></h2>
+                            <img src="../img/captura_archivos.png" alt="" width="80%" height="10%">
+                        </ul>
+                        <h2></h2>
+                        <li>📤 <b>Área de recepción:</b> Selecciona el área a la que se enviará la solicitud o
+                            incidencia.</li>
+                    </ul>
+
+
+
+                    <h6>⏱️ Importante</h6>
+                    <p>
+                        ⚠️ El área receptora tiene un plazo máximo de <b>48 horas</b> para brindar respuesta.
+                        Verifica que la información ingresada sea correcta antes de enviar.
+                    </p>
+
+                    <h6>💡 Nota</h6>
+                    <p>
+                        - Si se trata de una <b>solicitud</b>, deja el check de incidencia sin marcar.<br>
+                        - Si se trata de una <b>incidencia</b>, recuerda marcar el check y detallar el responsable. <br>
+                        - Si se adjuntara <b>más de un PDF</b>, comprimir todos los PDF en un solo archivo <b>ZIP</b>.
+                        <br>
+                    <h6>💬 Sugerencia</h6>
+                    - Usar la siguiente pagina para <b>concatenar PDFs</b> link: <a
+                        href="https://www.ilovepdf.com/es/unir_pdf"
+                        target="_blank">https://www.ilovepdf.com/es/unir_pdf</a><br>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    // ... (Mantener la función getNextSolicitudNumber como está) ...
+    async function getNextSolicitudNumber(area) {
+        if (!area) return '';
+
+        try {
+            const response = await fetch('https://registrosolicitudeseincidencias-2946605267.us-central1.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ area })
+            });
+
+            const data = await response.json();
+            return data.numeroSolicitud || '';
+        } catch (error) {
+            console.error('Error al obtener número de solicitud:', error);
+            return '';
+        }
+    }
+
+
+    // Funciones para manejar el estado de carga
+    function setLoadingState(isLoading, isUploading = false) {
+        const submitButton = document.getElementById('submitButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const buttonText = document.getElementById('submitButtonText');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+
+        if (isLoading) {
+            submitButton.disabled = true;
+            loadingSpinner.style.display = 'inline-block';
+            buttonText.textContent = isUploading ? 'Subiendo Archivo...' : 'Enviando Datos...';
+            progressBarContainer.style.display = isUploading ? 'block' : 'none'; // Mostrar si está subiendo
+        } else {
+            submitButton.disabled = false;
+            loadingSpinner.style.display = 'none';
+            buttonText.textContent = 'Registrar';
+            progressBarContainer.style.display = 'none'; // Ocultar al finalizar
+        }
+    }
+
+    // Funciones de manejo de éxito y error con la lógica del spinner integrada
+    function manejarExito(res) {
+        setLoadingState(false); // Restablecer el estado de carga
+
+        const mensaje = document.getElementById('mensaje');
+        mensaje.innerHTML = `<div class="alert alert-success d-flex align-items-center" role="alert">
+    <i class="bi bi-check-circle-fill me-2" style="font-size:1.5rem;"></i>
+    <div><strong>¡Registro exitoso!</strong><br>${res}</div>
+</div>`;
+
+        // 1. Limpiar manualmente los campos que deben reiniciarse
+        document.getElementById('AREA').value = ''; // Área de Emisión
+        document.getElementById('REQUERIMIENTOS').value = ''; // Requerimientos
+        document.getElementById('informe').value = ''; // Informe PDF (tipo file)
+        document.getElementById('AREA_RECEPCION').value = ''; // Área de Recepción
+        document.getElementById('RES_INCIDENCIA').value = ''; // Responsable de la Incidencia
+
+        // 2. Regenerar y configurar valores que no deben limpiarse por completo
+        const ahora = new Date();
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const año = ahora.getFullYear();
+        const horas = ahora.getHours();
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        const horas12 = horas % 12 || 12;
+        const fechaFormateada = `${dia}/${mes}/${año} ${horas12}:${minutos} ${ampm}`;
+
+        // Colocar la nueva fecha en el campo (este campo y REGISTRADO_POR se mantienen)
+        document.getElementById('FECHA_CONSULTA').value = fechaFormateada;
+
+        // 3. Reiniciar valores ocultos y el checkbox de incidencia
+        document.getElementById('NUMERO_SOLICITUD').value = '';
+        document.getElementById('ESTADO').value = 'Pendiente';
+
+        // Ocultar el campo de incidencia si estaba visible
+        document.getElementById('campoIncidencia').style.display = 'none';
+        document.getElementById('incidencia').checked = false;
+
+        // Ocultar el mensaje después de 4 segundos con fade-out
+        setTimeout(() => {
+            const alerta = document.getElementById('mensaje');
+            if (alerta) {
+                alerta.innerHTML = ""; // solo limpia el contenido
+            }
+        }, 4000);
+    }
+
+    function manejarError(err) {
+        setLoadingState(false); // Restablecer el estado de carga
+
+        const mensaje = document.getElementById('mensaje');
+        mensaje.innerHTML = `<div class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-x-circle-fill me-2" style="font-size:1.5rem;"></i>
+        <div><strong>Error al registrar:</strong> ${err}</div>
+    </div>`;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Mapeo de usuarios a nombres completos
+        const userMapping = {
+            'hervinzeus': 'HERVIN',
+            'kimberly': 'KIMBERLY',
+            'evelyn': 'EVELYN',
+            'joseph': 'JOSEPH',
+            'alvaro': 'ALVARO',
+            'victorzeus': 'VICTOR',
+            'manuel': 'MANUEL',
+            'eliaszeus': 'ELIAS',
+            'sebastianzeus': 'SEBASTIAN',
+            'sandrazeus': 'SANDRA',
+            'joaquinzeus': 'JOAQUIN',
+            'edgarzeus': 'EDGAR',
+            'joselyn': 'JOSELYN'
+        };
+
+        // Función para obtener el nombre completo del usuario actual
+        function getCurrentUserFullName() {
+            // Asume que 'loggedUser' se almacena en localStorage al iniciar sesión
+            const loggedUser = localStorage.getItem('loggedUser');
+            if (!loggedUser) return null;
+            // Retorna el nombre mapeado en mayúsculas, o el loggedUser si no está mapeado
+            return userMapping[loggedUser.toLowerCase()] ? userMapping[loggedUser.toLowerCase()].toUpperCase() : loggedUser.toUpperCase();
+        }
+
+        const fechaInput = document.getElementById("FECHA_CONSULTA");
+        const ahora = new Date();
+        // Formato dd/mm/yyyy hh:mm AM/PM
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const año = ahora.getFullYear();
+        const horas = ahora.getHours();
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        const horas12 = horas % 12 || 12;
+        const fechaFormateada = `${dia}/${mes}/${año} ${horas12}:${minutos} ${ampm}`;
+        fechaInput.value = fechaFormateada;
+
+        // Inicializar campos ocultos
+        document.getElementById('NUMERO_SOLICITUD').value = '';
+        document.getElementById('ESTADO').value = 'Pendiente';
+
+        //  Lógica para inicializar el campo REGISTRADO_POR 
+        const inputRegistradoPor = document.getElementById('REGISTRADO_POR');
+        const nombreUsuario = getCurrentUserFullName();
+        if (nombreUsuario) {
+            // Inicializa el campo con el nombre completo del usuario detectado
+            inputRegistradoPor.value = nombreUsuario;
+        }
+
+        // Manejar cambio de área para actualizar número de solicitud
+        document.getElementById('AREA').addEventListener('change', async function () {
+            const areaSeleccionada = this.value;
+            const campoNumero = document.getElementById('NUMERO_SOLICITUD');
+
+            if (areaSeleccionada) {
+                campoNumero.value = 'Cargando...';
+                const numeroSolicitud = await getNextSolicitudNumber(areaSeleccionada);
+                campoNumero.value = numeroSolicitud;
+            } else {
+                campoNumero.value = '';
+            }
+        });
+
+
+        // Mostrar/ocultar campo responsable según checkbox
+        document.getElementById("incidencia").addEventListener("change", function () {
+            const campo = document.getElementById("campoIncidencia");
+            campo.style.display = this.checked ? "block" : "none";
+        });
+
+        // Manejo avanzado del datalist para REGISTRADO_POR
+        const datalistId = 'sugerenciasColaboradores';
+
+        // 1. Quitar el atributo 'list' inicialmente (previniendo que se muestre al cargar)
+        inputRegistradoPor.removeAttribute('list');
+
+        // 2. Manejar el evento 'focus' (cuando se le hace clic)
+        inputRegistradoPor.addEventListener('focus', function () {
+            if (this.value.trim() === '') {
+                this.removeAttribute('list');
+            }
+        });
+
+        // 3. Manejar el evento 'input' (cuando se empieza a escribir)
+        inputRegistradoPor.addEventListener('input', function () {
+            if (this.value.trim().length > 0) {
+                this.setAttribute('list', datalistId);
+            } else {
+                this.removeAttribute('list');
+            }
+        });
+
+        // 4. Manejar el evento 'blur' (cuando pierde el foco)
+        inputRegistradoPor.addEventListener('blur', function () {
+            if (this.value.trim().length > 0) {
+                this.setAttribute('list', datalistId);
+            }
+        });
+
+        const inputResponsableInci = document.getElementById('RES_INCIDENCIA');
+        const datalistIdInci = 'sugerenciasColaboradoresInci';
+        // 1. Quitar el atributo 'list' inicialmente (previniendo que se muestre al cargar)
+        inputResponsableInci.removeAttribute('list');
+
+        // 2. Manejar el evento 'focus' (cuando se le hace clic)
+        inputResponsableInci.addEventListener('focus', function () {
+            if (this.value.trim() === '') {
+                this.removeAttribute('list');
+            }
+        });
+
+        // 3. Manejar el evento 'input' (cuando se empieza a escribir)
+        inputResponsableInci.addEventListener('input', function () {
+            if (this.value.trim().length > 0) {
+                this.setAttribute('list', datalistIdInci);
+            } else {
+                this.removeAttribute('list');
+            }
+        });
+
+        // 4. Manejar el evento 'blur' (cuando pierde el foco)
+        inputResponsableInci.addEventListener('blur', function () {
+            if (this.value.trim().length > 0) {
+                this.setAttribute('list', datalistIdInci);
+            }
+        });
+    });
+
+    // Lógica de Envío con XHR para barra de progreso
+    document.getElementById('formSolicitudes').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const form = this;
+        const mensaje = document.getElementById('mensaje');
+        mensaje.innerHTML = '';
+
+        const formData = new FormData(form);
+        const informeInput = document.getElementById('informe');
+        const isFilePresent = informeInput.files.length > 0;
+
+        // Si hay archivo, establecemos el estado de subida de archivo
+        setLoadingState(true, isFilePresent);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://registrosolicitudeseincidencias-2946605267.us-central1.run.app');
+
+        // Manejar el progreso de la subida (solo si hay archivo)
+        if (isFilePresent && xhr.upload) {
+            xhr.upload.addEventListener('progress', function (event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    const percent = Math.round(percentComplete);
+
+                    const progressBar = document.getElementById('progressBar');
+                    const progressStatus = document.getElementById('progressStatus');
+
+                    progressBar.style.width = percent + '%';
+                    progressBar.setAttribute('aria-valuenow', percent);
+                    progressBar.textContent = percent + '%';
+                    progressStatus.textContent = `Subiendo: ${percent}% completado...`;
+
+                    // Si la subida termina (100%), cambiamos el texto del botón
+                    if (percent === 100) {
+                        document.getElementById('submitButtonText').textContent = 'Procesando Datos...';
+                        progressStatus.textContent = 'Subida completa. Procesando en el servidor...';
+                    }
+                }
+            });
+        }
+
+        // Manejar la respuesta
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    manejarExito(data.mensaje || 'Solicitud registrada correctamente');
+                } catch (e) {
+                    manejarError("Respuesta inválida del servidor.");
+                }
+            } else {
+                let errorMessage = `Error HTTP: ${xhr.status}`;
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    // Si la respuesta no es JSON, se usa el error HTTP
+                }
+                manejarError(errorMessage);
+            }
+            setLoadingState(false); // Asegurar que se deshabilite el spinner en éxito o error
+        };
+
+        // Manejar errores de conexión (ej. servidor caído, sin internet)
+        xhr.onerror = function () {
+            manejarError("Error de conexión. Intente nuevamente.");
+        };
+
+        // Envío de la solicitud
+        xhr.send(formData);
+    });
+</script>
+
+</html>

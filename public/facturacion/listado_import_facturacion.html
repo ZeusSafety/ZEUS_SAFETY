@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listado Importaciones - ZEUS SAFETY</title>
+  <link rel="icon" type="image/png" href="/Logo de Zeus.png">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --azul-oscuro: #00264d;
+      --maiz-oscuro: #e2a30f;
+      --maiz-claro: #f4d03f;
+      --blanco: #ffffff;
+      --negro: #000000;
+      --gris-suave: #f8f9fa;
+      --gris-medio: #6c757d;
+      --rojo-alerta: #dc3545;
+      --verde-exito: #28a745;
+      --rojo: #e63946;
+      --verde: #43aa8b;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e6e6e6 0%, #dddcdf 100%);
+      min-height: 100vh;
+      color: var(--negro);
+      position: relative;
+      padding: 20px;
+    }
+
+    .btn-back {
+      position: fixed;
+      top: 12%;
+      left: 30px;
+      background: linear-gradient(135deg, var(--maiz-oscuro), var(--maiz-claro));
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 25px rgba(226, 163, 15, 0.3);
+      z-index: 1000;
+    }
+
+    .btn-back:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(226, 163, 15, 0.4);
+      background: linear-gradient(135deg, var(--maiz-claro), var(--maiz-oscuro));
+      color: white;
+      text-decoration: none;
+    }
+
+    .btn-back::before {
+      content: '←';
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 1680px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+      margin: 80px auto 20px;
+    }
+
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, var(--azul-oscuro), var(--maiz-oscuro));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+      text-shadow: none;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      color: var(--gris-medio);
+      font-weight: 500;
+    }
+
+    .logo-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-container img {
+      max-width: 170px;
+      max-height: 70px;
+      object-fit: contain;
+    }
+
+    .filters-section {
+      background: var(--blanco);
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      border: 2px solid transparent;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      align-items: end;
+    }
+
+    .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--azul-oscuro);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      border: 2px solid #e9ecef;
+      padding: 12px 15px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .form-control:focus {
+      border-color: var(--maiz-oscuro);
+      box-shadow: 0 0 0 0.2rem rgba(226, 163, 15, 0.25);
+      outline: none;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--maiz-oscuro), var(--maiz-claro));
+      color: var(--blanco);
+      border: none;
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 25px rgba(226, 163, 15, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(226, 163, 15, 0.4);
+      background: linear-gradient(135deg, var(--maiz-claro), var(--maiz-oscuro));
+      color: var(--blanco);
+      text-decoration: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .table-container {
+      background: var(--blanco);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      border: 2px solid transparent;
+      position: relative;
+    }
+
+    .table-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 20px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8));
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .table-container.has-scroll::after {
+      opacity: 1;
+    }
+
+
+    .table {
+      margin: 0;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .table thead th {
+      text-align: center !important;
+      vertical-align: middle !important;
+      font-size: 1.08rem;
+      letter-spacing: 0.5px;
+      background: var(--azul-oscuro) !important;
+      color: var(--blanco) !important;
+      border-bottom: 3px solid var(--maiz-oscuro);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0, 38, 77, 0.2);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+      padding: 16px 12px;
+      letter-spacing: 1px;
+    }
+
+    .table td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 12px 8px;
+      border-color: #e9ecef;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    .table td:nth-child(4) {
+      /* Productos */
+      white-space: pre-line;
+      min-width: 180px;
+      max-width: 320px;
+    }
+
+    .table td:nth-child(6) {
+      /* Fecha de Incidencias */
+      min-width: 130px;
+    }
+
+    .table td:nth-child(7) {
+      /* Incidencias */
+      min-width: 120px;
+    }
+
+    .table td:nth-child(8) {
+      /* Estado de Verificación */
+      min-width: 140px;
+    }
+
+    .table td:nth-child(10) {
+      /* Observaciones */
+      min-width: 80px;
+      max-width: 80px;
+    }
+
+    .table td:nth-child(11) {
+      /* Acciones */
+      min-width: 120px;
+    }
+
+    /* Estilos para paginación */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination-info {
+      color: var(--azul-oscuro);
+      font-weight: 600;
+      margin: 0 15px;
+    }
+
+    .pagination-btn {
+      background: var(--azul-oscuro);
+      color: var(--blanco);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--maiz-oscuro);
+      transform: translateY(-2px);
+    }
+
+    .pagination-btn:disabled {
+      background: var(--gris-medio);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .pagination-btn.active {
+      background: var(--maiz-oscuro);
+      color: var(--negro);
+    }
+
+    /* Botón de ojo para observaciones */
+    .btn-observaciones {
+      background: var(--azul-oscuro);
+      color: var(--blanco);
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .btn-observaciones:hover {
+      background: var(--maiz-oscuro);
+      color: var(--negro);
+      transform: translateY(-2px);
+    }
+
+    .btn-observaciones:disabled {
+      background: var(--gris-medio);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .table-striped>tbody>tr:nth-of-type(odd) {
+      background-color: var(--gris-suave);
+    }
+
+    .table-hover tbody tr:hover {
+      background-color: rgba(226, 163, 15, 0.1);
+      transform: scale(1.01);
+      transition: all 0.2s ease;
+    }
+
+    .fila-nueva {
+      animation: resaltarFila 2s;
+      background: #fffbe6 !important;
+      box-shadow: 0 0 8px 2px rgba(226, 163, 15, 0.3);
+    }
+
+    @keyframes resaltarFila {
+      0% {
+        background: #ffe066;
+      }
+
+      100% {
+        background: #fffbe6;
+      }
+    }
+
+    .estado-transito {
+      background: var(--maiz-oscuro) !important;
+      color: var(--negro) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(226, 163, 15, 0.3);
+    }
+
+    .estado-produccion {
+      background: var(--rojo) !important;
+      color: var(--blanco) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+    }
+
+    .estado-eta {
+      background: var(--verde) !important;
+      color: var(--blanco) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(67, 170, 139, 0.3);
+    }
+
+    .estado-incidencia-si {
+      background: var(--rojo-alerta) !important;
+      color: var(--blanco) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    .estado-incidencia-no {
+      background: var(--verde-exito) !important;
+      color: var(--blanco) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .canal-verde {
+      background: rgba(40, 167, 69, 0.2) !important;
+      color: var(--verde-exito) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      border: 2px solid var(--verde-exito);
+    }
+
+    .canal-rojo {
+      background: rgba(220, 53, 69, 0.2) !important;
+      color: var(--rojo-alerta) !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      border: 2px solid var(--rojo-alerta);
+    }
+
+    .canal-naranja {
+      background: rgba(255, 193, 7, 0.2) !important;
+      color: #fd7e14 !important;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-block;
+      border: 2px solid #fd7e14;
+    }
+
+    .btn-actualizar {
+      background: var(--azul-oscuro);
+      color: var(--blanco);
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 38, 77, 0.2);
+      cursor: pointer;
+    }
+
+    .btn-actualizar:hover {
+      background: var(--negro);
+      color: var(--maiz-oscuro);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 38, 77, 0.3);
+    }
+
+    .btn-pdf {
+      background: var(--azul-oscuro);
+      color: var(--blanco);
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 38, 77, 0.2);
+    }
+
+    .btn-pdf:hover {
+      background: var(--negro);
+      color: var(--maiz-oscuro);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 38, 77, 0.3);
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: var(--blanco);
+      margin: 5% auto;
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+      border: 2px solid var(--maiz-oscuro);
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--gris-suave);
+    }
+
+    .modal-header h3 {
+      color: var(--azul-oscuro);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      margin-bottom: 25px;
+    }
+
+    .modal-footer {
+      text-align: center;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--gris-medio);
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .close:hover {
+      color: var(--rojo-alerta);
+    }
+
+    .table-responsive {
+      max-height: 60vh;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0, 38, 77, 0.1);
+      overflow-x: auto;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gris-medio) var(--gris-suave);
+    }
+
+    /* Estilos para scrollbar en WebKit (Chrome, Safari, Edge) */
+    .table-responsive::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+      background: var(--gris-suave);
+      border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+      background: var(--gris-medio);
+      border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+      background: #5a6268;
+    }
+
+    .table {
+      margin: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      min-width: 1600px;
+      /* Ancho mínimo para asegurar que todas las columnas sean visibles */
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .btn-back {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 20px;
+        align-self: flex-start;
+      }
+
+      .container {
+        padding: 30px 20px;
+        margin-top: 20px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 25px 15px;
+      }
+
+      .header h1 {
+        font-size: 1.8rem;
+      }
+
+      .header p {
+        font-size: 1rem;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .header-back {
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-back-header {
+      background: linear-gradient(135deg, var(--maiz-oscuro), var(--maiz-claro));
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 25px rgba(226, 163, 15, 0.3);
+    }
+
+    .btn-back-header:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(226, 163, 15, 0.4);
+      background: linear-gradient(135deg, var(--maiz-claro), var(--maiz-oscuro));
+      color: white;
+      text-decoration: none;
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      margin: 0 20px;
+    }
+
+    .header-spacer {
+      width: 150px;
+      /* Mismo ancho que el logo para mantener centrado el título */
+    }
+
+    .header-title h1 {
+      color: white;
+      font-weight: 700;
+      font-size: 28px;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+    }
+
+    /* Header */
+    .header-container {
+      background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+      box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+      padding: 20px 30px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      margin-top: -20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .btn-volver {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      .btn-listado-flotante {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+
+      .card {
+        margin-top: 20px;
+      }
+
+      .header-container {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-top: -20px;
+      }
+
+      .header-title h1 {
+        font-size: 24px;
+      }
+
+      .btn-back-header {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      .header-spacer {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header con Botón Volver y Título -->
+  <div class="header-container">
+    <div class="header-back">
+      <a href="../../facturacion.html" class="btn-back-header">
+        <i class="fas fa-arrow-left"></i> Volver al Menú
+      </a>
+    </div>
+    <div class="header-title">
+      <h1>LISTADO IMPORTACIONES - FACTURACIÓN</h1>
+    </div>
+    <div class="header-spacer"></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h2><i class="fas fa-list-alt"></i>Consulta y Gestión de Registros de Facturación </h2>
+    </div>
+
+    <div class="filters-section">
+      <div class="filters-grid">
+        <div class="form-group">
+          <label class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="filtroFechaInicio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha Final</label>
+          <input type="date" class="form-control" id="filtroFechaFinal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° de Despacho</label>
+          <input type="text" class="form-control" id="filtroDespacho" placeholder="Buscar...">
+        </div>
+        <div class="form-group">
+          <button class="btn w-100" id="btnFiltrar">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+        </div>
+        <div class="form-group">
+          <button class="btn w-100" id="btnProcedimiento" style="background: var(--verde);">
+            <i class="fas fa-info-circle"></i> Procedimiento
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle" id="tablaImportaciones">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th>ID</th>
+              <th>Fecha Registro</th>
+              <th>N° Despacho</th>
+              <th>Solución PDF</th>
+              <th>Fecha de Incidencias</th>
+              <th>Incidencias</th>
+              <th>Estado de Verificación</th>
+              <th>Estado de Despacho</th>
+              <th>Fecha de Registro</th>
+              <th>Observaciones</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="11" class="text-center">Cargando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Contenedor de paginación -->
+      <div class="pagination-container" id="paginationContainer" style="display: none;">
+        <button class="pagination-btn" id="btnPrimera" title="Primera página">
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button class="pagination-btn" id="btnAnterior" title="Página anterior">
+          <i class="fas fa-angle-left"></i>
+        </button>
+        <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
+        <button class="pagination-btn" id="btnSiguiente" title="Página siguiente">
+          <i class="fas fa-angle-right"></i>
+        </button>
+        <button class="pagination-btn" id="btnUltima" title="Última página">
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para actualizar -->
+  <div id="modalActualizar" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close">&times;</span>
+        <h3><i class="fas fa-edit"></i> Actualizar Registro</h3>
+      </div>
+      <div class="modal-body">
+        <form id="formActualizar">
+          <input type="hidden" id="idImportacion" name="idImportacion">
+          <div class="form-group">
+            <label class="form-label">Estado de Registro</label>
+            <select class="form-control" id="estadoDespacho" name="estadoDespacho">
+              <option value="">Seleccionar...</option>
+              <option value="SI">REGISTRADO</option>
+              <option value="NO">NO REGISTRADO</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Ingrese observaciones..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btnGuardar">
+          <i class="fas fa-save"></i> Guardar
+        </button>
+        <button type="button" class="btn" id="btnCancelar" style="background: var(--gris-medio);">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para procedimiento -->
+  <div id="modalProcedimiento" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close-procedimiento">&times;</span>
+        <h3><i class="fas fa-info-circle"></i> Procedimiento de Facturación</h3>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: left; line-height: 1.6;">
+          <h4 style="color: var(--azul-oscuro); margin-bottom: 15px;">Proceso de Gestión de Facturación</h4>
+          
+          <div style="margin-bottom: 20px;">
+            <h5 style="color: var(--maiz-oscuro); margin-bottom: 10px;">1. Registro de Importación</h5>
+            <p>• Se registra la importación con todos los datos básicos</p>
+            <p>• Se asigna un número de despacho único</p>
+            <p>• Se especifica el tipo de carga y productos</p>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <h5 style="color: var(--maiz-oscuro); margin-bottom: 10px;">2. Estados de Facturación</h5>
+            <p>• <strong>REGISTRADO:</strong> Despacho facturado correctamente</p>
+            <p>• <strong>NO REGISTRADO:</strong> Pendiente de facturación</p>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <h5 style="color: var(--maiz-oscuro); margin-bottom: 10px;">3. Gestión de Documentos</h5>
+            <p>• Los PDFs de solución están disponibles para consulta</p>
+            <p>• Se pueden verificar los documentos de facturación</p>
+            <p>• Registrar observaciones sobre el estado de facturación</p>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <h5 style="color: var(--maiz-oscuro); margin-bottom: 10px;">4. Actualización de Estados</h5>
+            <p>• Utilizar el botón "Editar" para modificar información</p>
+            <p>• Actualizar estado de registro de facturación</p>
+            <p>• Agregar observaciones relevantes</p>
+          </div>
+
+          <div style="background: var(--gris-suave); padding: 15px; border-radius: 8px; border-left: 4px solid var(--maiz-oscuro);">
+            <h5 style="color: var(--azul-oscuro); margin-bottom: 10px;">Notas Importantes:</h5>
+            <p>• Mantener actualizada la información de facturación</p>
+            <p>• Los documentos PDF deben estar siempre disponibles</p>
+            <p>• Comunicar cualquier cambio de estado inmediatamente</p>
+            <p>• El sistema permite filtrar por fechas y número de despacho</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btnCerrarProcedimiento">
+          <i class="fas fa-check"></i> Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para observaciones -->
+  <div id="modalObservaciones" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close-observaciones">&times;</span>
+        <h3><i class="fas fa-eye"></i> Observaciones del Registro</h3>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: left; line-height: 1.6;">
+          <div style="background: var(--gris-suave); padding: 20px; border-radius: 8px; border-left: 4px solid var(--maiz-oscuro);">
+            <h5 style="color: var(--azul-oscuro); margin-bottom: 15px;">Observaciones:</h5>
+            <p id="observacionesTexto" style="font-size: 16px; color: var(--negro); white-space: pre-wrap; word-wrap: break-word;">
+              Sin observaciones registradas.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btnCerrarObservaciones">
+          <i class="fas fa-check"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let registrosGlobal = [];
+    let registrosPaginados = [];
+    let paginaActual = 1;
+    const registrosPorPagina = 6;
+
+    // Funciones de paginación
+    function calcularPaginacion(registros) {
+      const totalPaginas = Math.ceil(registros.length / registrosPorPagina);
+      const inicio = (paginaActual - 1) * registrosPorPagina;
+      const fin = inicio + registrosPorPagina;
+      registrosPaginados = registros.slice(inicio, fin);
+      return totalPaginas;
+    }
+
+    function actualizarPaginacion(totalPaginas) {
+      const paginationContainer = document.getElementById('paginationContainer');
+      const paginationInfo = document.getElementById('paginationInfo');
+      const btnPrimera = document.getElementById('btnPrimera');
+      const btnAnterior = document.getElementById('btnAnterior');
+      const btnSiguiente = document.getElementById('btnSiguiente');
+      const btnUltima = document.getElementById('btnUltima');
+
+      if (totalPaginas <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+      }
+
+      paginationContainer.style.display = 'flex';
+      paginationInfo.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+
+      // Habilitar/deshabilitar botones
+      btnPrimera.disabled = paginaActual === 1;
+      btnAnterior.disabled = paginaActual === 1;
+      btnSiguiente.disabled = paginaActual === totalPaginas;
+      btnUltima.disabled = paginaActual === totalPaginas;
+    }
+
+    function irAPagina(pagina) {
+      if (pagina < 1 || pagina > Math.ceil(registrosGlobal.length / registrosPorPagina)) {
+        return;
+      }
+      paginaActual = pagina;
+      const totalPaginas = calcularPaginacion(registrosGlobal);
+      actualizarPaginacion(totalPaginas);
+      renderizarTabla();
+    }
+
+    // Función para consumir la API
+    async function obtenerDatosAPI() {
+      const api = "https://importacionesvr01crud-2946605267.us-central1.run.app";
+      const facturacion = "facturacion";
+
+      try {
+        const url = `${api}?facturacion=${facturacion}`;
+        const response = await fetch(url);
+
+        if (response.status === 200) {
+          const datos = await response.text();
+          console.log("Datos extraídos correctamente");
+          return datos;
+        } else {
+          console.error("Error al extraer los datos");
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+      } catch (error) {
+        console.error("Error en la petición:", error);
+        throw error;
+      }
+    }
+
+    function cargarTablaImportaciones(filtrados = null) {
+      const tbody = document.querySelector('#tablaImportaciones tbody');
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center">Cargando...</td></tr>';
+      let ultimoId = localStorage.getItem('ultimoIdImportacion');
+
+      const render = function (registros) {
+        if (!Array.isArray(registros) || registros.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="11" class="text-center">Sin registros</td></tr>';
+          actualizarPaginacion(0);
+          return;
+        }
+
+        // Ordenar por ID_IMPORTACIONES (más alto primero)
+        registros.sort((a, b) => {
+          return Number(b.ID_IMPORTACIONES) - Number(a.ID_IMPORTACIONES);
+        });
+
+        // Calcular paginación
+        const totalPaginas = calcularPaginacion(registros);
+        actualizarPaginacion(totalPaginas);
+        renderizarTabla(ultimoId);
+      };
+
+      if (filtrados && Array.isArray(filtrados)) {
+        render(filtrados);
+        return;
+      }
+
+      // Deshabilitar el botón de filtro mientras carga
+      document.getElementById('btnFiltrar').disabled = true;
+
+      // Consumir la API
+      obtenerDatosAPI()
+        .then(function (datos) {
+          let registros = [];
+          try {
+            // Intentar parsear como JSON
+            registros = JSON.parse(datos);
+          } catch (e) {
+            // Si no es JSON válido, intentar procesar como texto plano
+            console.log("Los datos no son JSON válido, procesando como texto");
+            registros = [];
+          }
+
+          if (Array.isArray(registros)) {
+            registrosGlobal = registros;
+          } else {
+            registrosGlobal = [];
+          }
+          render(registrosGlobal);
+        })
+        .catch(function (err) {
+          tbody.innerHTML = '<tr><td colspan="11" class="text-danger">Error al cargar datos: ' + err.message + '</td></tr>';
+        })
+        .finally(function () {
+          // Habilitar el botón de filtro cuando los datos estén listos
+          document.getElementById('btnFiltrar').disabled = false;
+          // Detectar scroll después de cargar los datos
+          setTimeout(detectarScrollHorizontal, 100);
+        });
+    }
+
+    // Función para renderizar la tabla con paginación
+    function renderizarTabla(ultimoId) {
+      const tbody = document.querySelector('#tablaImportaciones tbody');
+      tbody.innerHTML = '';
+
+      registrosPaginados.forEach(function (row, i) {
+        const tr = document.createElement('tr');
+        if (i === 0 && (String(row.ID_IMPORTACIONES) === String(ultimoId))) {
+          tr.classList.add('fila-nueva');
+        }
+
+        // Crear las celdas según la nueva estructura
+        // ID
+        const tdId = document.createElement('td');
+        tdId.textContent = row.ID_IMPORTACIONES;
+        tr.appendChild(tdId);
+
+        // Fecha Registro - solo fecha sin hora
+        const tdFechaRegistro = document.createElement('td');
+        if (row.FECHA_REGISTRO && row.FECHA_REGISTRO !== 'null' && row.FECHA_REGISTRO !== '') {
+          let fecha = String(row.FECHA_REGISTRO).split(' ')[0];
+          if (fecha.includes('/')) {
+            const partes = fecha.split('/');
+            if (partes.length === 3) {
+              fecha = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+            }
+          }
+          tdFechaRegistro.textContent = fecha;
+        } else {
+          tdFechaRegistro.textContent = '';
+        }
+        tr.appendChild(tdFechaRegistro);
+
+        // N° Despacho
+        const tdDespacho = document.createElement('td');
+        tdDespacho.textContent = row.NUMERO_DESPACHO;
+        tr.appendChild(tdDespacho);
+
+        // Solución PDF
+        const tdSolucionPdf = document.createElement('td');
+        if (row.ARCHIVO_PDF_URL && typeof row.ARCHIVO_PDF_URL === 'string' && row.ARCHIVO_PDF_URL.startsWith('http')) {
+          tdSolucionPdf.innerHTML = `<button class="btn-pdf" onclick="window.open('${row.ARCHIVO_PDF_URL}','_blank')"><i class='fas fa-file-pdf'></i> Ver PDF</button>`;
+        } else {
+          tdSolucionPdf.textContent = '';
+        }
+        tr.appendChild(tdSolucionPdf);
+
+        // Fecha de Incidencias
+        const tdFechaIncidencias = document.createElement('td');
+        if (row.INCIDENCIA_REGISTRO && row.INCIDENCIA_REGISTRO !== 'null' && row.INCIDENCIA_REGISTRO !== '') {
+          let fecha = String(row.INCIDENCIA_REGISTRO).split(' ')[0];
+          if (fecha.includes('/')) {
+            const partes = fecha.split('/');
+            if (partes.length === 3) {
+              fecha = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+            }
+          }
+          tdFechaIncidencias.textContent = fecha;
+        } else {
+          tdFechaIncidencias.textContent = '';
+        }
+        tr.appendChild(tdFechaIncidencias);
+
+        // Incidencias
+        const tdIncidencias = document.createElement('td');
+        const incidencia = row.INCIDENCIAS || '';
+        if (incidencia && incidencia.trim() !== '') {
+          tdIncidencias.innerHTML = `<span class='estado-incidencia-si'>${incidencia}</span>`;
+        } else {
+          tdIncidencias.textContent = '';
+        }
+        tr.appendChild(tdIncidencias);
+
+        // Estado de Verificación
+        const tdEstadoVerificacion = document.createElement('td');
+        const estadoVerificacion = row.ESTADO_VERIFICACION || '';
+        if (estadoVerificacion === 'VERIFICADO') {
+          tdEstadoVerificacion.innerHTML = `<span class='estado-incidencia-no'>${estadoVerificacion}</span>`;
+        } else if (estadoVerificacion === 'PENDIENTE') {
+          tdEstadoVerificacion.innerHTML = `<span class='estado-produccion'>${estadoVerificacion}</span>`;
+        } else if (estadoVerificacion && estadoVerificacion.trim() !== '') {
+          tdEstadoVerificacion.textContent = estadoVerificacion;
+        } else {
+          tdEstadoVerificacion.textContent = '';
+        }
+        tr.appendChild(tdEstadoVerificacion);
+
+        // Estado de Despacho - Mapear desde ESTADO_REGISTRO_FACTURACION
+        const tdEstadoDespacho = document.createElement('td');
+        const estadoDespacho = row.ESTADO_REGISTRO_FACTURACION || '';
+        if (estadoDespacho === 'SI') {
+          tdEstadoDespacho.innerHTML = `<span class='estado-incidencia-no'>REGISTRADO</span>`;
+        } else if (estadoDespacho === 'NO') {
+          tdEstadoDespacho.innerHTML = `<span class='estado-incidencia-si'>NO REGISTRADO</span>`;
+        } else {
+          tdEstadoDespacho.textContent = '';
+        }
+        tr.appendChild(tdEstadoDespacho);
+
+        // Fecha de Registro - Mapear desde FECHA_REGISTRO_FACTURACION
+        const tdFechaRegistroFacturacion = document.createElement('td');
+        if (row.FECHA_REGISTRO_FACTURACION && row.FECHA_REGISTRO_FACTURACION !== 'null' && row.FECHA_REGISTRO_FACTURACION !== '') {
+          tdFechaRegistroFacturacion.textContent = row.FECHA_REGISTRO_FACTURACION;
+        } else {
+          tdFechaRegistroFacturacion.textContent = '';
+        }
+        tr.appendChild(tdFechaRegistroFacturacion);
+
+        // Observaciones - Botón de ojo
+        const tdObservaciones = document.createElement('td');
+        const observaciones = row.OBSERVACIONES_FACTURACION || '';
+        if (observaciones && observaciones.trim() !== '') {
+          tdObservaciones.innerHTML = `<button class="btn-observaciones" onclick="abrirModalObservaciones('${observaciones.replace(/'/g, "\\'")}')" title="Ver observaciones"><i class="fas fa-eye"></i></button>`;
+        } else {
+          tdObservaciones.innerHTML = `<button class="btn-observaciones" disabled title="Sin observaciones"><i class="fas fa-eye"></i></button>`;
+        }
+        tr.appendChild(tdObservaciones);
+
+        // Acciones
+        const tdAcciones = document.createElement('td');
+        // Usar ID_IMPORTACIONES real y campos de facturación
+        tdAcciones.innerHTML = `<button class="btn-actualizar" onclick="abrirModalActualizar(${row.ID_IMPORTACIONES}, '${row.ESTADO_REGISTRO_FACTURACION || ''}', '${row.OBSERVACIONES_FACTURACION || ''}')"><i class='fas fa-edit'></i> Editar</button>`;
+        tr.appendChild(tdAcciones);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Función para abrir modal de observaciones
+    function abrirModalObservaciones(observaciones) {
+      const modal = document.getElementById('modalObservaciones');
+      const textoObservaciones = document.getElementById('observacionesTexto');
+      
+      if (observaciones && observaciones.trim() !== '') {
+        textoObservaciones.textContent = observaciones;
+      } else {
+        textoObservaciones.textContent = 'Sin observaciones registradas.';
+      }
+      
+      modal.style.display = 'block';
+    }
+
+    // Función para cerrar modal de observaciones
+    function cerrarModalObservaciones() {
+      document.getElementById('modalObservaciones').style.display = 'none';
+    }
+
+    document.getElementById('btnFiltrar').onclick = function () {
+      if (!Array.isArray(registrosGlobal) || registrosGlobal.length === 0) {
+        return;
+      }
+      const fechaInicio = document.getElementById('filtroFechaInicio').value;
+      const fechaFinal = document.getElementById('filtroFechaFinal').value;
+      const despacho = document.getElementById('filtroDespacho').value.trim().toLowerCase();
+
+      let filtrados = registrosGlobal.filter(function (row) {
+        // Fecha Registro
+        let cumpleFecha = true;
+        if (fechaInicio) {
+          let f = row.FECHA_REGISTRO;
+          if (f && f.length >= 10) {
+            let fRow = f.split(' ')[0].split('/').reverse().join('-');
+            cumpleFecha = cumpleFecha && (fRow >= fechaInicio);
+          }
+        }
+        if (fechaFinal) {
+          let f = row.FECHA_REGISTRO;
+          if (f && f.length >= 10) {
+            let fRow = f.split(' ')[0].split('/').reverse().join('-');
+            cumpleFecha = cumpleFecha && (fRow <= fechaFinal);
+          }
+        }
+
+        // N° Despacho
+        let cumpleDespacho = true;
+        if (despacho) {
+          cumpleDespacho = String(row.NUMERO_DESPACHO || '').toLowerCase().includes(despacho);
+        }
+
+        return cumpleFecha && cumpleDespacho;
+      });
+      
+      // Resetear a la primera página cuando se filtra
+      paginaActual = 1;
+      cargarTablaImportaciones(filtrados);
+    };
+
+    // Funciones para el modal
+    function abrirModalActualizar(id, estadoDespacho, observaciones) {
+      document.getElementById('idImportacion').value = id;
+      document.getElementById('estadoDespacho').value = estadoDespacho || '';
+      document.getElementById('observaciones').value = observaciones || '';
+      document.getElementById('modalActualizar').style.display = 'block';
+    }
+
+    // Función para abrir modal de procedimiento
+    function abrirModalProcedimiento() {
+      document.getElementById('modalProcedimiento').style.display = 'block';
+    }
+
+    // Función para cerrar modal de procedimiento
+    function cerrarModalProcedimiento() {
+      document.getElementById('modalProcedimiento').style.display = 'none';
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalActualizar').style.display = 'none';
+      document.getElementById('formActualizar').reset();
+    }
+
+    async function actualizarRegistro() {
+      const id = document.getElementById('idImportacion').value;
+      const estadoDespacho = document.getElementById('estadoDespacho').value;
+      const observaciones = document.getElementById('observaciones').value;
+
+      if (!id) {
+        alert('Error: No se pudo identificar el registro');
+        return;
+      }
+
+      try {
+        const api = "https://importacionesvr01crud-2946605267.us-central1.run.app";
+        const facturacion = "facturacion"; // Área según la guía de Python
+
+        // Construir URL con parámetros de consulta
+        const url = `${api}?area=${facturacion}`;
+
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: id,
+            estado_registro: estadoDespacho || null,
+            observaciones: observaciones || null
+          })
+        });
+
+        if (response.status === 200) {
+          alert('Importación actualizada exitosamente');
+          cerrarModal();
+          cargarTablaImportaciones(); // Recargar la tabla
+        } else {
+          const errorData = await response.text();
+          alert('ERROR: ' + errorData);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al actualizar el registro: ' + error.message);
+      }
+    }
+
+    // Event listeners para el modal
+    document.addEventListener('DOMContentLoaded', function () {
+      const modal = document.getElementById('modalActualizar');
+      const modalProcedimiento = document.getElementById('modalProcedimiento');
+      const modalObservaciones = document.getElementById('modalObservaciones');
+      const closeBtn = document.querySelector('.close');
+      const closeBtnProcedimiento = document.querySelector('.close-procedimiento');
+      const closeBtnObservaciones = document.querySelector('.close-observaciones');
+      const btnCancelar = document.getElementById('btnCancelar');
+      const btnGuardar = document.getElementById('btnGuardar');
+      const btnProcedimiento = document.getElementById('btnProcedimiento');
+      const btnCerrarProcedimiento = document.getElementById('btnCerrarProcedimiento');
+      const btnCerrarObservaciones = document.getElementById('btnCerrarObservaciones');
+
+      // Event listeners para paginación
+      document.getElementById('btnPrimera').onclick = () => irAPagina(1);
+      document.getElementById('btnAnterior').onclick = () => irAPagina(paginaActual - 1);
+      document.getElementById('btnSiguiente').onclick = () => irAPagina(paginaActual + 1);
+      document.getElementById('btnUltima').onclick = () => irAPagina(Math.ceil(registrosGlobal.length / registrosPorPagina));
+
+      // Cerrar modal con X
+      closeBtn.onclick = cerrarModal;
+
+      // Cerrar modal con botón cancelar
+      btnCancelar.onclick = cerrarModal;
+
+      // Guardar cambios
+      btnGuardar.onclick = actualizarRegistro;
+
+      // Event listeners para modal de procedimiento
+      btnProcedimiento.onclick = abrirModalProcedimiento;
+      closeBtnProcedimiento.onclick = cerrarModalProcedimiento;
+      btnCerrarProcedimiento.onclick = cerrarModalProcedimiento;
+
+      // Event listeners para modal de observaciones
+      closeBtnObservaciones.onclick = cerrarModalObservaciones;
+      btnCerrarObservaciones.onclick = cerrarModalObservaciones;
+
+      // Cerrar modales haciendo clic fuera
+      window.onclick = function (event) {
+        if (event.target === modal) {
+          cerrarModal();
+        }
+        if (event.target === modalProcedimiento) {
+          cerrarModalProcedimiento();
+        }
+        if (event.target === modalObservaciones) {
+          cerrarModalObservaciones();
+        }
+      }
+    });
+
+    // Escuchar evento de registro exitoso para guardar el último ID
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'ultimoIdImportacion') {
+        cargarTablaImportaciones();
+      }
+    });
+
+    // Función para detectar scroll horizontal
+    function detectarScrollHorizontal() {
+      const tableContainer = document.querySelector('.table-container');
+      const tableResponsive = document.querySelector('.table-responsive');
+
+      if (tableResponsive.scrollWidth > tableResponsive.clientWidth) {
+        tableContainer.classList.add('has-scroll');
+      } else {
+        tableContainer.classList.remove('has-scroll');
+      }
+    }
+
+    window.onload = function () {
+      cargarTablaImportaciones();
+
+      // Detectar scroll después de cargar la tabla
+      setTimeout(detectarScrollHorizontal, 1000);
+
+      // Detectar scroll cuando cambie el tamaño de la ventana
+      window.addEventListener('resize', detectarScrollHorizontal);
+    };
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado Importaciones - ZEUS SAFETY</title>
+    <link rel="icon" type="image/png" href="/Logo de Zeus.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/styles.css">
+    <style>
+        /* Estilos específicos para la página de importaciones */
+        .importaciones-container {
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .content-card {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .filters-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: var(--bg-tertiary);
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .form-control {
+            border-radius: var(--border-radius);
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem;
+            transition: var(--transition);
+            width: 100%;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .table {
+            margin: 0;
+            background: var(--bg-primary);
+        }
+        
+        .table thead th {
+            background: var(--primary-color) !important;
+            color: white !important;
+            border: none;
+            font-weight: 600;
+            padding: 1rem 0.75rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .table td {
+            padding: 0.75rem;
+            border-color: #e2e8f0;
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+        
+        .table-striped>tbody>tr:nth-of-type(odd) {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(30, 58, 138, 0.05);
+            transform: scale(1.005);
+            transition: var(--transition);
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-transito {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .status-produccion {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .status-eta {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .canal-rojo {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .canal-verde {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .canal-amarillo {
+            background: var(--warning-color);
+            color: var(--text-primary);
+        }
+        
+        .incidencia-si {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .incidencia-no {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn-action {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .btn-action:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Sub-menu styles */
+        .menu-item.active {
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+        }
+        
+        .menu-item.active:hover {
+            background: var(--primary-dark);
+        }
+        
+        .menu-item {
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+        
+        .menu-item:hover {
+            background: var(--bg-tertiary);
+            border-radius: var(--border-radius);
+        }
+        
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .pagination-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .pagination-btn:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .pagination-info {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin: 0 1rem;
+        }
+        
+        /* Modal styles */
+        .modal-content {
+            border-radius: var(--border-radius-lg);
+            border: none;
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            border-bottom: none;
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        }
+        
+        .modal-title {
+            font-weight: 700;
+        }
+        
+        .btn-close {
+            filter: invert(1);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1.5rem 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .content-card {
+                margin: 0 -0.5rem 1rem;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .filters-section {
+                padding: 1rem;
+            }
+            
+            .table-container {
+                font-size: 0.875rem;
+            }
+            
+            .table thead th,
+            .table td {
+                padding: 0.5rem 0.25rem;
+            }
+            
+            .pagination-container {
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+            
+            .pagination-info {
+                margin: 0.5rem 0;
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.25rem;
+            }
+            
+            .table {
+                font-size: 0.75rem;
+            }
+            
+            .status-badge {
+                font-size: 0.625rem;
+                padding: 0.125rem 0.5rem;
+            }
+            
+            .btn-action {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <img src="../../Logo de Zeus.png" alt="ZEUS SAFETY Logo" class="logo">
+                <div class="logo-text">
+                    <h1 class="brand-name">ZEUS SAFETY</h1>
+                    <span class="brand-subtitle">Sistema de Integración</span>
+                </div>
+            </div>
+            <button class="sidebar-toggle d-lg-none" id="sidebarToggle">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <h6 class="section-title">MÓDULOS</h6>
+                <div class="menu-items">
+                    <a href="../../menu.html" class="menu-item">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Volver al Menú</span>
+                    </a>
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-ship"></i>
+                        <span>Importaciones</span>
+                    </a>
+                    {{subMenus}}
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name" id="username-display">Usuario</span>
+                    <span class="user-role">Administrador</span>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logoutUser()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Overlay para móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="main-content importaciones-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <button class="sidebar-toggle-mobile d-lg-none" id="sidebarToggleMobile">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item active">Listado Importaciones</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="header-btn" title="Notificaciones">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+                <div class="current-time" id="currentTime"></div>
+            </div>
+        </header>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-ship"></i> Listado Importaciones
+            </h1>
+            <p class="page-subtitle">Gestión y actualización de registros de importación</p>
+        </div>
+
+        <!-- Content -->
+        <div class="dashboard-content">
+            <div class="content-card">
+                <!-- Filters Section -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="form-group">
+                            <label class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="filtroFechaInicio">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha Final</label>
+                            <input type="date" class="form-control" id="filtroFechaFinal">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">N° de Despacho</label>
+                            <input type="text" class="form-control" id="filtroDespacho" placeholder="Buscar...">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-primary w-100" id="btnFiltrar">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Section -->
+                <div class="table-container">
+                    <table class="table table-striped table-hover align-middle" id="tablaImportaciones">
+                        <thead>
+                            <tr>
+                                <th>Fecha Registro</th>
+                                <th>N° Despacho</th>
+                                <th>Redactado por</th>
+                                <th>Productos</th>
+                                <th>Archivo_PDF</th>
+                                <th>Fecha Llegada</th>
+                                <th>Tipo de Carga</th>
+                                <th>Fecha de Almacén</th>
+                                <th>Estado</th>
+                                <th>Canal</th>
+                                <th>Fecha Recepción</th>
+                                <th>Incidencias</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="13" class="text-center">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination-container" id="paginationContainer" style="display: none;">
+                    <button class="pagination-btn" id="btnPrimera" title="Primera página">
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="pagination-btn" id="btnAnterior" title="Página anterior">
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
+                    <button class="pagination-btn" id="btnSiguiente" title="Página siguiente">
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="pagination-btn" id="btnUltima" title="Última página">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Actualizar -->
+    <div class="modal fade" id="modalActualizar" tabindex="-1" aria-labelledby="modalActualizarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalActualizarLabel">
+                        <i class="fas fa-edit"></i> Actualizar Importación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formActualizar">
+                        <input type="hidden" id="upd_id">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha Registro</label>
+                                <input type="text" class="form-control" id="upd_fecha_registro" readonly
+                                    style="background-color: var(--bg-tertiary);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">N° Despacho</label>
+                                <input type="text" class="form-control" id="upd_despacho" readonly 
+                                    style="background-color: var(--bg-tertiary);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Redactado por</label>
+                                <input type="text" class="form-control" id="upd_redactado" readonly 
+                                    style="background-color: var(--bg-tertiary);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha Llegada de Productos</label>
+                                <input type="date" class="form-control" id="upd_fecha_llegada" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Almacén</label>
+                                <input type="date" class="form-control" id="upd_fecha_almacen">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Productos</label>
+                                <textarea class="form-control" id="upd_productos" rows="3" required></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Carga</label>
+                                <select class="form-control" id="upd_tipo_carga" required>
+                                    <option value="">Seleccione el Tipo de Carga</option>
+                                    <option value="1 CONTENEDOR 40 HQ">1 CONTENEDOR 40 HQ</option>
+                                    <option value="1 CONTENEDOR 40 NOR">1 CONTENEDOR 40 NOR</option>
+                                    <option value="1 CONTENEDOR 20 ST">1 CONTENEDOR 20 ST</option>
+                                    <option value="CONSOLIDADO">CONSOLIDADO</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estado</label>
+                                <select class="form-control" id="upd_estado" required>
+                                    <option value="PRODUCCION">PRODUCCIÓN</option>
+                                    <option value="TRANSITO">TRÁNSITO</option>
+                                    <option value="ETA">ETA</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Canal</label>
+                                <select class="form-control" id="upd_canal">
+                                    <option value="">Seleccione un canal</option>
+                                    <option value="ROJO">ROJO</option>
+                                    <option value="VERDE">VERDE</option>
+                                    <option value="AMARILLO">AMARILLO</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarActualizacion">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../js/script.js"></script>
+    <script src="../../js/importaciones.js"></script>
+</body>
+</html>

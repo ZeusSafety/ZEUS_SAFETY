@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listado de Solicitudes</title>
+  <link rel="icon" type="image/png" href="https://cibertecedgar.github.io/marcalogo/logozeus.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a2e0e6ad8b.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Font Awesome CDN -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f4f7f6;
+  }
+
+  .table-container {
+    padding: 2rem;
+    background-color: #ffffff;
+    margin: 2rem auto;
+    border-radius: 0.75rem;
+    /* rounded corners */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    max-width: 98%;
+    /* Fluid width */
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #e2f0ff;
+  }
+
+  .badge {
+    padding: 0.4em 0.7em;
+    border-radius: 0.5em;
+    font-weight: bold;
+  }
+
+  .badge.bg-success {
+    background-color: #28a745 !important;
+  }
+
+  .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #343a40 !important;
+  }
+
+  .badge.bg-danger {
+    background-color: #dc3545 !important;
+  }
+
+  /* Colores personalizados para estados */
+  .badge.estado-pendiente {
+    background-color: #ffc107 !important;
+    color: #343a40 !important;
+  }
+
+  .badge.estado-revision {
+    background-color: #fd7e14 !important;
+    color: #ffffff !important;
+  }
+
+  .badge.estado-proceso {
+    background-color: #176CCF !important;
+    color: #ffffff !important;
+  }
+
+  .badge.estado-completado {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+  }
+
+  .modal-content {
+    border-radius: 0.75rem;
+    /* rounded corners */
+  }
+
+  .modal-header.bg-dark {
+    background-color: #343a40 !important;
+    color: #fff;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+  }
+
+  .btn {
+    border-radius: 0.5rem;
+    /* rounded corners for buttons */
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  header-logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .header-logo img {
+    max-width: 150px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .header-logo img:hover {
+    transform: scale(1.05);
+  }
+
+  .header-title {
+    flex: 1;
+    text-align: center;
+    margin: 0 20px;
+  }
+
+  .header-spacer {
+    width: 150px;
+    /* Mismo ancho que el logo para mantener centrado el título */
+  }
+
+  .header-title h1 {
+    color: white;
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+  }
+
+  /* Header */
+  .header-container {
+    background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+    box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+    padding-top: 1px;
+    padding-left: 20px;
+    padding-bottom: 0px;
+    padding-right: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    margin-top: -20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .btn-volver {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-listado-flotante {
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .card {
+      margin-top: 20px;
+    }
+
+    .header-container {
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      margin-top: -20px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+    }
+
+    .header-logo img {
+      max-width: 120px;
+    }
+
+    .header-spacer {
+      display: none;
+    }
+  }
+
+  #modalProcedimiento .modal-content {
+    font-family: 'Segoe UI', sans-serif;
+    line-height: 1.5;
+  }
+
+  #modalProcedimiento h6 {
+    margin-bottom: 0.3rem;
+  }
+
+  #modalProcedimiento ul {
+    margin-bottom: 1rem;
+    padding-left: 1.2rem;
+  }
+</style>
+
+<body>
+  <!-- Header con Logo y Título -->
+  <div class="header-container">
+    <div class="header-logo">
+      <img src="https://cibertecedgar.github.io/marcalogo/logozeus.png" alt="Logo Zeus">
+    </div>
+
+    <div class="header-title">
+      <h1>LOGISTICA: SOLICITUDES E INCIDENCIAS RECIBIDAS</h1>
+    </div>
+    <div class="header-spacer"></div>
+  </div>
+
+  <div class="table-container">
+    <div class="header-actions me-3">
+      <button class="btn btn-danger text-white rounded-pill px-3 ms-2" style="background-color:#1a62c0; border:none;"
+        onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Volver
+      </button>
+
+      <button class="btn btn-info text-white rounded-pill px-3" style="background-color:#17a2b8; border:none;"
+        data-bs-toggle="modal" data-bs-target="#modalProcedimiento">
+        📖 Procedimientos
+      </button>
+
+      <button class="btn btn-danger text-white rounded-pill px-3 ms-2" style="background-color:#dc3545; border:none;"
+        onclick="exportarPDF()">
+        📑 Exportar a PDF
+      </button>
+    </div>
+
+    <div class="container my-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-3">
+          <label for="filtroArea" class="form-label">Área de Recepción</label>
+          <select id="filtroArea" class="form-select">
+            <option value="">Todas las áreas</option>
+            <option value="LOGISTICA">LOGISTICA</option>
+            <option value="MARKETING">MARKETING</option>
+            <option value="VENTAS">VENTAS</option>
+            <option value="FACTURACION">FACTURACIÓN</option>
+            <option value="IMPORTACION">IMPORTACIÓN</option>
+            <option value="ADMINISTRACION">ADMINISTRACION</option>
+            <option value="SISTEMAS">SISTEMAS</option>
+            <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+          </select>
+        </div>
+
+        <div class="col-3">
+          <label for="filtroRegistrado" class="form-label">Colaborador</label>
+          <input type="text" id="filtroRegistrado" class="form-control" placeholder="Escribe un nombre...">
+        </div>
+
+        <div class="col-3">
+          <label for="filtroEstado" class="form-label">Estado</label>
+          <select id="filtroEstado" class="form-select">
+            <option value="">Todos los estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En Proceso">En Proceso</option>
+            <option value="En Revisión">En Revisión</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </div>
+
+        <div class="col-3">
+          <div class="form-check mt-4">
+            <label class="form-check-label" for="filtroIncidencia">Mostrar Incidencias</label>
+            <input class="form-check-input" type="checkbox" id="filtroIncidencia">
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle" id="tablaSolicitudes">
+        <thead class="table-info">
+          <tr style="text-align: center; --bs-table-color: #f3f3f3; --bs-table-bg: #1e4d7a;">
+            <th>Fecha Consulta</th>
+            <th>N° Solicitud</th>
+            <th>Registrado Por</th>
+            <th>Área de Envio</th>
+            <th>Con Incidencia</th>
+            <th>Informe</th>
+            <th>Área de Recepción</th>
+            <th>Fecha Respuesta</th>
+            <th>Respondido Por</th>
+            <th>Respuesta</th>
+            <th>Estado</th>
+            <th>Con Reprogramación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoTablaSolicitudes">
+          <!-- Las filas se cargarán aquí -->
+        </tbody>
+      </table>
+      <div id="pagination" class="mt-3"></div>
+    </div>
+  </div>
+
+  <!-- Modal de edición (Actualizar Respuesta) -->
+  <div class="modal fade" id="modalEdicion" tabindex="-1" aria-labelledby="modalEdicionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="modalEdicionLabel">Actualizar Respuesta</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Datos de Respuesta (editables) -->
+          <h6>✍️ Datos de la respuesta</h6>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="fechaRespuestaModal" class="form-label">Fecha y Hora Respuesta</label>
+              <input type="text" class="form-control rounded-md" id="fechaRespuestaModal" readonly
+                style="background-color: #f8f9fa;" placeholder="Se generará automáticamente">
+            </div>
+            <div class="col-md-6">
+              <label for="respondidoPorModal" class="form-label">Respondido Por</label>
+              <select class="form-select rounded-md" id="respondidoPorModal" onchange="toggleOtrosField()">
+                <option value="">Seleccionar...</option>
+                <option value="JOSEPH">JOSEPH</option>
+                <option value="JOSELYN">JOSELYN</option>
+                <option value="OTROS">OTROS</option>
+              </select>
+              <div id="otrosFieldContainer" style="display: none; margin-top: 10px;">
+                <label for="otrosNombreModal" class="form-label">Nombre de la persona</label>
+                <input type="text" class="form-control rounded-md" id="otrosNombreModal"
+                  placeholder="Escriba el nombre completo">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="respuestaModal" class="form-label">Respuesta</label>
+            <textarea class="form-control rounded-md" id="respuestaModal" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="informeRespuestaModal" class="form-label">Informe (Archivos PDF, rar, zip)</label>
+
+            <!-- Input de carga -->
+            <input type="file" id="informeRespuestaModal" class="form-control" accept=".pdf,.rar,.zip">
+
+            <!-- Link para visualizar el archivo -->
+            <div id="verArchivoContainer" class="mt-2" style="display:none;">
+              <a id="verArchivoBtn" href="#" target="_blank" class="btn btn-outline-primary btn-sm">
+                Ver archivo
+              </a>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="estadoModal" class="form-label">Estado</label>
+            <select class="form-select rounded-md" id="estadoModal">
+              <option value="Pendiente">Pendiente</option>
+              <option value="En Revisión">En Revisión</option>
+              <option value="En Proceso">En Proceso</option>
+              <option value="Completado">Completado</option>
+            </select>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input rounded-md" type="checkbox" id="chkReprogramacion">
+            <label class="form-check-label" for="chkReprogramacion">Reprogramación</label>
+          </div>
+
+          <!-- Campos ocultos de reprogramación -->
+          <div id="camposReprogramacion" class="hidden">
+            <h6 class="mt-4">↩️ Detalles de Reprogramación</h6>
+            <!-- Primera Reprogramación -->
+            <div id="reprog1" class="card mb-3 hidden">
+              <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">1ra Reprogramación</h6>
+                <div>
+                  <!-- Botón + -->
+                  <button id="btnAddReprog2" type="button" class="btn btn-success btn-sm me-1"
+                    title="Agregar 2da reprogramación" onclick="mostrarReprog2()">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="fechaReprogramacionModal" class="form-label">Fecha y hora Reprogramación</label>
+                    <input type="datetime-local" class="form-control rounded-md" id="fechaReprogramacionModal">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="respuestaReprogramacionModal" class="form-label">Motivo Reprogramación</label>
+                  <textarea class="form-control rounded-md" id="respuestaReprogramacionModal" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                  <label for="informeReprogramacionModal" class="form-label">Informe Reprogramación (Archivos PDF, rar, zip)</label>
+                  <input type="file" class="form-control rounded-md" id="informeReprogramacionModal"
+                    accept=".pdf,.rar,.zip">
+                  <div id="archivoExistente1" class="mt-2" style="display: none;">
+                    <a href="#" id="verArchivoReprog1" class="btn btn-sm btn-outline-primary" target="_blank">
+                      <i class="fas fa-file-pdf"></i> Ver archivo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Segunda Reprogramación (inicialmente oculta) -->
+            <div id="reprog2" class="card mb-3 hidden">
+              <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">2da Reprogramación</h6>
+                <div>
+                  <!-- Botón + -->
+                  <button id="btnAddReprog3" type="button" class="btn btn-success btn-sm me-1"
+                    title="Agregar 3ra reprogramación" onclick="mostrarReprog3()">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                  <!-- Botón - -->
+                  <button type="button" class="btn btn-danger btn-sm" title="Cerrar 2da reprogramación"
+                    onclick="ocultarReprog2()">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="fechaReprogramacion2Modal" class="form-label">Fecha y hora Reprogramación</label>
+                    <input type="datetime-local" class="form-control rounded-md" id="fechaReprogramacion2Modal">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="respuestaReprogramacion2Modal" class="form-label">Motivo Reprogramación</label>
+                  <textarea class="form-control rounded-md" id="respuestaReprogramacion2Modal" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                  <label for="informeReprogramacion2Modal" class="form-label">Informe Reprogramación (Archivos PDF, rar, zip  )</label>
+                  <input type="file" class="form-control rounded-md" id="informeReprogramacion2Modal"
+                    accept=".pdf,.rar,.zip">
+                  <div id="archivoExistente2" class="mt-2" style="display: none;">
+                    <a href="#" id="verArchivoReprog2" class="btn btn-sm btn-outline-primary" target="_blank">
+                      <i class="fas fa-file-pdf"></i> Ver archivo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Tercera Reprogramación (inicialmente oculta) -->
+            <div id="reprog3" class="card mb-3 hidden">
+              <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">3ra Reprogramación</h6>
+                <div>
+                  <button type="button" class="btn btn-danger btn-sm" title="Cerrar 3ra reprogramación"
+                    onclick="ocultarReprog3()">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="fechaReprogramacion3Modal" class="form-label">Fecha y hora Reprogramación</label>
+                    <input type="datetime-local" class="form-control rounded-md" id="fechaReprogramacion3Modal">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="respuestaReprogramacion3Modal" class="form-label">Motivo Reprogramación</label>
+                  <textarea class="form-control rounded-md" id="respuestaReprogramacion3Modal" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                  <label for="informeReprogramacion3Modal" class="form-label">Informe Reprogramación (Archivos PDF, rar, zip  )</label>
+                  <input type="file" class="form-control rounded-md" id="informeReprogramacion3Modal"
+                    accept=".pdf,.rar,.zip">
+                  <div id="archivoExistente3" class="mt-2" style="display: none;">
+                    <a href="#" id="verArchivoReprog3" class="btn btn-sm btn-outline-primary" target="_blank">
+                      <i class="fas fa-file-pdf"></i> Ver archivo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="idRespuestaHidden">
+          <input type="hidden" id="idMarketingHidden">
+          <input type="hidden" id="idSolicitudHidden">
+          <input type="hidden" id="origRespRespuestaHidden" value="">
+          <input type="hidden" id="origInformeRespuestaHidden" value="">
+          <input type="hidden" id="existingReprogCountHidden" value="0">
+          <!-- IDs y valores originales de reprogramaciones para detectar cambios -->
+          <input type="hidden" id="idReprog1Hidden">
+          <input type="hidden" id="idReprog2Hidden">
+          <input type="hidden" id="idReprog3Hidden">
+          <input type="hidden" id="origRespReprog1">
+          <input type="hidden" id="origRespReprog2">
+          <input type="hidden" id="origRespReprog3">
+          <input type="hidden" id="origInformeReprog1">
+          <input type="hidden" id="origInformeReprog2">
+          <input type="hidden" id="origInformeReprog3">
+
+          <div id="progressContainer" class="mb-3" style="display: none;">
+            <label class="form-label" id="progressLabel">Subiendo archivos...</label>
+            <div class="progress">
+              <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                0%
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-md" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary rounded-md" onclick="guardarCambios()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ver texto de Requerimientos/Respuestas -->
+  <div class="modal fade" id="modalTextoViewer" tabindex="-1" aria-labelledby="modalTextoViewerLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="modalTextoViewerLabel">Detalle</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="textoModalViewer"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ver reprogramaciones -->
+  <div class="modal fade" id="modalReprogramaciones" tabindex="-1" aria-labelledby="modalReprogramacionesLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="modalReprogramacionesLabel">📑 Reprogramaciones</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="accordion" id="accordionReprogramaciones">
+            <!-- Aquí se cargan dinámicamente las secciones -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal Procedimiento -->
+  <div class="modal fade" id="modalProcedimiento" tabindex="-1" aria-labelledby="modalProcedimientoLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0 rounded-4">
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold" id="modalProcedimientoLabel">📖 Procedimiento de Uso</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted">Este sistema permite gestionar y dar seguimiento a las solicitudes de manera rápida y
+            organizada. A continuación, se detalla su funcionamiento:</p>
+
+          <div class="mb-3">
+            <h6 class="fw-bold text-primary">🔎 Filtros</h6>
+            <ul class="small text-muted">
+              <li>Filtra las solicitudes por <strong>Área</strong>, <strong>Colaborador</strong>, <strong>Estado</strong> y <strong>Incidencia</strong>.
+              </li>
+              <li>El filtro de <strong>Colaborador</strong> funciona en tiempo real mientras escribes.</li>
+              <li>Se permite hacer <strong>Filtros Combinados</strong> funciona en tiempo real.</li>
+            </ul>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold text-primary">✍️ Responder Solicitudes</h6>
+            <ul class="small text-muted">
+              <li>En la columna <strong>Acciones</strong> podrás abrir el formulario de respuesta.</li>
+              <li>Completa los campos de <em>Respondido por</em>, <em>Respuesta</em> e
+                <em>Informe (opcional)</em>.
+              </li>
+              <li>Puedes adjuntar un archivo PDF y luego visualizarlo con el botón <strong>Ver archivo</strong>.</li>
+            </ul>
+            <strong>🚨 IMPORTANTE: SOLO TIENEN MÁXIMO 48 HORAS PARA RESPONDER O ATENDER UNA SOLICITUD/INCIDENCIA</strong>.
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold text-primary">🔄 Reprogramaciones</h6>
+            <ul class="small text-muted">
+              <li>Si es necesario reprogramar, activa el <strong>checkbox de Reprogramación</strong>.</li>
+              <li>Se permite máximo <strong>1 reprogramación</strong>.</li>
+              <li>Si se trata de un caso complicado, se permite un máximo de <strong>3 reprogramaciones</strong>.</li>
+              <li>Para agregar una nueva reprogramación, usa el <strong>botón verde ➕</strong> en la primera o segunda
+                reprogramación.</li>
+              <li>En los campos de reprogramación se puede escribir el <em>motivo</em> y opcionalmente un
+                <em>link a documentos</em>.
+              </li>
+            </ul>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold text-primary">📑 Visualización</h6>
+            <ul class="small text-muted">
+              <li>Si una solicitud tiene reprogramaciones, en la columna <strong>Con reprogramación</strong> se mostrará
+                <strong>SI</strong>.
+              </li>
+              <li>Al lado aparecerá un botón para abrir el detalle de todas las reprogramaciones registradas.</li>
+            </ul>
+
+            <ul>
+              <li>📎 <b>Informe:</b> Puedes adjuntar un archivo como soporte <b>PDF, .rar, .zip,
+                  etc</li>
+              <h2></h2>
+              <ul>
+                📌Selecciona la opción marcada de rojo para que el sistema muestre todos tus archivos
+                <h2></h2>
+                <img src="https://cibertecedgar.github.io/img-archivo/image-archivo.png" alt="" width="80%" height="10%">
+              </ul>
+              <h2></h2>
+
+              <h6>💬 Sugerencia</h6>
+              - Si en caso subiras varios pdf usar la siguiente pagina para <b>concatenar PDFs</b> link: <a
+                href="https://www.ilovepdf.com/es/unir_pdf" target="_blank">https://www.ilovepdf.com/es/unir_pdf</a><br>
+              </p>
+            </ul>
+
+          </div>
+        </div>
+        <div class="modal-footer bg-light rounded-bottom-4">
+          <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+<script>
+  // Función para escapar HTML y prevenir XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Normaliza fecha/hora (con espacio o con microsegundos) a formato input datetime-local (YYYY-MM-DDTHH:MM)
+  if (typeof toLocal !== 'function') {
+    function toLocal(str) {
+      if (!str) return "";
+      try {
+        const s = String(str);
+        const noMicros = s.includes('.') ? s.split('.')[0] : s;
+        const isoish = noMicros.replace(' ', 'T');
+        const d = new Date(isoish);
+        if (isNaN(d)) return "";
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } catch { return ""; }
+    }
+  }
+
+  let datosGlobales = [];
+  // Se ejecuta cuando el DOM está completamente cargado
+  document.addEventListener("DOMContentLoaded", function () {
+    obtenerDatos(); // Llama a la función para cargar los datos en la tabla
+
+    // Agrega el evento 'change' al checkbox de reprogramación
+    document.getElementById("chkReprogramacion").addEventListener("change", function () {
+      const campos = document.getElementById("camposReprogramacion");
+      if (this.checked) {
+        campos.classList.remove("hidden");
+        document.getElementById("reprog1").classList.remove("hidden");
+        document.getElementById("reprog2").classList.add("hidden");
+        document.getElementById("reprog3").classList.add("hidden");
+        document.getElementById("btnAddReprog2").classList.remove("hidden");
+        document.getElementById("btnAddReprog3").classList.add("hidden");
+      } else {
+        campos.classList.add("hidden");
+        document.getElementById("reprog1").classList.add("hidden");
+        document.getElementById("reprog2").classList.add("hidden");
+        document.getElementById("reprog3").classList.add("hidden");
+      }
+    });
+
+    // Limpiar modal cuando se cierre
+    document.getElementById("modalEdicion").addEventListener("hidden.bs.modal", function () {
+      limpiarModal();
+    });
+
+    // Funciones para mostrar progresivamente las reprogramaciones
+    window.mostrarReprog2 = function () {
+      document.getElementById("reprog2").classList.remove("hidden");
+      document.getElementById("btnAddReprog2").classList.add("hidden");
+      document.getElementById("btnAddReprog3").classList.remove("hidden");
+    };
+    window.mostrarReprog3 = function () {
+      document.getElementById("reprog3").classList.remove("hidden");
+      document.getElementById("btnAddReprog3").classList.add("hidden");
+    };
+  });
+
+  /**
+   * Llama a la función de Apps Script para obtener los datos
+   * y, en caso de éxito, los pinta en la tabla.
+   */
+  async function obtenerDatos() {
+    // Muestra un mensaje de carga mientras se obtienen los datos
+    const tbody = document.getElementById("cuerpoTablaSolicitudes");
+    tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando solicitudes...</td></tr>';
+
+    try {
+      const response = await fetch('https://registrosolicitudeseincidencias-2946605267.us-central1.run.app?listado=logistica', {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Datos recibidos de la API:', data);
+
+      // Verificar la estructura de los datos
+      if (Array.isArray(data)) {
+        data.forEach((item, index) => {
+          if (item.REPROGRAMACIONES) {
+            console.log(`Reprogramaciones para el ítem ${index}:`, item.REPROGRAMACIONES);
+          }
+        });
+      }
+
+      pintarTabla(data);
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+      tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-danger">Error al cargar los datos: ' + error.message + '</td></tr>';
+    }
+  }
+
+  let datosFiltradosGlobal = [];
+  let currentPage = 1;
+  const rowsPerPage = 15;
+
+  function pintarTabla(data) {
+    datosGlobales = data; // Guardamos todos los datos al inicio
+    aplicarFiltros(); // Mostrar aplicando filtros
+    currentPage = 1;
+  }
+
+  /**
+   * Pinta las filas de la tabla con los datos recibidos de Apps Script.
+   * @param {Array<Object>} data - Un array de objetos, donde cada objeto es una solicitud.
+   */
+  function aplicarFiltros() {
+    const areaSeleccionada = document.getElementById("filtroArea").value;
+    const estadoSeleccionado = document.getElementById("filtroEstado").value;
+    const registradoTexto = document.getElementById("filtroRegistrado").value.toLowerCase();
+    const soloIncidencias = document.getElementById("filtroIncidencia").checked;
+
+    // Filtrar datos según lo seleccionado
+    datosFiltradosGlobal = datosGlobales.filter(solicitud => {
+      const cumpleArea = !areaSeleccionada || solicitud.AREA === areaSeleccionada;
+      const cumpleEstado = !estadoSeleccionado || solicitud.ESTADO === estadoSeleccionado;
+      const cumpleRegistrado = !registradoTexto || solicitud.REGISTRADO_POR.toLowerCase().includes(registradoTexto);
+      const cumpleIncidencia = !soloIncidencias || (solicitud.RES_INCIDENCIA && solicitud.RES_INCIDENCIA.trim() !== "");
+      return cumpleArea && cumpleEstado && cumpleRegistrado && cumpleIncidencia;
+    });
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageData = datosFiltradosGlobal.slice(start, end);
+
+    // Pintamos la tabla con los datos filtrados
+    const tbody = document.getElementById("cuerpoTablaSolicitudes");
+    tbody.innerHTML = "";
+
+    if (pageData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="14" class="text-center py-4 text-muted">No hay solicitudes con los filtros seleccionados</td></tr>';
+    } else {
+      pageData.forEach(solicitud => {
+
+        let fechaConsultaDisplay = solicitud.FECHA_CONSULTA || '-';
+        if (fechaConsultaDisplay instanceof Date) {
+          fechaConsultaDisplay = fechaConsultaDisplay.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } else if (typeof fechaConsultaDisplay === 'string' && fechaConsultaDisplay.includes('T')) {
+          try {
+            const dateObj = new Date(fechaConsultaDisplay);
+            if (!isNaN(dateObj)) {
+              fechaConsultaDisplay = dateObj.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+          } catch (e) { }
+        }
+
+        let estadoBadgeClass = '';
+        switch (solicitud.ESTADO) {
+          case 'Completado':
+            estadoBadgeClass = 'estado-completado';
+            break;
+          case 'En Revisión':
+            estadoBadgeClass = 'estado-revision';
+            break;
+          case 'En Proceso':
+            estadoBadgeClass = 'estado-proceso';
+            break;
+          case 'Pendiente':
+          default:
+            estadoBadgeClass = 'estado-pendiente';
+            break;
+        }
+
+        // Formatear la Fecha Respuesta para mostrar solo fecha y hora 
+        let fechaRespuestaDisplay = solicitud.FECHA_RESPUESTA || '-';
+        if (fechaRespuestaDisplay instanceof Date) {
+          fechaRespuestaDisplay = fechaRespuestaDisplay.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } else if (typeof fechaRespuestaDisplay === 'string' && fechaRespuestaDisplay.includes('T')) { // Handle ISO strings
+          try {
+            const dateObj = new Date(fechaRespuestaDisplay);
+            if (!isNaN(dateObj)) {
+              fechaRespuestaDisplay = dateObj.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+          } catch (e) { /* fall through to original string */ }
+        }
+
+
+        let fila = `
+      <tr>
+        <td>${fechaConsultaDisplay}</td>
+        <td>${solicitud.NUMERO_SOLICITUD || '-'}</td>
+        <td>${solicitud.REGISTRADO_POR || '-'}</td>
+        <td>${solicitud.AREA || '-'}</td>
+        <td>${solicitud.RES_INCIDENCIA || '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-info rounded-md me-2" title="Ver Requerimientos" onclick="mostrarTextoEnModal('${escapeForOnclick(solicitud.REQUERIMIENTOS || 'No especificado.')}', 'Requerimientos')">
+            <i class="fas fa-eye"></i>
+          </button>
+          ${solicitud.INFORME_SOLICITUD ?
+            `<a href="${solicitud.INFORME_SOLICITUD}" target="_blank" class="btn btn-sm btn-success rounded-md"><i class="fas fa-file-pdf"></i> Ver archivo</a>` :
+            `<button class="btn btn-sm btn-secondary rounded-md disabled"><i class="fas fa-file-pdf"></i> Sin archivo</button>`
+          }
+        </td>
+        <td>${solicitud.AREA_RECEPCION || '-'}</td>
+        <td>${fechaRespuestaDisplay}</td>
+        <td>${solicitud.RESPONDIDO_POR || '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-info rounded-md me-2" title="Ver Respuesta" onclick="mostrarTextoEnModal('${escapeForOnclick(solicitud.RESPUESTA_R || 'No especificado.')}', 'Respuesta')">
+            <i class="fas fa-eye"></i>
+          </button>
+          ${solicitud.INFORME_RESPUESTA ?
+            `<a href="${solicitud.INFORME_RESPUESTA}" target="_blank" class="btn btn-sm btn-success rounded-md"><i class="fas fa-file-pdf"></i> Ver archivo</a>` :
+            `<button class="btn btn-sm btn-secondary rounded-md disabled"><i class="fas fa-file-pdf"></i> Sin archivo</button>`
+          }
+        </td>
+        <td><span class="badge ${estadoBadgeClass}">${solicitud.ESTADO || 'Pendiente'}</span></td>
+        <td>
+          ${(() => {
+            let tieneReprogramaciones = false;
+            if (solicitud.REPROGRAMACIONES) {
+              console.log('Verificando reprogramaciones para solicitud:', solicitud.NUMERO_SOLICITUD);
+              console.log('REPROGRAMACIONES:', solicitud.REPROGRAMACIONES);
+
+              // Asegurarse de que REPROGRAMACIONES sea un array
+              const reprog = Array.isArray(solicitud.REPROGRAMACIONES)
+                ? solicitud.REPROGRAMACIONES
+                : (typeof solicitud.REPROGRAMACIONES === 'string'
+                  ? JSON.parse(solicitud.REPROGRAMACIONES)
+                  : []);
+
+              tieneReprogramaciones = reprog && reprog.length > 0;
+              console.log('¿Tiene reprogramaciones?:', tieneReprogramaciones);
+            }
+            return tieneReprogramaciones
+              ? `<span class="badge bg-success me-2">SI</span>
+                 <button class="btn btn-sm btn-warning" onclick='verReprogramaciones(${JSON.stringify(solicitud)})'><i class="fas fa-list"></i></button>`
+              : `<span class="badge bg-danger">NO</span>`;
+          })()}
+        </td>
+        <td>
+          <button class="btn btn-primary rounded-md" title="Editar Solicitud" onclick='abrirModal(${JSON.stringify(solicitud)})'>
+            <i class="fas fa-edit"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+        tbody.innerHTML += fila;
+      });
+    }
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const totalPages = Math.ceil(datosFiltradosGlobal.length / rowsPerPage);
+    const container = document.getElementById("pagination");
+    container.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    let html = `<nav><ul class="pagination justify-content-center">`;
+
+    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+             <button class="page-link" onclick="changePage(${currentPage - 1})">Anterior</button>
+           </li>`;
+
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+               <button class="page-link" onclick="changePage(${i})">${i}</button>
+             </li>`;
+    }
+
+    html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+             <button class="page-link" onclick="changePage(${currentPage + 1})">Siguiente</button>
+           </li>`;
+
+    html += `</ul></nav>`;
+    container.innerHTML = html;
+  }
+
+  function changePage(page) {
+    const totalPages = Math.ceil(datosFiltradosGlobal.length / rowsPerPage);
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    aplicarFiltros();
+  }
+
+  //
+  document.getElementById("filtroArea").addEventListener("change", () => { currentPage = 1; aplicarFiltros(); });
+  document.getElementById("filtroEstado").addEventListener("change", () => { currentPage = 1; aplicarFiltros(); });
+  document.getElementById("filtroRegistrado").addEventListener("input", () => { currentPage = 1; aplicarFiltros(); });
+  document.getElementById("filtroIncidencia").addEventListener("change", () => { currentPage = 1; aplicarFiltros(); });
+
+
+  /**
+   * Muestra el modal con las reprogramaciones de una solicitud
+   * @param {Object} row - El objeto con los datos de la solicitud
+   */
+  function verReprogramaciones(row) {
+    currentRowForReprog = row;
+
+    // Normalizar array de reprogramaciones desde el backend
+    let arrayReprog = [];
+    if (Array.isArray(row.REPROGRAMACIONES)) {
+      arrayReprog = row.REPROGRAMACIONES;
+    } else if (typeof row.REPROGRAMACIONES === 'string') {
+      try { arrayReprog = JSON.parse(row.REPROGRAMACIONES) || []; } catch (e) { arrayReprog = []; }
+    }
+
+    // Respaldo a campos planos si no viene el array
+    if (!arrayReprog.length) {
+      arrayReprog = [
+        { FECHA_REPROGRAMACION: row.FECHA_REPROGRAMACION, RESPUESTA_REPROG: row.RESPUESTA_REPROGRAMACION, INFORME_REPROG: row.INFORME_REPROGRAMACION, FH_RESPUESTA: row.FH_RESPUESTA_1, FH_INFORME: row.FH_INFORME_1 },
+        { FECHA_REPROGRAMACION: row.FECHA_REPROGRAMACION_2, RESPUESTA_REPROG: row.RESPUESTA_2, INFORME_REPROG: row.INFORME_2, FH_RESPUESTA: row.FH_RESPUESTA_2, FH_INFORME: row.FH_INFORME_2 },
+        { FECHA_REPROGRAMACION: row.FECHA_REPROGRAMACION_3, RESPUESTA_REPROG: row.RESPUESTA_3, INFORME_REPROG: row.INFORME_3, FH_RESPUESTA: row.FH_RESPUESTA_3, FH_INFORME: row.FH_INFORME_3 }
+      ].filter(r => r.FECHA_REPROGRAMACION || r.RESPUESTA_REPROG || r.INFORME_REPROG);
+    }
+
+    // Adaptar al formato usado por el acordeón (aceptar claves alternativas del backend)
+    currentReprogramaciones = arrayReprog.map((r, i) => ({
+      titulo: ['1ra Reprogramación', '2da Reprogramación', '3ra Reprogramación'][i] || `Reprogramación #${i + 1}`,
+      fecha: r.FECHA_REPROGRAMACION || null,
+      respuesta: r.RESPUESTA_REPROG || r.RESPUESTA || null,
+      informe: r.INFORME_REPROG || r.INFORME || null,
+      fhRespuesta: r.FH_RESPUESTA || r.FH_RESPUESTA_REPROG || null,
+      fhInforme: r.FH_INFORME || r.FH_INFORME_REPROG || null
+    }));
+
+    const contenedor = document.getElementById("accordionReprogramaciones");
+    contenedor.innerHTML = "";
+
+    if (!currentReprogramaciones.length) {
+      contenedor.innerHTML = '<div class="alert alert-info">No hay reprogramaciones registradas.</div>';
+      new bootstrap.Modal(document.getElementById("modalReprogramaciones")).show();
+      return;
+    }
+
+    const formatFecha = (value) => {
+      if (!value) return '-';
+      try {
+        if (value instanceof Date && !isNaN(value)) {
+          return value.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        const str = String(value);
+        const noMicros = str.includes('.') ? str.split('.')[0] : str;
+        const isoish = noMicros.replace(' ', 'T');
+        const d = new Date(isoish);
+        if (!isNaN(d)) {
+          return d.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        return str;
+      } catch (e) { return String(value); }
+    };
+
+    currentReprogramaciones.forEach((reprog, idx) => {
+      const verInforme = reprog.informe
+        ? `<a href="${escapeHtml(reprog.informe)}" target="_blank" class="btn btn-sm btn-secondary ms-2"><i class=\"fas fa-eye\"></i> Ver Informe</a>`
+        : `<span class=\"text-muted\">No disponible</span>`;
+
+      contenedor.innerHTML += `
+          <div class="accordion-item">
+          <h2 class="accordion-header" id="headingReprog${idx}">
+            <button class="accordion-button ${idx !== 0 ? 'collapsed' : ''}" type="button"
+              data-bs-toggle="collapse" data-bs-target="#collapseReprog${idx}" aria-expanded="${idx === 0 ? 'true' : 'false'}"
+              aria-controls="collapseReprog${idx}">
+              ${reprog.titulo}
+              </button>
+            </h2>
+
+          <div id="collapseReprog${idx}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}"
+               aria-labelledby="headingReprog${idx}" data-bs-parent="#accordionReprogramaciones">
+              <div class="accordion-body">
+               <p><strong>📅 Fecha:</strong> ${formatFecha(reprog.fecha)}</p>
+               <p><strong>📝 Motivo:</strong> ${escapeHtml(reprog.respuesta || 'No registrada')}</p>
+               ${reprog.fhRespuesta ? `<p><small class="text-muted">🕒 Última actualización del motivo: ${formatFecha(reprog.fhRespuesta)}</small></p>` : ''}
+               <p><strong>📄 Informe:</strong> ${verInforme}</p>
+               ${reprog.fhInforme ? `<p><small class="text-muted">🕒 Última actualización del informe: ${formatFecha(reprog.fhInforme)}</small></p>` : ''}
+               <div class="mt-3">
+                 <button class="btn btn-outline-primary btn-sm ms-2" onclick="exportarReprogPDF(${idx})" title="Exportar contenido de esta reprogramación a PDF">
+                   <i class="fas fa-file-pdf"></i> Exportar a PDF
+                 </button>
+                </div>
+                </div>
+            </div>
+          </div>
+        `;
+    });
+
+    // Abrir modal
+    new bootstrap.Modal(document.getElementById("modalReprogramaciones")).show();
+  }
+
+  /**
+   * Muestra un texto largo en un modal genérico.
+   * @param {string} texto - El texto a mostrar.
+   * @param {string} titulo - El título del modal.
+   */
+  function mostrarTextoEnModal(texto, titulo) {
+    document.getElementById("modalTextoViewerLabel").innerText = titulo;
+    document.getElementById("textoModalViewer").innerText = texto;
+    new bootstrap.Modal(document.getElementById("modalTextoViewer")).show();
+  }
+
+  // Función para mostrar/ocultar campo OTROS
+  function toggleOtrosField() {
+    const respondidoPor = document.getElementById("respondidoPorModal").value;
+    const otrosContainer = document.getElementById("otrosFieldContainer");
+    const otrosInput = document.getElementById("otrosNombreModal");
+
+    if (respondidoPor === "OTROS") {
+      otrosContainer.style.display = "block";
+      otrosInput.required = true;
+    } else {
+      otrosContainer.style.display = "none";
+      otrosInput.required = false;
+      otrosInput.value = ""; // Limpiar el campo cuando se cambie de OTROS
+    }
+  }
+
+  /**
+   * Abre el modal de edición y carga los datos de la fila seleccionada.
+   * @param {Object} row - El objeto de datos de la fila seleccionada.
+   */
+  function abrirModal(row) {
+    // Carga los datos ocultos necesarios
+    document.getElementById("idRespuestaHidden").value = row.ID_RESPUESTA || "";
+    document.getElementById("idMarketingHidden").value = row.ID_MARKETING || "";
+    document.getElementById("idSolicitudHidden").value = row.ID_SOLICITUD || row.ID || "";
+
+    // Carga los datos de Respuesta (editables)
+    // Para la fecha de respuesta: si ya existe una fecha, la mantiene; si no, usa la fecha y hora actual
+    let fechaRespuesta = row.FECHA_RESPUESTA || "";
+    if (!fechaRespuesta) {
+      // Si no hay fecha de respuesta registrada, usar la fecha y hora actual
+      const ahora = new Date();
+      const dia = String(ahora.getDate()).padStart(2, '0');
+      const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+      const año = ahora.getFullYear();
+      const horas = ahora.getHours();
+      const minutos = String(ahora.getMinutes()).padStart(2, '0');
+      const ampm = horas >= 12 ? 'PM' : 'AM';
+      const horas12 = horas % 12 || 12;
+      fechaRespuesta = `${dia}/${mes}/${año} ${horas12}:${minutos} ${ampm}`;
+    }
+    document.getElementById("fechaRespuestaModal").value = fechaRespuesta;
+
+    // Manejar campo "Respondido por" y "OTROS"
+    const respondidoPor = row.RESPONDIDO_POR || "";
+    document.getElementById("respondidoPorModal").value = respondidoPor;
+
+    // Si el valor contiene información de "OTROS", separar el nombre
+    if (respondidoPor && respondidoPor !== "HERVIN" && respondidoPor !== "KIMBERLY") {
+      // Si no es uno de los valores predefinidos, asumir que es "OTROS" con nombre personalizado
+      document.getElementById("respondidoPorModal").value = "OTROS";
+      document.getElementById("otrosNombreModal").value = respondidoPor;
+      toggleOtrosField(); // Mostrar el campo OTROS
+    } else {
+      document.getElementById("otrosNombreModal").value = "";
+      toggleOtrosField(); // Ocultar el campo OTROS
+    }
+
+     // Mostrar respuesta: el backend entrega RESPUESTA_R (alias), usar respaldo RESPUESTA
+    const respuestaActual = row.RESPUESTA_R || row.RESPUESTA || "";
+    document.getElementById("respuestaModal").value = respuestaActual;
+    
+    // Obtener la URL del informe de la respuesta principal
+    const informeRespuestaUrl = row.INFORME_RESPUESTA || ""; 
+    
+    const informeInput = document.getElementById("informeRespuestaModal");
+    const verArchivoContainer = document.getElementById("verArchivoContainer");
+    const verArchivoBtn = document.getElementById("verArchivoBtn");
+    document.getElementById("estadoModal").value = row.ESTADO || "Pendiente";
+
+    // LÍNEAS AGREGADAS PARA CORREGIR EL ERROR DEL INFORME:
+    // 1. Guardar la respuesta actual para detectar cambios en 'guardarCambios'
+    document.getElementById("origRespRespuestaHidden").value = respuestaActual; 
+    // 2. Guardar la URL del informe para la lógica de 'mantener_informe'
+    document.getElementById("origInformeRespuestaHidden").value = informeRespuestaUrl;
+    // -----------------------------------------------------------
+
+    // Reinicia el campo archivo
+    informeInput.value = "";
+
+    // Si ya existe un archivo, muestra el botón "Ver archivo"
+    if (informeRespuestaUrl) { 
+        verArchivoContainer.style.display = "block";
+        verArchivoBtn.href = informeRespuestaUrl; // enlace guardado
+    } else {
+      verArchivoContainer.style.display = "none";
+      verArchivoBtn.href = "#";
+    }
+
+    // Maneja los campos de reprogramación progresiva
+    const chkReprogramacion = document.getElementById("chkReprogramacion");
+    const camposReprogramacion = document.getElementById("camposReprogramacion");
+    const reprog1 = document.getElementById("reprog1");
+    const reprog2 = document.getElementById("reprog2");
+    const reprog3 = document.getElementById("reprog3");
+    const btnAddReprog2 = document.getElementById("btnAddReprog2");
+    const btnAddReprog3 = document.getElementById("btnAddReprog3");
+
+    // Intentar poblar desde REPROGRAMACIONES (array del backend)
+    const normalizeArrayReprog = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+      }
+      return [];
+    };
+    const reprogsFromArray = normalizeArrayReprog(row.REPROGRAMACIONES);
+
+    if (reprogsFromArray.length > 0) {
+      chkReprogramacion.checked = true;
+      camposReprogramacion.classList.remove("hidden");
+      document.getElementById("existingReprogCountHidden").value = String(reprogsFromArray.length);
+
+      // Helper para mostrar archivo existente
+      const setArchivoExistente = (idx, url) => {
+        const contId = `archivoExistente${idx}`;
+        const linkId = `verArchivoReprog${idx}`;
+        if (url) {
+          document.getElementById(contId).style.display = "block";
+          document.getElementById(linkId).href = url;
+        } else {
+          document.getElementById(contId).style.display = "none";
+          document.getElementById(linkId).href = "#";
+        }
+      };
+
+      // Primera
+      const r1 = reprogsFromArray[0];
+      reprog1.classList.remove("hidden");
+      document.getElementById("fechaReprogramacionModal").value = toLocal(r1 && r1.FECHA_REPROGRAMACION);
+      document.getElementById("respuestaReprogramacionModal").value = (r1 && (r1.RESPUESTA_REPROG || r1.RESPUESTA)) || "";
+      document.getElementById("informeReprogramacionModal").value = "";
+      setArchivoExistente(1, r1 && r1.INFORME_REPROG);
+      document.getElementById("idReprog1Hidden").value = r1 && r1.ID_REPROGRAMACION ? r1.ID_REPROGRAMACION : "";
+      document.getElementById("origRespReprog1").value = (r1 && (r1.RESPUESTA_REPROG || r1.RESPUESTA)) || "";
+      document.getElementById("origInformeReprog1").value = r1 && r1.INFORME_REPROG ? r1.INFORME_REPROG : "";
+
+      // Segunda
+      const r2 = reprogsFromArray[1];
+      if (r2) {
+        reprog2.classList.remove("hidden");
+        btnAddReprog2.classList.add("hidden");
+        btnAddReprog3.classList.remove("hidden");
+        document.getElementById("fechaReprogramacion2Modal").value = toLocal(r2.FECHA_REPROGRAMACION);
+        document.getElementById("respuestaReprogramacion2Modal").value = r2.RESPUESTA_REPROG || r2.RESPUESTA || "";
+        document.getElementById("informeReprogramacion2Modal").value = "";
+        setArchivoExistente(2, r2.INFORME_REPROG);
+        document.getElementById("idReprog2Hidden").value = r2.ID_REPROGRAMACION || "";
+        document.getElementById("origRespReprog2").value = r2.RESPUESTA_REPROG || r2.RESPUESTA || "";
+        document.getElementById("origInformeReprog2").value = r2.INFORME_REPROG || "";
+      } else {
+        reprog2.classList.add("hidden");
+        btnAddReprog2.classList.remove("hidden");
+        btnAddReprog3.classList.add("hidden");
+        document.getElementById("fechaReprogramacion2Modal").value = "";
+        document.getElementById("respuestaReprogramacion2Modal").value = "";
+        document.getElementById("informeReprogramacion2Modal").value = "";
+        setArchivoExistente(2, null);
+      }
+
+      // Tercera
+      const r3 = reprogsFromArray[2];
+      if (r3) {
+        reprog3.classList.remove("hidden");
+        btnAddReprog3.classList.add("hidden");
+        document.getElementById("fechaReprogramacion3Modal").value = toLocal(r3.FECHA_REPROGRAMACION);
+        document.getElementById("respuestaReprogramacion3Modal").value = r3.RESPUESTA_REPROG || r3.RESPUESTA || "";
+        document.getElementById("informeReprogramacion3Modal").value = "";
+        setArchivoExistente(3, r3.INFORME_REPROG);
+        document.getElementById("idReprog3Hidden").value = r3.ID_REPROGRAMACION || "";
+        document.getElementById("origRespReprog3").value = r3.RESPUESTA_REPROG || r3.RESPUESTA || "";
+        document.getElementById("origInformeReprog3").value = r3.INFORME_REPROG || "";
+      } else {
+        reprog3.classList.add("hidden");
+        btnAddReprog3.classList.remove("hidden");
+        document.getElementById("fechaReprogramacion3Modal").value = "";
+        document.getElementById("respuestaReprogramacion3Modal").value = "";
+        document.getElementById("informeReprogramacion3Modal").value = "";
+        setArchivoExistente(3, null);
+      }
+    } else {
+      // Si hay datos de reprogramación, marca el checkbox y muestra los campos progresivamente
+      if (row.FECHA_REPROGRAMACION || row.RESPUESTA_REPROGRAMACION || row.INFORME_REPROGRAMACION ||
+        row.FECHA_REPROGRAMACION_2 || row.RESPUESTA_2 || row.INFORME_2 ||
+        row.FECHA_REPROGRAMACION_3 || row.RESPUESTA_3 || row.INFORME_3) {
+        chkReprogramacion.checked = true;
+        camposReprogramacion.classList.remove("hidden");
+        const countPlano = [
+          (row.FECHA_REPROGRAMACION || row.RESPUESTA_REPROGRAMACION || row.INFORME_REPROGRAMACION) ? 1 : 0,
+          (row.FECHA_REPROGRAMACION_2 || row.RESPUESTA_2 || row.INFORME_2) ? 1 : 0,
+          (row.FECHA_REPROGRAMACION_3 || row.RESPUESTA_3 || row.INFORME_3) ? 1 : 0
+        ].reduce((a, b) => a + b, 0);
+        document.getElementById("existingReprogCountHidden").value = String(countPlano);
+        // Primera reprogramación
+        reprog1.classList.remove("hidden");
+        const toLocal = (str) => {
+          if (!str) return "";
+          try {
+            const noMicros = String(str).includes('.') ? String(str).split('.')[0] : String(str);
+            const isoish = noMicros.replace(' ', 'T');
+            const d = new Date(isoish);
+            if (isNaN(d)) return "";
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          } catch { return ""; }
+        };
+
+        document.getElementById("fechaReprogramacionModal").value = toLocal(row.FECHA_REPROGRAMACION);
+        document.getElementById("respuestaReprogramacionModal").value = row.RESPUESTA_REPROGRAMACION || "";
+        // No asignar valor a input file - solo limpiar
+        document.getElementById("informeReprogramacionModal").value = "";
+        // Mostrar archivo existente si hay uno
+        if (row.INFORME_REPROGRAMACION) {
+          document.getElementById("archivoExistente1").style.display = "block";
+          document.getElementById("verArchivoReprog1").href = row.INFORME_REPROGRAMACION;
+        } else {
+          document.getElementById("archivoExistente1").style.display = "none";
+        }
+        // Segunda reprogramación
+        if (row.FECHA_REPROGRAMACION_2 || row.RESPUESTA_2 || row.INFORME_2) {
+          reprog2.classList.remove("hidden");
+          btnAddReprog2.classList.add("hidden");
+          btnAddReprog3.classList.remove("hidden");
+          document.getElementById("fechaReprogramacion2Modal").value = toLocal(row.FECHA_REPROGRAMACION_2);
+          document.getElementById("respuestaReprogramacion2Modal").value = row.RESPUESTA_2 || "";
+          // No asignar valor a input file - solo limpiar
+          document.getElementById("informeReprogramacion2Modal").value = "";
+          // Mostrar archivo existente si hay uno
+          if (row.INFORME_2) {
+            document.getElementById("archivoExistente2").style.display = "block";
+            document.getElementById("verArchivoReprog2").href = row.INFORME_2;
+          } else {
+            document.getElementById("archivoExistente2").style.display = "none";
+          }
+        } else {
+          reprog2.classList.add("hidden");
+          btnAddReprog2.classList.remove("hidden");
+          btnAddReprog3.classList.add("hidden");
+          document.getElementById("fechaReprogramacion2Modal").value = "";
+          document.getElementById("respuestaReprogramacion2Modal").value = "";
+          document.getElementById("informeReprogramacion2Modal").value = "";
+        }
+        // Tercera reprogramación
+        if (row.FECHA_REPROGRAMACION_3 || row.RESPUESTA_3 || row.INFORME_3) {
+          reprog3.classList.remove("hidden");
+          btnAddReprog3.classList.add("hidden");
+          document.getElementById("fechaReprogramacion3Modal").value = toLocal(row.FECHA_REPROGRAMACION_3);
+          document.getElementById("respuestaReprogramacion3Modal").value = row.RESPUESTA_3 || "";
+          // No asignar valor a input file - solo limpiar
+          document.getElementById("informeReprogramacion3Modal").value = "";
+          // Mostrar archivo existente si hay uno
+          if (row.INFORME_3) {
+            document.getElementById("archivoExistente3").style.display = "block";
+            document.getElementById("verArchivoReprog3").href = row.INFORME_3;
+          } else {
+            document.getElementById("archivoExistente3").style.display = "none";
+          }
+        } else {
+          reprog3.classList.add("hidden");
+          btnAddReprog3.classList.remove("hidden");
+          document.getElementById("fechaReprogramacion3Modal").value = "";
+          document.getElementById("respuestaReprogramacion3Modal").value = "";
+          document.getElementById("informeReprogramacion3Modal").value = "";
+        }
+      } else {
+        // Si no hay datos de reprogramación, desmarca el checkbox y oculta los campos
+        chkReprogramacion.checked = false;
+        camposReprogramacion.classList.add("hidden");
+        reprog1.classList.add("hidden");
+        reprog2.classList.add("hidden");
+        reprog3.classList.add("hidden");
+        btnAddReprog2.classList.remove("hidden");
+        btnAddReprog3.classList.add("hidden");
+        limpiarCamposReprogramacion();
+      }
+    }
+
+    // Muestra el modal de edición
+    new bootstrap.Modal(document.getElementById("modalEdicion")).show();
+  }
+
+   /**
+ * Envía un formulario con soporte para barra de progreso de subida.
+ * @param {string} url La URL de destino (e.g., '...run.app' o '...run.app?accion=reprogramar').
+ * @param {FormData} formData Los datos del formulario a enviar.
+ * @param {string} method El método HTTP ('PUT' o 'POST').
+ * @returns {Promise<Response>}
+ */
+  function enviarFormularioConProgreso(url, formData, method = 'PUT') {
+    const progressBar = document.getElementById('progressBar');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressLabel = document.getElementById('progressLabel');
+
+    return new Promise((resolve, reject) => {
+      // 1. Mostrar la barra de progreso e inicializarla
+      progressContainer.style.display = 'block';
+      progressLabel.textContent = 'Subiendo archivos...'; // Etiqueta genérica
+
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+
+      // Evento para el progreso de la subida
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          progressBar.style.width = percentComplete + '%';
+          progressBar.setAttribute('aria-valuenow', percentComplete);
+          progressBar.textContent = percentComplete + '%';
+          progressLabel.textContent = `Subiendo archivos... (${percentComplete}%)`;
+        }
+      };
+
+      // Evento de finalización/error
+      xhr.onload = function () {
+        // Ocultar la barra cuando finaliza
+        progressContainer.style.display = 'none';
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Simular un objeto Response para mantener compatibilidad con el código original
+          resolve({
+            ok: true,
+            status: xhr.status,
+            text: () => Promise.resolve(xhr.responseText),
+            json: () => Promise.resolve(JSON.parse(xhr.responseText || '{}'))
+          });
+        } else {
+          // En caso de error HTTP
+          reject(new Error(`Error HTTP ${xhr.status}: ${xhr.responseText}`));
+        }
+      };
+
+      xhr.onerror = function () {
+        progressContainer.style.display = 'none';
+        reject(new Error('Error de red o CORS al intentar enviar los datos.'));
+      };
+
+      // 2. Enviar el FormData
+      xhr.send(formData);
+    });
+  }
+
+
+
+  /**
+   * Guarda los cambios realizados en el modal
+   */
+  async function guardarCambios() {
+    // Manejar Respondido Por (OTROS)
+    let respondidoPor = document.getElementById("respondidoPorModal").value;
+    if (respondidoPor === "OTROS") {
+      const otrosNombre = document.getElementById("otrosNombreModal").value.trim();
+      if (!otrosNombre) { alert("Por favor, ingrese el nombre cuando seleccione 'OTROS'"); return; }
+      respondidoPor = otrosNombre.toUpperCase();
+    }
+
+    const idSolicitud = document.getElementById("idSolicitudHidden").value;
+    const respuesta = document.getElementById("respuestaModal").value;
+    const estado = document.getElementById("estadoModal").value;
+    const archivo = document.getElementById("informeRespuestaModal").files[0] || null;
+
+    // Obtener valores originales para la detección de cambios (necesarios para la lógica de informe)
+    // **ASUME la existencia de estos campos ocultos para valores originales en el modal/formulario.**
+    const originalResp = document.getElementById('origRespRespuestaHidden').value || '';
+    const originalInf = document.getElementById('origInformeRespuestaHidden').value || '';
+
+    // Detección de cambios
+    const cambioRespuesta = respuesta !== originalResp;
+    const cambioInforme = Boolean(archivo); // true si hay un nuevo archivo
+
+    console.log('Valor del informe original cargado:', originalInf);
+    console.log('¿Hay un nuevo archivo adjunto (cambioInforme)?', cambioInforme);
+    try {
+      const form = new FormData();
+      form.append('ID_SOLICITUD', idSolicitud || '');
+      form.append('RESPONDIDO_POR', respondidoPor || '');
+      form.append('RESPUESTA', respuesta || '');
+      form.append('ESTADO', estado || 'Pendiente');
+      // LÓGICA DE ACTUALIZACIÓN DE RESPUESTA ADAPTADA DE REPROGRAMACIÓN 
+      // Manejo del informe
+      if (cambioInforme) {
+        // Si hay un nuevo archivo, enviarlo
+        form.append('informe', archivo);
+      } else if (originalInf) { // Si NO hay nuevo archivo pero existe uno previo
+        // Preservarlo explícitamente enviando el URL del informe existente con un flag especial
+        form.append('INFORME_EXISTENTE', originalInf);
+        form.append('mantener_informe', 'true');
+      }
+
+      const resp = await enviarFormularioConProgreso('https://registrosolicitudeseincidencias-2946605267.us-central1.run.app', form, 'PUT');
+
+      // Si el checkbox de reprogramación está activo, enviar cada bloque visible
+      if (document.getElementById('chkReprogramacion').checked) {
+        const existentes = parseInt(document.getElementById('existingReprogCountHidden').value || '0', 10);
+        const bloques = [
+          { idx: 0, fechaId: 'fechaReprogramacionModal', respId: 'respuestaReprogramacionModal', fileId: 'informeReprogramacionModal', contId: 'reprog1', idHidden: 'idReprog1Hidden', origResp: 'origRespReprog1', origInf: 'origInformeReprog1' },
+          { idx: 1, fechaId: 'fechaReprogramacion2Modal', respId: 'respuestaReprogramacion2Modal', fileId: 'informeReprogramacion2Modal', contId: 'reprog2', idHidden: 'idReprog2Hidden', origResp: 'origRespReprog2', origInf: 'origInformeReprog2' },
+          { idx: 2, fechaId: 'fechaReprogramacion3Modal', respId: 'respuestaReprogramacion3Modal', fileId: 'informeReprogramacion3Modal', contId: 'reprog3', idHidden: 'idReprog3Hidden', origResp: 'origRespReprog3', origInf: 'origInformeReprog3' }
+        ];
+        for (const b of bloques) {
+          const contVisible = !document.getElementById(b.contId).classList.contains('hidden');
+          if (!contVisible) continue;
+          const fecha = document.getElementById(b.fechaId).value;
+          const motivo = document.getElementById(b.respId).value;
+          const file = document.getElementById(b.fileId).files[0] || null;
+          if (!fecha && !motivo && !file) continue;
+
+          // Si ya existe esa posición (por ejemplo, 0 para la primera, 1 para la segunda), no reenviar
+          const existingIndex = b.idx < existentes;
+          const idReprog = document.getElementById(b.idHidden).value;
+          const hadId = Boolean(idReprog);
+          const originalResp = document.getElementById(b.origResp).value || '';
+          const originalInf = document.getElementById(b.origInf).value || '';
+
+          // Detectar cambios
+          const cambioRespuesta = motivo !== originalResp;
+          const cambioInforme = Boolean(file);
+
+          // Si ya existe (tiene ID) y hay cambios en RESPUESTA o archivo, actualizar por PUT
+          if (existingIndex && hadId && (cambioRespuesta || cambioInforme)) {
+            const fdUpd = new FormData();
+            fdUpd.append('accion', 'reprogramar');
+            fdUpd.append('ID_REPROGRAMACION', idReprog);
+
+            // Siempre enviar la respuesta (aunque no haya cambiado)
+            fdUpd.append('RESPUESTA', motivo || '');
+
+            // Manejo del informe 
+            if (cambioInforme) {
+              // Si hay un nuevo archivo, enviarlo
+              fdUpd.append('informe', file);
+            } else if (originalInf && !cambioInforme) {
+              // Si NO hay nuevo archivo pero existe uno previo, preservarlo explícitamente
+              // Enviar el URL del informe existente con un flag especial
+              fdUpd.append('INFORME_EXISTENTE', originalInf);
+              fdUpd.append('mantener_informe', 'true');
+            }
+
+            const up = await enviarFormularioConProgreso('https://registrosolicitudeseincidencias-2946605267.us-central1.run.app?accion=reprogramar', fdUpd, 'PUT');
+
+            // Desincronizar cache local para forzar refresco de FH_INFORME/FH_RESPUESTA
+            await obtenerDatos();
+            continue;
+          }
+
+          // Si es nueva (índice >= existentes), crear por POST
+          if (b.idx >= existentes) {
+            const fd = new FormData();
+            fd.append('accion', 'reprogramar');
+            fd.append('ID_RESPUESTA', document.getElementById('idRespuestaHidden').value || '');
+            if (fecha) {
+              const normalizada = fecha.replace('T', ' ') + ':00';
+              fd.append('FECHA_REPROGRAMACION', normalizada);
+            }
+            fd.append('RESPUESTA', motivo || '');
+            if (file) { fd.append('informe', file); fd.append('INFORME', file); }
+
+            const rr = await enviarFormularioConProgreso('https://registrosolicitudeseincidencias-2946605267.us-central1.run.app?accion=reprogramar', fd, 'POST');
+
+          }
+        }
+      }
+
+      alert('Cambios guardados correctamente');
+      limpiarModal();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("modalEdicion"));
+      if (modal) modal.hide();
+      obtenerDatos();
+    } catch (e) {
+      console.error(e);
+      // Asegurar que la barra se oculte en caso de error
+      document.getElementById('progressContainer').style.display = 'none';
+      alert('No se pudo registrar la respuesta: ' + e.message);
+    }
+  }
+
+  /**
+     * Función de utilidad para escapar HTML y prevenir XSS.
+     * Útil cuando se inserta texto directamente en innerText o value.
+     */
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    text = String(text);
+    // Primero escapamos caracteres HTML
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    text = text.replace(/[&<>"']/g, function (m) { return map[m]; });
+
+    // Luego escapamos caracteres que pueden romper el JavaScript
+    text = text.replace(/\r?\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/"/g, '\\"')
+      .replace(/'/g, "\\'");
+    return text;
+  }
+
+  // Función para escapar texto para atributos onclick
+  function escapeForOnclick(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/\\/g, '\\\\')  // Escapar barras invertidas
+      .replace(/'/g, "\\'")     // Escapar comillas simples
+      .replace(/"/g, '\\"')     // Escapar comillas dobles
+      .replace(/\n/g, '\\n')    // Escapar saltos de línea
+      .replace(/\r/g, '\\r')    // Escapar retornos de carro
+      .replace(/\t/g, '\\t');   // Escapar tabulaciones
+  }
+
+
+  /**
+   * Limpia todos los campos de reprogramación
+   */
+  function limpiarCamposReprogramacion() {
+    // Primera reprogramación
+    document.getElementById("fechaReprogramacionModal").value = "";
+    document.getElementById("respuestaReprogramacionModal").value = "";
+    document.getElementById("informeReprogramacionModal").value = "";
+
+    // Segunda reprogramación
+    document.getElementById("fechaReprogramacion2Modal").value = "";
+    document.getElementById("respuestaReprogramacion2Modal").value = "";
+    document.getElementById("informeReprogramacion2Modal").value = "";
+
+    // Tercera reprogramación
+    document.getElementById("fechaReprogramacion3Modal").value = "";
+    document.getElementById("respuestaReprogramacion3Modal").value = "";
+    document.getElementById("informeReprogramacion3Modal").value = "";
+  }
+
+  /**
+   * Limpia completamente el modal
+   */
+  function limpiarModal() {
+    // Limpiar campos principales
+    document.getElementById("fechaRespuestaModal").value = "";
+    document.getElementById("respondidoPorModal").value = "";
+    document.getElementById("respuestaModal").value = "";
+    document.getElementById("informeRespuestaModal").value = "";
+    document.getElementById("estadoModal").value = "Pendiente";
+
+    // Limpiar checkbox de reprogramación
+    document.getElementById("chkReprogramacion").checked = false;
+
+    // Ocultar campos de reprogramación
+    document.getElementById("camposReprogramacion").classList.add("hidden");
+    document.getElementById("reprog1").classList.add("hidden");
+    document.getElementById("reprog2").classList.add("hidden");
+    document.getElementById("reprog3").classList.add("hidden");
+    document.getElementById("btnAddReprog2").classList.remove("hidden");
+    document.getElementById("btnAddReprog3").classList.add("hidden");
+
+    // Limpiar campos de reprogramación
+    limpiarCamposReprogramacion();
+
+    // Ocultar indicadores de archivos existentes
+    document.getElementById("archivoExistente1").style.display = "none";
+    document.getElementById("archivoExistente2").style.display = "none";
+    document.getElementById("archivoExistente3").style.display = "none";
+    // Limpiar enlaces de los botones
+    document.getElementById("verArchivoReprog1").href = "#";
+    document.getElementById("verArchivoReprog2").href = "#";
+    document.getElementById("verArchivoReprog3").href = "#";
+
+    // Limpiar campos ocultos
+    document.getElementById("idRespuestaHidden").value = "";
+    document.getElementById("idMarketingHidden").value = "";
+
+    // Ocultar botón ver archivo
+    document.getElementById("verArchivoContainer").style.display = "none";
+    document.getElementById("verArchivoBtn").href = "#";
+  }
+
+
+  let currentRowForReprog = null;
+  let currentReprogramaciones = [];
+
+  // Eliminada la versión duplicada anterior de verReprogramaciones que sobrescribía la correcta
+
+  /**
+   * Genera un PDF con los datos de la reprogramación seleccionada (solo esa sección).
+   * idx = 0 | 1 | 2 correspondiente a 1ra/2da/3ra.
+   */
+  function exportarReprogPDF(idx) {
+    try {
+      const re = currentReprogramaciones[idx];
+      if (!re) {
+        alert("Reprogramación no encontrada.");
+        return;
+      }
+
+      // Información adicional de la solicitud (contexto)
+      const solicitud = currentRowForReprog || {};
+      const numSolicitud = solicitud.NUMERO_SOLICITUD || '';
+      const idMarketing = solicitud.ID_SOLICITUD || '';
+      const registradoPor = solicitud.REGISTRADO_POR || '';
+
+      // Crear PDF con jsPDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+      const left = 40;
+      let y = 60;
+
+      // Encabezado
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("REPROGRAMACIÓN - " + re.titulo, left, y);
+      y += 24;
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`*/ DATOS DE LA SOLICITUD /*`, left, y); y += 16;
+      doc.text(`--------------------------------------------------------------------------------`, left, y); y += 16;
+      doc.text(`N° Solicitud:  ${numSolicitud}`, left, y); y += 16;
+      if (idMarketing) { doc.text(`ID de Solicitud:  ${idMarketing}`, left, y); y += 16; }
+      if (registradoPor) { doc.text(`Registrado Por:  ${registradoPor}`, left, y); y += 16; }
+      doc.text(`--------------------------------------------------------------------------------`, left, y); y += 16;
+
+      doc.text(`*/ DATOS DE LA REPROGRAMACIÓN /*`, left, y); y += 16;
+      doc.text(`--------------------------------------------------------------------------------`, left, y); y += 16;
+
+      y += 6;
+      doc.setFont("helvetica", "bold");
+      doc.text("Fecha: ", left, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(re.fecha || "-"), left + 70, y);
+      y += 20;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Motivo: ", left, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(re.respuesta || "-"), left + 70, y);
+      y += 20;
+
+
+      // Informe: si existe, incluir link clickeable (si el visor de PDF soporta links)
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Informe: ", left, y);
+      doc.setFont("helvetica", "normal");
+      if (re.informe) {
+        const linkText = "Ver informe original";
+        // texto azul y con link
+        doc.setTextColor(0, 102, 204);
+        // Opción compatible: pasar link como opción
+        doc.text(linkText, left + 70, y);
+        try {
+          // Vincular el área del texto al URL (funciona en jspdf 2.x)
+          doc.link(left + 70, y - 10, doc.getTextWidth(linkText), 14, { url: re.informe });
+        } catch (err) {
+          // si link falla, intentar text con opción link (algunas builds)
+          try { doc.text(linkText, left + 70, y, { link: re.informe }); } catch (e) { }
+        }
+        doc.setTextColor(0, 0, 0);
+        y += 18;
+      } else {
+        doc.text("-", left + 70, y);
+        y += 18;
+      }
+      doc.text(`--------------------------------------------------------------------------------`, left, y); y += 16;
+      // Pie con fecha de generación
+      y += 20;
+      const ahora = new Date();
+      doc.setFontSize(9);
+      doc.text(`Generado  :  ${ahora.toLocaleString()}`, left, y);
+
+      // Nombre de archivo
+      const safeNum = (numSolicitud || "sin_solicitud").replace(/\s+/g, "_");
+      const safeTitulo = re.titulo.replace(/\s+/g, "_");
+      const filename = `Reprog_${safeTitulo}_${safeNum}.pdf`;
+
+      doc.save(filename);
+    } catch (err) {
+      console.error("Error generando PDF de reprogramación:", err);
+      alert("Error al generar PDF. Revisa la consola.");
+    }
+  }
+
+  /* --- pequeña función de escape para insertar texto en HTML (la usé arriba) --- */
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, function (m) { return map[m]; });
+  }
+
+  function ocultarReprog2() {
+    // Oculta la 2da reprogramación
+    document.getElementById("reprog2").classList.add("hidden");
+    // Vuelve a mostrar el botón + en la 1ra
+    document.getElementById("btnAddReprog2").classList.remove("hidden");
+  }
+
+  function ocultarReprog3() {
+    // Oculta la 3ra reprogramación
+    document.getElementById("reprog3").classList.add("hidden");
+    // Vuelve a mostrar el botón + en la 2da
+    document.getElementById("btnAddReprog3").classList.remove("hidden");
+  }
+
+  function mostrarReprog2() {
+    document.getElementById("reprog2").classList.remove("hidden");
+    // Oculta el botón + de la 1ra
+    document.getElementById("btnAddReprog2").classList.add("hidden");
+  }
+
+  function mostrarReprog3() {
+    document.getElementById("reprog3").classList.remove("hidden");
+    // Oculta el botón + de la 2da
+    document.getElementById("btnAddReprog3").classList.add("hidden");
+  }
+
+
+  function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("landscape"); // Apaisado porque tienes muchas columnas
+
+    // Título
+    doc.setFontSize(14);
+    doc.text("Reporte de Solicitudes e Incidencias General - Zeus Safety", 14, 15);
+
+    // Extraer SOLO los datos filtrados que están en datosFiltradosGlobal
+    const dataExport = datosFiltradosGlobal.map(solicitud => [
+      solicitud.FECHA_CONSULTA || "-",
+      solicitud.NUMERO_SOLICITUD || "-",
+      solicitud.REGISTRADO_POR || "-",
+      solicitud.AREA || "-",
+      solicitud.RES_INCIDENCIA || "-",
+      solicitud.AREA_RECEPCION || "-",
+      solicitud.FECHA_RESPUESTA || "-",
+      solicitud.RESPONDIDO_POR || "-",
+      solicitud.ESTADO || "-",
+      solicitud.CON_REPROGRAMACION || "NO"
+    ]);
+
+    // Columnas que queremos exportar
+    const headers = [
+      "Fecha Consulta",
+      "N° Solicitud",
+      "Registrado Por",
+      "Área de Envio",
+      "Con Incidencia",
+      "Área de Recepción",
+      "Fecha Respuesta",
+      "Respondido Por",
+      "Estado",
+      "Reprogramación"
+    ];
+
+    // Insertar tabla
+    doc.autoTable({
+      head: [headers],
+      body: dataExport,
+      startY: 25,
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [23, 162, 184] } // azul tipo bootstrap info
+    });
+
+    // Guardar PDF
+    doc.save("Reporte_Solicitudes.pdf");
+  }
+
+
+</script>
+
+</html>

@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<!-- alias: logistica2025originalzeus | módulo: logística | STORAGE_KEY=incidencias_v12 -->
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Área de Logística: Registro de incidencia de proformas y actas</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://cibertecedgar.github.io/marcalogo/logozeus.png">
+  <style>
+    :root {
+      --azul-oscuro: #17375d;
+      --azul: #1e4d7a;
+      --gris: #f5f5f5;
+      --rojo: #c00000;
+      --link: #007bff;
+      --azul-claro: #e8f0f8;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .75rem 1rem;
+      background: var(--azul-oscuro);
+      color: #fff;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .container {
+      width: 90%;
+      max-width: none;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* Botón volver al menú */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .6rem 1.2rem;
+      color: #fff;
+      text-decoration: none;
+      background: rgba(255, 255, 255, .15);
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+      transition: all .3s ease;
+      font-weight: 500;
+      font-size: .9rem;
+    }
+    .btn-back::before {
+      content: '\2190'; /* flecha izquierda */
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .btn-back:hover {
+      background: rgba(255, 255, 255, .25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+    }
+    .btn-back:active {
+      transform: translateY(0);
+    }
+    .btn-back:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, .3), 0 4px 12px rgba(0, 0, 0, .2);
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(23, 55, 93, .12);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      border: 1px solid rgba(23, 55, 93, .08);
+      transition: box-shadow .3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 6px 28px rgba(23, 55, 93, .18);
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul) 100%);
+      color: #fff;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header .btn-ghost {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      color: #fff;
+      border-color: rgba(255, 255, 255, .65);
+    }
+
+    .card-header .btn-ghost:hover {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    /* botón verde en header (como Guardar) */
+    .card-header .btn-guardar {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+    }
+
+    .card-header .btn-ghost:hover {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .form-group {
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: .25rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: .5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: .9rem;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: .85rem;
+    }
+
+    .btn {
+      padding: .45rem .8rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+
+    .btn-primary {
+      background: var(--azul-oscuro);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--azul);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: var(--rojo);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #ddd;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: .55rem;
+      border: 1px solid #e7e7e7;
+      font-size: .85rem;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--azul-oscuro);
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    td a {
+      color: var(--link);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .badge {
+      padding: .2rem .5rem;
+      border-radius: .25rem;
+      color: #fff;
+      font-size: .75rem;
+      display: inline-block;
+    }
+
+    .badge-pendiente {
+      background: #ffc107;
+      color: #000;
+    }
+
+    .badge-enrevision {
+      background: #ff9800;
+    }
+
+    .badge-notificado {
+      background: #17a2b8;
+    }
+
+    .badge-completado {
+      background: #4caf50;
+    }
+
+    .badge-observado {
+      background: #c00000;
+    }
+
+    .table-responsive {
+      overflow: auto;
+    }
+
+    .item-row {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: .5rem;
+      align-items: flex-start;
+    }
+
+    .item-row textarea {
+      flex: 1 1 48%;
+      min-height: 44px;
+    }
+
+    .item-row .btn-danger {
+      height: 36px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 5%;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 12px;
+      width: 92%;
+      max-width: 900px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .25);
+    }
+
+    /* Instructivo minimalista */
+    .instructivo-title { margin: 0 0 .25rem 0; font-size: 1.25rem; color: #17375d; }
+    .instructivo-subtitle { margin: 0 0 1rem 0; color: #6c757d; font-size: .95rem; }
+    .instructivo-section { background: #f8f9fb; border: 1px solid #eef1f5; border-radius: 10px; padding: .9rem 1rem; margin-bottom: .9rem; }
+    .instructivo-section h4 { margin: 0 0 .5rem 0; font-size: 1.05rem; color: #17375d; }
+    .instructivo-section ul { margin: 0; padding-left: 1.2rem; }
+    .instructivo-section li { margin: .2rem 0; }
+    .instructivo-tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; }
+    .tool-item { background: #f8f9fb; border: 1px solid #eef1f5; border-radius: 10px; padding: .7rem .9rem; color: #183a5a; }
+    .tool-item strong { display: block; margin-bottom: .2rem; }
+
+    /* Botón Ver procedimiento mejorado */
+    .card-header .btn-procedimiento { display: inline-flex; align-items: center; gap: .45rem; background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.45); border-radius: 10px; padding: .5rem .9rem; transition: all .2s ease; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+    .card-header .btn-procedimiento:hover { background: rgba(255,255,255,.12); transform: translateY(-1px); border-color: #fff; }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      float: right;
+      cursor: pointer;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+      margin-bottom: .75rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      font-size: .85rem;
+      min-width: 180px;
+    }
+
+    .filter-actions {
+      margin-left: auto;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+
+    .cell-actions {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn {
+      cursor: pointer;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    .icon-btn:hover {
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    /* Column tweaks con reindexación por "Registrado por" */
+    /* Columna de ítems de error (columna 9) */
+    #tablaIncidencias th:nth-child(9),
+    #tablaIncidencias td:nth-child(9) {
+      min-width: 120px;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* Columna de observaciones adicionales (columna 15) */
+    #tablaIncidencias th:nth-child(15),
+    #tablaIncidencias td:nth-child(15) {
+      min-width: 100px;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* Columna de archivo de solución (columna 19) */
+    #tablaIncidencias th:nth-child(19),
+    #tablaIncidencias td:nth-child(19) {
+      min-width: 120px;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    #tablaIncidencias th:nth-child(12),
+    #tablaIncidencias td:nth-child(12) {
+      min-width: 160px;
+      white-space: nowrap;
+    }
+
+    #tablaIncidencias th:nth-child(12),
+    #tablaIncidencias td:nth-child(12) {
+      white-space: nowrap;
+    }
+
+    #tablaIncidencias th:nth-child(7),
+    #tablaIncidencias td:nth-child(7) {
+      text-align: center;
+    }
+
+    #tablaIncidencias th:nth-child(9),
+    #tablaIncidencias td:nth-child(9) {
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    #tablaIncidencias td:nth-child(14) {
+      text-transform: uppercase;
+    }
+
+    #tablaIncidencias th:nth-child(15),
+    #tablaIncidencias td:nth-child(15) {
+      text-align: center;
+    }
+
+    #tablaIncidencias td:nth-child(16) {
+      text-transform: uppercase;
+    }
+
+    .cell-actions a {
+      text-decoration: none;
+    }
+
+    /* Centrar N° de comprobante (col 8) */
+    #tablaIncidencias th:nth-child(8),
+    #tablaIncidencias td:nth-child(8) {
+      text-align: center;
+    }
+
+    #tablaIncidencias th:nth-child(20),
+    #tablaIncidencias td:nth-child(20) {
+      text-align: center;
+    }
+
+    #formLogistica button[type="submit"] {
+      margin-top: .5rem;
+    }
+
+    .prelike {
+      white-space: pre-wrap;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: .5rem;
+    }
+
+    /* Estilos para el modal de archivo */
+    #fileInfo {
+      border-left: 3px solid #007bff;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    #fileInfo small {
+      color: #495057;
+      font-weight: 500;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #saveLoading {
+      color: #fff;
+      font-weight: 500;
+    }
+
+
+    /* ====== ENCABEZADO CUADRO "LISTADO DE INCIDENCIAS" ====== */
+    .encabezado-listado {
+      background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+      /* Azul vivo */
+      color: #FFFFFF;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 5px 5px 0 0;
+    }
+
+    /* ====== ENCABEZADOS DE TABLA ====== */
+    table thead th {
+      background-color: #305989;
+      color: #FFFFFF;
+      /* Texto blanco */
+      font-weight: bold;
+      text-align: center;
+      padding: 8px;
+    }
+
+    /* ====== BOTÓN GUARDAR INCIDENCIA ====== */
+    .btn-guardar {
+      background-color: #00B140;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-guardar:hover {
+      background-color: #00913a;
+      cursor: pointer;
+    }
+
+    /* ====== BOTÓN NEGRO (VER PROCEDIMIENTO) ====== */
+    .btn-negro {
+      background-color: #000;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: background-color .3s ease;
+    }
+
+    .btn-negro:hover {
+      background-color: #222;
+      cursor: pointer;
+    }
+
+    .card-header .btn-negro {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+    }
+
+    /* ====== BOTÓN ELIMINAR ====== */
+    .btn-eliminar {
+      background-color: #FF3B30;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-eliminar:hover {
+      background-color: #d32d27;
+      cursor: pointer;
+    }
+
+    /* ====== FONDO GENERAL ====== */
+    body {
+      background-color: #FFFFFF;
+      color: #000000;
+    }
+
+    /* Botón azul corporativo reutilizable */
+    .btn-azul {
+      background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-azul:hover {
+      filter: brightness(.92);
+      cursor: pointer;
+    }
+
+    /* Botón claro para headers azules (outline) */
+    .btn-outline-light {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, .75);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      transition: background .2s ease, border-color .2s ease;
+    }
+
+    .btn-outline-light:hover {
+      background: rgba(255, 255, 255, .12);
+      border-color: #fff;
+    }
+
+    header-logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .header-logo img {
+    max-width: 150px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .header-logo img:hover {
+    transform: scale(1.05);
+  }
+
+  .header-title {
+    flex: 1;
+    text-align: center;
+    margin: 0 20px;
+  }
+
+  .header-spacer {
+    width: 150px; /* Mismo ancho que el logo para mantener centrado el título */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .header-title h1 {
+    color: white;
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+  }
+
+/* Header */
+  .header-container {
+    background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+    box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+    padding-top: 40px;
+    padding-bottom: 10px;
+    padding-left: 2%;
+    padding-right: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    margin-top: -20px;
+  }
+
+/* Responsive */
+  @media (max-width: 768px) {
+    .btn-volver {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-listado-flotante {
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .card {
+      margin-top: 20px;
+    }
+
+    .header-container {
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      margin-top: -20px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+    }
+
+    .header-logo img {
+      max-width: 120px;
+    }
+
+    .header-spacer {
+      display: none;
+    }
+
+
+    
+  }
+
+
+  header-logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .header-logo img {
+    max-width: 150px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .header-logo img:hover {
+    transform: scale(1.05);
+  }
+
+  .header-title {
+    flex: 1;
+    text-align: center;
+    margin: 0 20px;
+  }
+
+  .header-spacer {
+    width: 150px; /* Mismo ancho que el logo para mantener centrado el título */
+  }
+
+  .header-title h1 {
+    color: white;
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+  }
+
+ /* Header */
+        .header-container {
+            background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+            box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+            padding-top: 1px;
+            padding-left: 20px;
+            padding-bottom: 0px;
+            padding-right: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            margin-top: -20px;
+        }
+
+/* Responsive */
+  @media (max-width: 768px) {
+    .btn-volver {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-listado-flotante {
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .card {
+      margin-top: 20px;
+    }
+
+    .header-container {
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      margin-top: -20px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+    }
+
+    .header-logo img {
+      max-width: 120px;
+    }
+
+    .header-spacer {
+      display: none;
+    }
+  }
+
+  /* Paginación */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(23, 55, 93, .08);
+  }
+
+  .pagination button {
+    padding: .5rem .9rem;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: var(--azul-oscuro);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s ease;
+    font-weight: 500;
+  }
+
+  .pagination button:hover:not(:disabled) {
+    background: var(--azul-claro);
+    border-color: var(--azul);
+    transform: translateY(-1px);
+  }
+
+  .pagination button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .pagination button.active {
+    background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul) 100%);
+    color: #fff;
+    border-color: var(--azul-oscuro);
+  }
+
+  .pagination-info {
+    margin: 0 1rem;
+    color: #666;
+    font-size: .9rem;
+  }
+
+  /* Tabla de resumen */
+  .resumen-table {
+    margin-top: 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(23, 55, 93, .12);
+    overflow: hidden;
+    border: 1px solid rgba(23, 55, 93, .08);
+  }
+
+  .resumen-table-header {
+    background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul) 100%);
+    color: #fff;
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .resumen-table-body {
+    padding: 1rem;
+  }
+
+  .resumen-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .resumen-table th {
+    background: var(--azul-claro);
+    color: var(--azul-oscuro);
+    padding: .75rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--azul);
+  }
+
+  .resumen-table td {
+    padding: .75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .resumen-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .resumen-table tr:hover {
+    background: var(--azul-claro);
+  }
+
+  /* Ocultar filas no visibles en paginación */
+  .table-row-hidden {
+    display: none;
+  }
+  </style>
+</head>
+
+<body data-alias="logistica2025originalzeus" data-module="logistica">
+
+  <!-- Header con Logo y Título -->
+  <div class="header-container">
+    <div class="header-logo">
+      <img src="https://cibertecedgar.github.io/marcalogo/logozeus.png"
+        alt="Logo Zeus">
+    </div>
+    <div class="header-title">
+      <h1>Área de Logística: Registro de incidencia de proformas y actas</h1>
+    </div>
+    <div class="header-spacer">
+      <a href="../../logistica.html" class="btn-back">Volver al Menú</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Registrar nueva incidencia -->
+    <div class="card">
+      <div class="card-header encabezado-listado">
+        <h2>Registrar nueva incidencia</h2>
+        <button type="button" id="btnProcedimiento" class="btn btn-procedimiento" title="Ver procedimiento">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M20 22V6a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 6.5v13" />
+            <path d="M8 6v12" />
+            <path d="M12 6v12" />
+            <path d="M16 6v12" />
+          </svg>
+          Ver procedimiento
+        </button>
+      </div>
+      <div class="card-body">
+        <form id="formLogistica">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="encargado">Encargado comprobante *</label>
+              <select id="encargado" required>
+                <option value="">Seleccione...</option>
+                <option>HERVIN</option>
+                <option>KIMBERLY</option>
+                <option>JOSE</option>
+                <option>ALVARO</option>
+                <option>EVELYN</option>
+                <option>LIZETH</option>
+                <option>JOSEPH</option>
+                <option>MANUEL</option>
+              </select>
+            </div>
+                         <div class="form-group">
+               <label for="fechaEmision">Fecha de emisión *</label>
+               <input type="date" id="fechaEmision" required />
+             </div>
+            <div class="form-group">
+              <label for="responsable">Responsable incidencia *</label>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <select id="responsable" required style="min-width:220px; transition: width 0.2s;">
+                  <option value="">Seleccione...</option>
+                  <option>SANDRA</option>
+                  <option>JOSE</option>
+                  <option>KIMBERLY</option>
+                  <option>JOSEPH</option>
+                  <option>MANUEL</option>
+                  <option>JOSELYN</option>
+                  <option>VICTOR</option>
+                  <option>HERVIN</option>
+                  <option>EVELYN</option>
+                  <option>ALVARO</option>
+                  <option>LIZETH</option>
+                  <option>ONLINE</option>
+                  <option value="OTROS">OTROS</option>
+                </select>
+                <input type="text" id="responsableOtro" placeholder="Ingrese nombre" style="display:none; width:160px; text-transform:uppercase;" maxlength="40" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="area">Área *</label>
+              <select id="area" required>
+                <option value="">Seleccione...</option>
+                <option>VENTAS</option>
+                <option>FACTURACION</option>
+                <option>LOGISTICA</option>
+              </select>
+            </div>
+          </div>
+          <br>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proforma">N° proforma o acta *</label>
+              <input type="text" id="proforma" required />
+            </div>
+            <div class="form-group">
+              <label for="comprobante">N° de comprobante *</label>
+              <input type="text" id="comprobante" required />
+            </div>
+          </div>
+          <br>
+          <div class="form-group">
+            <label>Ítems de error (detalle / debe ser)</label>
+            <div id="itemsContainer"></div>
+            <br>
+            <button type="button" class="btn btn-secondary btn-azul" id="addItem">Agregar ítem</button>
+          </div>
+          <br>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tipoIncidencia">Tipo de incidencia *</label>
+              <select id="tipoIncidencia" required>
+                <option value="">Seleccione...</option>
+                <option>ERROR DE COLOR</option>
+                <option>ERROR DE TALLA</option>
+                <option>ERROR DE CANTIDAD</option>
+                <option>ERROR DE PRECIO</option>
+                <option>ERROR DE PRODUCTO</option>
+                <option>OTROS</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="observacionDetalle">Observación detallada</label>
+              <textarea id="observacionDetalle" placeholder="Describa la incidencia" disabled></textarea>
+            </div>
+          </div>
+          <br>
+          <!-- Registrado por -->
+          <div class="form-row">
+            <div class="form-group" style="max-width:280px">
+              <label for="registradoPor">Registrado por *</label>
+              <select id="registradoPor" required>
+                <option value="">Seleccione...</option>
+                <option>JOSEPH</option>
+                <option>JOSELYN</option>
+                <option>OTROS</option>
+              </select>
+            </div>
+            <div class="form-group" id="registradoPorOtroGroup" style="max-width:280px; display:none;">
+              <label for="registradoPorOtro">Otro (especificar)</label>
+              <input type="text" id="registradoPorOtro" placeholder="Ingrese nombre" />
+            </div>
+          </div>
+          <br>
+          <button type="submit" class="btn btn-primary btn-guardar">Guardar incidencia</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Listado -->
+    <div class="card">
+      <div class="card-header encabezado-listado">
+        <h2>Listado de incidencias</h2>
+      </div>
+      <div class="card-body">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label for="filterEstado">Filtrar por verificación</label>
+            <select id="filterEstado">
+              <option value="TODOS">Todos</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN REVISIÓN">En revisión</option>
+              <option value="NOTIFICADO">Notificado</option>
+              <option value="COMPLETADO">Completado</option>
+              <option value="OBSERVADO">Observado</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterStart">Desde</label>
+            <input type="date" id="filterStart" />
+          </div>
+          <div class="filter-group">
+            <label for="filterEnd">Hasta</label>
+            <input type="date" id="filterEnd" />
+          </div>
+          <div class="filter-actions">
+            <button id="applyFilter" class="btn btn-secondary btn-azul">Aplicar filtros</button>
+            <button id="clearFilters" class="btn btn-ghost">Limpiar</button>
+            <button id="exportCSV" class="btn btn-secondary btn-azul">Exportar CSV</button>
+            <button id="generateReport" class="btn btn-secondary btn-azul">Generar reporte</button>
+          </div>
+        </div>
+        <br>
+        <div class="table-responsive" id="tableViewport">
+          <table id="tablaIncidencias">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha registro</th>
+                <th>Registrado por</th>
+                <th>Mes</th>
+                <th>Encargado comprobante</th>
+                <th>Fecha emisión</th>
+                <th>N° proforma/acta</th>
+                <th>N° comprobante</th>
+                <th>Ítems de error</th>
+                <th>Responsable</th>
+                <th>Área</th>
+                <th>Tipo de incidencia</th>
+                <th>Fecha de notificación</th>
+                <th>Solución</th>
+                <th>Obs. adicionales</th>
+                <th>Revisado por</th>
+                <th>Estado de verificación</th>
+                                 <th>Fecha envío de archivo</th>
+                 <th>Archivo de solución</th>
+                 <th>Culminado</th>
+                 <th>Fecha concluyente</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <!-- Paginación -->
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- Tabla de Resumen -->
+    <div class="resumen-table">
+      <div class="resumen-table-header">
+        Resumen de Incidencias
+      </div>
+      <div class="resumen-table-body">
+        <table id="tablaResumen">
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Cantidad</th>
+              <th>Porcentaje</th>
+            </tr>
+          </thead>
+          <tbody id="resumenBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modales -->
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="modal-close" id="closeDetail" aria-label="Cerrar">&times;</button>
+      <h3 style="margin-top:0; color: #17375d;">📋 Ítems de Error - Detalle</h3>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div id="archivoModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="modal-close" id="closeArchivo" aria-label="Cerrar">&times;</button>
+      <h3 style="margin-top:0">Actualizar archivo y comentario de solución</h3>
+      <p class="muted">Fecha y hora de envío: <strong>se registrará automáticamente al guardar</strong>.</p>
+      
+      <!-- Sección de comentario -->
+      <div class="form-group">
+        <label for="editArchivoTexto">Comentario de solución (opcional)</label>
+        <textarea id="editArchivoTexto" placeholder="Ingrese comentario o nota sobre la solución" rows="3"></textarea>
+        <div style="margin-top: 10px;">
+          <button id="saveComentario" class="btn btn-primary">
+            <span id="saveComentarioText">Guardar comentario</span>
+            <span id="saveComentarioLoading" style="display:none;">⏳ Guardando...</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Sección de Archivo -->
+      <div class="form-group">
+        <label for="editArchivoPDF">Cargar Archivo (PDF o Imagen) (opcional)</label>
+        <input type="file" id="editArchivoPDF" accept="application/pdf,image/jpeg,image/jpg,image/png,image/gif,image/webp" />
+        <p class="muted">
+          <strong>📤 Envío automático:</strong> Al seleccionar un archivo (PDF o imagen), se enviará automáticamente a la API de almacenamiento 
+          y se guardará el enlace resultante en el registro, no se podrá recibir un mensaje de éxito, presionar una sola vez.
+        </p>
+        <div id="fileInfo" style="display:none; background:#f8f9fa; padding:8px; border-radius:4px; margin-top:8px;">
+          <small>📄 Archivo seleccionado: <span id="fileName"></span></small>
+        </div>
+        <div style="margin-top: 10px;">
+          <button id="savePDF" class="btn btn-primary">
+            <span id="savePDFText">Guardar Archivo</span>
+            <span id="savePDFLoading" style="display:none;">⏳ Enviando...</span>
+          </button>
+          <button id="openPDF" class="btn btn-secondary" style="display:none;">Abrir Archivo</button>
+          <button id="clearArchivo" class="btn btn-danger">Quitar archivo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewTextModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="modal-close" id="closeViewText" aria-label="Cerrar">&times;</button>
+             <h3 style="margin-top:0">Contenido de solución</h3>
+      <div id="viewArchivoContent"></div>
+    </div>
+  </div>
+
+  <div id="procedimientoModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="modal-close" id="closeProcedimiento" aria-label="Cerrar">&times;</button>
+      <h3 class="instructivo-title">📌 Instructivo del Sistema de Logística: Registro de Incidencias en Proformas y Actas</h3>
+      <p class="instructivo-subtitle">Guía rápida y minimalista del flujo de trabajo y herramientas disponibles.</p>
+
+      <div class="instructivo-section">
+        <h4>Su funcionamiento se divide en dos secciones principales</h4>
+        <ul>
+          <li>1️⃣ Registro de una nueva incidencia</li>
+          <li>2️⃣ Listado de incidencias registradas</li>
+        </ul>
+      </div>
+
+      <div class="instructivo-section">
+        <h4>1️⃣ Registro de una nueva incidencia</h4>
+        <p>Complete los siguientes campos obligatorios y presione <strong>“Guardar incidencia”</strong> ✅.</p>
+        <ul>
+          <li>Encargado del comprobante</li>
+          <li>Fecha de emisión</li>
+          <li>Responsable de la incidencia</li>
+          <li>Área (Ventas, Facturación o Logística)</li>
+          <li>N° de proforma o acta</li>
+          <li>N° de comprobante</li>
+          <li>Ítems de error (cantidad, talla, color, etc.)</li>
+          <li>Tipo de incidencia (color, talla, cantidad, precio, producto u otros)</li>
+          <li>Observación detallada</li>
+          <li>Registrado por</li>
+        </ul>
+      </div>
+
+      <div class="instructivo-section">
+        <h4>2️⃣ Listado de incidencias registradas</h4>
+        <ul>
+          <li>ID de incidencia</li>
+          <li>Fecha de registro y usuario</li>
+          <li>Encargado del comprobante y fecha de emisión</li>
+          <li>Número de proforma y comprobante</li>
+          <li>Responsable y área del error</li>
+          <li>Tipo de incidencia</li>
+          <li>Estado de verificación</li>
+          <li>Solución aplicada y observaciones</li>
+          <li>Archivos o reportes asociados</li>
+          <li>Estado final de la incidencia</li>
+        </ul>
+      </div>
+
+      <div class="instructivo-section">
+        <h4>Herramientas disponibles</h4>
+        <div class="instructivo-tools">
+          <div class="tool-item"><strong>🔍 Filtros</strong>Por estado o rango de fechas</div>
+          <div class="tool-item"><strong>📊 Exportar</strong>Generar CSV o reporte</div>
+          <div class="tool-item"><strong>👁️ Detalles</strong>Ver información completa</div>
+          <div class="tool-item"><strong>📄 PDF</strong>Generar PDF del caso</div>
+          <div class="tool-item"><strong>📥 Archivos</strong>Subir/editar archivos</div>
+          <div class="tool-item"><strong>📝 Observaciones</strong>Revisar notas adicionales</div>
+        </div>
+      </div>
+
+      <div class="instructivo-section">
+        <h4>3️⃣ Modales de apoyo</h4>
+        <ul>
+          <li><strong>Detalle de incidencia</strong>: Vista completa del caso</li>
+          <li><strong>Actualizar archivo</strong>: Cargar PDF o enlace con la solución</li>
+          <li><strong>Visualización de observaciones y archivos</strong>: Leer notas y enlaces relacionados</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    // ===== Configuración API =====
+    const API_BASE_URL = 'https://incidenciaslogisticaproformas-2946605267.us-central1.run.app';
+    let allRecords = [];
+    let currentPage = 1;
+    const rowsPerPage = 12;
+
+    // ===== Funciones de utilidad =====
+    const badgeClass = (v) => { v = (v || '').toUpperCase(); return v === 'PENDIENTE' ? 'badge-pendiente' : v === 'EN REVISIÓN' || v === 'EN REVISION' || v === 'EN PROCESO' ? 'badge-enrevision' : v === 'NOTIFICADO' ? 'badge-notificado' : v === 'COMPLETADO' ? 'badge-completado' : v === 'OBSERVADO' ? 'badge-observado' : ''; };
+    const fmtDateDisplay = (dt) => { if (!dt) return ''; const d = new Date(dt); if (isNaN(d)) return dt; const dd = String(d.getDate()).padStart(2, '0'); const mm = String(d.getMonth() + 1).padStart(2, '0'); const yyyy = d.getFullYear(); let hh = d.getHours(); const ap = hh >= 12 ? 'PM' : 'AM'; hh = hh % 12 || 12; const mi = String(d.getMinutes()).padStart(2, '0'); const ss = String(d.getSeconds()).padStart(2, '0'); return `${dd}-${mm}-${yyyy} ${String(hh).padStart(2, '0')}:${mi}:${ss} ${ap}`; };
+    const fmtDateOnly = (dt) => { 
+      if (!dt) return ''; 
+      // Si la fecha viene en formato YYYY-MM-DD, manejarla directamente sin conversión de zona horaria
+      if (typeof dt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dt)) {
+        const parts = dt.split('-');
+        const dd = parts[2];
+        const mm = parts[1];
+        const yyyy = parts[0];
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      // Para otros formatos, usar el método original
+      const d = new Date(dt); 
+      if (isNaN(d)) return dt; 
+      const dd = String(d.getDate()).padStart(2, '0'); 
+      const mm = String(d.getMonth() + 1).padStart(2, '0'); 
+      const yyyy = d.getFullYear(); 
+      return `${dd}/${mm}/${yyyy}`; 
+    };
+    const nowLocalISO = () => { const d = new Date(); const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); const HH = String(d.getHours()).padStart(2, '0'); const MI = String(d.getMinutes()).padStart(2, '0'); const SS = String(d.getSeconds()).padStart(2, '0'); return `${yyyy}-${mm}-${dd}T${HH}:${MI}:${SS}`; };
+
+    // Función para convertir número de mes a nombre
+    const getMonthName = (monthNum) => {
+      const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+      const num = parseInt(monthNum, 10);
+      return (num >= 1 && num <= 12) ? months[num - 1] : monthNum;
+    };
+
+    // ===== Funciones API =====
+    async function fetchRecords() {
+      try {
+        const params = { tipo: "registro" };
+        const headers = { "Content-Type": "application/json" };
+        const url = new URL(API_BASE_URL);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+        const response = await fetch(url, { method: 'GET', headers });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        console.log('Datos recibidos de la API:', data);
+        allRecords = data || [];
+        console.log('Registros cargados:', allRecords);
+        return allRecords;
+      } catch (error) {
+        console.error('Error fetching records:', error);
+        alert('Error al cargar los datos desde la API');
+        return [];
+      }
+    }
+
+    async function createRecord(recordData) {
+      try {
+        console.log('Enviando datos a la API:', recordData);
+        const response = await fetch(API_BASE_URL, {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recordData)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('Respuesta de la API:', result);
+        await fetchRecords(); // Recargar datos
+        return result;
+      } catch (error) {
+        console.error('Error creating record:', error);
+        alert('Error al crear el registro: ' + error.message);
+        throw error;
+      }
+    }
+
+         async function updateRecord(id, recordData) {
+       try {
+         console.log('Actualizando registro ID:', id, 'con datos:', recordData);
+         
+         // Incluir el ID en el cuerpo de la petición según el formato esperado por la API
+         const dataWithId = {
+           ...recordData,
+           id: id
+         };
+         
+         const response = await fetch(`${API_BASE_URL}`, {
+           method: 'PUT',
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify(dataWithId)
+         });
+
+        console.log('Respuesta de actualización - Status:', response.status);
+        console.log('Respuesta de actualización - Headers:', response.headers);
+
+        if (!response.ok) {
+          // Intentar leer el error como JSON primero, luego como texto
+          let errorMessage = '';
+          try {
+            const errorJson = await response.json();
+            errorMessage = JSON.stringify(errorJson);
+          } catch (jsonError) {
+            // Si no es JSON, leer como texto
+            errorMessage = await response.text();
+          }
+          
+          console.error('Error response:', errorMessage);
+          
+          // Detectar errores específicos del servidor
+          if (errorMessage.includes('Headers') || errorMessage.includes('name') && errorMessage.includes('is not defined')) {
+            throw new Error(`Error de configuración del servidor: ${errorMessage}`);
+          } else {
+            throw new Error(`HTTP error! status: ${response.status} - ${errorMessage}`);
+          }
+        }
+
+        // Verificar si la respuesta es JSON válido
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json();
+          console.log('Resultado de actualización:', result);
+          await fetchRecords(); // Recargar datos
+          return result;
+        } else {
+          // Si no es JSON, leer como texto
+          const textResult = await response.text();
+          console.log('Resultado de actualización (texto):', textResult);
+          await fetchRecords(); // Recargar datos
+          return { success: true, message: textResult };
+        }
+      } catch (error) {
+        console.error('Error updating record:', error);
+        // No mostrar alert aquí, dejar que el código que llama maneje el error
+        throw error;
+      }
+    }
+
+         async function deleteRecord(id) {
+       try {
+         const response = await fetch(`${API_BASE_URL}`, {
+           method: 'DELETE',
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ id: id })
+         });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        await fetchRecords(); // Recargar datos
+        return true;
+      } catch (error) {
+        console.error('Error deleting record:', error);
+        alert('Error al eliminar el registro');
+        throw error;
+      }
+    }
+
+    // ===== Funciones de filtrado y búsqueda =====
+    const findById = (id) => {
+      console.log('Buscando ID:', id, 'Tipo:', typeof id);
+
+      // Convertir el ID a número si es posible
+      const numId = parseInt(id, 10);
+      const isNumId = !isNaN(numId);
+
+      // Buscar por diferentes posibles campos de ID
+      const found = allRecords.find(r => {
+        if (!r) return false;
+
+        const rId = r.ID || r.id || r.Id;
+
+        // Si el ID buscado es un número válido, comparar como números
+        if (isNumId) {
+          return rId === numId;
+        }
+
+        // Si no es número, comparar como strings
+        return String(rId) === String(id);
+      });
+
+      console.log('Registro encontrado:', found ? 'SÍ' : 'NO');
+      return found || null;
+    };
+    const norm = (s) => (s || '').toUpperCase().replace(/[ÁÀÂÄ]/g, 'A').replace(/[ÉÈÊË]/g, 'E').replace(/[ÍÌÎÏ]/g, 'I').replace(/[ÓÒÔÖ]/g, 'O').replace(/[ÚÙÛÜ]/g, 'U');
+
+    const filterRecords = () => {
+      const estadoSel = document.getElementById('filterEstado').value;
+      const start = document.getElementById('filterStart').value;
+      const end = document.getElementById('filterEnd').value;
+      return allRecords.filter(rec => {
+        const est = rec.ESTADO_INCIDENCIA || 'PENDIENTE';
+        if (estadoSel !== 'TODOS' && norm(est) !== norm(estadoSel)) return false;
+        // Usar el campo correcto de la API
+        const fISO = rec['DATE(FECHA_EMISION)'] || rec.DATE_FECHA_EMISION || '';
+        const f = typeof fISO === 'string' ? fISO.substring(0, 10) : '';
+        if (start && (!f || f < start)) return false; if (end && (!f || f > end)) return false; return true;
+      });
+    };
+
+    const tdText = (text) => { const td = document.createElement('td'); td.textContent = text == null ? '' : String(text); return td; };
+    const tdHTML = (node) => { const td = document.createElement('td'); td.appendChild(node); return td; };
+    const spanNowrap = (text) => { const s = document.createElement('span'); s.className = 'nowrap'; s.textContent = text || ''; return s; };
+
+    const itemsCell = (rec) => {
+      const td = document.createElement('td');
+      const box = document.createElement('div');
+      box.className = 'cell-actions';
+
+      const recordId = rec.ID || rec.id || rec.Id;
+      console.log('Asignando ID en itemsCell:', recordId, 'Tipo:', typeof recordId);
+
+      // Botón para ver detalles
+      const eye = document.createElement('a');
+      eye.href = '#';
+      eye.textContent = '👁️';
+      eye.className = 'icon-btn';
+      eye.title = 'Ver ítems';
+      eye.dataset.action = 'view';
+      eye.dataset.id = recordId;
+      box.appendChild(eye);
+
+      // Botón para generar PDF
+      const pdf = document.createElement('a');
+      pdf.href = '#';
+      pdf.textContent = 'PDF';
+      pdf.className = 'icon-btn';
+      pdf.title = 'Generar PDF';
+      pdf.dataset.action = 'pdf';
+      pdf.dataset.id = recordId;
+      box.appendChild(document.createTextNode(' '));
+      box.appendChild(pdf);
+
+      td.appendChild(box);
+      return td;
+    };
+
+         const archivoCell = (rec) => {
+       const td = document.createElement('td');
+       const box = document.createElement('div');
+       box.className = 'cell-actions';
+
+       const recordId = rec.ID || rec.id || rec.Id;
+       console.log('Asignando ID en archivoCell:', recordId, 'Tipo:', typeof recordId);
+
+       const hasArchivo = !!String(rec.ARCHIVO_SOLUCION_PDF || '').trim();
+       const hasTexto = !!String(rec.TEXTO_SOLUCION_PDF || '').trim();
+
+       // Botón Editar (siempre visible)
+       const btnEditar = document.createElement('button');
+       btnEditar.className = 'btn btn-ghost';
+       btnEditar.textContent = 'Editar';
+       btnEditar.dataset.action = 'edit-file';
+       btnEditar.dataset.id = recordId;
+       box.appendChild(btnEditar);
+
+       // Botón Ver PDF (solo si hay archivo)
+       if (hasArchivo) {
+         box.appendChild(document.createTextNode(' '));
+         const btnPDF = document.createElement('a');
+         btnPDF.href = '#';
+         btnPDF.textContent = '📄';
+         btnPDF.className = 'icon-btn';
+         btnPDF.title = 'Ver PDF';
+         btnPDF.dataset.action = 'view-pdf';
+         btnPDF.dataset.id = recordId;
+         box.appendChild(btnPDF);
+       }
+
+       // Botón Ver Comentario (solo si hay texto)
+       if (hasTexto) {
+         box.appendChild(document.createTextNode(' '));
+         const btnComentario = document.createElement('a');
+         btnComentario.href = '#';
+         btnComentario.textContent = '👁️';
+         btnComentario.className = 'icon-btn';
+         btnComentario.title = 'Ver comentario';
+         btnComentario.dataset.action = 'view-comentario';
+         btnComentario.dataset.id = recordId;
+         box.appendChild(btnComentario);
+       }
+
+       // Si no hay nada, mostrar guión
+       if (!hasArchivo && !hasTexto) {
+         box.appendChild(document.createTextNode(' —'));
+       }
+
+       td.appendChild(box);
+       return td;
+     };
+
+    function renderList() {
+      const tbody = document.querySelector('#tablaIncidencias tbody'); tbody.innerHTML = '';
+      const filtered = filterRecords();
+      console.log('Registros filtrados:', filtered);
+
+      // Calcular paginación
+      const totalPages = Math.ceil(filtered.length / rowsPerPage);
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = startIndex + rowsPerPage;
+      const paginatedRecords = filtered.slice(startIndex, endIndex);
+
+      // Debug: mostrar estructura del primer registro
+      if (filtered.length > 0) {
+        console.log('Estructura del primer registro:', Object.keys(filtered[0]));
+        console.log('Primer registro completo:', filtered[0]);
+      }
+      paginatedRecords.forEach(rec => {
+        const tr = document.createElement('tr');
+        const id = rec.ID || rec.id || rec.Id;
+        console.log('Procesando registro con ID:', id, 'Registro:', rec);
+        tr.appendChild(tdText(id));
+        tr.appendChild(tdHTML(spanNowrap(fmtDateDisplay(rec.FECHA_REGISTRO) || '')));
+        tr.appendChild(tdText(rec.REGISTRADO_POR));
+        // Usar el campo correcto de la API para el mes
+        tr.appendChild(tdText(getMonthName(rec['MONTH(FECHA_EMISION)'] || rec.MONTH_FECHA_EMISION)));
+        tr.appendChild(tdText(rec.ENCARGADO_COMPROBANTE));
+        // Usar el campo correcto de la API para la fecha
+        tr.appendChild(tdHTML(spanNowrap(fmtDateOnly(rec['DATE(FECHA_EMISION)'] || rec.DATE_FECHA_EMISION) || '')));
+        tr.appendChild(tdText(rec.NUMERO_PROFORMA));
+        tr.appendChild(tdText(rec.NUMERO_COMPROBANTE));
+        tr.appendChild(itemsCell(rec));
+        tr.appendChild(tdText(rec.RESPONSABLE_INCIDENCIA));
+        tr.appendChild(tdText(rec.AREA));
+        tr.appendChild(tdText(rec.TIPO_INCIDENCIA));
+        tr.appendChild(tdHTML(spanNowrap(fmtDateDisplay(rec.FECHA_NOTIFICACION) || '')));
+        tr.appendChild(tdHTML(spanNowrap(rec.SOLUCION || '')));
+        const tdObs = document.createElement('td');
+        const txt = String(rec.OBSERVACION_ADICIONAL_CORRECION || '').trim();
+        const recordId = rec.ID || rec.id || rec.Id;
+        console.log('Asignando ID en observaciones:', recordId, 'Tipo:', typeof recordId);
+
+        if (txt) {
+          const a = document.createElement('a');
+          a.href = '#';
+          a.textContent = '👁️';
+          a.className = 'icon-btn';
+          a.dataset.action = 'view-obs-log';
+          a.dataset.id = recordId;
+          tdObs.appendChild(a);
+        } else {
+          tdObs.textContent = '—';
+        }
+        tr.appendChild(tdObs);
+        tr.appendChild(tdText(rec.REVISADO_POR));
+        const est = String(rec.ESTADO_INCIDENCIA || '').toUpperCase(); const badge = document.createElement('span'); badge.className = `badge ${badgeClass(est)}`; badge.textContent = est; tr.appendChild(tdHTML(badge));
+                 tr.appendChild(tdHTML(spanNowrap(fmtDateDisplay(rec.FECHA_ENVIO_ARCHIVO) || '')));
+         tr.appendChild(archivoCell(rec));
+         tr.appendChild(tdText(rec.CULMINADO || 'NO'));
+         tr.appendChild(tdHTML(spanNowrap(fmtDateDisplay(rec.FECHA_CONCLUYENTE) || '')));
+        tbody.appendChild(tr);
+      });
+
+      document.querySelector('#tablaIncidencias').onclick = (e) => {
+        const t = e.target.closest('a,button');
+        if (!t) return;
+        const action = t.dataset.action;
+        const id = t.dataset.id || '';
+        console.log('Click en acción:', action, 'ID:', id);
+
+        if (action === 'view') {
+          e.preventDefault();
+          console.log('Abriendo detalles para ID:', id);
+          showDetailById(id);
+        }
+        if (action === 'pdf') {
+          e.preventDefault();
+          console.log('Generando PDF para ID:', id);
+          generatePDFById(id);
+        }
+        if (action === 'edit-file') {
+          e.preventDefault();
+          console.log('Abriendo modal de archivo para ID:', id);
+          openArchivoModalById(id);
+        }
+                 if (action === 'view-text') {
+           e.preventDefault();
+           console.log('Abriendo modal de texto para ID:', id);
+           openViewTextModalById(id);
+         }
+         if (action === 'view-pdf') {
+           e.preventDefault();
+           console.log('Abriendo PDF para ID:', id);
+           openPDFById(id);
+         }
+         if (action === 'view-comentario') {
+           e.preventDefault();
+           console.log('Abriendo comentario para ID:', id);
+           openComentarioById(id);
+         }
+        if (action === 'view-obs-log') {
+          e.preventDefault();
+          console.log('Abriendo modal de observaciones para ID:', id);
+          openObsModalById_Log(id);
+        }
+      };
+
+      adjustTableViewport();
+      renderPagination(filtered.length);
+      updateResumenTable(filtered);
+    }
+
+    function adjustTableViewport() {
+      const wrapper = document.getElementById('tableViewport'); const table = document.getElementById('tablaIncidencias'); if (!wrapper || !table) return;
+      const thH = table.tHead ? table.tHead.getBoundingClientRect().height : 40; const firstRow = table.tBodies[0]?.rows[0]; const rowH = firstRow ? firstRow.getBoundingClientRect().height : 40; const maxH = Math.round(thH + rowH * 10 + 2); wrapper.style.maxHeight = maxH + 'px'; wrapper.style.overflow = 'auto';
+    }
+
+    function renderPagination(totalRecords) {
+      const paginationDiv = document.getElementById('pagination');
+      if (!paginationDiv) return;
+
+      const totalPages = Math.ceil(totalRecords / rowsPerPage);
+      if (totalPages <= 1) {
+        paginationDiv.innerHTML = `<div class="pagination-info">Mostrando ${totalRecords} registro(s)</div>`;
+        return;
+      }
+
+      let html = '';
+      
+      // Botón Anterior
+      html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹ Anterior</button>`;
+      
+      // Números de página
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      if (startPage > 1) {
+        html += `<button onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+      }
+      
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += `<span>...</span>`;
+        html += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+      }
+      
+      // Botón Siguiente
+      html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente ›</button>`;
+      
+      // Información
+      const startIndex = (currentPage - 1) * rowsPerPage + 1;
+      const endIndex = Math.min(currentPage * rowsPerPage, totalRecords);
+      html += `<div class="pagination-info">Mostrando ${startIndex}-${endIndex} de ${totalRecords} registro(s)</div>`;
+      
+      paginationDiv.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      const filtered = filterRecords();
+      const totalPages = Math.ceil(filtered.length / rowsPerPage);
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderList();
+    }
+    
+    // Hacer goToPage accesible globalmente para los botones de paginación
+    window.goToPage = goToPage;
+
+    function updateResumenTable(records) {
+      const resumenBody = document.getElementById('resumenBody');
+      if (!resumenBody) return;
+
+      // Contar por estado
+      const estados = {};
+      records.forEach(rec => {
+        const estado = (rec.ESTADO_INCIDENCIA || 'PENDIENTE').toUpperCase();
+        estados[estado] = (estados[estado] || 0) + 1;
+      });
+
+      const total = records.length;
+      resumenBody.innerHTML = '';
+
+      // Ordenar estados por cantidad (mayor a menor)
+      const estadosOrdenados = Object.entries(estados).sort((a, b) => b[1] - a[1]);
+
+      estadosOrdenados.forEach(([estado, cantidad]) => {
+        const porcentaje = total > 0 ? ((cantidad / total) * 100).toFixed(1) : 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="badge ${badgeClass(estado)}">${estado}</span></td>
+          <td><strong>${cantidad}</strong></td>
+          <td>${porcentaje}%</td>
+        `;
+        resumenBody.appendChild(tr);
+      });
+
+      // Agregar fila de total
+      if (total > 0) {
+        const trTotal = document.createElement('tr');
+        trTotal.style.fontWeight = 'bold';
+        trTotal.style.backgroundColor = 'var(--azul-claro)';
+        trTotal.innerHTML = `
+          <td>TOTAL</td>
+          <td>${total}</td>
+          <td>100%</td>
+        `;
+        resumenBody.appendChild(trTotal);
+      }
+    }
+
+    async function showDetailById(id) { 
+      const rec = findById(id); 
+      if (!rec) { 
+        alert('No se encontró el registro.'); 
+        return; 
+      } 
+      
+      console.log('Registro completo para mostrar detalles:', rec);
+      
+      const c = document.getElementById('detailContent'); 
+      c.innerHTML = '<p>⏳ Cargando detalles...</p>'; 
+      
+      try {
+        // Extraer datos de error/solución desde la API (igual que en generatePDFById)
+        console.log('Extrayendo datos de error/solución para ID:', id);
+        const errorResponse = await fetch(`${API_BASE_URL}?tipo=error_solucion&id=${id}`, {
+          method: 'GET',
+          headers: { "Content-Type": "application/json" }
+        });
+        
+        let detalleItems = [];
+        if (errorResponse.ok) {
+          detalleItems = await errorResponse.json();
+          console.log('Datos de error/solución obtenidos:', detalleItems);
+        } else {
+          console.error('Error al obtener datos de error/solución:', await errorResponse.text());
+        }
+        
+        // Limpiar el contenido
+        c.innerHTML = '';
+        
+        // Si no hay ítems, mostrar mensaje
+        if (!detalleItems || detalleItems.length === 0) {
+          const p = document.createElement('p');
+          p.innerHTML = '<strong>No hay ítems de error registrados.</strong>';
+          c.appendChild(p);
+          
+          // Mostrar información de debug
+          const debugDiv = document.createElement('div');
+          debugDiv.style.marginTop = '20px';
+          debugDiv.style.padding = '10px';
+          debugDiv.style.backgroundColor = '#f0f0f0';
+          debugDiv.style.borderRadius = '5px';
+          debugDiv.style.fontSize = '12px';
+          debugDiv.innerHTML = `<strong>Debug:</strong> No se encontraron datos de error/solución en la API. Campos disponibles en el registro: ${Object.keys(rec).join(', ')}`;
+          c.appendChild(debugDiv);
+        } else {
+          // Mostrar cada ítem de error
+          detalleItems.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.style.marginBottom = '20px';
+            itemDiv.style.padding = '15px';
+            itemDiv.style.border = '1px solid #e0e0e0';
+            itemDiv.style.borderRadius = '8px';
+            itemDiv.style.backgroundColor = '#f9f9f9';
+            
+            const title = document.createElement('h4');
+            title.textContent = `Ítem ${index + 1}`;
+            title.style.margin = '0 0 10px 0';
+            title.style.color = '#17375d';
+            itemDiv.appendChild(title);
+            
+            // Usar los campos correctos de la API
+            const errorText = item.ERROR_ || item.ERROR || item.error || item.detalle || item.detalle_error || item.text || '';
+            const solucionText = item.SOLUCION || item.solucion || item.debe_ser || item.correccion || '';
+            
+            if (errorText && errorText.trim()) {
+              const errorP = document.createElement('p');
+              errorP.innerHTML = `<strong>Detalle del error:</strong><br>${errorText}`;
+              errorP.style.margin = '5px 0';
+              itemDiv.appendChild(errorP);
+            }
+            
+            if (solucionText && solucionText.trim()) {
+              const solP = document.createElement('p');
+              solP.innerHTML = `<strong>Debe ser:</strong><br>${solucionText}`;
+              solP.style.margin = '5px 0';
+              itemDiv.appendChild(solP);
+            }
+            
+            c.appendChild(itemDiv);
+          });
+        }
+      } catch (error) {
+        console.error('Error al cargar detalles:', error);
+        c.innerHTML = `<p style="color: red;"><strong>Error al cargar los detalles:</strong> ${error.message}</p>`;
+      }
+      
+      document.getElementById('detailModal').style.display = 'flex'; 
+    }
+    document.getElementById('closeDetail').onclick = () => { document.getElementById('detailModal').style.display = 'none'; };
+
+    let CURRENT_EDIT_ID = null;
+         const openArchivoModalById = (id) => { 
+       CURRENT_EDIT_ID = id; 
+       const rec = findById(id); 
+       if (!rec) { 
+         alert('No se encontró el registro.'); 
+         return; 
+       } 
+       // Cargar el comentario de solución en el campo de texto
+       document.getElementById('editArchivoTexto').value = String(rec.TEXTO_SOLUCION_PDF || ''); 
+       // Limpiar el campo de archivo PDF
+       document.getElementById('editArchivoPDF').value = ''; 
+       document.getElementById('fileInfo').style.display = 'none';
+       
+       // Mostrar/ocultar botón "Abrir PDF" según si hay enlace disponible
+       const archivoUrl = String(rec.ARCHIVO_SOLUCION_PDF || '').trim();
+       const openPDFBtn = document.getElementById('openPDF');
+       if (archivoUrl && /^https?:\/\//i.test(archivoUrl)) {
+         openPDFBtn.style.display = 'inline-block';
+         openPDFBtn.onclick = () => window.open(archivoUrl, '_blank');
+       } else {
+         openPDFBtn.style.display = 'none';
+       }
+       
+       document.getElementById('archivoModal').style.display = 'flex'; 
+     };
+    document.getElementById('closeArchivo').onclick = () => { document.getElementById('archivoModal').style.display = 'none'; };
+         document.getElementById('clearArchivo').onclick = async () => { 
+       if (!CURRENT_EDIT_ID) return; 
+       const rec = findById(CURRENT_EDIT_ID); 
+       if (!rec) return; 
+       try { 
+         await updateRecord(CURRENT_EDIT_ID, { ARCHIVO_SOLUCION_PDF: '' }); 
+         await fetchRecords(); // Recargar datos desde la API
+         renderList(); // Actualizar la tabla
+         alert('✅ Archivo removido exitosamente.');
+         
+         // Cerrar el modal después de mostrar el mensaje
+         setTimeout(() => {
+           document.getElementById('archivoModal').style.display = 'none';
+         }, 1500);
+       } catch (error) { 
+         console.error('Error clearing file:', error); 
+         alert('❌ Error al remover el archivo: ' + error.message);
+       } 
+     };
+    // Función para guardar solo el comentario
+    document.getElementById('saveComentario').onclick = async () => { 
+      if (!CURRENT_EDIT_ID) return; 
+      const rec = findById(CURRENT_EDIT_ID); 
+      if (!rec) { 
+        alert('No se encontró el registro.'); 
+        return; 
+      } 
+      
+      const txt = String(document.getElementById('editArchivoTexto').value || '').trim(); 
+      
+      // Mostrar indicador de carga
+      const saveBtn = document.getElementById('saveComentario');
+      const saveText = document.getElementById('saveComentarioText');
+      const saveLoading = document.getElementById('saveComentarioLoading');
+      
+      saveBtn.disabled = true;
+      saveText.style.display = 'none';
+      saveLoading.style.display = 'inline';
+      
+      try { 
+        // Usar el método específico para guardar comentario
+        const data = {
+          id: CURRENT_EDIT_ID,
+          texto_solucion_pdf: txt
+        };
+        
+        console.log('Guardando comentario con método específico:', data);
+        
+        const response = await fetch(`${API_BASE_URL}?metodo=solucion_texto`, {
+          method: 'PUT',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        
+        console.log('Respuesta de guardar comentario - Status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        }
+        
+        const result = await response.text();
+        console.log('Resultado de guardar comentario:', result);
+        
+        await fetchRecords(); // Recargar datos desde la API
+        renderList(); // Actualizar la tabla
+        
+        alert('✅ Comentario guardado exitosamente.');
+        
+        // Cerrar el modal después de mostrar el mensaje
+        setTimeout(() => {
+          document.getElementById('archivoModal').style.display = 'none';
+        }, 1500);
+        
+      } catch (error) { 
+        console.error('Error saving comment:', error); 
+        alert('❌ Error al guardar el comentario: ' + error.message);
+      } finally {
+        // Restaurar botón
+        saveBtn.disabled = false;
+        saveText.style.display = 'inline';
+        saveLoading.style.display = 'none';
+      }
+    };
+
+    // Función para guardar solo el PDF
+    document.getElementById('savePDF').onclick = async () => { 
+      if (!CURRENT_EDIT_ID) return; 
+      const rec = findById(CURRENT_EDIT_ID); 
+      if (!rec) { 
+        alert('No se encontró el registro.'); 
+        return; 
+      } 
+      
+      const fileInput = document.getElementById('editArchivoPDF'); 
+      const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null; 
+      
+      if (!file) {
+        alert('Por favor seleccione un archivo (PDF o imagen) para guardar.');
+        return;
+      }
+      
+      // Mostrar indicador de carga
+      const saveBtn = document.getElementById('savePDF');
+      const saveText = document.getElementById('savePDFText');
+      const saveLoading = document.getElementById('savePDFLoading');
+      
+      saveBtn.disabled = true;
+      saveText.style.display = 'none';
+      saveLoading.style.display = 'inline';
+      
+      try { 
+        let archivoUrl = '';
+        let pdfEnviado = false;
+        let pdfError = null;
+        
+        console.log('Enviando archivo PDF a la API...');
+        
+        // Crear FormData para enviar el archivo
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // URL de la API con el ID como parámetro
+        const apiUrl = `https://pdfdrive-2946605267.us-central1.run.app?id=${CURRENT_EDIT_ID}`;
+        
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData
+          });
+          
+          console.log('Respuesta de la API PDF - Status:', response.status);
+          console.log('Respuesta de la API PDF - Headers:', response.headers);
+          
+          // Verificar si la respuesta es JSON válido
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const result = await response.json();
+            console.log('Respuesta de la API PDF:', result);
+            
+            if (response.ok) {
+              // Si la API devuelve una URL, usarla
+              if (result.url || result.link) {
+                archivoUrl = result.url || result.link;
+                pdfEnviado = true;
+              } else if (result.status === 'ok' || result.status === 'success') {
+                // Si el status es 'ok' o 'success', considerar exitoso
+                archivoUrl = `Archivo PDF enviado exitosamente - ID: ${CURRENT_EDIT_ID}`;
+                pdfEnviado = true;
+              } else if (result.ERROR) {
+                // Si hay error en la respuesta, pero el PDF se guardó
+                console.warn('Error en respuesta pero continuando:', result.ERROR);
+                archivoUrl = `Archivo PDF enviado exitosamente - ID: ${CURRENT_EDIT_ID}`;
+                pdfEnviado = true;
+              } else {
+                // Si hay un mensaje de error en la respuesta JSON
+                throw new Error(`Error en la API: ${result.message || JSON.stringify(result)}`);
+              }
+            } else {
+              // Si el status HTTP no es 200, pero tenemos respuesta JSON
+              throw new Error(`Error HTTP: ${response.status} - ${result.message || JSON.stringify(result)}`);
+            }
+          } else {
+            // Si no es JSON, intentar leer como texto para debug
+            const textResponse = await response.text();
+            console.log('Respuesta no-JSON de la API:', textResponse);
+            
+            if (response.ok) {
+              // Si el status es 200, considerar que fue exitoso
+              archivoUrl = `Archivo PDF enviado exitosamente - ID: ${CURRENT_EDIT_ID}`;
+              pdfEnviado = true;
+            } else {
+              throw new Error(`Error HTTP: ${response.status} - Respuesta: ${textResponse}`);
+            }
+          }
+          
+        } catch (apiError) {
+          console.error('Error al enviar archivo a la API:', apiError);
+          pdfError = apiError.message;
+          // Continuar con el proceso, pero marcar que hubo error
+        }
+        
+        // Preparar datos para actualizar el registro
+        const updateData = { 
+          FECHA_ENVIO_ARCHIVO: nowLocalISO() 
+        }; 
+        
+        // Solo agregar archivo si se envió exitosamente
+        if (pdfEnviado) {
+          updateData.ARCHIVO_SOLUCION_PDF = archivoUrl;
+        }
+        
+        console.log('Datos a actualizar:', updateData);
+        
+        try {
+          console.log('Actualizando registro con datos:', updateData);
+          
+          // SOLUCIÓN: No actualizar el registro si el PDF ya se guardó
+          // Solo actualizar la fecha de envío, no el archivo
+          if (pdfEnviado) {
+            // Solo actualizar la fecha, no el archivo (ya se guardó en Drive)
+            const fechaOnly = { 
+              FECHA_ENVIO_ARCHIVO: nowLocalISO() 
+            };
+            await updateRecord(CURRENT_EDIT_ID, fechaOnly);
+          }
+          
+          // Recargar datos y actualizar vista inmediatamente
+          await fetchRecords(); // Recargar datos desde la API
+          renderList(); // Actualizar la tabla
+          
+          console.log('Estado final - PDF enviado:', pdfEnviado, 'Error:', pdfError);
+          
+          // Mostrar mensaje apropiado
+          if (pdfEnviado) {
+            alert('✅ Archivo enviado exitosamente a Google Drive y guardado en el registro.');
+            // Limpiar el campo de archivo
+            document.getElementById('editArchivoPDF').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            
+            // Cerrar el modal después de mostrar el mensaje
+            setTimeout(() => {
+              document.getElementById('archivoModal').style.display = 'none';
+            }, 1500);
+          } else if (pdfError) {
+            alert(`⚠️ El archivo no se pudo enviar a la API: ${pdfError}`);
+          } else {
+            alert('✅ Archivo procesado y guardado en el registro.');
+          }
+        } catch (updateError) {
+          console.error('Error al actualizar registro:', updateError);
+          
+          // Si falla la actualización pero el archivo se guardó, mostrar mensaje de éxito parcial
+          if (pdfEnviado) {
+            alert('✅ Archivo guardado en Google Drive');
+            // Aún así, intentar recargar los datos
+            try {
+              await fetchRecords();
+              renderList();
+            } catch (reloadError) {
+              console.error('Error al recargar datos:', reloadError);
+            }
+          } else {
+            alert('❌ Error al guardar la información: ' + updateError.message);
+          }
+        }
+        
+      } catch (error) { 
+        console.error('Error saving file:', error); 
+        alert('❌ Error al guardar el archivo: ' + error.message);
+      } finally {
+        // Restaurar botón
+        saveBtn.disabled = false;
+        saveText.style.display = 'inline';
+        saveLoading.style.display = 'none';
+      }
+    };
+
+    const openViewTextModalById = (id) => { const rec = findById(id); if (!rec) { alert('No se encontró el registro.'); return; } const cont = document.getElementById('viewArchivoContent'); cont.innerHTML = ''; const txt = String(rec.ARCHIVO_SOLUCION_PDF || '').trim(); if (!txt) { cont.textContent = '(Sin texto/enlace)'; } else if (/^https?:\/\//i.test(txt)) { const a = document.createElement('a'); a.href = txt; a.target = '_blank'; a.textContent = txt; cont.appendChild(a); } else { const pre = document.createElement('div'); pre.className = 'prelike'; pre.textContent = txt; cont.appendChild(pre); } document.getElementById('viewTextModal').style.display = 'flex'; };
+    document.getElementById('closeViewText').onclick = () => { document.getElementById('viewTextModal').style.display = 'none'; };
+
+         const openObsModalById_Log = (id) => { const rec = findById(id); if (!rec) { alert('No se encontró el registro.'); return; } const cont = document.getElementById('viewArchivoContent'); cont.innerHTML = ''; const pre = document.createElement('div'); pre.className = 'prelike'; pre.textContent = String(rec.OBSERVACION_ADICIONAL_CORRECION || '').trim() || '(Sin observaciones)'; cont.appendChild(pre); document.getElementById('viewTextModal').style.display = 'flex'; };
+
+     // Función para abrir PDF
+     const openPDFById = (id) => {
+       const rec = findById(id);
+       if (!rec) {
+         alert('No se encontró el registro.');
+         return;
+       }
+       
+       const archivoUrl = String(rec.ARCHIVO_SOLUCION_PDF || '').trim();
+       if (!archivoUrl) {
+         alert('No hay archivo PDF disponible.');
+         return;
+       }
+       
+       // Si es una URL válida, abrir en nueva pestaña
+       if (/^https?:\/\//i.test(archivoUrl)) {
+         window.open(archivoUrl, '_blank');
+       } else {
+         // Si no es URL, mostrar en modal
+         const cont = document.getElementById('viewArchivoContent');
+         cont.innerHTML = '';
+         const pre = document.createElement('div');
+         pre.className = 'prelike';
+         pre.textContent = archivoUrl;
+         cont.appendChild(pre);
+         document.getElementById('viewTextModal').style.display = 'flex';
+       }
+     };
+
+     // Función para abrir comentario
+     const openComentarioById = (id) => {
+       const rec = findById(id);
+       if (!rec) {
+         alert('No se encontró el registro.');
+         return;
+       }
+       
+       const comentario = String(rec.TEXTO_SOLUCION_PDF || '').trim();
+       if (!comentario) {
+         alert('No hay comentario disponible.');
+         return;
+       }
+       
+       const cont = document.getElementById('viewArchivoContent');
+       cont.innerHTML = '';
+       const pre = document.createElement('div');
+       pre.className = 'prelike';
+       pre.textContent = comentario;
+       cont.appendChild(pre);
+       document.getElementById('viewTextModal').style.display = 'flex';
+     };
+
+         async function generatePDFById(id) { 
+       const rec = findById(id); 
+       if (!rec) { 
+         alert('No se encontró el registro.'); 
+         return; 
+       } 
+       
+       try {
+         // Extraer datos de error/solución desde la API
+         console.log('Extrayendo datos de error/solución para ID:', id);
+         const errorResponse = await fetch(`${API_BASE_URL}?tipo=error_solucion&id=${id}`, {
+           method: 'GET',
+           headers: { "Content-Type": "application/json" }
+         });
+         
+         let errorSolucionData = [];
+         if (errorResponse.ok) {
+           errorSolucionData = await errorResponse.json();
+           console.log('Datos de error/solución obtenidos:', errorSolucionData);
+         } else {
+           console.error('Error al obtener datos de error/solución:', await errorResponse.text());
+         }
+         
+         const { jsPDF } = window.jspdf; 
+         const doc = new jsPDF(); 
+         
+         // Líneas básicas del registro
+         const lines = [
+           `ID: ${rec.ID}`, 
+           `Fecha registro: ${fmtDateDisplay(rec.FECHA_REGISTRO)}`, 
+           `Registrado por: ${rec.REGISTRADO_POR}`, 
+           `Mes: ${getMonthName(rec['MONTH(FECHA_EMISION)'] || rec.MONTH_FECHA_EMISION)}`, 
+           `Encargado: ${rec.ENCARGADO_COMPROBANTE}`, 
+           `Fecha de emisión: ${fmtDateOnly(rec['DATE(FECHA_EMISION)'] || rec.DATE_FECHA_EMISION)}`, 
+           `N° proforma/acta: ${rec.NUMERO_PROFORMA}`, 
+           `N° comprobante: ${rec.NUMERO_COMPROBANTE}`, 
+           `Responsable: ${rec.RESPONSABLE_INCIDENCIA}`, 
+           `Área: ${rec.AREA}`, 
+           `Tipo: ${rec.TIPO_INCIDENCIA}`, 
+           `Fecha notificación: ${fmtDateDisplay(rec.FECHA_NOTIFICACION)}`, 
+           `Solución: ${rec.SOLUCION}`, 
+           `Obs. adicionales: ${(rec.OBSERVACION_ADICIONAL_CORRECION || '').toString().replace(/\n/g, ' ')}`, 
+           `Revisado por: ${rec.REVISADO_POR}`, 
+           `Estado verificación: ${rec.ESTADO_INCIDENCIA}`, 
+           `Fecha envío archivo: ${fmtDateDisplay(rec.FECHA_ENVIO_ARCHIVO)}`, 
+           `Fecha concluyente: ${rec.FECHA_CONCLUYENTE ? fmtDateDisplay(rec.FECHA_CONCLUYENTE) : ''}`
+         ]; 
+         
+         let y = 10; 
+         doc.setFontSize(12); 
+         
+         // Agregar líneas básicas
+         lines.forEach(line => { 
+           doc.text(line, 10, y); 
+           y += 7; 
+           if (y > 280) { 
+             doc.addPage(); 
+             y = 10; 
+           } 
+         }); 
+         
+         // Agregar datos de error/solución si existen
+         if (errorSolucionData && errorSolucionData.length > 0) {
+           y += 10; // Espacio adicional
+           doc.setFontSize(14);
+           doc.text('DETALLES DE ERROR Y SOLUCIÓN:', 10, y);
+           y += 15; // Más espacio después del título
+           doc.setFontSize(12);
+           
+           errorSolucionData.forEach((item, index) => {
+             // Verificar si necesitamos nueva página antes de agregar el ítem
+             if (y > 250) {
+               doc.addPage();
+               y = 10;
+             }
+             
+             // Título del ítem
+             doc.setFontSize(12);
+             doc.text(`Ítem ${index + 1}:`, 10, y);
+             y += 8;
+             
+             // Error con texto dividido en líneas si es muy largo
+             const errorText = item.ERROR_ || '';
+             if (errorText) {
+               doc.setFontSize(10);
+               const errorLines = doc.splitTextToSize(`Error: ${errorText}`, 180);
+               errorLines.forEach(line => {
+                 if (y > 270) {
+                   doc.addPage();
+                   y = 10;
+                 }
+                 doc.text(line, 15, y);
+                 y += 5;
+               });
+               y += 3; // Espacio adicional después del error
+             }
+             
+             // Solución con texto dividido en líneas si es muy largo
+             const solucionText = item.SOLUCION || '';
+             if (solucionText) {
+               doc.setFontSize(10);
+               const solucionLines = doc.splitTextToSize(`Solución: ${solucionText}`, 180);
+               solucionLines.forEach(line => {
+                 if (y > 270) {
+                   doc.addPage();
+                   y = 10;
+                 }
+                 doc.text(line, 15, y);
+                 y += 5;
+               });
+               y += 8; // Espacio adicional después de la solución
+             }
+             
+             // Línea separadora entre ítems
+             if (index < errorSolucionData.length - 1) {
+               if (y > 270) {
+                 doc.addPage();
+                 y = 10;
+               }
+               doc.setFontSize(8);
+               doc.text('─'.repeat(50), 10, y);
+               y += 8;
+             }
+           });
+         }
+         
+         doc.save(`${rec.ID || 'incidencia'}.pdf`); 
+       } catch (error) {
+         console.error('Error al generar PDF:', error);
+         alert('Error al generar el PDF: ' + error.message);
+       }
+     }
+
+         function exportFilteredCSV() { 
+       const list = filterRecords(); 
+       let csv = 'ID,FECHA_REGISTRO,REGISTRADO_POR,MONTH_FECHA_EMISION,ENCARGADO_COMPROBANTE,DATE_FECHA_EMISION,NUMERO_PROFORMA,NUMERO_COMPROBANTE,RESPONSABLE_INCIDENCIA,AREA,TIPO_INCIDENCIA,FECHA_NOTIFICACION,SOLUCION,OBSERVACION_ADICIONAL_CORRECION,REVISADO_POR,ESTADO_INCIDENCIA,FECHA_ENVIO_ARCHIVO,ARCHIVO_SOLUCION_PDF,ACTA_REALIZADA,CULMINADO,FECHA_CONCLUYENTE\n'; 
+       list.forEach(rec => { 
+         const row = [
+           rec.ID || '', 
+           rec.FECHA_REGISTRO || '', 
+           rec.REGISTRADO_POR || '', 
+           getMonthName(rec['MONTH(FECHA_EMISION)'] || rec.MONTH_FECHA_EMISION) || '', 
+           rec.ENCARGADO_COMPROBANTE || '', 
+           rec['DATE(FECHA_EMISION)'] || rec.DATE_FECHA_EMISION || '', 
+           rec.NUMERO_PROFORMA || '', 
+           rec.NUMERO_COMPROBANTE || '', 
+           rec.RESPONSABLE_INCIDENCIA || '', 
+           rec.AREA || '', 
+           rec.TIPO_INCIDENCIA || '', 
+           rec.FECHA_NOTIFICACION || '', 
+           rec.SOLUCION || '', 
+           rec.OBSERVACION_ADICIONAL_CORRECION || '', 
+           rec.REVISADO_POR || '', 
+           rec.ESTADO_INCIDENCIA || '', 
+           rec.FECHA_ENVIO_ARCHIVO || '', 
+           rec.ARCHIVO_SOLUCION_PDF || '', 
+           rec.ACTA_REALIZADA || '', 
+           rec.CULMINADO || '', 
+           rec.FECHA_CONCLUYENTE || ''
+         ]; 
+         csv += row.map(x => `"${String(x).replace(/"/g, '""')}"`).join(',') + '\n'; 
+       }); 
+       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); 
+       const url = URL.createObjectURL(blob); 
+       const a = document.createElement('a'); 
+       a.href = url; 
+       a.download = 'incidencias_logistica.csv'; 
+       a.click(); 
+       URL.revokeObjectURL(url); 
+     }
+
+    async function generateReport() { const table = document.querySelector('#tablaIncidencias'); const canvas = await html2canvas(table); const img = canvas.toDataURL('image/png'); const { jsPDF } = window.jspdf; const pdf = new jsPDF({ orientation: 'landscape' }); const props = pdf.getImageProperties(img); const pdfW = pdf.internal.pageSize.getWidth(); const pdfH = (props.height * pdfW) / props.width; pdf.addImage(img, 'PNG', 0, 10, pdfW, pdfH); pdf.save('reporte_incidencias_logistica.pdf'); }
+
+    // ===== Items: agregar/eliminar =====
+    function addItemRow() { const c = document.getElementById('itemsContainer'); const row = document.createElement('div'); row.className = 'item-row'; const t1 = document.createElement('textarea'); t1.placeholder = 'Detalle de error'; const t2 = document.createElement('textarea'); t2.placeholder = 'Debe ser'; const del = document.createElement('button'); del.type = 'button'; del.className = 'btn btn-danger btn-eliminar'; del.textContent = 'Eliminar'; del.setAttribute('aria-label', 'Eliminar ítem'); del.dataset.action = 'del-item'; row.append(t1, t2, del); c.appendChild(row); }
+    document.getElementById('addItem').onclick = addItemRow;
+    document.getElementById('itemsContainer').addEventListener('click', (e) => { const btn = e.target.closest('button[data-action="del-item"]'); if (!btn) return; const container = document.getElementById('itemsContainer'); const rows = container.querySelectorAll('.item-row'); const row = btn.closest('.item-row'); if (rows.length > 1) { const next = row.nextElementSibling?.querySelector('textarea') || container.querySelector('.item-row textarea'); row.remove(); if (next) next.focus(); } else { row.querySelectorAll('textarea').forEach(t => t.value = ''); row.querySelector('textarea')?.focus(); } });
+
+    // ===== Form interacciones =====
+    document.getElementById('tipoIncidencia').addEventListener('change', (e) => { const val = e.target.value; const d = document.getElementById('observacionDetalle'); d.disabled = (val !== 'OTROS'); if (val !== 'OTROS') d.value = ''; });
+
+    // Mostrar campo adicional cuando "OTROS" es seleccionado en Responsable incidencia
+    (function () {
+      const sel = document.getElementById('responsable');
+      const inp = document.getElementById('responsableOtro');
+      if (!sel || !inp) return;
+      const toggle = () => {
+        if (sel.value === 'OTROS') {
+          inp.style.display = '';
+          sel.style.width = '120px';
+          inp.required = true;
+          setTimeout(() => inp.focus(), 0);
+        } else {
+          inp.style.display = 'none';
+          sel.style.width = '';
+          inp.required = false;
+          inp.value = '';
+        }
+      };
+      sel.addEventListener('change', toggle);
+      toggle();
+      // Forzar mayúsculas al escribir
+      inp.addEventListener('input', function () {
+        this.value = this.value.toUpperCase();
+      });
+    })();
+
+    // ===== Filtros/listado =====
+    document.getElementById('applyFilter').onclick = () => { currentPage = 1; renderList(); };
+    document.getElementById('clearFilters').onclick = () => { currentPage = 1; document.getElementById('filterEstado').value = 'TODOS'; document.getElementById('filterStart').value = ''; document.getElementById('filterEnd').value = ''; renderList(); };
+    document.getElementById('exportCSV').onclick = exportFilteredCSV;
+    document.getElementById('generateReport').onclick = generateReport;
+
+    // Cerrar modales clic fuera
+    ;['viewTextModal', 'detailModal', 'archivoModal', 'procedimientoModal'].forEach(id => { const overlay = document.getElementById(id); if (overlay) { overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); } });
+
+    // Botón "Ver procedimiento" (abre/cierra modal)
+    (function () {
+      const btn = document.getElementById('btnProcedimiento');
+      const close = document.getElementById('closeProcedimiento');
+      if (btn) { btn.addEventListener('click', () => { const m = document.getElementById('procedimientoModal'); if (m) m.style.display = 'flex'; }); }
+      if (close) { close.addEventListener('click', () => { const m = document.getElementById('procedimientoModal'); if (m) m.style.display = 'none'; }); }
+    })();
+
+    // Mostrar campo adicional cuando "OTROS" es seleccionado en Registrado por
+    (function () {
+      const sel = document.getElementById('registradoPor');
+      const grp = document.getElementById('registradoPorOtroGroup');
+      const inp = document.getElementById('registradoPorOtro');
+      if (!sel || !grp || !inp) return;
+      const toggle = () => {
+        if (sel.value === 'OTROS') {
+          grp.style.display = '';
+          inp.required = true;
+          setTimeout(() => inp.focus(), 0);
+        } else {
+          grp.style.display = 'none';
+          inp.required = false;
+          inp.value = '';
+        }
+      };
+      sel.addEventListener('change', toggle);
+      toggle();
+    })();
+
+    // ===== Guardar incidencia =====
+    document.getElementById('formLogistica').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const encargado = document.getElementById('encargado').value;
+      const fechaEmision = document.getElementById('fechaEmision').value;
+      const responsableSel = document.getElementById('responsable').value;
+      const responsableOtro = document.getElementById('responsableOtro') ? document.getElementById('responsableOtro').value.trim().toUpperCase() : '';
+      const responsable = (responsableSel === 'OTROS' && responsableOtro) ? responsableOtro : responsableSel;
+      const area = document.getElementById('area').value;
+      const proforma = document.getElementById('proforma').value;
+      const comprobante = document.getElementById('comprobante').value;
+      const tipo = document.getElementById('tipoIncidencia').value;
+      const obsDetalle = document.getElementById('observacionDetalle').value;
+      const registradoPorSel = document.getElementById('registradoPor').value;
+      const registradoPorOtro = document.getElementById('registradoPorOtro') ? document.getElementById('registradoPorOtro').value.trim() : '';
+      const registradoPor = (registradoPorSel === 'OTROS' && registradoPorOtro) ? registradoPorOtro : registradoPorSel;
+
+      if (!encargado || !fechaEmision || !responsable || !area || !proforma || !comprobante || !tipo || !registradoPor) {
+        alert('Completa los campos obligatorios.');
+        return;
+      }
+
+      // Recopilar los ítems de error
+      const itemsContainer = document.getElementById('itemsContainer');
+      const itemRows = itemsContainer.querySelectorAll('.item-row');
+      const detalle = [];
+
+      itemRows.forEach(row => {
+        const textareas = row.querySelectorAll('textarea');
+        const error = textareas[0]?.value?.trim();
+        const solucion = textareas[1]?.value?.trim();
+
+        if (error || solucion) {
+          detalle.push({
+            error: error || '',
+            solucion: solucion || ''
+          });
+        }
+      });
+
+      // Formatear la fecha para la API (solo fecha, sin hora)
+      const fechaFormateada = fechaEmision;
+
+      try {
+        // Incrustar los ítems en observación como fallback para listados que no devuelven DETALLE
+        const detalleJson = JSON.stringify(detalle);
+        const observacionMerged = (obsDetalle ? String(obsDetalle).trim() + "\n\n" : "") + `[DETALLE_ITEMS_JSON] ${detalleJson}`;
+
+        const recordData = {
+          fecha_emision: fechaFormateada,
+          encargado_comprobante: encargado,
+          responsable_incidencia: responsable,
+          registrado_por: registradoPor,
+          area: area,
+          numero_proforma: proforma,
+          numero_comprobante: comprobante,
+          tipo_incidencia: tipo,
+          observacion: observacionMerged,
+          detalle: detalle
+        };
+
+        console.log('Datos a enviar:', recordData);
+        await createRecord(recordData);
+        e.target.reset();
+        document.getElementById('observacionDetalle').disabled = true;
+        document.getElementById('itemsContainer').innerHTML = '';
+        addItemRow();
+        alert('Incidencia registrada exitosamente');
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        alert('Error al guardar la incidencia');
+      }
+    });
+
+    // Evento para mostrar información del archivo seleccionado
+    document.getElementById('editArchivoPDF').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const fileInfo = document.getElementById('fileInfo');
+      const fileName = document.getElementById('fileName');
+      
+      if (file) {
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        const fileType = file.type.startsWith('image/') ? '🖼️' : '📄';
+        fileName.textContent = `${fileType} ${file.name} (${fileSize} MB)`;
+        fileInfo.style.display = 'block';
+      } else {
+        fileInfo.style.display = 'none';
+      }
+    });
+
+
+
+    // Inicial
+    addItemRow();
+    fetchRecords().then(() => renderList());
+    window.addEventListener('resize', adjustTableViewport);
+  </script>
+</body>
+
+</html>

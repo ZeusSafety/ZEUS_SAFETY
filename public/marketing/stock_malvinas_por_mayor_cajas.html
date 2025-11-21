@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Sistema de Gestión de Stock</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --azul-marino: #1e3a5f;
+      --amarillo-mostaza: #f4a942;
+      --blanco: #ffffff;
+      --gris-claro: #f5f5f5;
+      --gris: #e0e0e0;
+      --gris-oscuro: #333;
+      --sombra: rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--gris-claro);
+      color: var(--gris-oscuro);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--azul-marino) 0%, #2c5282 100%);
+      color: var(--blanco);
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px var(--sombra);
+    }
+
+    .header h1 {
+      font-size: clamp(18px, 5vw, 28px);
+      margin-bottom: 5px;
+      word-break: break-word;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: clamp(12px, 3vw, 14px);
+    }
+
+    /* NOTIFICACIONES */
+    .notificaciones {
+      background: var(--blanco);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px var(--sombra);
+      border-left: 4px solid var(--amarillo-mostaza);
+    }
+
+    .notificacion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .notificacion-header:hover {
+      opacity: 0.8;
+    }
+
+    .notificacion-resumen {
+      font-size: clamp(12px, 3vw, 14px);
+      color: var(--gris-oscuro);
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .notificacion-toggle {
+      background: var(--amarillo-mostaza);
+      color: var(--azul-marino);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(11px, 2.5vw, 12px);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .notificaciones-lista {
+      display: none;
+      margin-top: 15px;
+    }
+
+    .notificaciones-lista.expanded {
+      display: block;
+    }
+
+    .notificacion-item {
+      background: var(--gris-claro);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .notificacion-info {
+      flex: 1;
+      min-width: 200px;
+      font-size: clamp(12px, 2.5vw, 14px);
+    }
+
+    .notificacion-info strong {
+      color: var(--azul-marino);
+    }
+
+    .btn-ver-detalles {
+      background: var(--azul-marino);
+      color: var(--blanco);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(11px, 2.5vw, 12px);
+      white-space: nowrap;
+    }
+
+    .btn-ver-detalles:hover {
+      opacity: 0.9;
+    }
+
+    /* CONTROLES */
+    .controles {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .buscador {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .buscador input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--gris);
+      border-radius: 8px;
+      font-size: clamp(13px, 3vw, 14px);
+      transition: border-color 0.3s;
+    }
+
+    .buscador input:focus {
+      outline: none;
+      border-color: var(--azul-marino);
+    }
+
+    .btn-acciones {
+      background: var(--amarillo-mostaza);
+      color: var(--azul-marino);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: clamp(13px, 3vw, 14px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      white-space: nowrap;
+      min-width: 150px;
+    }
+
+    .btn-acciones:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px var(--sombra);
+    }
+
+    /* TABLA */
+    .tabla-container {
+      background: var(--blanco);
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 4px var(--sombra);
+      overflow-x: auto;
+      margin-bottom: 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tabla-container h2 {
+      color: var(--azul-marino);
+      margin-bottom: 15px;
+      font-size: clamp(16px, 4vw, 20px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    thead {
+      background: var(--azul-marino);
+      color: var(--blanco);
+    }
+
+    th {
+      padding: 12px 8px;
+      text-align: left;
+      font-weight: 600;
+      font-size: clamp(11px, 2.5vw, 13px);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--gris);
+      font-size: clamp(11px, 2.5vw, 13px);
+      word-break: break-word;
+    }
+
+    tbody tr:hover {
+      background: var(--gris-claro);
+    }
+
+    /* PAGINACIÓN */
+    .paginacion {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn-paginacion {
+      background: var(--azul-marino);
+      color: var(--blanco);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(12px, 2.5vw, 13px);
+      white-space: nowrap;
+    }
+
+    .btn-paginacion:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .paginacion-info {
+      font-size: clamp(12px, 2.5vw, 13px);
+      color: var(--gris-oscuro);
+    }
+
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .modal.active {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 10px;
+    }
+
+    .modal-content {
+      background: var(--blanco);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      margin: auto;
+    }
+
+    .modal-header {
+      background: var(--azul-marino);
+      color: var(--blanco);
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .modal-header h2 {
+      font-size: clamp(16px, 4vw, 20px);
+      word-break: break-word;
+    }
+
+    .btn-cerrar {
+      background: transparent;
+      color: var(--blanco);
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .modal-body {
+      padding: 15px;
+    }
+
+    /* FORMULARIO */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: var(--azul-marino);
+      font-size: clamp(12px, 2.5vw, 13px);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid var(--gris);
+      border-radius: 6px;
+      font-size: clamp(13px, 3vw, 14px);
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--azul-marino);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    /* AUTOCOMPLETADO */
+    .autocomplete {
+      position: relative;
+    }
+
+    .autocomplete-items {
+      position: relative;
+      background: var(--blanco);
+      border: 2px solid var(--gris);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 500px;
+      overflow-y: auto;
+      width: 100%;
+      z-index: 99;
+      box-shadow: 0 4px 6px var(--sombra);
+    }
+
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--gris);
+      font-size: clamp(12px, 2.5vw, 14px);
+    }
+
+    .autocomplete-item:hover {
+      background: var(--gris-claro);
+    }
+
+    .autocomplete-item strong {
+      color: var(--azul-marino);
+    }
+
+    /* PRODUCTOS LISTADOS */
+    .productos-listados {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .productos-listados table {
+      font-size: clamp(11px, 2.5vw, 12px);
+      min-width: 500px;
+    }
+
+    .btn-editar,
+    .btn-eliminar {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: clamp(10px, 2vw, 11px);
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+
+    .btn-editar {
+      background: var(--amarillo-mostaza);
+      color: var(--azul-marino);
+    }
+
+    .btn-eliminar {
+      background: #e74c3c;
+      color: var(--blanco);
+    }
+
+    /* BOTONES */
+    .btn-primary {
+      background: var(--azul-marino);
+      color: var(--blanco);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: clamp(13px, 3vw, 14px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px var(--sombra);
+    }
+
+    .btn-secondary {
+      background: var(--amarillo-mostaza);
+      color: var(--azul-marino);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: clamp(13px, 3vw, 14px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      width: 100%;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px var(--sombra);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group button {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    /* PRODUCTO INFO */
+    .producto-info {
+      background: var(--gris-claro);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .producto-info h3 {
+      color: var(--azul-marino);
+      margin-bottom: 15px;
+      font-size: clamp(14px, 3.5vw, 18px);
+    }
+
+    .producto-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .producto-info-item {
+      font-size: clamp(12px, 2.5vw, 13px);
+    }
+
+    .producto-info-item strong {
+      color: var(--azul-marino);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    /* LOADING */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: var(--azul-marino);
+      font-size: clamp(13px, 3vw, 14px);
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    /* SECCIÓN RESERVADOS */
+    .seccion-reservados {
+      background: var(--blanco);
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 4px var(--sombra);
+      margin-top: 20px;
+    }
+
+    .seccion-reservados h2 {
+      color: var(--azul-marino);
+      margin-bottom: 15px;
+      font-size: clamp(16px, 4vw, 20px);
+      border-bottom: 3px solid var(--amarillo-mostaza);
+      padding-bottom: 10px;
+      border-top: 3px solid var(--amarillo-mostaza);
+      padding-top: 10px;
+    }
+
+    .btn-gestionar {
+      background: var(--amarillo-mostaza);
+      color: var(--azul-marino);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(11px, 2.5vw, 12px);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .btn-gestionar:hover {
+      opacity: 0.9;
+    }
+
+    /* ANIMACIÓN NOTIFICACIÓN */
+    .notificaciones.nueva-actualizacion {
+      background-color: #fff3cd;
+      border-left: 5px solid #ffc107;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .notificaciones.nueva-actualizacion .notificacion-header {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .notificaciones.nueva-actualizacion .notificacion-header::before {
+      content: '•';
+      color: #dc3545;
+      font-size: 24px;
+      line-height: 1;
+      position: absolute;
+      left: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.5;
+      }
+    }
+
+    /* RESPONSIVE */
+    @media (min-width: 576px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .header {
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+
+      .notificaciones {
+        padding: 12px;
+      }
+
+      .controles {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .buscador {
+        min-width: 100%;
+      }
+
+      .btn-acciones {
+        width: 100%;
+      }
+
+      .tabla-container {
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      table {
+        min-width: 500px;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+      }
+
+      .modal {
+        padding: 5px;
+      }
+
+      .modal.active {
+        padding: 10px 5px;
+        align-items: flex-start;
+      }
+
+      .modal-content {
+        max-height: 95vh;
+        margin-top: 10px;
+      }
+
+      .modal-header {
+        padding: 12px 15px;
+      }
+
+      .modal-body {
+        padding: 12px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn-group button {
+        width: 100%;
+        min-width: 100%;
+      }
+
+      .producto-info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .productos-listados {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .seccion-reservados {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 16px;
+      }
+
+      .header p {
+        font-size: 12px;
+      }
+
+      .notificacion-resumen {
+        font-size: 11px;
+      }
+
+      .notificacion-toggle {
+        font-size: 10px;
+        padding: 5px 10px;
+      }
+
+      table {
+        min-width: 450px;
+        font-size: 10px;
+      }
+
+      th,
+      td {
+        padding: 6px 4px;
+      }
+
+      .btn-gestionar {
+        padding: 5px 8px;
+        font-size: 10px;
+      }
+
+      .modal-header h2 {
+        font-size: 14px;
+      }
+
+      .btn-cerrar {
+        font-size: 24px;
+        width: 25px;
+        height: 25px;
+      }
+    }
+
+    /* MEJORAS TÁCTILES PARA MÓVILES */
+    @media (hover: none) and (pointer: coarse) {
+
+      button,
+      .btn-acciones,
+      .btn-primary,
+      .btn-secondary,
+      .btn-gestionar,
+      .btn-ver-detalles,
+      .btn-paginacion {
+        min-height: 44px;
+        touch-action: manipulation;
+      }
+
+      .autocomplete-item {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    /* SCROLL HORIZONTAL INDICATOR */
+    .tabla-container::after {
+      content: '← Desliza horizontalmente →';
+      display: none;
+      text-align: center;
+      padding: 10px;
+      color: var(--azul-marino);
+      font-size: 11px;
+      font-style: italic;
+      background: var(--gris-claro);
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .tabla-container::after {
+        display: block;
+      }
+    }
+
+    header-logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-logo img {
+      max-width: 150px;
+      object-fit: contain;
+      transition: transform 0.3s ease;
+    }
+
+    .header-logo img:hover {
+      transform: scale(1.05);
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      margin: 0 20px;
+    }
+
+    .header-spacer {
+      width: 150px;
+      /* Mismo ancho que el logo para mantener centrado el título */
+    }
+
+    .header-title h1 {
+      color: white;
+      font-weight: 700;
+      font-size: 28px;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(20, 33, 61, 0.1);
+    }
+
+    /* Header */
+    .header-container {
+      background: linear-gradient(135deg, #17375d 0%, #1e4d7a 100%);
+      box-shadow: 0 2px 20px rgba(25, 67, 158, 0.1);
+      padding-top: 1px;
+      padding-left: 20px;
+      padding-bottom: 0px;
+      padding-right: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      margin-top: -20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .btn-volver {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      .btn-listado-flotante {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+
+      .card {
+        margin-top: 20px;
+      }
+
+      .header-container {
+        flex-direction: revert;
+        gap: 1px;
+        padding: 20px;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-top: -20px;
+      }
+
+      .header-title h1 {
+        font-size: 24px;
+      }
+
+      .header-logo img {
+        max-width: 120px;
+      }
+
+      .header-spacer {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header con Logo y Título -->
+    <div class="header-container">
+      <div class="header-logo">
+        <img src="https://cibertecedgar.github.io/marcalogo/logozeus.png" alt="Logo Zeus">
+      </div>
+      <div class="header-title">
+        <h1>SISTEMA DE DESCUENTO VENTA POR CAJAS - MALVINAS</h1>
+      </div>
+      <div class="header-spacer"></div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div class="notificaciones">
+      <div class="notificacion-header" onclick="toggleNotificaciones()">
+        <div class="notificacion-resumen" id="notificacionResumen">
+          Cargando últimas actualizaciones...
+        </div>
+        <button class="notificacion-toggle">Ver historial</button>
+      </div>
+      <div class="notificaciones-lista" id="notificacionesLista"></div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="controles">
+      <div class="buscador">
+        <input type="text" id="buscadorTabla" placeholder="🔍 Buscar productos..." onkeyup="filtrarTabla()">
+      </div>
+      <button class="btn-acciones" onclick="abrirModalAcciones()">⚡ ACCIONES</button>
+    </div>
+
+    <!-- TABLA PRINCIPAL -->
+    <div class="tabla-container">
+      <h2>PRODUCTOS CON STOCK 📦</h2>
+      <div class="loading" id="loadingStock">Cargando stock...</div>
+      <table id="tablaStock">
+        <thead>
+          <tr>
+            <th>CODIGO</th>
+            <th>PRODUCTO</th>
+            <th>LÍMITE</th>
+            <th>CATEGORIA</th>
+            <th>CANTIDAD CAJAS</th>
+            <th>UNIDAD MEDIDA</th>
+            <th>GESTIONES</th>
+          </tr>
+        </thead>
+        <tbody id="tablaStockBody"></tbody>
+      </table>
+      <div class="paginacion">
+        <button class="btn-paginacion" onclick="cambiarPagina(-1)" id="btnAnterior">Anterior</button>
+        <span class="paginacion-info" id="paginacionInfo"></span>
+        <button class="btn-paginacion" onclick="cambiarPagina(1)" id="btnSiguiente">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PRODUCTOS RESERVADOS -->
+    <div class="seccion-reservados" id="seccionReservados" style="display: none;">
+      <h2>🔒 PRODUCTOS RESERVADOS</h2>
+
+      <!-- Notificaciones de reservados -->
+      <div class="notificaciones" style="margin-bottom: 15px;">
+        <div class="notificacion-header" onclick="toggleNotificacionesReservados()">
+          <div class="notificacion-resumen" id="notificacionResumenReservados">
+            Sin actualizaciones recientes
+          </div>
+          <button class="notificacion-toggle">Ver historial</button>
+        </div>
+        <div class="notificaciones-lista" id="notificacionesListaReservados"></div>
+      </div>
+
+      <div class="loading" id="loadingReservados">Cargando productos reservados...</div>
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table id="tablaReservados">
+          <thead>
+            <tr>
+              <th>PRODUCTO</th>
+              <th>CATEGORIA</th>
+              <th>FECHA Y HORA</th>
+              <th>RESPONSABLE</th>
+              <th>CANTIDAD RESERVADA</th>
+              <th>UNIDAD MEDIDA</th>
+              <th>ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tablaReservadosBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ACCIONES -->
+  <div class="modal" id="modalAcciones">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>⚡ Gestionar Stock</h2>
+        <button class="btn-cerrar" onclick="cerrarModalAcciones()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Buscador de productos -->
+        <div class="form-group">
+          <label>Buscar Producto</label>
+          <div class="autocomplete">
+            <input type="text" id="buscarProducto" placeholder="Escribe para buscar..." oninput="buscarProductoAuto()">
+            <div class="autocomplete-items" id="autocompleteItems"></div>
+          </div>
+        </div>
+
+        <!-- Info del producto seleccionado -->
+        <div class="producto-info" id="productoInfo" style="display: none;">
+          <div class="producto-info-grid">
+            <div class="producto-info-item">
+              <strong>Producto</strong>
+              <span id="infoProductoNombre"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Categoría</strong>
+              <span id="infoProductoCategoria"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Stock Actual</strong>
+              <span id="infoProductoStock"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Unidad</strong>
+              <span id="infoProductoUnidad"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario de acción -->
+        <div id="formularioAccion" style="display: none;">
+          <div class="form-group">
+            <label>Acción</label>
+            <select id="tipoAccion">
+              <option value="">Seleccione una acción</option>
+              <option value="RETIRAR">Retirar</option>
+              <option value="RESERVAR">Reservar</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cantidad *</label>
+              <input type="number" id="cantidad" min="0" step="0.01" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>Unidad de Medida</label>
+              <select id="unidadMedida">
+                <option value="CAJAS">CAJAS</option>
+                <option value="UNIDADES">UNIDADES</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Motivo (Opcional)</label>
+            <textarea id="motivo" placeholder="Ingrese el motivo de la operación"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Responsable *</label>
+              <select id="responsable">
+                <option value="">Seleccione</option>
+                <option value="EDGAR">EDGAR</option>
+                <option value="EVELYN">EVELYN</option>
+                <option value="KIMBERLY">KIMBERLY</option>
+                <option value="JOSEPH">JOSEPH</option>
+                <option value="ALVARO">ALVARO</option>
+                <option value="MANUEL">MANUEL</option>
+                <option value="JHONSON">JHONSON</option>
+                <option value="VICTOR">VICTOR</option>
+                <option value="LIZETH">LIZETH</option>
+                <option value="JOSÉ">JOSÉ</option>
+                <option value="HERVIN">HERVIN</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fecha y Hora</label>
+              <input type="text" id="fechaHora" readonly>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn-secondary" onclick="listarProducto()">📋 Listar</button>
+          </div>
+        </div>
+
+        <!-- Productos listados -->
+        <div class="productos-listados" id="productosListados" style="display: none;">
+          <h3 style="color: var(--azul-marino); margin-bottom: 10px;">Productos para Guardar</h3>
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Stock Actual</th>
+                  <th>Acción</th>
+                  <th>Cantidad</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="listaProductosBody"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button class="btn-primary" onclick="guardarOperaciones()">💾 Guardar Todo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GESTIONAR RESERVA -->
+  <div class="modal" id="modalGestionarReserva">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔒 Gestionar Producto Reservado</h2>
+        <button class="btn-cerrar" onclick="cerrarModalGestionarReserva()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Info del producto reservado -->
+        <div class="producto-info">
+          <div class="producto-info-grid">
+            <div class="producto-info-item">
+              <strong>Producto</strong>
+              <span id="reservaProductoNombre"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Categoría</strong>
+              <span id="reservaProductoCategoria"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Stock Reservado</strong>
+              <span id="reservaStockReservado"></span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Responsable</strong>
+              <span id="reservaResponsable"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="form-group">
+          <label>Acción</label>
+          <select id="reservaAccion">
+            <option value="">Seleccione una acción</option>
+            <option value="RETIRAR">Retirar</option>
+            <option value="REGRESAR">Regresar al stock general</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad *</label>
+            <input type="number" id="reservaCantidad" min="0" step="0.01" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Unidad de Medida</label>
+            <select id="reservaUnidadMedida">
+              <option value="CAJAS">CAJAS</option>
+              <option value="UNIDADES">UNIDADES</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Motivo (Opcional)</label>
+          <textarea id="reservaMotivo" placeholder="Ingrese el motivo de la operación"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Responsable *</label>
+            <select id="reservaResponsableAccion">
+              <option value="">Seleccione</option>
+              <option value="EDGAR">EDGAR</option>
+              <option value="EVELYN">EVELYN</option>
+              <option value="KIMBERLY">KIMBERLY</option>
+              <option value="JOSEPH">JOSEPH</option>
+              <option value="ALVARO">ALVARO</option>
+              <option value="MANUEL">MANUEL</option>
+              <option value="JHONSON">JHONSON</option>
+              <option value="VICTOR">VICTOR</option>
+              <option value="LIZETH">LIZETH</option>
+              <option value="JOSÉ">JOSÉ</option>
+              <option value="HERVIN">HERVIN</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha y Hora</label>
+            <input type="text" id="reservaFechaHora" readonly>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-primary" onclick="guardarGestionReserva()">💾 Guardar</button>
+          <button class="btn-secondary" onclick="cerrarModalGestionarReserva()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLES HISTORIAL -->
+  <div class="modal" id="modalDetalles">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 Detalles de la Operación</h2>
+        <button class="btn-cerrar" onclick="cerrarModalDetalles()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalDetallesBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // Variables globales
+    let productos = [];
+    let productosReservados = [];
+    let historialReciente = [];
+    let historialReservados = [];
+    let productoSeleccionado = null;
+    let reservaSeleccionada = null;
+    let productosParaGuardar = [];
+    let paginaActual = 1;
+    const productosPorPagina = 25;
+
+    // Inicializar
+    window.onload = function () {
+      cargarDatos();
+      actualizarFechaHora();
+      setInterval(actualizarFechaHora, 1000);
+    };
+
+    // Cargar todos los datos
+    function cargarDatos() {
+      document.getElementById('loadingStock').classList.add('active');
+      document.getElementById('loadingReservados').classList.add('active');
+
+      // Cargar productos del endpoint REST
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/productos', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          productos = data.data || data;
+          document.getElementById('loadingStock').classList.remove('active');
+          renderizarTablaStock();
+        })
+        .catch(error => {
+          console.error('Error cargando productos:', error);
+          mostrarError(error);
+          document.getElementById('loadingStock').classList.remove('active');
+        });
+
+      // Cargar historial general del endpoint REST
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/historial/general', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          historialReciente = data.data || data;
+          renderizarNotificaciones();
+        })
+        .catch(error => {
+          console.error('Error cargando historial general:', error);
+          renderizarNotificaciones();
+        });
+
+      // Cargar productos reservados del endpoint REST
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/reservadas', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          productosReservados = data.data || data;
+          document.getElementById('loadingReservados').classList.remove('active');
+          renderizarTablaReservados();
+        })
+        .catch(error => {
+          console.error('Error cargando productos reservados:', error);
+          document.getElementById('loadingReservados').classList.remove('active');
+          renderizarTablaReservados();
+        });
+
+      // Cargar historial de reservas del endpoint REST
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/historial/reservas', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          historialReservados = data.data || data;
+          renderizarNotificacionesReservados();
+        })
+        .catch(error => {
+          console.error('Error cargando historial de reservas:', error);
+          renderizarNotificacionesReservados();
+        });
+    }
+
+    // Renderizar tabla de stock
+    function renderizarTablaStock() {
+      const tbody = document.getElementById('tablaStockBody');
+      const buscador = document.getElementById('buscadorTabla').value.toLowerCase();
+
+      let productosFiltrados = productos.filter(p => {
+        const nombreProducto = (p.producto || p.Producto || '').toString().toLowerCase();
+        const codigoProducto = (p.codigo || p.CODIGO || p['Código de Producto'] || '').toString().toLowerCase();
+        const categoriaProducto = (p.categoria || p.CATEGORIA || '').toString().toLowerCase();
+
+        return nombreProducto.includes(buscador) ||
+          codigoProducto.includes(buscador) ||
+          categoriaProducto.includes(buscador);
+      });
+
+      const inicio = (paginaActual - 1) * productosPorPagina;
+      const fin = inicio + productosPorPagina;
+      const productosPagina = productosFiltrados.slice(inicio, fin);
+
+      tbody.innerHTML = '';
+      productosPagina.forEach(p => {
+        const tr = document.createElement('tr');
+
+        const codigo = p.codigo || p.CODIGO || p['Código de Producto'] || '';
+        const nombre = p.producto || p.Producto || p.NOMBRE || '';
+        const limite = p.limite || p.Limite || p.LIMITE_DESCUENTO_CAJAS || 0;
+        const categoria = p.categoria || p.CATEGORIA || '';
+        const cantidad = p.cantidadCajas || p.Cantidad || p.CANTIDAD_CAJAS || 0;
+        const unidad = p.unidadMedida || p.Unidad_Medida || p.UNIDAD_MEDIDA_CAJAS || 'CAJAS';
+
+        tr.innerHTML = `
+          <td>${codigo}</td>
+          <td>${nombre}</td>
+          <td>${limite} <i class="fas fa-exclamation-triangle" style="color:orange;"></i></td>
+          <td>${categoria}</td>
+          <td><strong>${cantidad}</strong></td>
+          <td>${unidad}</td>
+          <td>
+            <button class="btn-gestionar" onclick='abrirModalGestionarProducto(${JSON.stringify(p)})' title="Gestionar producto">
+              <i class="fas fa-clipboard"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      actualizarPaginacion(productosFiltrados.length);
+    }
+
+    // Renderizar tabla de reservados
+    function renderizarTablaReservados() {
+      const seccion = document.getElementById('seccionReservados');
+      const tbody = document.getElementById('tablaReservadosBody');
+
+      if (productosReservados.length === 0) {
+        seccion.style.display = 'none';
+        return;
+      }
+
+      seccion.style.display = 'block';
+      tbody.innerHTML = '';
+
+      productosReservados.forEach(r => {
+        const tr = document.createElement('tr');
+
+        const producto = r.PRODUCTO || r.producto || '';
+        const categoria = r.CATEGORIA || r.categoria || '';
+        const fechaStr = r['Fecha y hora de reserva'] || r.FECHA_HORA || r.fechaHora || '';
+        const responsable = r.RESPONSABLE || r.responsable || '';
+        const cantidadReservada = r.CANTIDAD_RESERVADA || r.cantidadReservada || 0;
+        const unidadMedida = r.UNIDAD_MEDIDA || r.unidadMedida || 'CAJAS';
+
+        const fechaFormateada = formatearFecha(fechaStr);
+
+        tr.innerHTML = `
+          <td>${producto}</td>
+          <td>${categoria}</td>
+          <td>${fechaFormateada}</td>
+          <td>${responsable}</td>
+          <td><strong>${cantidadReservada}</strong></td>
+          <td>${unidadMedida}</td>
+          <td>
+            <button class="btn-gestionar" onclick='abrirModalGestionarReserva(${JSON.stringify(r)})'>
+              Gestionar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Renderizar notificaciones
+    function renderizarNotificaciones() {
+      const resumen = document.getElementById('notificacionResumen');
+      const lista = document.getElementById('notificacionesLista');
+      const contenedor = resumen.closest('.notificaciones');
+
+      if (historialReciente.length === 0) {
+        resumen.textContent = 'No hay actualizaciones recientes';
+        contenedor.classList.remove('nueva-actualizacion');
+        return;
+      }
+
+      contenedor.classList.add('nueva-actualizacion');
+
+      const ultimo = historialReciente[0];
+
+      const responsable = ultimo.RESPONSABLE || ultimo.responsable || '';
+      const fechaStr = ultimo.FECHA_HORA || ultimo.fechaHora || '';
+      const producto = ultimo.PRODUCTO || ultimo.producto || '';
+      const accion = ultimo.ACCION_REALIZADA || ultimo.accion || '';
+
+      const fechaFormateada = formatearFecha(fechaStr);
+
+      resumen.innerHTML = `
+        <strong>${responsable}</strong> realizó una <strong>${accion}</strong> 
+        de <strong>${producto}</strong> - ${fechaFormateada}
+      `;
+
+      lista.innerHTML = '';
+      historialReciente.forEach(h => {
+        const fechaH = h.FECHA_HORA || h.fechaHora || '';
+        const fechaFormateadaH = formatearFecha(fechaH);
+
+        const responsableH = h.RESPONSABLE || h.responsable || '';
+        const productoH = h.PRODUCTO || h.producto || '';
+        const categoriaH = h.CATEGORIA || h.categoria || '';
+        const accionH = h.ACCION_REALIZADA || h.accion || '';
+
+        const div = document.createElement('div');
+        div.className = 'notificacion-item';
+        div.innerHTML = `
+          <div class="notificacion-info">
+            <strong>${responsableH}</strong> - ${productoH} (${categoriaH})<br>
+            <small>${accionH} - ${fechaFormateadaH}</small>
+          </div>
+          <button class="btn-ver-detalles" onclick='verDetalles(${JSON.stringify(h)})'>
+            Ver detalles
+          </button>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    // Función auxiliar para formatear fechas
+    function formatearFecha(fechaStr) {
+      if (!fechaStr) return '';
+
+      if (typeof fechaStr === 'string' && fechaStr.includes('-')) {
+        const partes = fechaStr.split(' ');
+        const fecha = partes[0];
+        const hora = partes[1];
+
+        const [año, mes, dia] = fecha.split('-');
+        const [horas, minutos, segundos] = hora.split(':');
+
+        const fechaObj = new Date(año, parseInt(mes) - 1, dia, horas, minutos, segundos);
+
+        return fechaObj.toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+
+      if (fechaStr instanceof Date) {
+        return fechaStr.toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+
+      return fechaStr;
+    }
+
+    // Renderizar notificaciones de reservados
+    function renderizarNotificacionesReservados() {
+      const resumen = document.getElementById('notificacionResumenReservados');
+      const lista = document.getElementById('notificacionesListaReservados');
+      const contenedor = resumen.closest('.notificaciones');
+
+      if (historialReservados.length === 0) {
+        resumen.textContent = 'Sin actualizaciones recientes';
+        contenedor.classList.remove('nueva-actualizacion');
+        return;
+      }
+
+      contenedor.classList.add('nueva-actualizacion');
+
+      const ultimo = historialReservados[0];
+
+      const responsable = ultimo.RESPONSABLE || ultimo.responsable || '';
+      const fechaStr = ultimo.FECHA_HORA_ACTUALIZACION_HC || ultimo.fechaHora || '';
+      const producto = ultimo.PRODUCTO || ultimo.producto || '';
+      const accion = ultimo.ACCION_REALIZADA || ultimo.accion || '';
+
+      const fechaFormateada = formatearFecha(fechaStr);
+
+      resumen.innerHTML = `
+        <strong>${responsable}</strong> - ${accion} de <strong>${producto}</strong> 
+        - ${fechaFormateada}
+      `;
+
+      lista.innerHTML = '';
+      historialReservados.forEach(h => {
+        const fechaH = h.FECHA_HORA_ACTUALIZACION_HC || h.fechaHora || '';
+        const fechaFormateadaH = formatearFecha(fechaH);
+
+        const responsableH = h.RESPONSABLE || h.responsable || '';
+        const productoH = h.PRODUCTO || h.producto || '';
+        const categoriaH = h.CATEGORIA || h.categoria || '';
+        const accionH = h.ACCION_REALIZADA || h.accion || '';
+
+        const div = document.createElement('div');
+        div.className = 'notificacion-item';
+        div.innerHTML = `
+          <div class="notificacion-info">
+            <strong>${responsableH}</strong> - ${productoH} (${categoriaH})<br>
+            <small>${accionH} - ${fechaFormateadaH}</small>
+          </div>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    // Toggle notificaciones
+    function toggleNotificaciones() {
+      const lista = document.getElementById('notificacionesLista');
+      lista.classList.toggle('expanded');
+
+      const contenedor = lista.closest('.notificaciones');
+      if (contenedor) {
+        contenedor.classList.remove('nueva-actualizacion');
+      }
+    }
+
+    function toggleNotificacionesReservados() {
+      const lista = document.getElementById('notificacionesListaReservados');
+      lista.classList.toggle('expanded');
+
+      const contenedor = lista.closest('.notificaciones');
+      if (contenedor) {
+        contenedor.classList.remove('nueva-actualizacion');
+      }
+    }
+
+    // Ver detalles
+    function verDetalles(historial) {
+      const modal = document.getElementById('modalDetalles');
+      const body = document.getElementById('modalDetallesBody');
+
+      const responsable = historial.RESPONSABLE || historial.responsable || '';
+      const fechaStr = historial.FECHA_HORA || historial.fechaHora || '';
+      const producto = historial.PRODUCTO || historial.producto || '';
+      const categoria = historial.CATEGORIA || historial.categoria || '';
+      const accion = historial.ACCION_REALIZADA || historial.accion || '';
+      const cantidadFinal = historial['CANTIDAD FINAL'] || historial.cantidadCajas || 0;
+      const motivo = historial.MOTIVO || historial.motivo || '';
+
+      const fechaFormateada = formatearFecha(fechaStr);
+
+      body.innerHTML = `
+        <div class="producto-info">
+          <h3>Información de la Operación</h3>
+          <div class="producto-info-grid">
+            <div class="producto-info-item">
+              <strong>Responsable</strong>
+              <span>${responsable}</span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Fecha y Hora</strong>
+              <span>${fechaFormateada}</span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Producto</strong>
+              <span>${producto}</span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Categoría</strong>
+              <span>${categoria}</span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Acción</strong>
+              <span>${accion}</span>
+            </div>
+            <div class="producto-info-item">
+              <strong>Stock Final</strong>
+              <span>${cantidadFinal} cajas</span>
+            </div>
+            ${motivo ? `
+            <div class="producto-info-item" style="grid-column: 1 / -1;">
+              <strong>Motivo</strong>
+              <span>${motivo}</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    function cerrarModalDetalles() {
+      document.getElementById('modalDetalles').classList.remove('active');
+    }
+
+    // Filtrar tabla
+    function filtrarTabla() {
+      paginaActual = 1;
+      renderizarTablaStock();
+    }
+
+    // Paginación
+    function cambiarPagina(direccion) {
+      paginaActual += direccion;
+      renderizarTablaStock();
+    }
+
+    function actualizarPaginacion(totalProductos) {
+      const totalPaginas = Math.ceil(totalProductos / productosPorPagina);
+      document.getElementById('paginacionInfo').textContent =
+        `Página ${paginaActual} de ${totalPaginas || 1}`;
+      document.getElementById('btnAnterior').disabled = paginaActual === 1;
+      document.getElementById('btnSiguiente').disabled = paginaActual >= totalPaginas;
+    }
+
+    // Modal acciones
+    function abrirModalAcciones() {
+      document.getElementById('modalAcciones').classList.add('active');
+      limpiarFormularioAcciones();
+    }
+
+    function cerrarModalAcciones() {
+      document.getElementById('modalAcciones').classList.remove('active');
+      limpiarFormularioAcciones();
+    }
+
+    function limpiarFormularioAcciones() {
+      document.getElementById('buscarProducto').value = '';
+      document.getElementById('autocompleteItems').innerHTML = '';
+      document.getElementById('productoInfo').style.display = 'none';
+      document.getElementById('formularioAccion').style.display = 'none';
+      document.getElementById('productosListados').style.display = 'none';
+      productoSeleccionado = null;
+      productosParaGuardar = [];
+      limpiarCamposFormulario();
+    }
+
+    function limpiarCamposFormulario() {
+      document.getElementById('tipoAccion').value = '';
+      document.getElementById('cantidad').value = '';
+      document.getElementById('unidadMedida').value = 'CAJAS';
+      document.getElementById('motivo').value = '';
+      document.getElementById('responsable').value = '';
+    }
+
+    // Autocompletado
+    function buscarProductoAuto() {
+      const input = document.getElementById('buscarProducto');
+      const items = document.getElementById('autocompleteItems');
+      const valor = input.value.toLowerCase();
+
+      items.innerHTML = '';
+
+      if (valor.length < 2) return;
+
+      const coincidencias = productos.filter(p => {
+        const nombreProducto = (p.producto || p.Producto || p.NOMBRE || '').toString().toLowerCase();
+        const codigoProducto = (p.codigo || p.CODIGO || p['Código de Producto'] || '').toString().toLowerCase();
+
+        return nombreProducto.includes(valor) || codigoProducto.includes(valor);
+      }).slice(0, 10);
+
+      coincidencias.forEach(p => {
+        const codigo = p.codigo || p.CODIGO || p['Código de Producto'] || '';
+        const nombre = p.producto || p.Producto || p.NOMBRE || '';
+        const cantidad = p.cantidadCajas || p.Cantidad || p.CANTIDAD_CAJAS || 0;
+
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerHTML = `
+          <strong>${nombre}</strong><br>
+          <small>Código: ${codigo} | Stock: ${cantidad}</small>
+        `;
+        div.onclick = () => seleccionarProducto(p);
+        items.appendChild(div);
+      });
+    }
+
+    function seleccionarProducto(producto) {
+      productoSeleccionado = producto;
+
+      const nombre = producto.producto || producto.Producto || producto.NOMBRE || '';
+      const categoria = producto.categoria || producto.CATEGORIA || '';
+      const cantidad = producto.cantidadCajas || producto.Cantidad || producto.CANTIDAD_CAJAS || 0;
+      const unidad = producto.unidadMedida || producto.Unidad_Medida || producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS';
+
+      document.getElementById('buscarProducto').value = nombre;
+      document.getElementById('autocompleteItems').innerHTML = '';
+
+      document.getElementById('infoProductoNombre').textContent = nombre;
+      document.getElementById('infoProductoCategoria').textContent = categoria;
+      document.getElementById('infoProductoStock').textContent = cantidad + ' cajas';
+      document.getElementById('infoProductoUnidad').textContent = unidad;
+
+      document.getElementById('productoInfo').style.display = 'block';
+      document.getElementById('formularioAccion').style.display = 'block';
+
+      limpiarCamposFormulario();
+    }
+
+    // Abrir modal directamente desde la tabla de productos
+    function abrirModalGestionarProducto(producto) {
+      document.getElementById('modalAcciones').classList.add('active');
+      limpiarFormularioAcciones();
+      seleccionarProducto(producto);
+    }
+
+    // Listar producto
+    function listarProducto() {
+      if (!productoSeleccionado) {
+        alert('Debe seleccionar un producto');
+        return;
+      }
+
+      const accion = document.getElementById('tipoAccion').value;
+      const cantidad = document.getElementById('cantidad').value;
+      const unidadMedida = document.getElementById('unidadMedida').value;
+      const motivo = document.getElementById('motivo').value;
+      const responsable = document.getElementById('responsable').value;
+
+      if (!accion || !cantidad || !responsable) {
+        alert('Debe completar los campos obligatorios');
+        return;
+      }
+
+      if (parseFloat(cantidad) <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        return;
+      }
+
+      const id = productoSeleccionado.ID || productoSeleccionado.id || '';
+      const nombre = productoSeleccionado.producto || productoSeleccionado.Producto || productoSeleccionado.NOMBRE || '';
+      const cat = productoSeleccionado.categoria || productoSeleccionado.CATEGORIA || '';
+      const stock = productoSeleccionado.cantidadCajas || productoSeleccionado.Cantidad || productoSeleccionado.CANTIDAD_CAJAS || 0;
+
+      productosParaGuardar.push({
+        idProducto: id,
+        producto: nombre,
+        categoria: cat,
+        stockActual: stock,
+        accion: accion,
+        cantidad: parseFloat(cantidad),
+        unidadMedida: unidadMedida,
+        motivo: motivo,
+        responsable: responsable
+      });
+
+      renderizarProductosListados();
+      limpiarCamposFormulario();
+      document.getElementById('buscarProducto').value = '';
+      document.getElementById('productoInfo').style.display = 'none';
+      document.getElementById('formularioAccion').style.display = 'none';
+      productoSeleccionado = null;
+    }
+
+    function renderizarProductosListados() {
+      const container = document.getElementById('productosListados');
+      const tbody = document.getElementById('listaProductosBody');
+
+      if (productosParaGuardar.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      tbody.innerHTML = '';
+
+      productosParaGuardar.forEach((p, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.producto}</td>
+          <td>${p.categoria}</td>
+          <td>${p.stockActual}</td>
+          <td><span style="color: ${p.accion === 'RETIRAR' ? '#e74c3c' : '#f4a942'}; font-weight: 600;">${p.accion}</span></td>
+          <td>${p.cantidad} ${p.unidadMedida}</td>
+          <td>
+            <button class="btn-editar" onclick="editarProductoListado(${index})">Editar</button>
+            <button class="btn-eliminar" onclick="eliminarProductoListado(${index})">Eliminar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editarProductoListado(index) {
+      const producto = productosParaGuardar[index];
+
+      const productoOriginal = productos.find(p => {
+        const idProd = p.ID || p.id;
+        return idProd === producto.idProducto;
+      });
+
+      if (productoOriginal) {
+        seleccionarProducto(productoOriginal);
+
+        document.getElementById('tipoAccion').value = producto.accion;
+        document.getElementById('cantidad').value = producto.cantidad;
+        document.getElementById('unidadMedida').value = producto.unidadMedida;
+        document.getElementById('motivo').value = producto.motivo;
+        document.getElementById('responsable').value = producto.responsable;
+      }
+
+      eliminarProductoListado(index);
+    }
+
+    function eliminarProductoListado(index) {
+      productosParaGuardar.splice(index, 1);
+      renderizarProductosListados();
+    }
+
+    // Guardar operaciones
+    function guardarOperaciones() {
+      if (productosParaGuardar.length === 0) {
+        alert('No hay productos para guardar');
+        return;
+      }
+
+      if (!confirm('¿Está seguro de guardar estas operaciones?')) {
+        return;
+      }
+
+      const loading = document.createElement('div');
+      loading.className = 'loading active';
+      loading.textContent = 'Guardando operaciones...';
+      document.getElementById('modalAcciones').querySelector('.modal-body').appendChild(loading);
+
+      const movimientos = productosParaGuardar.map(p => {
+        let accionEnviar = (p.accion || '').toString().trim().toUpperCase();
+        if (accionEnviar === 'RETIRAR') accionEnviar = 'RETIRO';
+        else if (accionEnviar === 'RESERVAR') accionEnviar = 'RESERVA';
+
+        return {
+          id_producto: p.idProducto,
+          responsable: p.responsable,
+          accion: accionEnviar,
+          cantidad: p.cantidad,
+          motivo: p.motivo,
+          unidad_medida_transaccion: p.unidadMedida
+        };
+      });
+
+      // Loguear payload antes de enviarlo para facilitar debugging
+      console.log('movimientos a enviar', movimientos);
+
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/descuentoStockCajasVendidas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(movimientos)
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          loading.remove();
+          if (data.success) {
+            alert('Operaciones guardadas correctamente. Se procesaron ' + data.movimientos.length + ' movimientos.');
+            cerrarModalAcciones();
+            cargarDatos();
+          } else {
+            alert('Error: ' + (data.error || 'Error al guardar operaciones'));
+          }
+        })
+        .catch(error => {
+          loading.remove();
+          console.error('Error guardando operaciones:', error);
+          mostrarError(error);
+        });
+    }
+
+    // Modal gestionar reserva
+    function abrirModalGestionarReserva(reserva) {
+      reservaSeleccionada = reserva;
+
+      const producto = reserva.PRODUCTO || reserva.producto || '';
+      const categoria = reserva.CATEGORIA || reserva.categoria || '';
+      const cantidadReservada = reserva.CANTIDAD_RESERVADA || reserva.cantidadReservada || 0;
+      const responsable = reserva.RESPONSABLE || reserva.responsable || '';
+
+      document.getElementById('reservaProductoNombre').textContent = producto;
+      document.getElementById('reservaProductoCategoria').textContent = categoria;
+      document.getElementById('reservaStockReservado').textContent = cantidadReservada + ' cajas';
+      document.getElementById('reservaResponsable').textContent = responsable;
+
+      document.getElementById('reservaAccion').value = '';
+      document.getElementById('reservaCantidad').value = '';
+      document.getElementById('reservaUnidadMedida').value = 'CAJAS';
+      document.getElementById('reservaMotivo').value = '';
+      document.getElementById('reservaResponsableAccion').value = '';
+
+      document.getElementById('modalGestionarReserva').classList.add('active');
+    }
+
+    function cerrarModalGestionarReserva() {
+      document.getElementById('modalGestionarReserva').classList.remove('active');
+      reservaSeleccionada = null;
+    }
+
+    function guardarGestionReserva() {
+      if (!reservaSeleccionada) return;
+
+      const accion = document.getElementById('reservaAccion').value;
+      const cantidad = document.getElementById('reservaCantidad').value;
+      const unidadMedida = document.getElementById('reservaUnidadMedida').value;
+      const motivo = document.getElementById('reservaMotivo').value;
+      const responsable = document.getElementById('reservaResponsableAccion').value;
+
+      if (!accion || !cantidad || !responsable) {
+        alert('Debe completar los campos obligatorios');
+        return;
+      }
+
+      if (parseFloat(cantidad) <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        return;
+      }
+
+      let cantidadEnCajas = parseFloat(cantidad);
+      if (unidadMedida === 'UNIDADES') {
+        cantidadEnCajas = cantidadEnCajas / 24;
+      }
+
+      const cantidadReservada = reservaSeleccionada.CANTIDAD_RESERVADA || reservaSeleccionada.cantidadReservada || 0;
+
+      if (cantidadEnCajas > cantidadReservada) {
+        alert('La cantidad excede el stock reservado');
+        return;
+      }
+
+      if (!confirm('¿Está seguro de realizar esta operación?')) {
+        return;
+      }
+
+      const loading = document.createElement('div');
+      loading.className = 'loading active';
+      loading.textContent = 'Guardando...';
+      document.getElementById('modalGestionarReserva').querySelector('.modal-body').appendChild(loading);
+
+      const idReservados = reservaSeleccionada.ID_RESERVADOS || reservaSeleccionada.idReservados || reservaSeleccionada.id || '';
+
+      const esRegreso = accion === 'REGRESAR';
+
+      const datos = {
+        id_reservados: idReservados,
+        responsable: responsable,
+        cantidad_gestionada: parseFloat(cantidad),
+        es_regreso: esRegreso,
+        motivo: motivo,
+        unidad_medida: unidadMedida
+      };
+
+      // Loguear payload de gestión de reserva antes de enviarlo
+      console.log('datos gestion reserva', datos);
+
+      fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datos)
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error en la solicitud: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          loading.remove();
+          if (data.success) {
+            alert(data.message || 'Gestión de reserva realizada correctamente');
+            cerrarModalGestionarReserva();
+            cargarDatos();
+          } else {
+            alert('Error: ' + (data.error || 'Error al gestionar reserva'));
+          }
+        })
+        .catch(error => {
+          loading.remove();
+          console.error('Error guardando gestión de reserva:', error);
+          mostrarError(error);
+        });
+    }
+
+    // Actualizar fecha y hora
+    function actualizarFechaHora() {
+      const ahora = new Date();
+      const fechaFormateada = ahora.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      const campos = ['fechaHora', 'reservaFechaHora'];
+      campos.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) campo.value = fechaFormateada;
+      });
+    }
+
+    // Manejo de errores
+    function mostrarError(error) {
+      console.error('Error:', error);
+      alert('Error: ' + error.message);
+    }
+
+    // Cerrar autocomplete al hacer clic fuera
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.autocomplete')) {
+        document.getElementById('autocompleteItems').innerHTML = '';
+      }
+    });
+
+    // Cerrar modales con ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        cerrarModalAcciones();
+        cerrarModalGestionarReserva();
+        cerrarModalDetalles();
+      }
+    });
+
+    // Prevenir zoom en doble tap en dispositivos móviles
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+  </script>
+</body>
+
+</html>

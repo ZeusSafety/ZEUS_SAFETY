@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - ZEUS SAFETY</title>
+    <link rel="icon" type="image/png" href="/Logo de Zeus.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --azul-principal: #1e3a8a;
+            --azul-claro: #3b82f6;
+            --azul-oscuro: #1e40af;
+            --azul-muy-claro: #dbeafe;
+            --blanco: #ffffff;
+            --gris-claro: #f8fafc;
+            --gris-medio: #64748b;
+            --gris-oscuro: #334155;
+            --verde-exito: #10b981;
+            --rojo-error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--azul-muy-claro) 0%, var(--blanco) 100%);
+            min-height: 100vh;
+            color: var(--gris-oscuro);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            padding: 20px 40px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.3);
+            color: var(--blanco);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--blanco);
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--blanco);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--azul-principal);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .config-grid-full {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .config-panel {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            color: var(--blanco);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .panel-content {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--azul-principal);
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gris-claro);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--blanco);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--azul-claro);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gris-claro);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--blanco);
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--azul-claro);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--azul-claro);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background: var(--azul-oscuro);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gris-medio);
+            color: var(--blanco);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gris-oscuro);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-success {
+            background: var(--verde-exito);
+            color: var(--blanco);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--rojo-error);
+            color: var(--blanco);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .table-container {
+            background: var(--blanco);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--azul-principal) 0%, var(--azul-oscuro) 100%);
+            color: var(--blanco);
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--gris-claro);
+            transition: background-color 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--azul-muy-claro);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background: var(--azul-claro);
+            color: var(--blanco);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .btn-edit:hover {
+            background: var(--azul-oscuro);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: var(--rojo-error);
+            color: var(--blanco);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .notificacion {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--blanco);
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+        }
+
+        .notificacion.mostrar {
+            transform: translateX(0);
+        }
+
+        .notificacion.exito {
+            border-left: 4px solid var(--verde-exito);
+        }
+
+        .notificacion.error {
+            border-left: 4px solid var(--rojo-error);
+        }
+
+        .notificacion.info {
+            border-left: 4px solid var(--azul-claro);
+        }
+
+        .notificacion i {
+            font-size: 1.2rem;
+        }
+
+        .notificacion.exito i {
+            color: var(--verde-exito);
+        }
+
+        .notificacion.error i {
+            color: var(--rojo-error);
+        }
+
+        .notificacion.info i {
+            color: var(--azul-claro);
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            background: var(--blanco);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading-spinner i {
+            font-size: 2rem;
+            color: var(--azul-claro);
+            margin-bottom: 10px;
+        }
+
+        .loading-spinner p {
+            color: var(--gris-oscuro);
+            font-weight: 600;
+        }
+
+        /* Paginación */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: var(--gris-claro);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border: 2px solid var(--azul-claro);
+            background: var(--blanco);
+            color: var(--azul-claro);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--azul-claro);
+            color: var(--blanco);
+            transform: translateY(-1px);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: var(--gris-medio);
+            color: var(--gris-medio);
+        }
+
+        .pagination-info {
+            color: var(--gris-oscuro);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .config-grid-full {
+                grid-template-columns: 1fr;
+            }
+
+            #formCliente > div {
+                grid-template-columns: 1fr !important;
+            }
+
+            .panel-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .table th,
+            .table td {
+                min-width: 120px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="../../../Logo de Zeus.png" alt="ZEUS SAFETY Logo" class="logo">
+                <h1 class="header-title">Configuración del Sistema</h1>
+            </div>
+            <a href="../../../facturacion.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Volver a Ventas
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="section-title">
+            <i class="fas fa-cogs"></i>
+            Gestión de Configuraciones
+            <button type="button" class="btn btn-secondary" onclick="cargarConfiguraciones()">
+                <i class="fas fa-sync-alt"></i>
+                Recargar Datos
+            </button>
+        </div>
+
+        <div class="config-grid">
+            <!-- Panel de Asesores -->
+            <div class="config-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-users"></i>
+                        Gestión de Asesores
+                    </div>
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-success" onclick="mostrarFormularioAsesor()">
+                            <i class="fas fa-plus"></i>
+                            Nuevo Asesor
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <!-- Formulario de Asesor (oculto por defecto) -->
+                    <form id="formAsesor" style="display: none;" class="form-asesor">
+                        <div class="form-group">
+                            <label for="nombreAsesor" class="form-label">Nombre del Asesor *</label>
+                            <input type="text" id="nombreAsesor" name="nombreAsesor" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estadoAsesor" class="form-label">Estado</label>
+                            <select id="estadoAsesor" name="estadoAsesor" class="form-select">
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar Asesor
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="ocultarFormularioAsesor()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabla de Asesores -->
+                    <div class="table-container">
+                        <table class="table" id="tablaAsesores">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyAsesores">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                        <p>Cargando asesores...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Formas de Pago -->
+            <div class="config-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-credit-card"></i>
+                        Gestión de Formas de Pago
+                    </div>
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-success" onclick="mostrarFormularioFormaPago()">
+                            <i class="fas fa-plus"></i>
+                            Nueva Forma de Pago
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <!-- Formulario de Forma de Pago (oculto por defecto) -->
+                    <form id="formFormaPago" style="display: none;" class="form-forma-pago">
+                        <div class="form-group">
+                            <label for="nombreFormaPago" class="form-label">Nombre de la Forma de Pago *</label>
+                            <input type="text" id="nombreFormaPago" name="nombreFormaPago" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estadoFormaPago" class="form-label">Estado</label>
+                            <select id="estadoFormaPago" name="estadoFormaPago" class="form-select">
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar Forma de Pago
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="ocultarFormularioFormaPago()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabla de Formas de Pago -->
+                    <div class="table-container">
+                        <table class="table" id="tablaFormasPago">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyFormasPago">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                        <p>Cargando formas de pago...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Lugares -->
+            <div class="config-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Gestión de Lugares
+                    </div>
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-success" onclick="mostrarFormularioLugar()">
+                            <i class="fas fa-plus"></i>
+                            Nuevo Lugar
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <!-- Formulario de Lugar (oculto por defecto) -->
+                    <form id="formLugar" style="display: none;" class="form-lugar">
+                        <div class="form-group">
+                            <label for="nombreLugar" class="form-label">Nombre del Lugar *</label>
+                            <input type="text" id="nombreLugar" name="nombreLugar" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoLugar" class="form-label">Tipo de Lugar *</label>
+                            <select id="tipoLugar" name="tipoLugar" class="form-select" required>
+                                <option value="">Seleccione un tipo</option>
+                                <option value="CENTRO COMERCIAL">Centro Comercial</option>
+                                <option value="PROVINCIA">Provincia</option>
+                                <option value="AVENIDA">Avenida</option>
+                                <option value="CIUDAD">Ciudad</option>
+                                <option value="DISTRITO">Distrito</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar Lugar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="ocultarFormularioLugar()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabla de Lugares -->
+                    <div class="table-container">
+                        <table class="table" id="tablaLugares">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Lugar</th>
+                                    <th>Tipo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyLugares">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                        <p>Cargando lugares...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <!-- Paginación de lugares -->
+                        <div class="pagination" id="paginacionLugares">
+                            <button onclick="cambiarPaginaLugares(-1)" id="btnPrevLugares">
+                                <i class="fas fa-chevron-left"></i>
+                                Anterior
+                            </button>
+                            <span class="pagination-info" id="infoPageLugares">Página 1 de 1</span>
+                            <button onclick="cambiarPaginaLugares(1)" id="btnNextLugares">
+                                Siguiente
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Cliente (Grid completo - sin tabla) -->
+        <div class="config-grid-full">
+            <div class="config-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-user-plus"></i>
+                        Registro de Nuevos Clientes
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <!-- Formulario de Cliente (siempre visible) -->
+                    <form id="formCliente" class="form-cliente">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 200px; gap: 15px; align-items: end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="nombreCliente" class="form-label">Nombre del Cliente *</label>
+                                <input type="text" id="nombreCliente" name="nombreCliente" class="form-input" required placeholder="Ingrese el nombre completo del cliente">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="tipoCliente" class="form-label">Tipo de Cliente *</label>
+                                <select id="tipoCliente" name="tipoCliente" class="form-select" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    <option value="EMPRESA">Empresa</option>
+                                    <option value="PERSONA">Persona</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <button type="submit" class="btn btn-success" style="width: 100%;">
+                                    <i class="fas fa-user-plus"></i>
+                                    Registrar Cliente
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div style="margin-top: 15px; padding: 15px; background: var(--azul-muy-claro); border-radius: 8px; border-left: 4px solid var(--azul-claro);">
+                        <p style="color: var(--gris-oscuro); margin: 0; font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nota:</strong> Los clientes registrados aquí estarán disponibles inmediatamente en el sistema de ventas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la API
+        const API_URL = "https://productoscrud-2946605267.us-central1.run.app";
+        
+        // Variables globales
+        let asesores = [];
+        let formasPago = [];
+        let lugares = [];
+        let editandoAsesor = null;
+        let editandoFormaPago = null;
+        let editandoLugar = null;
+        
+        // Variables de paginación para lugares
+        let paginaActualLugares = 1;
+        const elementosPorPaginaLugares = 5;
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo = 'info') {
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.innerHTML = `
+                <i class="fas ${tipo === 'exito' ? 'fa-check-circle' : tipo === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span>${mensaje}</span>
+            `;
+            
+            document.body.appendChild(notificacion);
+            
+            setTimeout(() => {
+                notificacion.classList.add('mostrar');
+            }, 100);
+            
+            setTimeout(() => {
+                notificacion.classList.remove('mostrar');
+                setTimeout(() => {
+                    document.body.removeChild(notificacion);
+                }, 300);
+            }, 3000);
+        }
+
+        // Función para mostrar loading
+        function mostrarLoading(mostrar = true) {
+            let loading = document.getElementById('loading-overlay');
+            
+            if (mostrar) {
+                if (!loading) {
+                    loading = document.createElement('div');
+                    loading.id = 'loading-overlay';
+                    loading.innerHTML = `
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Procesando...</p>
+                        </div>
+                    `;
+                    document.body.appendChild(loading);
+                }
+                loading.style.display = 'flex';
+            } else {
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            }
+        }
+
+        // Función para cargar configuraciones
+        async function cargarConfiguraciones() {
+            try {
+                mostrarLoading(true);
+                
+                const response = await fetch(`${API_URL}?metodo=configuracion`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Datos de configuración recibidos:', data);
+
+                // Filtrar por categorías
+                asesores = data.filter(item => item.CATEGORIA === 'ASESOR');
+                formasPago = data.filter(item => item.CATEGORIA === 'FORMA_PAGO');
+                
+                console.log('Asesores:', asesores);
+                console.log('Formas de pago:', formasPago);
+
+                // Actualizar tablas
+                actualizarTablaAsesores();
+                actualizarTablaFormasPago();
+                
+                // Cargar lugares
+                await cargarLugares();
+
+                mostrarNotificacion('Configuraciones cargadas correctamente', 'exito');
+                
+            } catch (error) {
+                console.error('Error al cargar configuraciones:', error);
+                mostrarNotificacion('Error al cargar configuraciones', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Función para actualizar tabla de asesores
+        function actualizarTablaAsesores() {
+            const tbody = document.getElementById('tbodyAsesores');
+            
+            if (asesores.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                            <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            <p>No hay asesores registrados</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = asesores.map(asesor => `
+                <tr>
+                    <td>${asesor.ID}</td>
+                    <td>${asesor.NOMBRE}</td>
+                    <td>
+                        <span class="status-badge ${asesor.ESTADO === '1' ? 'status-active' : 'status-inactive'}">
+                            ${asesor.ESTADO === '1' ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editarAsesor('${asesor.ID}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete" onclick="eliminarAsesor('${asesor.ID}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Función para actualizar tabla de formas de pago
+        function actualizarTablaFormasPago() {
+            const tbody = document.getElementById('tbodyFormasPago');
+            
+            if (formasPago.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                            <i class="fas fa-credit-card" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            <p>No hay formas de pago registradas</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = formasPago.map(forma => `
+                <tr>
+                    <td>${forma.ID}</td>
+                    <td>${forma.NOMBRE}</td>
+                    <td>
+                        <span class="status-badge ${forma.ESTADO === '1' ? 'status-active' : 'status-inactive'}">
+                            ${forma.ESTADO === '1' ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editarFormaPago('${forma.ID}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete" onclick="eliminarFormaPago('${forma.ID}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Funciones para formulario de asesor
+        function mostrarFormularioAsesor() {
+            document.getElementById('formAsesor').style.display = 'block';
+            editandoAsesor = null;
+            document.getElementById('nombreAsesor').value = '';
+            document.getElementById('estadoAsesor').value = '1';
+            
+            // Restaurar el texto del botón para nuevo asesor
+            const submitBtn = document.querySelector('#formAsesor button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Asesor';
+        }
+
+        function ocultarFormularioAsesor() {
+            document.getElementById('formAsesor').style.display = 'none';
+            editandoAsesor = null;
+            
+            // Restaurar el texto del botón
+            const submitBtn = document.querySelector('#formAsesor button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Asesor';
+        }
+
+        function editarAsesor(id) {
+            const asesor = asesores.find(a => a.ID == id);
+            if (asesor) {
+                editandoAsesor = id;
+                document.getElementById('nombreAsesor').value = asesor.NOMBRE;
+                document.getElementById('estadoAsesor').value = asesor.ESTADO;
+                document.getElementById('formAsesor').style.display = 'block';
+                
+                // Cambiar el texto del botón para indicar que estamos editando
+                const submitBtn = document.querySelector('#formAsesor button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Asesor';
+            }
+        }
+
+        async function eliminarAsesor(id) {
+            if (confirm('¿Está seguro de que desea eliminar este asesor?')) {
+                try {
+                    mostrarLoading(true);
+                    
+                    const response = await fetch(`${API_URL}?metodo=eliminar_configuracion`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: id
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Asesor eliminado correctamente', 'exito');
+                    cargarConfiguraciones();
+                    
+                } catch (error) {
+                    console.error('Error al eliminar asesor:', error);
+                    mostrarNotificacion('Error al eliminar asesor', 'error');
+                } finally {
+                    mostrarLoading(false);
+                }
+            }
+        }
+
+        // Funciones para formulario de forma de pago
+        function mostrarFormularioFormaPago() {
+            document.getElementById('formFormaPago').style.display = 'block';
+            editandoFormaPago = null;
+            document.getElementById('nombreFormaPago').value = '';
+            document.getElementById('estadoFormaPago').value = '1';
+            
+            // Restaurar el texto del botón para nueva forma de pago
+            const submitBtn = document.querySelector('#formFormaPago button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Forma de Pago';
+        }
+
+        function ocultarFormularioFormaPago() {
+            document.getElementById('formFormaPago').style.display = 'none';
+            editandoFormaPago = null;
+            
+            // Restaurar el texto del botón
+            const submitBtn = document.querySelector('#formFormaPago button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Forma de Pago';
+        }
+
+        function editarFormaPago(id) {
+            const forma = formasPago.find(f => f.ID == id);
+            if (forma) {
+                editandoFormaPago = id;
+                document.getElementById('nombreFormaPago').value = forma.NOMBRE;
+                document.getElementById('estadoFormaPago').value = forma.ESTADO;
+                document.getElementById('formFormaPago').style.display = 'block';
+                
+                // Cambiar el texto del botón para indicar que estamos editando
+                const submitBtn = document.querySelector('#formFormaPago button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Forma de Pago';
+            }
+        }
+
+        async function eliminarFormaPago(id) {
+            if (confirm('¿Está seguro de que desea eliminar esta forma de pago?')) {
+                try {
+                    mostrarLoading(true);
+                    
+                    const response = await fetch(`${API_URL}?metodo=eliminar_configuracion`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: id
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Forma de pago eliminada correctamente', 'exito');
+                    cargarConfiguraciones();
+                    
+                } catch (error) {
+                    console.error('Error al eliminar forma de pago:', error);
+                    mostrarNotificacion('Error al eliminar forma de pago', 'error');
+                } finally {
+                    mostrarLoading(false);
+                }
+            }
+        }
+
+        // Event listeners para formularios
+        document.getElementById('formAsesor').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('nombreAsesor').value.trim();
+            const estado = document.getElementById('estadoAsesor').value;
+            
+            if (!nombre) {
+                mostrarNotificacion('El nombre del asesor es obligatorio', 'error');
+                return;
+            }
+
+            try {
+                mostrarLoading(true);
+                
+                if (editandoAsesor) {
+                    // Actualizar asesor existente
+                    const datos = {
+                        id: editandoAsesor,
+                        nombre: nombre
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion_edit`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Asesor actualizado correctamente', 'exito');
+                } else {
+                    // Crear nuevo asesor
+                    const datos = {
+                        nombre: nombre,
+                        categoria: 'ASESOR'
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Asesor creado correctamente', 'exito');
+                }
+                
+                ocultarFormularioAsesor();
+                cargarConfiguraciones();
+                
+            } catch (error) {
+                console.error('Error al guardar asesor:', error);
+                mostrarNotificacion('Error al guardar asesor', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        });
+
+        document.getElementById('formFormaPago').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('nombreFormaPago').value.trim();
+            const estado = document.getElementById('estadoFormaPago').value;
+            
+            if (!nombre) {
+                mostrarNotificacion('El nombre de la forma de pago es obligatorio', 'error');
+                return;
+            }
+
+            try {
+                mostrarLoading(true);
+                
+                if (editandoFormaPago) {
+                    // Actualizar forma de pago existente
+                    const datos = {
+                        id: editandoFormaPago,
+                        nombre: nombre
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion_edit`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Forma de pago actualizada correctamente', 'exito');
+                } else {
+                    // Crear nueva forma de pago
+                    const datos = {
+                        nombre: nombre,
+                        categoria: 'FORMA_PAGO'
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Forma de pago creada correctamente', 'exito');
+                }
+                
+                ocultarFormularioFormaPago();
+                cargarConfiguraciones();
+                
+            } catch (error) {
+                console.error('Error al guardar forma de pago:', error);
+                mostrarNotificacion('Error al guardar forma de pago', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        });
+
+        // Función para cargar lugares
+        async function cargarLugares() {
+            try {
+                const response = await fetch(`${API_URL}?metodo=lugar_configuracion`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                lugares = await response.json();
+                console.log('Lugares:', lugares);
+
+                actualizarTablaLugares();
+                
+            } catch (error) {
+                console.error('Error al cargar lugares:', error);
+                mostrarNotificacion('Error al cargar lugares', 'error');
+            }
+        }
+
+        // Función para actualizar tabla de lugares
+        function actualizarTablaLugares() {
+            const tbody = document.getElementById('tbodyLugares');
+            
+            if (lugares.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--gris-medio); padding: 40px;">
+                            <i class="fas fa-map-marker-alt" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            <p>No hay lugares registrados</p>
+                        </td>
+                    </tr>
+                `;
+                actualizarPaginacionLugares();
+                return;
+            }
+
+            // Calcular índices para paginación
+            const totalPaginas = Math.ceil(lugares.length / elementosPorPaginaLugares);
+            const inicio = (paginaActualLugares - 1) * elementosPorPaginaLugares;
+            const fin = inicio + elementosPorPaginaLugares;
+            const lugaresPagina = lugares.slice(inicio, fin);
+
+            tbody.innerHTML = lugaresPagina.map(lugar => `
+                <tr>
+                    <td>${lugar.ID}</td>
+                    <td>${lugar.LUGAR}</td>
+                    <td>${lugar.TIPO || 'N/A'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editarLugar('${lugar.ID}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete" onclick="eliminarLugar('${lugar.ID}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            actualizarPaginacionLugares();
+        }
+
+        // Función para actualizar controles de paginación de lugares
+        function actualizarPaginacionLugares() {
+            const totalPaginas = Math.ceil(lugares.length / elementosPorPaginaLugares) || 1;
+            const infoPage = document.getElementById('infoPageLugares');
+            const btnPrev = document.getElementById('btnPrevLugares');
+            const btnNext = document.getElementById('btnNextLugares');
+
+            if (infoPage) {
+                infoPage.textContent = `Página ${paginaActualLugares} de ${totalPaginas} (${lugares.length} lugares)`;
+            }
+
+            if (btnPrev) {
+                btnPrev.disabled = paginaActualLugares === 1;
+            }
+
+            if (btnNext) {
+                btnNext.disabled = paginaActualLugares >= totalPaginas;
+            }
+        }
+
+        // Función para cambiar de página en lugares
+        function cambiarPaginaLugares(direccion) {
+            const totalPaginas = Math.ceil(lugares.length / elementosPorPaginaLugares);
+            
+            paginaActualLugares += direccion;
+            
+            // Validar límites
+            if (paginaActualLugares < 1) {
+                paginaActualLugares = 1;
+            } else if (paginaActualLugares > totalPaginas) {
+                paginaActualLugares = totalPaginas;
+            }
+            
+            actualizarTablaLugares();
+        }
+
+        // Funciones para formulario de lugar
+        function mostrarFormularioLugar() {
+            document.getElementById('formLugar').style.display = 'block';
+            editandoLugar = null;
+            document.getElementById('nombreLugar').value = '';
+            document.getElementById('tipoLugar').value = '';
+            
+            const submitBtn = document.querySelector('#formLugar button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Lugar';
+        }
+
+        function ocultarFormularioLugar() {
+            document.getElementById('formLugar').style.display = 'none';
+            editandoLugar = null;
+            
+            const submitBtn = document.querySelector('#formLugar button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Lugar';
+        }
+
+        function editarLugar(id) {
+            const lugar = lugares.find(l => l.ID == id);
+            if (lugar) {
+                editandoLugar = id;
+                document.getElementById('nombreLugar').value = lugar.LUGAR;
+                document.getElementById('tipoLugar').value = lugar.TIPO || '';
+                document.getElementById('formLugar').style.display = 'block';
+                
+                const submitBtn = document.querySelector('#formLugar button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Lugar';
+            }
+        }
+
+        async function eliminarLugar(id) {
+            if (confirm('¿Está seguro de que desea eliminar este lugar?')) {
+                try {
+                    mostrarLoading(true);
+                    
+                    const response = await fetch(`${API_URL}?metodo=eliminar_configuracion`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: id
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Lugar eliminado correctamente', 'exito');
+                    
+                    // Resetear a página 1 si la página actual queda vacía
+                    const totalPaginasNuevo = Math.ceil((lugares.length - 1) / elementosPorPaginaLugares);
+                    if (paginaActualLugares > totalPaginasNuevo && totalPaginasNuevo > 0) {
+                        paginaActualLugares = totalPaginasNuevo;
+                    }
+                    
+                    cargarLugares();
+                    
+                } catch (error) {
+                    console.error('Error al eliminar lugar:', error);
+                    mostrarNotificacion('Error al eliminar lugar', 'error');
+                } finally {
+                    mostrarLoading(false);
+                }
+            }
+        }
+
+        // Event listener para formulario de lugar
+        document.getElementById('formLugar').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('nombreLugar').value.trim();
+            const tipo = document.getElementById('tipoLugar').value;
+            
+            if (!nombre || !tipo) {
+                mostrarNotificacion('Todos los campos son obligatorios', 'error');
+                return;
+            }
+
+            try {
+                mostrarLoading(true);
+                
+                if (editandoLugar) {
+                    // Actualizar lugar existente
+                    const datos = {
+                        id: editandoLugar,
+                        lugar: nombre,
+                        tipo: tipo
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion_lugar_edit`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Lugar actualizado correctamente', 'exito');
+                } else {
+                    // Crear nuevo lugar
+                    const datos = {
+                        lugar: nombre,
+                        tipo: tipo
+                    };
+
+                    const response = await fetch(`${API_URL}?metodo=configuracion_lugar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(datos)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    mostrarNotificacion('Lugar creado correctamente', 'exito');
+                    
+                    // Si es nuevo lugar, ir a la última página
+                    if (!editandoLugar) {
+                        const totalPaginasNuevo = Math.ceil((lugares.length + 1) / elementosPorPaginaLugares);
+                        paginaActualLugares = totalPaginasNuevo;
+                    }
+                }
+                
+                ocultarFormularioLugar();
+                cargarLugares();
+                
+            } catch (error) {
+                console.error('Error al guardar lugar:', error);
+                mostrarNotificacion('Error al guardar lugar', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        });
+
+        // Event listener para formulario de cliente
+        document.getElementById('formCliente').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('nombreCliente').value.trim();
+            const tipo = document.getElementById('tipoCliente').value;
+            
+            if (!nombre || !tipo) {
+                mostrarNotificacion('Todos los campos son obligatorios', 'error');
+                return;
+            }
+
+            try {
+                mostrarLoading(true);
+                
+                const datos = {
+                    cliente: nombre,
+                    tipo_cliente: tipo
+                };
+
+                const response = await fetch(`${API_URL}?metodo=configuracion_cliente`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Cliente registrado:', result);
+
+                mostrarNotificacion('Cliente registrado correctamente', 'exito');
+                
+                // Limpiar formulario
+                document.getElementById('nombreCliente').value = '';
+                document.getElementById('tipoCliente').value = '';
+                
+            } catch (error) {
+                console.error('Error al registrar cliente:', error);
+                mostrarNotificacion('Error al registrar cliente', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        });
+
+        // Cargar configuraciones al iniciar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarConfiguraciones();
+        });
+    </script>
+</body>
+</html>
