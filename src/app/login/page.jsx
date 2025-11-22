@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "../../components/context/AuthContext";
 import { InputWithIcon } from "../../components/ui/InputWithIcon";
-import { FeatureList } from "../../components/login/FeatureList";
 import { validateEmail } from "../../utils/helpers";
 
 export default function LoginPage() {
@@ -89,12 +88,12 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Sección izquierda - Panel de características */}
+      {/* Sección izquierda - Vacía para futuras implementaciones */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Imagen de fondo */}
         <div className="absolute inset-0">
           <Image
-            src="/images/fondo_zeus_izquierdo.jpg"
+            src="/images/fondo_izquierda_new.png"
             alt="Fondo Zeus"
             fill
             className="object-cover"
@@ -103,44 +102,25 @@ export default function LoginPage() {
           />
         </div>
         
-        {/* Overlay oscuro para legibilidad */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/75 to-indigo-900/80"></div>
-        
-        {/* Overlay adicional para mejor contraste */}
-        <div className="absolute inset-0 bg-black/30"></div>
-
-        <div className="relative z-10 w-full p-12 pl-20 pt-48 flex flex-col justify-between">
-          {/* Lista de características */}
-          <div>
-            <div className="space-y-6">
-              <FeatureList />
-            </div>
-          </div>
-
-          {/* Footer del panel izquierdo */}
-          <div className="pt-8 border-t border-white/20">
-            <p className="text-white/90 text-sm leading-relaxed font-normal">
-              Plataforma profesional para la gestión eficiente de importaciones y logística.
-            </p>
-          </div>
-        </div>
+        {/* Overlay amarillo transparente */}
+        <div className="absolute inset-0 bg-yellow-500/30"></div>
       </div>
 
       {/* Sección derecha - Formulario de Login */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-white overflow-hidden">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8 bg-white overflow-hidden">
         <div className="w-full max-w-md">
           {/* Card del formulario */}
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)' }}>
             {/* Gradiente superior sutil y profesional */}
-            <div className="h-2 bg-gradient-to-r from-blue-600 via-blue-700 to-slate-800"></div>
+            <div className="h-3 bg-gradient-to-r from-yellow-500 via-yellow-500 to-amber-500"></div>
             
-            <div className="p-8">
+            <div className="p-6">
               {/* Logo y branding */}
-              <div className="text-center mb-8">
-                <div className="flex justify-center mb-6">
-                  <div className="relative w-40 h-40">
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-4">
+                  <div className="relative w-48 h-48">
                     <Image
-                      src="/images/logotipo_zeus_safety.png"
+                      src="/images/logo_zeus_safety.png"
                       alt="Zeus Safety Logo"
                       fill
                       className="object-contain"
@@ -149,19 +129,19 @@ export default function LoginPage() {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                     Iniciar Sesión
                   </h2>
-                  <div className="w-16 h-1 bg-gradient-to-r from-blue-600 to-slate-800 mx-auto rounded-full"></div>
-                  <p className="text-gray-500 text-sm font-medium pt-1">
+                  <div className="w-16 h-1 bg-gradient-to-r from-yellow-500 to-amber-500 mx-auto rounded-full"></div>
+                  <p className="text-gray-600 text-sm font-medium pt-1">
                     Accede al sistema con tus credenciales
                   </p>
                 </div>
               </div>
 
               {/* Formulario */}
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form className="space-y-5" onSubmit={handleSubmit}>
                 <InputWithIcon
                   label="Usuario"
                   type="text"
@@ -236,16 +216,17 @@ export default function LoginPage() {
                 </div>
 
                 {errors.submit && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  <div className="bg-red-50/80 border-2 border-red-200 text-red-700 px-4 py-3.5 rounded-xl text-sm font-medium">
                     {errors.submit}
                   </div>
                 )}
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 border-2 border-yellow-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                  style={{ boxShadow: '0 4px 14px 0 rgba(234, 179, 8, 0.3)' }}
                 >
                   {isLoading ? (
                     <>
@@ -268,24 +249,19 @@ export default function LoginPage() {
               </form>
 
               {/* Footer del formulario */}
-              <div className="mt-6 pt-5 border-t border-gray-200 text-center">
+              <div className="mt-4 pt-4 border-t border-gray-200/80 text-center">
                 <a
                   href="#"
-                  className="text-sm text-gray-600 hover:text-blue-700 transition-colors font-medium inline-flex items-center space-x-1 group"
+                  className="text-sm text-gray-600 hover:text-yellow-600 font-semibold inline-flex items-center space-x-1.5"
                 >
                   <span>¿Olvidaste tu contraseña?</span>
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </a>
               </div>
             </div>
           </div>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-400 mt-8">
-            © {new Date().getFullYear()} Zeus Safety. Todos los derechos reservados.
-          </p>
         </div>
       </div>
     </div>

@@ -9,6 +9,8 @@ export function Sidebar({ isOpen, onClose }) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [expandedModules, setExpandedModules] = useState({});
+  const [expandedSubmenus, setExpandedSubmenus] = useState({});
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const modules = [
     { id: "gerencia", name: "Gerencia", icon: "shield", hasSubmenu: true },
@@ -23,11 +25,294 @@ export function Sidebar({ isOpen, onClose }) {
     { id: "permisos", name: "Permisos/Solicitudes e Incidencias", icon: "list", hasSubmenu: true },
   ];
 
+  // Submenús de Gerencia
+  const gerenciaSubmenu = [
+    {
+      id: "dashboard",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "gestion-usuarios",
+      name: "Gestión de Usuarios",
+      icon: "users",
+      hasSubmenu: true,
+      subItems: [
+        { id: "accesibilidad-credenciales", name: "Accesibilidad y Credenciales", icon: "key" },
+      ],
+    },
+    {
+      id: "gestion-productos",
+      name: "Gestión de Productos",
+      icon: "box",
+      hasSubmenu: true,
+      subItems: [
+        { id: "productos", name: "Productos", icon: "key" },
+      ],
+    },
+    {
+      id: "reportes-anomalias",
+      name: "Reportes y Anomalías",
+      icon: "document-list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "reporte-ventas", name: "Reporte de Ventas", icon: "chart-line" },
+        { id: "anomalias-sistema", name: "Anomalías del Sistema", icon: "warning" },
+        { id: "reporte-importaciones", name: "Reporte de Importaciones", icon: "document" },
+        { id: "reporte-usuarios", name: "Reporte de Usuarios", icon: "users" },
+        { id: "reporte-tiempos", name: "Reporte de Tiempos", icon: "clock" },
+        { id: "reporte-base-datos", name: "Reporte de Base de Datos", icon: "database" },
+      ],
+    },
+  ];
+
+  // Submenús de Administración
+  const administracionSubmenu = [
+    {
+      id: "dashboard-admin",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "incidencias",
+      name: "Incidencias",
+      icon: "warning",
+      hasSubmenu: true,
+      subItems: [
+        { id: "importaciones", name: "Importaciones", icon: "ship" },
+        { id: "proformas-actas", name: "Proformas / Actas", icon: "document" },
+      ],
+    },
+    {
+      id: "configuracion",
+      name: "Configuración",
+      icon: "gears",
+      hasSubmenu: true,
+      subItems: [
+        { id: "gestionar-productos", name: "Gestionar Productos", icon: "plus-circle" },
+      ],
+    },
+  ];
+
+  // Submenús de Importación
+  const importacionSubmenu = [
+    {
+      id: "dashboard-import",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "importaciones",
+      name: "Importaciones",
+      icon: "ship",
+      hasSubmenu: true,
+      subItems: [
+        { id: "registro", name: "Registro", icon: "plus-circle" },
+        { id: "listado-import", name: "Listado", icon: "list" },
+      ],
+    },
+    {
+      id: "solicitudes",
+      name: "Solicitudes",
+      icon: "document-list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-solicitudes", name: "Listado", icon: "list" },
+      ],
+    },
+  ];
+
+  // Submenús de Logística
+  const logisticaSubmenu = [
+    {
+      id: "dashboard-log",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "registro-incidencias",
+      name: "Registro de Incidencias",
+      icon: "plus-circle",
+      hasSubmenu: true,
+      subItems: [
+        { id: "proformas", name: "Proformas", icon: "document" },
+      ],
+    },
+    {
+      id: "ver-listados",
+      name: "Ver Listados",
+      icon: "document-list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "incidencias-importaciones", name: "Incidencias Importaciones", icon: "warning" },
+        { id: "importaciones-log", name: "Importaciones", icon: "ship" },
+      ],
+    },
+    {
+      id: "inventario",
+      name: "Inventario",
+      icon: "plus-circle",
+      hasSubmenu: true,
+      subItems: [
+        { id: "inventario-item", name: "Inventario", icon: "document" },
+      ],
+    },
+  ];
+
+  // Submenús de Ventas
+  const ventasSubmenu = [
+    {
+      id: "dashboard-ventas",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "listado-importaciones",
+      name: "Listado Importaciones",
+      icon: "list",
+      hasSubmenu: false,
+    },
+    {
+      id: "incidencias-proforma",
+      name: "Incidencias Proforma",
+      icon: "warning",
+      hasSubmenu: false,
+    },
+    {
+      id: "metricas-ventas",
+      name: "Métricas de Ventas",
+      icon: "warning",
+      hasSubmenu: false,
+    },
+  ];
+
+  // Submenús de Marketing
+  const marketingSubmenu = [
+    {
+      id: "dashboard-marketing",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "importaciones-marketing",
+      name: "Importaciones",
+      icon: "ship",
+      hasSubmenu: false,
+    },
+    {
+      id: "solicitudes-marketing",
+      name: "Solicitudes",
+      icon: "document-list",
+      hasSubmenu: false,
+    },
+    {
+      id: "gestion-clientes-marketing",
+      name: "Gestion de Clientes - Marketing",
+      icon: "document-list",
+      hasSubmenu: false,
+    },
+    {
+      id: "listado-ventas-marketing",
+      name: "Listado de Ventas - Marketing",
+      icon: "document-list",
+      hasSubmenu: false,
+    },
+  ];
+
+  // Submenús de Sistemas
+  const sistemasSubmenu = [
+    {
+      id: "dashboard-sistemas",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "pagos",
+      name: "Pagos",
+      icon: "credit-card",
+      hasSubmenu: true,
+      subItems: [
+        { id: "gestion-pagos", name: "Gestión de Pagos", icon: "money" },
+      ],
+    },
+  ];
+
+  // Submenús de Recursos Humanos
+  const recursosHumanosSubmenu = [
+    {
+      id: "dashboard-rh",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+  ];
+
+  // Submenús de Facturación
+  const facturacionSubmenu = [
+    {
+      id: "dashboard-facturacion",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "listados-facturacion",
+      name: "Listados",
+      icon: "list",
+      hasSubmenu: false,
+    },
+  ];
+
+  // Submenús de Permisos/Solicitudes e Incidencias
+  const permisosSubmenu = [
+    {
+      id: "registro-permisos",
+      name: "Registro de Permisos",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "registro-solicitudes-incidencias",
+      name: "Registro de Solicitudes e Incidencias",
+      icon: "plus-circle",
+      hasSubmenu: false,
+    },
+    {
+      id: "mis-solicitudes-incidencias",
+      name: "Mis Solicitudes e Incidencias",
+      icon: "list",
+      hasSubmenu: false,
+    },
+  ];
+
   const toggleModule = (moduleId) => {
     setExpandedModules((prev) => ({
       ...prev,
       [moduleId]: !prev[moduleId],
     }));
+  };
+
+  const toggleSubmenu = (submenuId) => {
+    setExpandedSubmenus((prev) => {
+      const isExpanding = !prev[submenuId];
+      // Si se está expandiendo, marcar el item; si se está colapsando, desmarcarlo
+      if (isExpanding) {
+        setSelectedItem(submenuId);
+      } else {
+        setSelectedItem(null);
+      }
+      return {
+        ...prev,
+        [submenuId]: isExpanding,
+      };
+    });
   };
 
   const handleLogout = () => {
@@ -90,9 +375,72 @@ export function Sidebar({ isOpen, onClose }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
+      home: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+      box: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      ),
+      key: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        </svg>
+      ),
+      "document-list": (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
+      "chart-line": (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+      warning: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      ),
+      clock: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      database: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+        </svg>
+      ),
+      "plus-circle": (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} />
+        </svg>
+      ),
+      "credit-card": (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      ),
+      money: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
     };
 
     return icons[iconName] || icons.shield;
+  };
+
+  const handleSubmenuClick = (itemId) => {
+    // Solo marcar items que NO tienen submenú (son páginas finales)
+    // Los items con submenú se manejan con toggleSubmenu
+    console.log("Navigate to:", itemId);
+    // Aquí iría la navegación real
   };
 
   return (
@@ -117,10 +465,10 @@ export function Sidebar({ isOpen, onClose }) {
         `}
       >
         {/* Logo */}
-        <div className="pt-4 pb-4 px-6 border-b border-gray-200 flex justify-center">
+        <div className="pt-3 pb-3 px-6 border-b border-gray-200 flex justify-center">
           <div className="relative w-40 h-40">
             <Image
-              src="/images/logotipo_zeus_safety.png"
+              src="/images/logo_zeus_safety.png"
               alt="Zeus Safety Logo"
               fill
               className="object-contain"
@@ -141,13 +489,25 @@ export function Sidebar({ isOpen, onClose }) {
               <li key={module.id}>
                 <button
                   onClick={() => toggleModule(module.id)}
-                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:via-indigo-50 hover:to-slate-50 transition-all duration-200 group hover:shadow-md border border-transparent hover:border-blue-200/60 active:scale-[0.98]"
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group hover:shadow-md border active:scale-[0.98] ${
+                    (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                      ? "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-700 border-yellow-200 shadow-sm"
+                      : "text-gray-700 hover:bg-gradient-to-r hover:from-yellow-50 hover:via-amber-50 hover:to-yellow-50 border-transparent hover:border-yellow-200/60"
+                  }`}
                 >
                   <div className="flex items-center space-x-3.5">
-                    <span className="text-gray-600 group-hover:text-blue-600 transition-colors flex-shrink-0">
+                    <span className={`transition-colors flex-shrink-0 ${
+                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                        ? "text-yellow-600"
+                        : "text-gray-600 group-hover:text-yellow-600"
+                    }`}>
                       {getIcon(module.icon)}
                     </span>
-                    <span className="text-sm font-semibold text-gray-800 group-hover:text-gray-900 text-left leading-tight">
+                    <span className={`text-sm font-semibold text-left leading-tight ${
+                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                        ? "text-yellow-800"
+                        : "text-gray-800 group-hover:text-gray-900"
+                    }`}>
                       {module.name === "Permisos/Solicitudes e Incidencias" ? (
                         <>
                           Permisos/Solicitudes e<br />
@@ -161,7 +521,7 @@ export function Sidebar({ isOpen, onClose }) {
                   {module.hasSubmenu && (
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
-                        expandedModules[module.id] ? "rotate-180 text-blue-600" : "group-hover:text-blue-500"
+                        expandedModules[module.id] ? "rotate-180 text-yellow-600" : "group-hover:text-yellow-500"
                       }`}
                       fill="none"
                       stroke="currentColor"
@@ -171,6 +531,658 @@ export function Sidebar({ isOpen, onClose }) {
                     </svg>
                   )}
                 </button>
+
+                {/* Submenú de Gerencia */}
+                {module.id === "gerencia" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    {/* Items del submenú */}
+                    <div className="space-y-0.5">
+                      {gerenciaSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Administración */}
+                {module.id === "administracion" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    {/* Items del submenú */}
+                    <div className="space-y-0.5">
+                      {administracionSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Importación */}
+                {module.id === "importacion" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {importacionSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Logística */}
+                {module.id === "logistica" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {logisticaSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Ventas */}
+                {module.id === "ventas" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {ventasSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Marketing */}
+                {module.id === "marketing" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {marketingSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Sistemas */}
+                {module.id === "sistemas" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {sistemasSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Recursos Humanos */}
+                {module.id === "recursos-humanos" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {recursosHumanosSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Facturación */}
+                {module.id === "facturacion" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {facturacionSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Permisos/Solicitudes e Incidencias */}
+                {module.id === "permisos" && expandedModules[module.id] && (
+                  <div className="mt-1.5 ml-2 space-y-1 bg-gray-50 rounded-lg py-2 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {permisosSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id)}
+                              className="w-full flex items-center space-x-3 pl-3 pr-4 py-2.5 rounded-lg text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-200 text-sm font-medium border border-transparent hover:border-yellow-200"
+                            >
+                              <span className="text-gray-500 group-hover:text-yellow-600 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : "text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-200"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={expandedSubmenus[item.id] ? "text-yellow-600" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-sm font-semibold ${expandedSubmenus[item.id] ? "text-yellow-800" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-yellow-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-4 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      className={`w-full flex items-center space-x-3 pl-3 pr-4 py-2 rounded-lg transition-all duration-200 text-sm border ${
+                                        selectedItem === subItem.id
+                                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                          : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 border-transparent hover:border-yellow-100"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-yellow-600" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -179,8 +1191,8 @@ export function Sidebar({ isOpen, onClose }) {
         {/* User info and logout */}
         <div className="p-4 border-t border-gray-200/80 bg-gradient-to-br from-gray-50/50 via-white to-white space-y-3">
           <div className="flex items-center space-x-3 px-4 py-3.5 bg-white rounded-xl border border-gray-200/60 shadow-md hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-yellow-500/20 backdrop-blur-sm border-2 border-yellow-400/40 rounded-xl flex items-center justify-center shadow-sm">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
@@ -193,7 +1205,8 @@ export function Sidebar({ isOpen, onClose }) {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2.5 px-4 py-3.5 bg-red-500/20 backdrop-blur-sm border-2 border-red-400/40 hover:bg-red-500/30 hover:border-red-500/60 text-red-600 rounded-xl font-bold transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98] text-sm"
+            className="w-full flex items-center justify-center space-x-2.5 px-4 py-3.5 bg-yellow-500 border-2 border-yellow-500 hover:bg-yellow-600 hover:border-yellow-600 text-white rounded-xl font-bold transition-all duration-200 shadow-lg hover:shadow-xl text-sm"
+            style={{ boxShadow: '0 4px 14px 0 rgba(234, 179, 8, 0.3)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -69,11 +69,11 @@ export function ModuleCard({ module, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="group relative bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-200"
+      className="group relative bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-yellow-200"
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-5">
-          <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+          <div className="w-16 h-16 bg-yellow-500/20 backdrop-blur-sm border-2 border-yellow-400/40 rounded-2xl flex items-center justify-center text-yellow-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-yellow-500/30 group-hover:border-yellow-500/60 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
           <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBg(module.status)}`}>
@@ -81,7 +81,7 @@ export function ModuleCard({ module, onClick }) {
             <span>{module.status}</span>
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-yellow-600 transition-colors">
           {module.name}
         </h3>
         <p className="text-sm text-gray-500 leading-relaxed">
