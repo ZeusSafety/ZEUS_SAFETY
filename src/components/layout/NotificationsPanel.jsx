@@ -95,13 +95,13 @@ const mockNotifications = [
 ];
 
 const categoryColors = {
-  "IMPORTACIÓN": "bg-gradient-to-r from-blue-500 to-blue-600",
-  "INCIDENCIA DE PROFORMAS": "bg-gradient-to-r from-indigo-500 to-purple-600",
-  "VENTAS": "bg-gradient-to-r from-emerald-500 to-green-600",
-  "LOGÍSTICA": "bg-gradient-to-r from-purple-500 to-pink-600",
-  "ADMINISTRACIÓN": "bg-gradient-to-r from-cyan-500 to-blue-500",
-  "SISTEMAS": "bg-gradient-to-r from-orange-500 to-amber-600",
-  "RECURSOS HUMANOS": "bg-gradient-to-r from-pink-500 to-rose-600",
+  "IMPORTACIÓN": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "INCIDENCIA DE PROFORMAS": "bg-gradient-to-r from-yellow-600 to-amber-600",
+  "VENTAS": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "LOGÍSTICA": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "ADMINISTRACIÓN": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "SISTEMAS": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "RECURSOS HUMANOS": "bg-gradient-to-r from-yellow-500 to-amber-500",
 };
 
 export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
@@ -150,26 +150,26 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
 
   return (
     <>
-      {/* Overlay con blur mejorado */}
+      {/* Overlay sutil - solo para cerrar al hacer click fuera */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-md z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/10 z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Panel principal */}
+      {/* Panel principal - posicionado debajo del botón de notificaciones */}
       <div
         ref={panelRef}
-        className="fixed top-20 right-8 w-[440px] max-h-[calc(100vh-6rem)] bg-white rounded-3xl shadow-2xl z-50 border border-gray-200/50 overflow-hidden flex flex-col backdrop-blur-xl bg-white/95 animate-in duration-300"
+        className="fixed top-20 right-[140px] w-[440px] max-h-[calc(100vh-6rem)] bg-white rounded-3xl shadow-2xl z-50 border border-gray-200 overflow-hidden flex flex-col"
         style={{
           boxShadow: "0 20px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
         }}
       >
-        {/* Header mejorado con gradiente premium */}
-        <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 px-6 py-5 flex items-center justify-between overflow-hidden">
+        {/* Header mejorado con gradiente amarillo */}
+        <div className="relative bg-gradient-to-br from-yellow-500 via-amber-500 to-yellow-600 px-6 py-5 flex items-center justify-between overflow-hidden">
           {/* Patrón de fondo sutil */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-300 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-300 rounded-full blur-2xl"></div>
           </div>
           
           <div className="relative flex items-center space-x-4 flex-1">
@@ -228,7 +228,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         </div>
 
         {/* Lista de notificaciones mejorada */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-gray-50/50 to-white">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6">
               <div className="p-5 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-5 shadow-inner">
@@ -258,7 +258,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                   key={notification.id}
                   className={`relative group transition-all duration-300 ${
                     notification.unread 
-                      ? "bg-gradient-to-r from-blue-50/80 via-indigo-50/40 to-transparent hover:from-blue-50 hover:via-indigo-50/60" 
+                      ? "bg-gradient-to-r from-yellow-50/80 via-amber-50/40 to-transparent hover:from-yellow-50 hover:via-amber-50/60" 
                       : "hover:bg-gray-50/80"
                   }`}
                   style={{
@@ -267,7 +267,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                 >
                   {/* Indicador de no leída mejorado */}
                   {notification.unread && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 via-indigo-500 to-purple-500 shadow-lg" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-yellow-500 via-amber-500 to-yellow-600 shadow-lg" />
                   )}
 
                   <div className="px-6 py-5">
@@ -322,7 +322,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                       <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pt-1">
                         <button
                           onClick={() => handleOpenDetails(notification.id)}
-                          className="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all duration-200 active:scale-95 shadow-sm border border-blue-100"
+                          className="p-2.5 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-600 transition-all duration-200 active:scale-95 shadow-sm border border-yellow-100"
                           aria-label="Ver detalles"
                           title="Ver detalles"
                         >
@@ -374,7 +374,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         {/* Footer mejorado */}
         {notifications.length > 0 && (
           <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100/80">
-            <button className="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200 py-2 rounded-lg hover:bg-blue-50/50">
+            <button className="w-full text-center text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors duration-200 py-2 rounded-lg hover:bg-yellow-50/50">
               Ver todas las notificaciones
             </button>
           </div>
