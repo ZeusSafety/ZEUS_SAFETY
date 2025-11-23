@@ -110,12 +110,12 @@ export default function ConfiguracionPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
           <div className="max-w-[95%] mx-auto px-6 py-6">
-            {/* Botón Volver */}
+            {/* Botón Volver - OUTSIDE the white card */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-blue-600 rounded-xl font-semibold hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
+              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-500/40 text-blue-800 rounded-xl font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -123,64 +123,67 @@ export default function ConfiguracionPage() {
               <span>Volver al Menú</span>
             </button>
 
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-                  <p className="text-gray-600 mt-1">Administración del sistema y ajustes</p>
+            {/* Card contenedor blanco - ENCLOSING the rest of the content */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
+              {/* Header */}
+              <div className="mb-8">
+                <div className="flex items-center space-x-4 mb-3">
+                  <div className="w-16 h-16 bg-blue-700/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
+                    <p className="text-gray-600 mt-1">Administración del sistema y ajustes</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Secciones */}
-            <div className="space-y-6">
-              {sections.map((section) => (
-                <div key={section.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                  {/* Header de Sección */}
-                  <div className="px-6 py-4 bg-blue-500/20 backdrop-blur-md border-b border-blue-200/30">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-500/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-600 border-2 border-blue-400/30 shadow-sm">
-                        {section.icon}
+              {/* Secciones */}
+              <div className="space-y-6">
+                {sections.map((section) => (
+                  <div key={section.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    {/* Header de Sección */}
+                    <div className="px-6 py-4 bg-blue-700/20 backdrop-blur-md border-b border-blue-300/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-700/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-800 border-2 border-blue-600/30 shadow-sm">
+                          {section.icon}
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
                       </div>
-                      <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
                     </div>
-                  </div>
 
-                  {/* Opciones de la sección */}
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {section.options.map((option) => (
-                        <button
-                          key={option.id}
-                          onClick={() => router.push(option.route)}
-                          className="bg-white rounded-xl border border-gray-200/60 p-4 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-300/60 hover:bg-blue-50/30 shadow-sm text-left group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {option.title}
-                            </h3>
-                            <svg
-                              className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </div>
-                        </button>
-                      ))}
+                    {/* Opciones de la sección */}
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {section.options.map((option) => (
+                          <button
+                            key={option.id}
+                            onClick={() => router.push(option.route)}
+                            className="bg-white rounded-xl border border-gray-200/60 p-4 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-500/60 hover:bg-blue-100/30 shadow-sm text-left group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-800 transition-colors">
+                                {option.title}
+                              </h3>
+                              <svg
+                                className="w-5 h-5 text-gray-400 group-hover:text-blue-800 transition-colors"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </main>

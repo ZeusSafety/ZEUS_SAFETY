@@ -141,12 +141,12 @@ export default function PerfilPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
           <div className="max-w-[95%] mx-auto px-6 py-6">
-            {/* Botón Volver */}
+            {/* Botón Volver - OUTSIDE the white card */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-blue-600 rounded-xl font-semibold hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
+              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-500/40 text-blue-800 rounded-xl font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -154,49 +154,52 @@ export default function PerfilPage() {
               <span>Volver al Menú</span>
             </button>
 
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-                  <p className="text-gray-600 mt-1">Gestiona tu cuenta y configuración</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Opciones del menú */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {menuOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => router.push(option.route)}
-                  className="bg-white rounded-2xl border border-gray-200/60 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-300/60 hover:bg-white/95 shadow-sm text-left group"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/25 group-hover:border-blue-500/50 transition-all duration-200">
-                      {getIcon(option.iconName)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {option.title}
-                      </h3>
-                    </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            {/* Card contenedor blanco - ENCLOSING the rest of the content */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
+              {/* Header */}
+              <div className="mb-8">
+                <div className="flex items-center space-x-4 mb-3">
+                  <div className="w-16 h-16 bg-blue-700/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                </button>
-              ))}
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
+                    <p className="text-gray-600 mt-1">Gestiona tu cuenta y configuración</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Opciones del menú */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {menuOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => router.push(option.route)}
+                    className="bg-white rounded-2xl border border-gray-200/60 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-500/60 hover:bg-white/95 shadow-sm text-left group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/25 group-hover:border-blue-700/50 transition-all duration-200">
+                        {getIcon(option.iconName)}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-800 transition-colors">
+                          {option.title}
+                        </h3>
+                      </div>
+                      <svg
+                        className="w-5 h-5 text-gray-400 group-hover:text-blue-800 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </main>

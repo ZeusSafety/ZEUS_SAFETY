@@ -81,7 +81,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-5">
-          <div className="w-16 h-16 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/25 group-hover:border-blue-500/50 transition-all duration-200">
+          <div className="w-16 h-16 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/25 group-hover:border-blue-700/50 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
           <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBg(module.status)}`}>
@@ -89,7 +89,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
             <span>{module.status}</span>
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-800 transition-colors">
           {module.name}
         </h3>
         <p className="text-sm text-gray-500 leading-relaxed">

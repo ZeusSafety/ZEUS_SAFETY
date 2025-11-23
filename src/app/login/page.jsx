@@ -111,7 +111,7 @@ export default function LoginPage() {
           <div className="space-y-6">
             {/* Gestión integral de importaciones */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/40 backdrop-blur-sm border-2 border-blue-400/60 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/50 group-hover:border-blue-400/80 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
             {/* Seguimiento en tiempo real */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/40 backdrop-blur-sm border-2 border-blue-400/60 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/50 group-hover:border-blue-400/80 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -135,7 +135,7 @@ export default function LoginPage() {
 
             {/* Control de accesos y permisos */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/40 backdrop-blur-sm border-2 border-blue-400/60 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/50 group-hover:border-blue-400/80 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
@@ -147,7 +147,7 @@ export default function LoginPage() {
 
             {/* Reportes y documentación */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/40 backdrop-blur-sm border-2 border-blue-400/60 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/50 group-hover:border-blue-400/80 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -159,7 +159,7 @@ export default function LoginPage() {
 
             {/* Logística y distribución */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/40 backdrop-blur-sm border-2 border-blue-400/60 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/50 group-hover:border-blue-400/80 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                 </svg>
@@ -177,8 +177,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Card del formulario */}
           <div className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)' }}>
-            {/* Gradiente superior sutil y profesional */}
-            <div className="h-3 bg-gradient-to-r from-blue-600 via-blue-600 to-slate-800"></div>
+            {/* Barra superior transparente azul */}
+            <div className="h-3 bg-blue-700/30 backdrop-blur-sm border-b-2 border-blue-700/50"></div>
             
             <div className="p-6">
               {/* Logo y branding */}
@@ -199,7 +199,7 @@ export default function LoginPage() {
                   <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                     Iniciar Sesión
                   </h2>
-                  <div className="w-16 h-1 bg-blue-600/60 mx-auto rounded-full"></div>
+                  <div className="w-16 h-1 bg-blue-800/60 mx-auto rounded-full"></div>
                   <p className="text-gray-600 text-sm font-medium pt-1">
                     Accede al sistema con tus credenciales
                   </p>
@@ -291,7 +291,7 @@ export default function LoginPage() {
                   <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
+                  className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
                 >
                   {isLoading ? (
                     <>
@@ -317,7 +317,7 @@ export default function LoginPage() {
               <div className="mt-4 pt-4 border-t border-gray-200/80 text-center">
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-gray-600 hover:text-blue-700 transition-colors font-medium inline-flex items-center space-x-1 group"
+                  className="text-sm text-gray-600 hover:text-blue-800 transition-colors font-medium inline-flex items-center space-x-1 group"
                 >
                   <span>¿Olvidaste tu contraseña?</span>
                   <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>

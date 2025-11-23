@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-6">
             {/* Gestión integral de importaciones */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/30 group-hover:border-blue-700/60 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
 
             {/* Seguimiento en tiempo real */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/30 group-hover:border-blue-700/60 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -106,7 +106,7 @@ export default function ForgotPasswordPage() {
 
             {/* Control de accesos y permisos */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/30 group-hover:border-blue-700/60 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
 
             {/* Reportes y documentación */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/30 group-hover:border-blue-700/60 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -130,7 +130,7 @@ export default function ForgotPasswordPage() {
 
             {/* Logística y distribución */}
             <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-500/30 group-hover:border-blue-500/60 transition-all duration-200">
+              <div className="flex-shrink-0 w-16 h-16 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/30 group-hover:border-blue-700/60 transition-all duration-200">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                 </svg>
@@ -170,7 +170,7 @@ export default function ForgotPasswordPage() {
                   <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                     Recuperar Contraseña
                   </h2>
-                  <div className="w-16 h-1 bg-blue-600/60 mx-auto rounded-full"></div>
+                  <div className="w-16 h-1 bg-blue-800/60 mx-auto rounded-full"></div>
                   <p className="text-gray-600 text-sm font-medium pt-1">
                     Ingresa tu correo electrónico para recibir instrucciones
                   </p>
@@ -208,7 +208,7 @@ export default function ForgotPasswordPage() {
                         placeholder="correo@ejemplo.com"
                         className={`
                           w-full px-4 py-3 pl-12 border-2 rounded-xl bg-gray-50/50
-                          focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+                          focus:outline-none focus:ring-2 focus:ring-blue-700/30 focus:border-blue-700
                           text-gray-900 placeholder-gray-400 font-medium
                           ${errors.email ? "border-red-400 bg-red-50/50 focus:ring-red-500/30 focus:border-red-500" : "border-gray-300 hover:border-gray-400"}
                         `}
@@ -226,7 +226,7 @@ export default function ForgotPasswordPage() {
                       type="submit"
                       className="ripple-effect"
                       disabled={isLoading}
-                      className="w-full bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
+                      className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
                     >
                       {isLoading ? (
                         <>
@@ -252,8 +252,8 @@ export default function ForgotPasswordPage() {
                   {/* Mensaje de éxito */}
                   <div className="bg-gradient-to-br from-blue-50 to-slate-50 border-2 border-blue-200 rounded-xl p-6 text-center">
                     <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-blue-400/30">
-                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 bg-blue-700/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-blue-600/30">
+                        <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
@@ -264,7 +264,7 @@ export default function ForgotPasswordPage() {
                     <p className="text-gray-600 text-sm leading-relaxed mb-1">
                       Hemos enviado las instrucciones para recuperar tu contraseña a:
                     </p>
-                    <p className="text-blue-600 font-semibold text-sm mb-4">
+                    <p className="text-blue-800 font-semibold text-sm mb-4">
                       {formData.email}
                     </p>
                     <p className="text-gray-500 text-xs">
@@ -275,7 +275,7 @@ export default function ForgotPasswordPage() {
                   <div className="pt-2">
                     <Link
                       href="/login"
-                      className="w-full bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99]"
+                      className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99]"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

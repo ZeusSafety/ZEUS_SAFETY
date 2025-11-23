@@ -39,7 +39,7 @@ export function Header({ onMenuToggle }) {
             </svg>
           </button>
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-1 bg-blue-600/60 rounded-full"></div>
+            <div className="h-8 w-1 bg-blue-800/60 rounded-full"></div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               Sistema de Integración
             </h1>
@@ -71,7 +71,7 @@ export function Header({ onMenuToggle }) {
           {/* Settings */}
           <button 
             onClick={() => router.push("/configuracion")}
-            className="p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 group text-gray-600 hover:text-gray-900" 
+            className="p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 group text-gray-600 hover:text-blue-800" 
             aria-label="Configuración"
           >
             <svg className="w-5 h-5 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>

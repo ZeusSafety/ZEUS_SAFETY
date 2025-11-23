@@ -30,11 +30,11 @@ function CustomDropdown({ value, onChange, options }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-sm px-4 py-2.5 pr-10 rounded-xl border-2 border-gray-200/60 bg-white/80 backdrop-blur-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-gray-300/60 cursor-pointer shadow-sm hover:shadow-md"
+        className="flex items-center justify-between w-full text-sm px-4 py-2.5 pr-3 rounded-xl border-2 border-gray-200/60 bg-white/80 backdrop-blur-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-700/30 focus:border-blue-700 transition-all duration-200 hover:border-gray-300/60 cursor-pointer shadow-sm hover:shadow-md whitespace-nowrap"
       >
-        <span>{selectedOption.label}</span>
+        <span className="flex-1 text-left">{selectedOption.label}</span>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-2 ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -57,7 +57,7 @@ function CustomDropdown({ value, onChange, options }) {
               }}
               className={`w-full text-left px-4 py-3 text-sm font-medium transition-all duration-200 ${
                 value === option.value
-                  ? "bg-blue-50/60 text-blue-700 border-l-4 border-blue-500"
+                  ? "bg-blue-100/60 text-blue-900 border-l-4 border-blue-700"
                   : "text-gray-700 hover:bg-gray-50/60"
               }`}
             >
@@ -127,7 +127,7 @@ const mockNotifications = [
     user: "CARLOS RODRÍGUEZ",
     notificationId: "528",
     time: "Hace 3 horas",
-    unread: false,
+    unread: true,
     type: "warning",
     priority: "baja",
   },
@@ -170,13 +170,13 @@ const mockNotifications = [
 ];
 
 const categoryColors = {
-  "IMPORTACIÓN": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "INCIDENCIA DE PROFORMAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "VENTAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "LOGÍSTICA": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "ADMINISTRACIÓN": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "SISTEMAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
-  "RECURSOS HUMANOS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "IMPORTACIÓN": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "INCIDENCIA DE PROFORMAS": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "VENTAS": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "LOGÍSTICA": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "ADMINISTRACIÓN": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "SISTEMAS": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
+  "RECURSOS HUMANOS": "bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/30",
 };
 
 // Colores y significados de prioridad
@@ -184,7 +184,7 @@ const priorityConfig = {
   alta: {
     color: "bg-red-500",
     text: "Alta",
-    badge: "bg-red-100/60 text-red-700 border-red-200/60",
+    badge: "bg-red-500/20 backdrop-blur-sm border-2 border-red-400/40 text-red-700",
     icon: (
       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -192,9 +192,9 @@ const priorityConfig = {
     ),
   },
   normal: {
-    color: "bg-blue-500",
-    text: "Normal",
-    badge: "bg-blue-100/60 text-blue-700 border-blue-200/60",
+    color: "bg-orange-500",
+    text: "Media",
+    badge: "bg-orange-500/20 backdrop-blur-sm border-2 border-orange-400/40 text-orange-700",
     icon: (
       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -202,9 +202,9 @@ const priorityConfig = {
     ),
   },
   baja: {
-    color: "bg-gray-400",
+    color: "bg-yellow-400",
     text: "Baja",
-    badge: "bg-gray-100/60 text-gray-700 border-gray-200/60",
+    badge: "bg-yellow-400/20 backdrop-blur-sm border-2 border-yellow-400/40 text-yellow-700",
     icon: (
       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -218,6 +218,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mutedCategories, setMutedCategories] = useState([]);
   const [groupBy, setGroupBy] = useState("category"); // "category" | "priority" | "none"
+  const [recentlyMarked, setRecentlyMarked] = useState(new Set());
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -244,11 +245,25 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
   };
 
   const handleMarkAsRead = (id) => {
+    // Marcar como leída primero
     setNotifications((prev) =>
       prev.map((notif) =>
         notif.id === id ? { ...notif, unread: false } : notif
       )
     );
+    
+    // Agregar a recientemente marcadas para mostrar indicador verde
+    setRecentlyMarked((prev) => new Set([...prev, id]));
+    
+    // Después de 2 segundos, eliminar de la lista principal
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+      setRecentlyMarked((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }, 2000);
   };
 
   const handleOpenDetails = (id) => {
@@ -325,16 +340,16 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         }}
       >
         {/* Header */}
-        <div className="relative bg-blue-500/20 backdrop-blur-md border-b-2 border-blue-400/30 px-6 py-7 flex items-center justify-between overflow-hidden">
+        <div className="relative bg-blue-700/20 backdrop-blur-md border-b-2 border-blue-600/30 px-6 py-7 flex items-center justify-between overflow-hidden">
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-80 h-80 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-300 rounded-full blur-2xl"></div>
           </div>
           
           <div className="relative flex items-center space-x-4 flex-1">
-            <div className="p-2.5 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-xl shadow-sm">
+            <div className="p-2.5 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-xl shadow-sm">
               <svg
-                className="w-5 h-5 text-blue-600"
+                className="w-5 h-5 text-blue-800"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -363,11 +378,11 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="relative p-2.5 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-xl hover:bg-blue-500/25 hover:border-blue-500/50 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm"
+            className="relative p-2.5 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-xl hover:bg-blue-700/25 hover:border-blue-700/50 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm"
             aria-label="Actualizar"
           >
             <svg
-              className={`w-4.5 h-4.5 text-blue-600 transition-transform duration-500 ${
+              className={`w-4.5 h-4.5 text-blue-800 transition-transform duration-500 ${
                 isRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
@@ -385,32 +400,41 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         </div>
 
         {/* Filtros y controles mejorados */}
-        <div className="px-6 py-4 bg-gradient-to-r from-gray-50 via-blue-50/30 to-gray-50 border-b border-gray-200/60 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+        <div className="px-6 py-4 bg-gradient-to-r from-gray-50 via-blue-50/30 to-gray-50 border-b border-gray-200/60 flex items-center justify-between gap-3 flex-nowrap">
+          <div className="flex items-center gap-3 flex-nowrap flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
-              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Agrupar:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Agrupar:</span>
             </div>
-            <CustomDropdown
-              value={groupBy}
-              onChange={setGroupBy}
-              options={[
-                { value: "none", label: "Sin agrupar" },
-                { value: "category", label: "Por categoría" },
-                { value: "priority", label: "Por prioridad" },
-              ]}
-            />
+            <div className="flex-shrink-0 min-w-[160px]">
+              <CustomDropdown
+                value={groupBy}
+                onChange={setGroupBy}
+                options={[
+                  { value: "none", label: "Sin agrupar" },
+                  { value: "category", label: "Por categoría" },
+                  { value: "priority", label: "Por prioridad" },
+                ]}
+              />
+            </div>
           </div>
           {mutedCategories.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-50/60 backdrop-blur-sm border border-red-200/60 rounded-xl">
-              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button
+              onClick={() => setMutedCategories([])}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50/60 backdrop-blur-sm border border-red-200/60 rounded-xl flex-shrink-0 whitespace-nowrap hover:bg-red-100/60 hover:border-red-300/60 transition-all duration-200"
+              title="Activar todas las categorías"
+            >
+              <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
               </svg>
               <span className="text-xs font-semibold text-red-700">{mutedCategories.length} silenciadas</span>
-            </div>
+              <svg className="w-3 h-3 text-red-500 hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           )}
         </div>
 
@@ -503,8 +527,17 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                           key={notification.id}
                           className={`relative group transition-all duration-300 ${
                             notification.unread 
-                              ? "bg-red-50/60 backdrop-blur-sm hover:bg-red-100/70 border-l-4 border-red-500/70" 
-                              : "hover:bg-gray-50/80"
+                              ? (() => {
+                                  const priority = notification.priority || "normal";
+                                  if (priority === "alta") {
+                                    return "bg-red-50/60 backdrop-blur-sm hover:bg-red-100/70 border-l-4 border-red-500/70";
+                                  } else if (priority === "normal") {
+                                    return "bg-orange-50/60 backdrop-blur-sm hover:bg-orange-100/70 border-l-4 border-orange-500/70";
+                                  } else {
+                                    return "bg-yellow-50/60 backdrop-blur-sm hover:bg-yellow-100/70 border-l-4 border-yellow-500/70";
+                                  }
+                                })()
+                              : "bg-green-50/60 backdrop-blur-sm hover:bg-green-100/70 border-l-4 border-green-500/70"
                           }`}
                         >
 
@@ -514,7 +547,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                                 {/* Tags de categoría y prioridad */}
                                 <div className="flex items-center gap-2.5 mb-3 flex-wrap">
                                   <span
-                                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-blue-600 shadow-sm ${
+                                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-blue-800 shadow-sm ${
                                       categoryColors[notification.category] ||
                                       "bg-gray-500/20 backdrop-blur-sm border-2 border-gray-400/30"
                                     }`}
@@ -552,7 +585,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                               <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pt-1">
                                 <button
                                   onClick={() => handleOpenDetails(notification.id)}
-                                  className="p-2.5 rounded-xl bg-blue-50/60 backdrop-blur-sm hover:bg-blue-100/60 text-blue-600 transition-all duration-200 active:scale-95 shadow-sm border border-blue-100/60"
+                                  className="p-2.5 rounded-xl bg-blue-100/60 backdrop-blur-sm hover:bg-blue-200/60 text-blue-800 transition-all duration-200 active:scale-95 shadow-sm border border-blue-200/60"
                                   aria-label="Ver detalles"
                                 >
                                   <svg
@@ -606,7 +639,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         {/* Footer */}
         {filteredNotifications.length > 0 && (
           <div className="px-6 py-4 bg-gray-50/40 backdrop-blur-sm border-t border-gray-100/60">
-            <button className="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200 py-2 rounded-lg hover:bg-blue-50/40">
+            <button className="w-full text-center text-sm font-semibold text-blue-800 hover:text-blue-900 transition-colors duration-200 py-2 rounded-lg hover:bg-blue-100/40">
               Ver todas las notificaciones
             </button>
           </div>
