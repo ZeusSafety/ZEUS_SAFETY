@@ -2,6 +2,74 @@
 
 import { useState, useEffect, useRef } from "react";
 
+// Componente de Dropdown personalizado
+function CustomDropdown({ value, onChange, options }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const selectedOption = options.find((opt) => opt.value === value) || options[0];
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between w-full text-sm px-4 py-2.5 pr-10 rounded-xl border-2 border-gray-200/60 bg-white/80 backdrop-blur-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-gray-300/60 cursor-pointer shadow-sm hover:shadow-md"
+      >
+        <span>{selectedOption.label}</span>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white/90 backdrop-blur-md rounded-xl border-2 border-gray-200/60 shadow-xl z-50 overflow-hidden">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                value === option.value
+                  ? "bg-blue-50/60 text-blue-700 border-l-4 border-blue-500"
+                  : "text-gray-700 hover:bg-gray-50/60"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const mockNotifications = [
   {
     id: 1,
@@ -13,6 +81,7 @@ const mockNotifications = [
     time: "Hace 5 minutos",
     unread: true,
     type: "success",
+    priority: "alta",
   },
   {
     id: 2,
@@ -24,6 +93,7 @@ const mockNotifications = [
     time: "Hace 12 minutos",
     unread: true,
     type: "info",
+    priority: "normal",
   },
   {
     id: 3,
@@ -35,7 +105,7 @@ const mockNotifications = [
     time: "Hace 1 hora",
     unread: true,
     type: "info",
-    status: "Disponible",
+    priority: "normal",
   },
   {
     id: 4,
@@ -47,6 +117,7 @@ const mockNotifications = [
     time: "Hace 2 horas",
     unread: true,
     type: "success",
+    priority: "alta",
   },
   {
     id: 5,
@@ -58,6 +129,7 @@ const mockNotifications = [
     time: "Hace 3 horas",
     unread: false,
     type: "warning",
+    priority: "baja",
   },
   {
     id: 6,
@@ -69,6 +141,7 @@ const mockNotifications = [
     time: "Hace 5 horas",
     unread: false,
     type: "success",
+    priority: "normal",
   },
   {
     id: 7,
@@ -80,6 +153,7 @@ const mockNotifications = [
     time: "Ayer",
     unread: true,
     type: "warning",
+    priority: "alta",
   },
   {
     id: 8,
@@ -91,22 +165,59 @@ const mockNotifications = [
     time: "Ayer",
     unread: true,
     type: "info",
+    priority: "normal",
   },
 ];
 
 const categoryColors = {
-  "IMPORTACIÓN": "bg-gradient-to-r from-yellow-500 to-amber-500",
-  "INCIDENCIA DE PROFORMAS": "bg-gradient-to-r from-yellow-600 to-amber-600",
-  "VENTAS": "bg-gradient-to-r from-yellow-500 to-amber-500",
-  "LOGÍSTICA": "bg-gradient-to-r from-yellow-500 to-amber-500",
-  "ADMINISTRACIÓN": "bg-gradient-to-r from-yellow-500 to-amber-500",
-  "SISTEMAS": "bg-gradient-to-r from-yellow-500 to-amber-500",
-  "RECURSOS HUMANOS": "bg-gradient-to-r from-yellow-500 to-amber-500",
+  "IMPORTACIÓN": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "INCIDENCIA DE PROFORMAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "VENTAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "LOGÍSTICA": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "ADMINISTRACIÓN": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "SISTEMAS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+  "RECURSOS HUMANOS": "bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/30",
+};
+
+// Colores y significados de prioridad
+const priorityConfig = {
+  alta: {
+    color: "bg-red-500",
+    text: "Alta",
+    badge: "bg-red-100/60 text-red-700 border-red-200/60",
+    icon: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  normal: {
+    color: "bg-blue-500",
+    text: "Normal",
+    badge: "bg-blue-100/60 text-blue-700 border-blue-200/60",
+    icon: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  baja: {
+    color: "bg-gray-400",
+    text: "Baja",
+    badge: "bg-gray-100/60 text-gray-700 border-gray-200/60",
+    icon: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
 };
 
 export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mutedCategories, setMutedCategories] = useState([]);
+  const [groupBy, setGroupBy] = useState("category"); // "category" | "priority" | "none"
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -144,39 +255,86 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
     console.log("Abrir detalles de notificación:", id);
   };
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const toggleMuteCategory = (category) => {
+    setMutedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  // Filtrar notificaciones según categorías silenciadas
+  const filteredNotifications = notifications.filter(
+    (notif) => !mutedCategories.includes(notif.category)
+  );
+
+  // Agrupar notificaciones
+  const groupedNotifications = () => {
+    if (groupBy === "none") {
+      return { "Todas": filteredNotifications };
+    }
+
+    const groups = {};
+    filteredNotifications.forEach((notif) => {
+      const key =
+        groupBy === "category"
+          ? notif.category
+          : notif.priority || "normal";
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(notif);
+    });
+
+    // Ordenar grupos: por prioridad (alta, normal, baja) o alfabéticamente
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (groupBy === "priority") {
+        const order = { alta: 0, normal: 1, baja: 2 };
+        return (order[a] ?? 3) - (order[b] ?? 3);
+      }
+      return a.localeCompare(b);
+    });
+
+    const sortedGroups = {};
+    sortedKeys.forEach((key) => {
+      sortedGroups[key] = groups[key];
+    });
+
+    return sortedGroups;
+  };
+
+  const unreadCount = filteredNotifications.filter((n) => n.unread).length;
+  const groups = groupedNotifications();
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Overlay sutil - solo para cerrar al hacer click fuera */}
+      {/* Overlay sutil */}
       <div
         className="fixed inset-0 bg-black/10 z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Panel principal - posicionado debajo del botón de notificaciones */}
+      {/* Panel principal */}
       <div
         ref={panelRef}
-        className="fixed top-20 right-[140px] w-[440px] max-h-[calc(100vh-6rem)] bg-white rounded-3xl shadow-2xl z-50 border border-gray-200 overflow-hidden flex flex-col"
+        className="fixed top-22 right-[200px] w-[440px] max-h-[500px] bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl z-50 border border-gray-200/60 overflow-hidden flex flex-col"
         style={{
           boxShadow: "0 20px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
         }}
       >
-        {/* Header mejorado con gradiente amarillo */}
-        <div className="relative bg-gradient-to-br from-yellow-500 via-amber-500 to-yellow-600 px-6 py-5 flex items-center justify-between overflow-hidden">
-          {/* Patrón de fondo sutil */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-300 rounded-full blur-2xl"></div>
+        {/* Header */}
+        <div className="relative bg-blue-500/20 backdrop-blur-md border-b-2 border-blue-400/30 px-6 py-7 flex items-center justify-between overflow-hidden">
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-300 rounded-full blur-2xl"></div>
           </div>
           
           <div className="relative flex items-center space-x-4 flex-1">
-            {/* Icono de campana mejorado */}
-            <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/30 shadow-lg">
+            <div className="p-2.5 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-xl shadow-sm">
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -191,26 +349,25 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
             </div>
             
             <div className="flex-1">
-              <h2 className="text-white font-bold text-xl tracking-tight mb-0.5">
+              <h2 className="text-gray-900 font-bold text-lg tracking-tight mb-0.5">
                 Notificaciones
               </h2>
               {unreadCount > 0 && (
-                <p className="text-white/90 text-sm font-medium">
+                <p className="text-gray-700 text-xs font-medium">
                   {unreadCount} sin leer
                 </p>
               )}
             </div>
           </div>
           
-          {/* Botón de refresh mejorado */}
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="relative p-2.5 rounded-xl hover:bg-white/20 transition-all duration-200 active:scale-95 disabled:opacity-50 backdrop-blur-sm border border-white/20"
+            className="relative p-2.5 bg-blue-500/15 backdrop-blur-sm border-2 border-blue-400/30 rounded-xl hover:bg-blue-500/25 hover:border-blue-500/50 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm"
             aria-label="Actualizar"
           >
             <svg
-              className={`w-5 h-5 text-white transition-transform duration-500 ${
+              className={`w-4.5 h-4.5 text-blue-600 transition-transform duration-500 ${
                 isRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
@@ -227,11 +384,41 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
           </button>
         </div>
 
-        {/* Lista de notificaciones mejorada */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
-          {notifications.length === 0 ? (
+        {/* Filtros y controles mejorados */}
+        <div className="px-6 py-4 bg-gradient-to-r from-gray-50 via-blue-50/30 to-gray-50 border-b border-gray-200/60 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Agrupar:</span>
+            </div>
+            <CustomDropdown
+              value={groupBy}
+              onChange={setGroupBy}
+              options={[
+                { value: "none", label: "Sin agrupar" },
+                { value: "category", label: "Por categoría" },
+                { value: "priority", label: "Por prioridad" },
+              ]}
+            />
+          </div>
+          {mutedCategories.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50/60 backdrop-blur-sm border border-red-200/60 rounded-xl">
+              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+              </svg>
+              <span className="text-xs font-semibold text-red-700">{mutedCategories.length} silenciadas</span>
+            </div>
+          )}
+        </div>
+
+        {/* Lista de notificaciones */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white/50 backdrop-blur-sm">
+          {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6">
-              <div className="p-5 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-5 shadow-inner">
+              <div className="p-5 bg-gray-100/60 backdrop-blur-sm border-2 border-gray-200/40 rounded-2xl mb-5">
                 <svg
                   className="w-10 h-10 text-gray-400"
                   fill="none"
@@ -248,122 +435,167 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
               </div>
               <p className="text-gray-600 font-semibold text-base">No hay notificaciones</p>
               <p className="text-gray-400 text-sm mt-2 text-center max-w-xs">
-                Te notificaremos cuando haya novedades
+                {mutedCategories.length > 0
+                  ? "Algunas categorías están silenciadas"
+                  : "Te notificaremos cuando haya novedades"}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100/80">
-              {notifications.map((notification, index) => (
-                <div
-                  key={notification.id}
-                  className={`relative group transition-all duration-300 ${
-                    notification.unread 
-                      ? "bg-gradient-to-r from-yellow-50/80 via-amber-50/40 to-transparent hover:from-yellow-50 hover:via-amber-50/60" 
-                      : "hover:bg-gray-50/80"
-                  }`}
-                  style={{
-                    animationDelay: `${index * 30}ms`,
-                  }}
-                >
-                  {/* Indicador de no leída mejorado */}
-                  {notification.unread && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-yellow-500 via-amber-500 to-yellow-600 shadow-lg" />
-                  )}
-
-                  <div className="px-6 py-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        {/* Tag de categoría mejorado */}
-                        <div className="flex items-center gap-2.5 mb-3">
-                          <span
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-md ${
-                              categoryColors[notification.category] ||
-                              "bg-gradient-to-r from-gray-500 to-gray-600"
-                            }`}
-                          >
-                            {notification.category}
+            <div>
+              {Object.entries(groups).map(([groupName, groupNotifications], groupIndex) => (
+                <div key={groupName}>
+                  {/* Encabezado de grupo */}
+                  {groupBy !== "none" && (
+                    <div className="px-6 py-1.5 bg-gray-50/60 backdrop-blur-sm border-b border-gray-100/60 sticky top-0 z-10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">
+                            {groupName}
+                          </h3>
+                          <span className="text-[10px] text-gray-500">
+                            ({groupNotifications.length})
                           </span>
-                          {notification.unread && (
-                            <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
-                          )}
                         </div>
-
-                        {/* Título mejorado */}
-                        <h3 className="font-bold text-gray-900 text-[15px] mb-2 leading-snug line-clamp-1">
-                          {notification.title}
-                        </h3>
-
-                        {/* Descripción mejorada */}
-                        <p className="text-gray-600 text-sm mb-3 leading-relaxed line-clamp-2">
-                          {notification.description}
-                        </p>
-
-                        {/* Meta información mejorada */}
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                          <span className="font-semibold text-gray-700">{notification.user}</span>
-                          <span className="text-gray-300">•</span>
-                          <span className="font-mono">ID: {notification.notificationId}</span>
-                          <span className="text-gray-300">•</span>
-                          <span>{notification.time}</span>
-                        </div>
-
-                        {/* Badge de estado mejorado */}
-                        {notification.status && (
-                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200/60 rounded-lg shadow-sm">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full shadow-sm shadow-emerald-500/50" />
-                            <span className="text-emerald-700 text-xs font-semibold">
-                              {notification.status}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Botones de acción mejorados */}
-                      <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pt-1">
-                        <button
-                          onClick={() => handleOpenDetails(notification.id)}
-                          className="p-2.5 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-600 transition-all duration-200 active:scale-95 shadow-sm border border-yellow-100"
-                          aria-label="Ver detalles"
-                          title="Ver detalles"
-                        >
-                          <svg
-                            className="w-4.5 h-4.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                            />
-                          </svg>
-                        </button>
-                        {notification.unread && (
+                        {groupBy === "category" && (
                           <button
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 active:scale-95 shadow-sm border border-gray-200"
-                            aria-label="Marcar como leído"
-                            title="Marcar como leído"
+                            onClick={() => toggleMuteCategory(groupName)}
+                            className="p-1 rounded hover:bg-gray-200/60 transition-colors"
+                            title={mutedCategories.includes(groupName) ? "Activar" : "Silenciar"}
                           >
                             <svg
-                              className="w-4.5 h-4.5"
+                              className={`w-4 h-4 ${
+                                mutedCategories.includes(groupName)
+                                  ? "text-red-500"
+                                  : "text-gray-400"
+                              }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
-                              strokeWidth={2.5}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 13l4 4L19 7"
-                              />
+                              {mutedCategories.includes(groupName) ? (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                />
+                              ) : (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                />
+                              )}
                             </svg>
                           </button>
                         )}
                       </div>
                     </div>
+                  )}
+
+                  {/* Notificaciones del grupo */}
+                  <div>
+                    {groupNotifications.map((notification, index) => {
+                      const priority = priorityConfig[notification.priority || "normal"];
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`relative group transition-all duration-300 ${
+                            notification.unread 
+                              ? "bg-red-50/60 backdrop-blur-sm hover:bg-red-100/70 border-l-4 border-red-500/70" 
+                              : "hover:bg-gray-50/80"
+                          }`}
+                        >
+
+                          <div className="px-6 py-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                {/* Tags de categoría y prioridad */}
+                                <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                                  <span
+                                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-blue-600 shadow-sm ${
+                                      categoryColors[notification.category] ||
+                                      "bg-gray-500/20 backdrop-blur-sm border-2 border-gray-400/30"
+                                    }`}
+                                  >
+                                    {notification.category}
+                                  </span>
+                                  <span
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 ${priority.badge}`}
+                                  >
+                                    {priority.icon}
+                                    {priority.text}
+                                  </span>
+                                  {notification.unread && (
+                                    <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
+                                  )}
+                                </div>
+
+                                <h3 className="font-bold text-gray-900 text-[15px] mb-2 leading-snug line-clamp-1">
+                                  {notification.title}
+                                </h3>
+
+                                <p className="text-gray-600 text-sm mb-3 leading-relaxed line-clamp-2">
+                                  {notification.description}
+                                </p>
+
+                                <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                                  <span className="font-semibold text-gray-700">{notification.user}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="font-mono">ID: {notification.notificationId}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span>{notification.time}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pt-1">
+                                <button
+                                  onClick={() => handleOpenDetails(notification.id)}
+                                  className="p-2.5 rounded-xl bg-blue-50/60 backdrop-blur-sm hover:bg-blue-100/60 text-blue-600 transition-all duration-200 active:scale-95 shadow-sm border border-blue-100/60"
+                                  aria-label="Ver detalles"
+                                >
+                                  <svg
+                                    className="w-4.5 h-4.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2.5}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                    />
+                                  </svg>
+                                </button>
+                                {notification.unread && (
+                                  <button
+                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    className="p-2.5 rounded-xl bg-gray-100/60 backdrop-blur-sm hover:bg-gray-200/60 text-gray-700 transition-all duration-200 active:scale-95 shadow-sm border border-gray-200/60"
+                                    aria-label="Marcar como leído"
+                                  >
+                                    <svg
+                                      className="w-4.5 h-4.5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={2.5}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -371,10 +603,10 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
           )}
         </div>
 
-        {/* Footer mejorado */}
-        {notifications.length > 0 && (
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100/80">
-            <button className="w-full text-center text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors duration-200 py-2 rounded-lg hover:bg-yellow-50/50">
+        {/* Footer */}
+        {filteredNotifications.length > 0 && (
+          <div className="px-6 py-4 bg-gray-50/40 backdrop-blur-sm border-t border-gray-100/60">
+            <button className="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200 py-2 rounded-lg hover:bg-blue-50/40">
               Ver todas las notificaciones
             </button>
           </div>

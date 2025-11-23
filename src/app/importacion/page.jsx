@@ -31,7 +31,7 @@ export default function ImportacionPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -62,7 +62,7 @@ export default function ImportacionPage() {
           description: "Registrar nueva importación con archivos PDF",
           buttonText: "+ Crear Registro",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           ),
@@ -78,7 +78,7 @@ export default function ImportacionPage() {
           description: "Ver y gestionar todas las importaciones registradas",
           buttonText: "Ver Listado",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
@@ -106,7 +106,7 @@ export default function ImportacionPage() {
           description: "Ver y gestionar Solicitudes/Incidencias",
           buttonText: "Ver Solicitudes/Incidencias",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
@@ -127,23 +127,26 @@ export default function ImportacionPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
           <div className="max-w-[95%] mx-auto px-6 py-6">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-blue-600 rounded-xl font-semibold hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver al Menú</span>
             </button>
+            
+            {/* Card contenedor blanco */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
 
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center space-x-4 mb-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
@@ -162,11 +165,11 @@ export default function ImportacionPage() {
                   {/* Header de Sección */}
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 transition-all duration-200"
+                    className="w-full flex items-center justify-between px-6 py-4 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-gray-800 hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-white">{section.icon}</div>
-                      <h2 className="text-xl font-bold">{section.title}</h2>
+                      <div className="text-blue-600">{section.icon}</div>
+                      <h2 className="text-xl font-bold text-gray-800">{section.title}</h2>
                     </div>
                     <svg
                       className={`w-5 h-5 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
@@ -186,17 +189,17 @@ export default function ImportacionPage() {
                         {section.cards.map((card) => (
                           <div
                             key={card.id}
-                            className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-yellow-300/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
+                            className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-blue-300/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
                             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02)' }}
                           >
                             <div className="flex items-start justify-between mb-4">
-                              <div className="w-14 h-14 bg-yellow-500/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-yellow-600 border-2 border-yellow-400/30 shadow-sm">
+                              <div className="w-14 h-14 bg-blue-500/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-600 border-2 border-blue-400/30 shadow-sm">
                                 {card.icon}
                               </div>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
                             <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
-                            <button className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-lg font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+                            <button className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
                               {card.buttonIcon}
                               <span>{card.buttonText}</span>
                             </button>
@@ -207,6 +210,7 @@ export default function ImportacionPage() {
                   )}
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </main>

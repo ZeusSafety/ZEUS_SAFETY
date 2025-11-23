@@ -33,7 +33,7 @@ export default function MarketingPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function MarketingPage() {
           description: "Ver y gestionar listado de importaciones",
           buttonText: "Ver Importaciones",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
@@ -91,7 +91,7 @@ export default function MarketingPage() {
           description: "Administrar información de clientes.",
           buttonText: "Acceder",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           ),
@@ -107,7 +107,7 @@ export default function MarketingPage() {
           description: "Ver y revisar ventas de Marketing.",
           buttonText: "Acceder",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           ),
@@ -124,7 +124,7 @@ export default function MarketingPage() {
           description: "Análisis de actividad reciente de clientes.",
           buttonText: "Acceder",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           ),
@@ -151,7 +151,7 @@ export default function MarketingPage() {
           description: "Ver y gestionar el stock con descuento por cajas.",
           buttonText: "Ver Stock",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
@@ -179,7 +179,7 @@ export default function MarketingPage() {
           description: "Ver y gestionar Solicitudes/Incidencias",
           buttonText: "Acceder",
           buttonIcon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           ),
@@ -199,23 +199,26 @@ export default function MarketingPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
           <div className="max-w-[95%] mx-auto px-6 py-6">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-blue-600 rounded-xl font-semibold hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver al Menú</span>
             </button>
+            
+            {/* Card contenedor blanco */}
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
 
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center space-x-4 mb-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                   </svg>
@@ -234,11 +237,11 @@ export default function MarketingPage() {
                   {/* Header de Sección */}
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 transition-all duration-200"
+                    className="w-full flex items-center justify-between px-6 py-4 bg-blue-500/20 backdrop-blur-md border border-blue-300/40 text-gray-800 hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-200 shadow-md"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-white">{section.icon}</div>
-                      <h2 className="text-xl font-bold">{section.title}</h2>
+                      <div className="text-blue-600">{section.icon}</div>
+                      <h2 className="text-xl font-bold text-gray-800">{section.title}</h2>
                     </div>
                     <svg
                       className={`w-5 h-5 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
@@ -258,17 +261,17 @@ export default function MarketingPage() {
                         {section.cards.map((card) => (
                           <div
                             key={card.id}
-                            className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-yellow-300/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
+                            className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-blue-300/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
                             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02)' }}
                           >
                             <div className="flex items-start justify-between mb-4">
-                              <div className="w-14 h-14 bg-yellow-500/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-yellow-600 border-2 border-yellow-400/30 shadow-sm">
+                              <div className="w-14 h-14 bg-blue-500/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-600 border-2 border-blue-400/30 shadow-sm">
                                 {card.icon}
                               </div>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
                             <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
-                            <button className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-lg font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+                            <button className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-500/30 hover:border-blue-500/60 text-blue-600 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
                               {card.buttonIcon}
                               <span>{card.buttonText}</span>
                             </button>
@@ -279,6 +282,7 @@ export default function MarketingPage() {
                   )}
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </main>

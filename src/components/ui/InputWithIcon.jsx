@@ -19,7 +19,6 @@ export function InputWithIcon({
           className="block text-sm font-semibold text-gray-800 mb-2.5"
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <div className="relative">
@@ -40,7 +39,7 @@ export function InputWithIcon({
           required={required}
           className={`
             w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50
-            focus:outline-none focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500
+            focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
             text-gray-900 placeholder-gray-400 font-medium
             ${icon ? "pl-12" : ""}
             ${error ? "border-red-400 bg-red-50/50 focus:ring-red-500/30 focus:border-red-500" : "border-gray-300 hover:border-gray-400"}

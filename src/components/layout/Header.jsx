@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { NotificationsPanel } from "./NotificationsPanel";
 
 export function Header({ onMenuToggle }) {
+  const router = useRouter();
   const [currentTime, setCurrentTime] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationCount = 15; // Contador de notificaciones no leídas
@@ -37,7 +39,7 @@ export function Header({ onMenuToggle }) {
             </svg>
           </button>
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-1 bg-gradient-to-b from-yellow-500 to-amber-500 rounded-full"></div>
+            <div className="h-8 w-1 bg-blue-600/60 rounded-full"></div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               Sistema de Integración
             </h1>
@@ -51,7 +53,7 @@ export function Header({ onMenuToggle }) {
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             className={`relative p-3 rounded-xl transition-all duration-200 group ${
               notificationsOpen 
-                ? "bg-gradient-to-br from-yellow-50 to-amber-50 text-yellow-600 shadow-md" 
+                ? "bg-gradient-to-br from-blue-50 to-slate-50 text-blue-600 shadow-md" 
                 : "hover:bg-gray-50 text-gray-600 hover:text-gray-900"
             }`}
             aria-label="Notificaciones"
@@ -68,6 +70,7 @@ export function Header({ onMenuToggle }) {
 
           {/* Settings */}
           <button 
+            onClick={() => router.push("/configuracion")}
             className="p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 group text-gray-600 hover:text-gray-900" 
             aria-label="Configuración"
           >
