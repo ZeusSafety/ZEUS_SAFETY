@@ -470,7 +470,15 @@ export function Sidebar({ isOpen, onClose }) {
       }
     }
     
+    // Navegación para otros items
+    if (itemId === "accesibilidad-credenciales") {
+      router.push("/gerencia/colaboradores");
+      setSelectedItem(itemId);
+      return;
+    }
+    
     // Aquí iría la navegación real para otros items
+    setSelectedItem(itemId);
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
@@ -23,12 +23,14 @@ export default function GerenciaPage() {
     }
   }, [user, loading, router]);
 
-  const toggleSection = (sectionId) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
+  const toggleSection = useCallback((sectionId) => {
+    setExpandedSections((prev) => {
+      const newState = { ...prev };
+      // Solo cambiar el estado de la sección específica
+      newState[sectionId] = !prev[sectionId];
+      return newState;
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -281,56 +283,74 @@ export default function GerenciaPage() {
 
             {/* Secciones */}
             <div className="space-y-4">
-              {sections.map((section) => (
-                <div key={section.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                  {/* Header de Sección */}
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 text-gray-800 hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="text-blue-800">{section.icon}</div>
-                      <h2 className="text-xl font-bold text-gray-800">{section.title}</h2>
-                    </div>
-                    <svg
-                      className={`w-5 h-5 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
+              {sections.map((section) => {
+                const sectionId = section.id;
+                const handleClick = (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleSection(sectionId);
+                };
+                return (
+                  <div key={sectionId} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    {/* Header de Sección */}
+                    <button
+                      onClick={handleClick}
+                      type="button"
+                      className="w-full flex items-center justify-between px-6 py-4 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 text-gray-800 hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Cards de la Sección */}
-                  {expandedSections[section.id] && (
-                    <div className="p-6 bg-gray-50/50">
-                      <div className={`grid gap-4 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
-                        {section.cards.map((card) => (
-                          <div
-                            key={card.id}
-                            className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-blue-700/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
-                            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02)' }}
-                          >
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="w-14 h-14 bg-blue-700/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-800 border-2 border-blue-600/30 shadow-sm">
-                                {card.icon}
-                              </div>
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
-                            <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
-                            <button className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-400/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
-                              {card.buttonIcon}
-                              <span>{card.buttonText}</span>
-                            </button>
-                          </div>
-                        ))}
+                      <div className="flex items-center space-x-3">
+                        <div className="text-blue-800">{section.icon}</div>
+                        <h2 className="text-xl font-bold text-gray-800">{section.title}</h2>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                      <svg
+                        className={`w-5 h-5 transition-transform duration-200 ${expandedSections[sectionId] ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Cards de la Sección */}
+                    {expandedSections[sectionId] && (
+                      <div className="p-6 bg-gray-50/50">
+                        <div className={`grid gap-4 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                          {section.cards.map((card) => (
+                            <div
+                              key={card.id}
+                              className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 hover:border-blue-700/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm"
+                              style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02)' }}
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="w-14 h-14 bg-blue-700/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-800 border border-blue-700/40 shadow-sm">
+                                  {card.icon}
+                                </div>
+                              </div>
+                              <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
+                              <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
+                              <button 
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log("Button clicked, card.id:", card.id);
+                                  router.push("/gerencia/colaboradores");
+                                }}
+                                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer"
+                              >
+                                {card.buttonIcon}
+                                <span>{card.buttonText}</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             </div>
           </div>

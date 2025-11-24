@@ -151,14 +151,14 @@ export default function MenuPage() {
                       Gestiona todos los módulos del sistema ZEUS SAFETY desde este panel centralizado.
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="flex items-center space-x-2 bg-white/25 backdrop-blur-md px-4 py-2 rounded-lg border border-blue-300/30 shadow-md">
-                        <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <div className="flex items-center space-x-2 bg-blue-700/20 backdrop-blur-md px-4 py-2 rounded-lg border border-blue-700/40 shadow-md">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <span className="text-xs font-semibold text-white">Panel de Control</span>
                       </div>
-                      <div className="flex items-center space-x-2 bg-white/25 backdrop-blur-md px-4 py-2 rounded-lg border border-blue-300/30 shadow-md">
-                        <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <div className="flex items-center space-x-2 bg-blue-700/20 backdrop-blur-md px-4 py-2 rounded-lg border border-blue-700/40 shadow-md">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-xs font-semibold text-white">{getCurrentDate()}</span>
