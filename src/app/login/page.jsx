@@ -178,7 +178,7 @@ export default function LoginPage() {
           {/* Card del formulario */}
           <div className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)' }}>
             {/* Barra superior transparente azul */}
-            <div className="h-3 bg-blue-700/20 backdrop-blur-sm border-b border-blue-700/40"></div>
+            <div className="h-3 bg-blue-700/30 backdrop-blur-sm border-b border-blue-700/50"></div>
             
             <div className="p-6">
               {/* Logo y branding */}
