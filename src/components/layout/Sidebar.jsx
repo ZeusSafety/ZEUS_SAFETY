@@ -12,7 +12,8 @@ export function Sidebar({ isOpen, onClose }) {
   const [expandedSubmenus, setExpandedSubmenus] = useState({});
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const modules = [
+  // Todos los módulos disponibles
+  const allModules = [
     { id: "gerencia", name: "Gerencia", icon: "shield", hasSubmenu: true },
     { id: "administracion", name: "Administración", icon: "user-gear", hasSubmenu: true },
     { id: "importacion", name: "Importación", icon: "ship", hasSubmenu: true },
@@ -24,6 +25,15 @@ export function Sidebar({ isOpen, onClose }) {
     { id: "facturacion", name: "Facturación", icon: "chart", hasSubmenu: true },
     { id: "permisos", name: "Permisos/Solicitudes e Incidencias", icon: "list", hasSubmenu: true },
   ];
+
+  // Filtrar módulos según los permisos del usuario
+  const userModules = user?.modules || [];
+  const isAdmin = user?.isAdmin || false;
+  
+  // Si es admin o no tiene módulos definidos, mostrar todos
+  const modules = isAdmin || userModules.length === 0 
+    ? allModules 
+    : allModules.filter((module) => userModules.includes(module.id));
 
   // Submenús de Gerencia
   const gerenciaSubmenu = [

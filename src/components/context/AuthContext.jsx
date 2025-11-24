@@ -17,17 +17,59 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (user, password) => {
     try {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: user, password }),
       });
 
-      const data = await response.json();
+      // Verificar si la respuesta es exitosa antes de parsear
+      if (!response.ok) {
+        let errorMessage = "Error al autenticar con el servidor";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Si no se puede parsear como JSON, leer como texto
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch (e2) {
+            errorMessage = `Error ${response.status}: ${response.statusText}`;
+          }
+        }
+        console.error("Login error:", response.status, errorMessage);
+        return { success: false, error: errorMessage };
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        const textResponse = await response.text();
+        console.error("Response text:", textResponse);
+        return { 
+          success: false, 
+          error: `Error en la respuesta del servidor: ${response.status} ${response.statusText}` 
+        };
+      }
+
+      // Log para depuración - mostrar contenido completo
+      console.log("=== LOGIN RESPONSE ===");
+      console.log("Response status:", response.status);
+      console.log("Full response:", JSON.stringify(data, null, 2));
+      console.log("User object:", JSON.stringify(data.user, null, 2));
+      console.log("User modules (array):", data.user?.modules);
+      console.log("User modules (stringified):", JSON.stringify(data.user?.modules, null, 2));
+      console.log("User isAdmin:", data.user?.isAdmin);
+      console.log("=====================");
 
       if (data.success) {
         setUser(data.user);
@@ -36,9 +78,13 @@ export function AuthProvider({ children }) {
         return { success: true };
       }
 
-      return { success: false, error: data.error };
+      return { success: false, error: data.error || "Error desconocido" };
     } catch (error) {
-      return { success: false, error: "Error de conexión" };
+      console.error("Login catch error:", error);
+      return { 
+        success: false, 
+        error: error.message || "Error de conexión. Verifica tu conexión a internet." 
+      };
     }
   };
 

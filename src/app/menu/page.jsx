@@ -30,7 +30,8 @@ export default function MenuPage() {
     return null;
   }
 
-  const modules = [
+  // Todos los módulos disponibles
+  const allModules = [
     {
       id: "gerencia",
       name: "Gerencia",
@@ -94,7 +95,58 @@ export default function MenuPage() {
       description: "Gestión de ventas y clientes",
       status: "Disponible",
     },
+    {
+      id: "permisos",
+      name: "Permisos/Solicitudes e Incidencias",
+      icon: "list",
+      description: "Gestión de permisos y solicitudes",
+      status: "Disponible",
+    },
   ];
+
+  // Filtrar módulos según los permisos del usuario
+  const userModules = user?.modules || [];
+  const isAdmin = user?.isAdmin || false;
+  
+  // Si es admin, mostrar todos los módulos
+  // Si no es admin pero tiene módulos, filtrar
+  // Si no es admin y no tiene módulos, no mostrar ninguno
+  const availableModules = isAdmin 
+    ? allModules 
+    : userModules.length > 0
+    ? allModules.filter((module) => userModules.includes(module.id))
+    : [];
+  
+  // Log para depuración - mostrar contenido completo
+  console.log("=== MENU PAGE ===");
+  console.log("User object:", JSON.stringify(user, null, 2));
+  console.log("User modules (array):", userModules);
+  console.log("User modules (stringified):", JSON.stringify(userModules, null, 2));
+  console.log("Is Admin:", isAdmin);
+  console.log("Available modules count:", availableModules.length);
+  console.log("Available modules IDs:", availableModules.map(m => m.id));
+  console.log("All modules IDs:", allModules.map(m => m.id));
+  console.log("=================");
+
+  // Generar mensaje de bienvenida según los módulos
+  const getWelcomeMessage = () => {
+    const userName = user?.name || user?.email || "Usuario";
+    
+    if (isAdmin || userModules.length === 0 || userModules.length >= 5) {
+      return `¡Bienvenido, ${userName}!`;
+    }
+    
+    if (userModules.length === 1) {
+      // Obtener el nombre del módulo desde availableModules
+      const module = availableModules.find(m => userModules.includes(m.id)) || availableModules[0];
+      const moduleName = module?.name || "el sistema";
+      return `¡Bienvenido, ${userName}, al área de ${moduleName}!`;
+    }
+    
+    // Si tiene múltiples módulos, listar los principales
+    const moduleNames = availableModules.slice(0, 3).map(m => m.name).join(", ");
+    return `¡Bienvenido, ${userName}! Acceso a: ${moduleNames}`;
+  };
 
   const getCurrentDate = () => {
     const now = new Date();
@@ -145,10 +197,12 @@ export default function MenuPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h1 className="text-4xl font-bold mb-3 tracking-tight text-white">
-                      ¡Bienvenido, {user?.name || user?.email || "Usuario"}!
+                      {getWelcomeMessage()}
                     </h1>
-                    <p className="text-blue-50 text-base mb-6 leading-relaxed font-medium whitespace-nowrap">
-                      Gestiona todos los módulos del sistema ZEUS SAFETY desde este panel centralizado.
+                    <p className="text-blue-50 text-base mb-6 leading-relaxed font-medium">
+                      {isAdmin || userModules.length >= 5
+                        ? "Gestiona todos los módulos del sistema ZEUS SAFETY desde este panel centralizado."
+                        : `Accede a tus módulos asignados del sistema ZEUS SAFETY.`}
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
                       <div className="flex items-center space-x-2 bg-blue-700/20 backdrop-blur-md px-4 py-2 rounded-lg border border-blue-700/40 shadow-md">
@@ -176,16 +230,22 @@ export default function MenuPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">MÓDULOS DISPONIBLES</h2>
               <div className="w-20 h-1.5 bg-blue-600/60 rounded-full"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {modules.map((module, index) => (
-                <ModuleCard
-                  key={module.id}
-                  module={module}
-                  onClick={() => handleModuleClick(module.id)}
-                  index={index}
-                />
-              ))}
-            </div>
+            {availableModules.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableModules.map((module, index) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    onClick={() => handleModuleClick(module.id)}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">No tienes módulos asignados.</p>
+              </div>
+            )}
           </div>
         </main>
       </div>

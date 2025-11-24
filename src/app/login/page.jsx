@@ -12,7 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, login, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
-    email: "",
+    user: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
@@ -44,8 +44,8 @@ export default function LoginPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email.trim()) {
-      newErrors.email = "El usuario es requerido";
+    if (!formData.user.trim()) {
+      newErrors.user = "El usuario es requerido";
     }
 
     if (!formData.password) {
@@ -66,7 +66,7 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.user, formData.password);
 
     setIsLoading(false);
 
@@ -211,11 +211,11 @@ export default function LoginPage() {
                 <InputWithIcon
                   label="Usuario"
                   type="text"
-                  name="email"
-                  value={formData.email}
+                  name="user"
+                  value={formData.user}
                   onChange={handleChange}
                   placeholder="Usuario"
-                  error={errors.email}
+                  error={errors.user}
                   required
                   autoComplete="username"
                   icon={
