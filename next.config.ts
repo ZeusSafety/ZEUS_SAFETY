@@ -7,9 +7,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Si tu repositorio no está en la raíz del dominio, descomenta y ajusta el basePath
-  // basePath: '/ZEUS_SAFETY',
-  // assetPrefix: '/ZEUS_SAFETY',
+  // BasePath para GitHub Pages (ajusta si tu repositorio tiene otro nombre)
+  basePath: '/ZEUS_SAFETY',
+  assetPrefix: '/ZEUS_SAFETY',
 };
 
 export default nextConfig;
