@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
 
-export default function RecursosHumanosPage() {
+function RecursosHumanosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -953,5 +953,17 @@ export default function RecursosHumanosPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function RecursosHumanosPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    }>
+      <RecursosHumanosContent />
+    </Suspense>
   );
 }
