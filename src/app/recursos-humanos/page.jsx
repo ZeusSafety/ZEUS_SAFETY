@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
 
 export default function RecursosHumanosPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState("gestion-colaboradores");
@@ -17,6 +18,26 @@ export default function RecursosHumanosPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    // Leer el parámetro de consulta "section" de la URL
+    const section = searchParams.get("section");
+    if (section) {
+      // Validar que la sección existe en las secciones disponibles
+      const validSections = [
+        "gestion-colaboradores",
+        "control-asistencia",
+        "gestion-permisos",
+        "gestion-vacaciones",
+        "control-documentos",
+        "gestion-remuneraciones",
+        "auto-servicio",
+      ];
+      if (validSections.includes(section)) {
+        setActiveSection(section);
+      }
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
