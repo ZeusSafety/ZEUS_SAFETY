@@ -357,6 +357,7 @@ export async function POST(request) {
       name: data.nombre || data.name || data.usuario || data.username || email,
       modules: finalModules,
       isAdmin: isAdmin,
+      rol: data.rol || data.role || (isAdmin ? 1 : 2), // Guardar el rol del usuario
     };
 
     console.log("=== FINAL USER OBJECT ===");
