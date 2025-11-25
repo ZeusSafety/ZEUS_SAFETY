@@ -224,9 +224,8 @@ export default function ForgotPasswordPage() {
                   <div className="pt-1">
                     <button
                       type="submit"
-                      className="ripple-effect"
-                      disabled={isLoading}
                       className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
+                      disabled={isLoading}
                     >
                       {isLoading ? (
                         <>
