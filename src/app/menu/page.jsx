@@ -86,7 +86,7 @@ export default function MenuPage() {
       name: "Recursos Humanos",
       icon: "users",
       description: "Gestión de personal y nómina",
-      status: "Próximamente",
+      status: "Disponible",
     },
     {
       id: "ventas",

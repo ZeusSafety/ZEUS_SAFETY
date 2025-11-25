@@ -262,6 +262,48 @@ export function Sidebar({ isOpen, onClose }) {
       icon: "home",
       hasSubmenu: false,
     },
+    {
+      id: "gestion-colaboradores",
+      name: "Gestión de Colaboradores",
+      icon: "users",
+      hasSubmenu: false,
+    },
+    {
+      id: "control-asistencia",
+      name: "Control de Asistencia",
+      icon: "clock",
+      hasSubmenu: false,
+    },
+    {
+      id: "gestion-permisos",
+      name: "Gestión de Permisos",
+      icon: "check",
+      hasSubmenu: false,
+    },
+    {
+      id: "gestion-vacaciones",
+      name: "Gestión de Vacaciones",
+      icon: "calendar",
+      hasSubmenu: false,
+    },
+    {
+      id: "control-documentos",
+      name: "Control de Documentos Laborales",
+      icon: "document",
+      hasSubmenu: false,
+    },
+    {
+      id: "gestion-remuneraciones",
+      name: "Gestión de Remuneraciones",
+      icon: "money",
+      hasSubmenu: false,
+    },
+    {
+      id: "auto-servicio",
+      name: "Auto-Servicio del Colaborador (ESS)",
+      icon: "user",
+      hasSubmenu: false,
+    },
   ];
 
   // Submenús de Facturación
@@ -442,6 +484,21 @@ export function Sidebar({ isOpen, onClose }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
+      check: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      calendar: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+      user: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
     };
 
     return icons[iconName] || icons.shield;
@@ -455,7 +512,7 @@ export function Sidebar({ isOpen, onClose }) {
     // Si es Dashboard, redirigir a la página del módulo correspondiente
     if (itemId === "dashboard" || itemId === "dashboard-admin" || itemId === "dashboard-import" || itemId === "dashboard-importacion" || 
         itemId === "dashboard-logistica" || itemId === "dashboard-ventas" || itemId === "dashboard-marketing" ||
-        itemId === "dashboard-sistemas" || itemId === "dashboard-recursos-humanos" || itemId === "dashboard-facturacion" ||
+        itemId === "dashboard-sistemas" || itemId === "dashboard-rh" || itemId === "dashboard-recursos-humanos" || itemId === "dashboard-facturacion" ||
         itemId === "dashboard-permisos") {
       
       // Mapeo de itemId a rutas
@@ -468,6 +525,7 @@ export function Sidebar({ isOpen, onClose }) {
         "dashboard-ventas": "/ventas",
         "dashboard-marketing": "/marketing",
         "dashboard-sistemas": "/sistemas",
+        "dashboard-rh": "/recursos-humanos",
         "dashboard-recursos-humanos": "/recursos-humanos",
         "dashboard-facturacion": "/facturacion",
         "dashboard-permisos": "/permisos",
@@ -483,6 +541,23 @@ export function Sidebar({ isOpen, onClose }) {
     // Navegación para otros items
     if (itemId === "accesibilidad-credenciales") {
       router.push("/gerencia/colaboradores");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para secciones de Recursos Humanos
+    const recursosHumanosSections = [
+      "gestion-colaboradores",
+      "control-asistencia",
+      "gestion-permisos",
+      "gestion-vacaciones",
+      "control-documentos",
+      "gestion-remuneraciones",
+      "auto-servicio",
+    ];
+    
+    if (recursosHumanosSections.includes(itemId)) {
+      router.push(`/recursos-humanos?section=${itemId}`);
       setSelectedItem(itemId);
       return;
     }
