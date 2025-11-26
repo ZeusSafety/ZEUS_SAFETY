@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -15,12 +15,119 @@ export default function ImportacionesLogisticaPage() {
   const [numeroDespacho, setNumeroDespacho] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [importaciones, setImportaciones] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Función para obtener datos de la API
+  const fetchImportaciones = useCallback(async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      // Verificar que estamos en el cliente
+      if (typeof window === "undefined") {
+        throw new Error("Este código debe ejecutarse en el cliente");
+      }
+      
+      // Obtener el token del localStorage
+      const token = localStorage.getItem("token");
+      
+      if (!token || token.trim() === "") {
+        throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
+      }
+      
+      console.log("Fetching importaciones logística with token:", token.substring(0, 20) + "...");
+      console.log("API URL:", "https://importaciones2026-2946605267.us-central1.run.app?logistica=logistica");
+      
+      const apiUrl = "https://importaciones2026-2946605267.us-central1.run.app?logistica=logistica";
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+        
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
+      }
+      
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("La respuesta no es un JSON válido");
+        }
+      }
+      
+      console.log("Data received:", data);
+      
+      // Mapear los datos de la API al formato esperado para logística
+      const mappedData = Array.isArray(data) 
+        ? data.map((item, index) => ({
+            id: item.id || item.ID || index + 1,
+            fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
+            numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
+            redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
+            productos: item.productos || item.PRODUCTOS || "",
+            fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
+            tipoCarga: item.tipo_carga || item.tipoCarga || item.TIPO_CARGA || "",
+            estado: item.estado || item.ESTADO || "",
+            canal: item.canal || item.CANAL || "",
+            fechaRecepcion: item.fecha_recepcion || item.fechaRecepcion || item.FECHA_RECEPCION || "",
+            fechaAlmacen: item.fecha_almacen || item.fechaAlmacen || item.FECHA_ALMACEN || "",
+            incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
+            fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || "",
+          }))
+        : [];
+      
+      console.log("Mapped data:", mappedData);
+      setImportaciones(mappedData);
+    } catch (err) {
+      console.error("Error al obtener importaciones:", err);
+      setError(err instanceof Error ? err.message : "Error al cargar los datos");
+    } finally {
+      setLoadingData(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User authenticated, fetching importaciones logística...");
+      try {
+        fetchImportaciones();
+      } catch (err) {
+        console.error("Error calling fetchImportaciones:", err);
+        setError("Error al iniciar la carga de datos");
+        setLoadingData(false);
+      }
+    }
+  }, [user, loading, fetchImportaciones]);
 
   if (loading) {
     return (
@@ -34,102 +141,10 @@ export default function ImportacionesLogisticaPage() {
     return null;
   }
 
-  // Datos ficticios de importaciones logística
-  const importaciones = [
-    {
-      id: 15,
-      fechaRegistro: "2025-11-19",
-      numeroDespacho: "ZEUS50",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PETER",
-      fechaLlegada: "2025-12-29",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      estado: "TRANSITO",
-      canal: "",
-      fechaRecepcion: "",
-      fechaAlmacen: "",
-      incidencias: false,
-      fechaIncidencias: "",
-    },
-    {
-      id: 14,
-      fechaRegistro: "2025-10-10",
-      numeroDespacho: "ZEUS47",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES/PETER",
-      fechaLlegada: "2025-11-16",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "",
-      fechaAlmacen: "",
-      incidencias: false,
-      fechaIncidencias: "",
-    },
-    {
-      id: 7,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS42/ZEUS43/ZEUS49",
-      redactadoPor: "HERVIN",
-      productos: "ARNES/NITRON/CALIBRE",
-      fechaLlegada: "2025-10-20",
-      tipoCarga: "CONSOLIDADO",
-      estado: "ETA",
-      canal: "AMARILLO",
-      fechaRecepcion: "2025-10-29",
-      fechaAlmacen: "2025-10-29",
-      incidencias: true,
-      fechaIncidencias: "29/10/2025, 09:16:57 p. m.",
-    },
-    {
-      id: 8,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS44",
-      redactadoPor: "HERVIN",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-09-10",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "2025-09-18",
-      fechaAlmacen: "2025-09-19",
-      incidencias: true,
-      fechaIncidencias: "06/10/2025, 11:20:35 a. m.",
-    },
-    {
-      id: 9,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS45",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-10-15",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "2025-10-27",
-      fechaAlmacen: "2025-10-27",
-      incidencias: true,
-      fechaIncidencias: "27/10/2025, 14:30:12 p. m.",
-    },
-    {
-      id: 10,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS46",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES DE SEGURIDAD",
-      fechaLlegada: "2025-10-13",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      estado: "ETA",
-      canal: "AMARILLO",
-      fechaRecepcion: "2025-10-24",
-      fechaAlmacen: "2025-10-23",
-      incidencias: false,
-      fechaIncidencias: "",
-    },
-  ];
-
   const handleFiltrar = () => {
-    console.log("Filtrar:", { fechaInicio, fechaFinal, numeroDespacho });
+    // Recargar datos con filtros
+    fetchImportaciones();
+    setCurrentPage(1);
   };
 
   const handleProcedimiento = () => {
@@ -288,7 +303,38 @@ export default function ImportacionesLogisticaPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {currentImportaciones.map((importacion) => (
+                      {loadingData ? (
+                        <tr>
+                          <td colSpan={15} className="px-3 py-8 text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                              <span className="text-sm text-gray-600">Cargando datos...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : error ? (
+                        <tr>
+                          <td colSpan={15} className="px-3 py-8 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <span className="text-sm text-red-600 font-semibold">Error al cargar los datos</span>
+                              <span className="text-xs text-gray-500">{error}</span>
+                              <button
+                                onClick={fetchImportaciones}
+                                className="mt-2 px-4 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200"
+                              >
+                                Reintentar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : currentImportaciones.length === 0 ? (
+                        <tr>
+                          <td colSpan={15} className="px-3 py-8 text-center">
+                            <span className="text-sm text-gray-500">No se encontraron importaciones</span>
+                          </td>
+                        </tr>
+                      ) : (
+                        currentImportaciones.map((importacion) => (
                         <tr key={importacion.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.id}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRegistro}</td>
@@ -342,7 +388,8 @@ export default function ImportacionesLogisticaPage() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                      ))
+                      )}
                     </tbody>
                   </table>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -15,12 +15,116 @@ export default function ListadoImportacionesMarketingPage() {
   const [numeroDespacho, setNumeroDespacho] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [importaciones, setImportaciones] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Función para obtener datos de la API
+  const fetchImportaciones = useCallback(async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      // Verificar que estamos en el cliente
+      if (typeof window === "undefined") {
+        throw new Error("Este código debe ejecutarse en el cliente");
+      }
+      
+      // Obtener el token del localStorage
+      const token = localStorage.getItem("token");
+      
+      if (!token || token.trim() === "") {
+        throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
+      }
+      
+      console.log("Fetching importaciones marketing with token:", token.substring(0, 20) + "...");
+      console.log("API URL:", "https://importaciones2026-2946605267.us-central1.run.app");
+      
+      const apiUrl = "https://importaciones2026-2946605267.us-central1.run.app";
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+        
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
+      }
+      
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("La respuesta no es un JSON válido");
+        }
+      }
+      
+      console.log("Data received:", data);
+      
+      // Mapear los datos de la API al formato esperado para marketing
+      const mappedData = Array.isArray(data) 
+        ? data.map((item, index) => ({
+            id: item.id || item.ID || index + 1,
+            fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
+            numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
+            redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
+            productos: item.productos || item.PRODUCTOS || "",
+            fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
+            fechaAlmacen: item.fecha_almacen || item.fechaAlmacen || item.FECHA_ALMACEN || "",
+            estado: item.estado || item.ESTADO || "",
+            fechaRecepcion: item.fecha_recepcion || item.fechaRecepcion || item.FECHA_RECEPCION || "",
+            incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
+          }))
+        : [];
+      
+      console.log("Mapped data:", mappedData);
+      setImportaciones(mappedData);
+    } catch (err) {
+      console.error("Error al obtener importaciones:", err);
+      setError(err instanceof Error ? err.message : "Error al cargar los datos");
+    } finally {
+      setLoadingData(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User authenticated, fetching importaciones marketing...");
+      try {
+        fetchImportaciones();
+      } catch (err) {
+        console.error("Error calling fetchImportaciones:", err);
+        setError("Error al iniciar la carga de datos");
+        setLoadingData(false);
+      }
+    }
+  }, [user, loading, fetchImportaciones]);
 
   if (loading) {
     return (
@@ -34,84 +138,10 @@ export default function ListadoImportacionesMarketingPage() {
     return null;
   }
 
-  // Datos ficticios de importaciones marketing
-  const importaciones = [
-    {
-      id: 1,
-      fechaRegistro: "2025-11-19",
-      numeroDespacho: "ZEUS50",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PETER",
-      fechaLlegada: "2025-12-29",
-      fechaAlmacen: "",
-      estado: "TRANSITO",
-      fechaRecepcion: "",
-      incidencias: false,
-    },
-    {
-      id: 2,
-      fechaRegistro: "2025-10-10",
-      numeroDespacho: "ZEUS47",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES/PETER",
-      fechaLlegada: "2025-11-16",
-      fechaAlmacen: "2025-11-27",
-      estado: "ETA",
-      fechaRecepcion: "",
-      incidencias: false,
-    },
-    {
-      id: 3,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS42/ZEUS43/ZEUS49",
-      redactadoPor: "HERVIN",
-      productos: "ARNES/NITRON/CALIBRE",
-      fechaLlegada: "2025-10-20",
-      fechaAlmacen: "2025-10-29",
-      estado: "ETA",
-      fechaRecepcion: "2025-10-29",
-      incidencias: true,
-    },
-    {
-      id: 4,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS44",
-      redactadoPor: "HERVIN",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-09-10",
-      fechaAlmacen: "2025-09-19",
-      estado: "ETA",
-      fechaRecepcion: "2025-09-18",
-      incidencias: true,
-    },
-    {
-      id: 5,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS45",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-10-15",
-      fechaAlmacen: "2025-10-27",
-      estado: "ETA",
-      fechaRecepcion: "2025-10-27",
-      incidencias: true,
-    },
-    {
-      id: 6,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS46",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES DE SEGURIDAD",
-      fechaLlegada: "2025-10-13",
-      fechaAlmacen: "2025-10-23",
-      estado: "ETA",
-      fechaRecepcion: "2025-10-24",
-      incidencias: false,
-    },
-  ];
-
   const handleFiltrar = () => {
-    console.log("Filtrar:", { fechaInicio, fechaFinal, numeroDespacho });
+    // Recargar datos con filtros
+    fetchImportaciones();
+    setCurrentPage(1);
   };
 
   const totalPages = Math.ceil(importaciones.length / itemsPerPage);
@@ -240,7 +270,38 @@ export default function ListadoImportacionesMarketingPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {currentImportaciones.map((importacion) => (
+                      {loadingData ? (
+                        <tr>
+                          <td colSpan={10} className="px-3 py-8 text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                              <span className="text-sm text-gray-600">Cargando datos...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : error ? (
+                        <tr>
+                          <td colSpan={10} className="px-3 py-8 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <span className="text-sm text-red-600 font-semibold">Error al cargar los datos</span>
+                              <span className="text-xs text-gray-500">{error}</span>
+                              <button
+                                onClick={fetchImportaciones}
+                                className="mt-2 px-4 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200"
+                              >
+                                Reintentar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : currentImportaciones.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="px-3 py-8 text-center">
+                            <span className="text-sm text-gray-500">No se encontraron importaciones</span>
+                          </td>
+                        </tr>
+                      ) : (
+                        currentImportaciones.map((importacion) => (
                         <tr key={importacion.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.fechaRegistro}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.numeroDespacho}</td>
@@ -275,7 +336,8 @@ export default function ListadoImportacionesMarketingPage() {
                             </span>
                           </td>
                         </tr>
-                      ))}
+                      ))
+                      )}
                     </tbody>
                   </table>
                 </div>

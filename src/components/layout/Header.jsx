@@ -33,9 +33,10 @@ export function Header({ onMenuToggle }) {
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-gray-200/80 flex items-center justify-between px-6 shadow-sm" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)' }}>
+      <header className="h-16 bg-white border-b border-gray-200/80 flex items-center justify-between shadow-sm" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)' }}>
+        <div className="w-full max-w-[1400px] xl:max-w-[1680px] 2xl:max-w-[1920px] mx-auto pl-2 sm:pl-3 md:pl-4 lg:pl-5 xl:pl-6 2xl:pl-7 pr-4 sm:pr-6 md:pr-8 lg:pr-10 xl:pr-12 2xl:pr-14 flex items-center justify-between">
         {/* Left section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 sm:space-x-5 md:space-x-6 lg:space-x-7 xl:space-x-8">
           <button
             onClick={onMenuToggle}
             className="p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group"
@@ -54,7 +55,7 @@ export function Header({ onMenuToggle }) {
         </div>
 
         {/* Right section */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
           {/* Notifications */}
           <button 
             onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -98,6 +99,7 @@ export function Header({ onMenuToggle }) {
               <span className="text-xs font-bold text-gray-800 tabular-nums">{currentTime}</span>
             </div>
           </div>
+        </div>
         </div>
       </header>
 

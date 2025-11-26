@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -15,12 +15,115 @@ export default function ListadoImportacionesFacturacionPage() {
   const [numeroDespacho, setNumeroDespacho] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [facturaciones, setFacturaciones] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Función para obtener datos de la API
+  const fetchFacturaciones = useCallback(async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      // Verificar que estamos en el cliente
+      if (typeof window === "undefined") {
+        throw new Error("Este código debe ejecutarse en el cliente");
+      }
+      
+      // Obtener el token del localStorage
+      const token = localStorage.getItem("token");
+      
+      if (!token || token.trim() === "") {
+        throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
+      }
+      
+      console.log("Fetching facturaciones with token:", token.substring(0, 20) + "...");
+      console.log("API URL:", "https://importaciones2026-2946605267.us-central1.run.app?facturacion=facturacion");
+      
+      const apiUrl = "https://importaciones2026-2946605267.us-central1.run.app?facturacion=facturacion";
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+        
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
+      }
+      
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("La respuesta no es un JSON válido");
+        }
+      }
+      
+      console.log("Data received:", data);
+      
+      // Mapear los datos de la API al formato esperado para facturación
+      const mappedData = Array.isArray(data) 
+        ? data.map((item, index) => ({
+            id: item.id || item.ID || index + 1,
+            fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
+            numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
+            fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || "",
+            incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
+            estadoVerificacion: item.estado_verificacion || item.estadoVerificacion || item.ESTADO_VERIFICACION || "",
+            estadoDespacho: item.estado_despacho || item.estadoDespacho || item.ESTADO_DESPACHO || "",
+            fechaRegistroCompleto: item.fecha_registro_completo || item.fechaRegistroCompleto || item.FECHA_REGISTRO_COMPLETO || item.fecha_registro_completa || item.fechaRegistroCompleta || item.FECHA_REGISTRO_COMPLETA || "",
+            observaciones: item.observaciones || item.OBSERVACIONES || "",
+          }))
+        : [];
+      
+      console.log("Mapped data:", mappedData);
+      setFacturaciones(mappedData);
+    } catch (err) {
+      console.error("Error al obtener facturaciones:", err);
+      setError(err instanceof Error ? err.message : "Error al cargar los datos");
+    } finally {
+      setLoadingData(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User authenticated, fetching facturaciones...");
+      try {
+        fetchFacturaciones();
+      } catch (err) {
+        console.error("Error calling fetchFacturaciones:", err);
+        setError("Error al iniciar la carga de datos");
+        setLoadingData(false);
+      }
+    }
+  }, [user, loading, fetchFacturaciones]);
 
   if (loading) {
     return (
@@ -34,78 +137,10 @@ export default function ListadoImportacionesFacturacionPage() {
     return null;
   }
 
-  // Datos ficticios de facturación
-  const facturaciones = [
-    {
-      id: 15,
-      fechaRegistro: "2025-11-19",
-      numeroDespacho: "ZEUS50",
-      fechaIncidencias: "",
-      incidencias: false,
-      estadoVerificacion: "",
-      estadoDespacho: "",
-      fechaRegistroCompleto: "",
-      observaciones: "",
-    },
-    {
-      id: 14,
-      fechaRegistro: "2025-10-10",
-      numeroDespacho: "ZEUS47",
-      fechaIncidencias: "",
-      incidencias: false,
-      estadoVerificacion: "",
-      estadoDespacho: "",
-      fechaRegistroCompleto: "",
-      observaciones: "",
-    },
-    {
-      id: 10,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS46",
-      fechaIncidencias: "2025-10-24",
-      incidencias: false,
-      estadoVerificacion: "",
-      estadoDespacho: "REGISTRADO",
-      fechaRegistroCompleto: "2025-10-24 10:59:36",
-      observaciones: "",
-    },
-    {
-      id: 9,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS45",
-      fechaIncidencias: "2025-10-27",
-      incidencias: true,
-      estadoVerificacion: "COMPLETADO",
-      estadoDespacho: "REGISTRADO",
-      fechaRegistroCompleto: "2025-10-28 10:53:22",
-      observaciones: "",
-    },
-    {
-      id: 8,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS44",
-      fechaIncidencias: "2025-10-06",
-      incidencias: true,
-      estadoVerificacion: "COMPLETADO",
-      estadoDespacho: "REGISTRADO",
-      fechaRegistroCompleto: "2025-10-25 15:03:25",
-      observaciones: "",
-    },
-    {
-      id: 7,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS42/ZEUS43/ZEUS49",
-      fechaIncidencias: "2025-10-29",
-      incidencias: true,
-      estadoVerificacion: "COMPLETADO",
-      estadoDespacho: "REGISTRADO",
-      fechaRegistroCompleto: "2025-10-30 11:26:05",
-      observaciones: "",
-    },
-  ];
-
   const handleFiltrar = () => {
-    console.log("Filtrar:", { fechaInicio, fechaFinal, numeroDespacho });
+    // Recargar datos con filtros
+    fetchFacturaciones();
+    setCurrentPage(1);
   };
 
   const handleProcedimiento = () => {
@@ -241,7 +276,38 @@ export default function ListadoImportacionesFacturacionPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {currentFacturaciones.map((facturacion) => (
+                      {loadingData ? (
+                        <tr>
+                          <td colSpan={11} className="px-3 py-8 text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                              <span className="text-sm text-gray-600">Cargando datos...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : error ? (
+                        <tr>
+                          <td colSpan={11} className="px-3 py-8 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <span className="text-sm text-red-600 font-semibold">Error al cargar los datos</span>
+                              <span className="text-xs text-gray-500">{error}</span>
+                              <button
+                                onClick={fetchFacturaciones}
+                                className="mt-2 px-4 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200"
+                              >
+                                Reintentar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : currentFacturaciones.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} className="px-3 py-8 text-center">
+                            <span className="text-sm text-gray-500">No se encontraron facturaciones</span>
+                          </td>
+                        </tr>
+                      ) : (
+                        currentFacturaciones.map((facturacion) => (
                         <tr key={facturacion.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{facturacion.id}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistro}</td>
@@ -292,7 +358,8 @@ export default function ListadoImportacionesFacturacionPage() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                      ))
+                      )}
                     </tbody>
                   </table>
                 </div>
