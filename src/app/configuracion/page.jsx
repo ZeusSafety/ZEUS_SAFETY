@@ -105,7 +105,7 @@ export default function ConfiguracionPage() {
       
       <div 
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-72" : "ml-0"
+          sidebarOpen ? "ml-60" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
