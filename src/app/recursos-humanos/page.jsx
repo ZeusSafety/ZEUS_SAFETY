@@ -176,7 +176,7 @@ export default function RecursosHumanosPage() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function RecursosHumanosPage() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -339,7 +339,7 @@ export default function RecursosHumanosPage() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     {getIcon("clock")}
                   </div>
                   <div>
@@ -405,7 +405,7 @@ export default function RecursosHumanosPage() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     {getIcon("clock")}
                   </div>
                   <div>
@@ -470,7 +470,7 @@ export default function RecursosHumanosPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     {getIcon("check")}
                   </div>
                   <div>
@@ -556,7 +556,7 @@ export default function RecursosHumanosPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                   {getIcon("calendar")}
                 </div>
                 <div>
@@ -641,7 +641,7 @@ export default function RecursosHumanosPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                   {getIcon("document")}
                 </div>
                 <div>
@@ -716,7 +716,7 @@ export default function RecursosHumanosPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                   {getIcon("money")}
                 </div>
                 <div>
@@ -788,7 +788,7 @@ export default function RecursosHumanosPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                   {getIcon("user")}
                 </div>
                 <div>
@@ -806,7 +806,7 @@ export default function RecursosHumanosPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-600/40 shadow-sm mb-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -819,7 +819,7 @@ export default function RecursosHumanosPage() {
               </div>
 
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-600/40 shadow-sm mb-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -832,7 +832,7 @@ export default function RecursosHumanosPage() {
               </div>
 
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-600/40 shadow-sm mb-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -845,7 +845,7 @@ export default function RecursosHumanosPage() {
               </div>
 
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-600/40 shadow-sm mb-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -858,7 +858,7 @@ export default function RecursosHumanosPage() {
               </div>
 
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-600/40 shadow-sm mb-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>

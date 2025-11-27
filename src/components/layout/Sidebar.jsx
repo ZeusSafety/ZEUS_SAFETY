@@ -630,8 +630,12 @@ export function Sidebar({ isOpen, onClose }) {
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Logo */}
-        <div className="pt-2 pb-2 px-4 border-b border-gray-200 flex justify-center">
+        {/* Logo - Clickable to menu */}
+        <button
+          onClick={() => router.push("/menu")}
+          className="pt-2 pb-2 px-4 border-b border-gray-200 flex justify-center w-full bg-white hover:bg-white active:bg-white transition-colors duration-200"
+          aria-label="Ir al menú"
+        >
           <div className="relative w-32 h-32">
             <Image
               src="/images/logo_zeus_safety.png"
@@ -641,38 +645,39 @@ export function Sidebar({ isOpen, onClose }) {
               priority
             />
           </div>
-        </div>
+        </button>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3 custom-scrollbar">
-          <div className="px-4 mb-3">
+        <nav className={`flex-1 flex flex-col ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-hidden' : 'overflow-hidden'}`}>
+          <div className="px-4 pt-1 pb-1 flex-shrink-0 bg-white">
             <h3 className="text-xs font-black text-gray-700 uppercase tracking-widest">
               MÓDULOS
             </h3>
           </div>
+          <div className={`flex-1 ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} py-2`}>
           <ul className="space-y-1 px-2">
             {modules.map((module) => (
               <li key={module.id}>
                 <button
                   onClick={() => toggleModule(module.id)}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all duration-200 group hover:shadow-md border active:scale-[0.98] ${
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all duration-200 group hover:shadow-md border-2 active:scale-[0.98] ${
                     (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
-                      ? "bg-gradient-to-r from-blue-50 to-slate-50 text-blue-900 border-blue-300 shadow-sm"
-                      : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:via-slate-50 hover:to-blue-50 border-transparent hover:border-blue-300/60"
+                      ? "bg-blue-700 text-white border-blue-800 shadow-sm"
+                      : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                   }`}
                 >
                   <div className="flex items-center space-x-2">
                     <span className={`transition-colors flex-shrink-0 ${
                       (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
-                        ? "text-blue-900"
-                        : "text-gray-600 group-hover:text-blue-900"
+                        ? "text-white"
+                        : "text-gray-600 group-hover:text-white"
                     }`}>
                       {getIcon(module.icon)}
                     </span>
                     <span className={`text-xs font-semibold text-left leading-tight ${
                       (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
-                        ? "text-blue-900"
-                        : "text-gray-800 group-hover:text-gray-900"
+                        ? "text-white"
+                        : "text-gray-800 group-hover:text-white"
                     }`}>
                       {module.name === "Permisos/Solicitudes e Incidencias" ? (
                         <>
@@ -687,7 +692,7 @@ export function Sidebar({ isOpen, onClose }) {
                   {module.hasSubmenu && (
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
-                        expandedModules[module.id] ? "rotate-180 text-blue-900" : "group-hover:text-blue-700"
+                        expandedModules[module.id] ? "rotate-180 text-white" : "group-hover:text-white"
                       }`}
                       fill="none"
                       stroke="currentColor"
@@ -700,7 +705,7 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Gerencia */}
                 {module.id === "gerencia" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     {/* Items del submenú */}
                     <div className="space-y-0.5">
                       {gerenciaSubmenu.map((item) => (
@@ -708,9 +713,9 @@ export function Sidebar({ isOpen, onClose }) {
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -719,17 +724,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -746,11 +751,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -766,7 +771,7 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Administración */}
                 {module.id === "administracion" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     {/* Items del submenú */}
                     <div className="space-y-0.5">
                       {administracionSubmenu.map((item) => (
@@ -774,9 +779,9 @@ export function Sidebar({ isOpen, onClose }) {
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -785,17 +790,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -812,11 +817,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -832,16 +837,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Importación */}
                 {module.id === "importacion" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {importacionSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -850,17 +855,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -877,11 +882,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -897,16 +902,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Logística */}
                 {module.id === "logistica" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {logisticaSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -915,17 +920,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -942,11 +947,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -962,16 +967,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Ventas */}
                 {module.id === "ventas" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {ventasSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -980,17 +985,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1007,11 +1012,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1027,16 +1032,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Marketing */}
                 {module.id === "marketing" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {marketingSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -1045,17 +1050,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1072,11 +1077,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1092,16 +1097,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Sistemas */}
                 {module.id === "sistemas" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {sistemasSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -1110,17 +1115,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1137,11 +1142,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1157,16 +1162,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Recursos Humanos */}
                 {module.id === "recursos-humanos" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {recursosHumanosSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -1175,17 +1180,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1202,11 +1207,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1222,16 +1227,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Facturación */}
                 {module.id === "facturacion" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {facturacionSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -1240,17 +1245,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1267,11 +1272,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1287,16 +1292,16 @@ export function Sidebar({ isOpen, onClose }) {
 
                 {/* Submenú de Permisos/Solicitudes e Incidencias */}
                 {module.id === "permisos" && expandedModules[module.id] && (
-                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-50 rounded-lg py-1.5 border border-gray-100">
+                  <div className="mt-1 ml-2 space-y-0.5 bg-slate-200 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {permisosSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
                               onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-300"
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-blue-700 hover:text-white transition-all duration-200 text-xs font-medium border border-transparent hover:border-blue-800"
                             >
-                              <span className="text-gray-500 group-hover:text-blue-900 flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
                               <span className="text-left">{item.name}</span>
                             </button>
                           ) : (
@@ -1305,17 +1310,17 @@ export function Sidebar({ isOpen, onClose }) {
                                 onClick={() => toggleSubmenu(item.id)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border ${
                                   expandedSubmenus[item.id]
-                                    ? "bg-blue-100 text-blue-900 border-blue-300"
-                                    : "text-gray-700 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                    ? "bg-blue-700 text-white border-2 border-blue-800"
+                                    : "text-gray-700 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                 }`}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <span className={expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-500"}>{getIcon(item.icon)}</span>
-                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-blue-900" : "text-gray-800"}`}>{item.name}</span>
+                                  <span className={expandedSubmenus[item.id] ? "text-white" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold ${expandedSubmenus[item.id] ? "text-white" : "text-gray-800"}`}>{item.name}</span>
                                 </div>
                                 <svg
                                   className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
-                                    expandedSubmenus[item.id] ? "rotate-180 text-blue-900" : ""
+                                    expandedSubmenus[item.id] ? "rotate-180 text-white" : ""
                                   }`}
                                   fill="none"
                                   stroke="currentColor"
@@ -1332,11 +1337,11 @@ export function Sidebar({ isOpen, onClose }) {
                                       onClick={() => handleSubmenuClick(subItem.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border ${
                                         selectedItem === subItem.id
-                                          ? "bg-blue-100 text-blue-900 border-blue-300"
-                                          : "text-gray-600 hover:bg-blue-100 hover:text-blue-900 border-transparent hover:border-blue-300"
+                                          ? "bg-blue-700 text-white border-2 border-blue-800"
+                                          : "text-gray-600 hover:bg-blue-700 hover:text-white border-transparent hover:border-blue-800"
                                       }`}
                                     >
-                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-blue-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-white" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
                                       <span className="text-left">{subItem.name}</span>
                                     </button>
                                   ))}
@@ -1352,6 +1357,7 @@ export function Sidebar({ isOpen, onClose }) {
               </li>
             ))}
           </ul>
+          </div>
         </nav>
 
         {/* User info and logout */}
@@ -1360,8 +1366,8 @@ export function Sidebar({ isOpen, onClose }) {
             onClick={() => router.push("/perfil")}
             className="w-full flex items-center space-x-2 px-2.5 py-2 bg-white rounded-lg border border-gray-200/60 shadow-md hover:shadow-lg transition-shadow"
           >
-            <div className="w-9 h-9 bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 rounded-lg flex items-center justify-center shadow-sm">
-              <svg className="w-4.5 h-4.5 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-9 h-9 bg-blue-700 border-2 border-blue-800 rounded-lg flex items-center justify-center shadow-sm">
+              <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
@@ -1374,7 +1380,7 @@ export function Sidebar({ isOpen, onClose }) {
           </button>
           <button
             onClick={handleLogout}
-            className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-900 font-semibold py-2 px-3 rounded-lg flex items-center justify-center space-x-1.5 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] text-xs"
+            className="w-full bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white font-semibold py-2 px-3 rounded-lg flex items-center justify-center space-x-1.5 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] text-xs"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

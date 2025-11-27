@@ -12,7 +12,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
   const getStatusBg = (status) => {
     if (status === "Disponible") return "bg-green-50 border-green-200 text-green-700";
     if (status === "Próximamente") return "bg-orange-50 border-orange-200 text-orange-700";
-    return "bg-gray-50 border-gray-200 text-gray-700";
+    return "bg-slate-200 border-slate-300 text-gray-700";
   };
 
   const getIcon = (iconName) => {
@@ -87,11 +87,11 @@ export function ModuleCard({ module, onClick, index = 0 }) {
       transition={{ duration: 0.4, delay: index * 0.1 }}
       whileHover={{ scale: 1.02, y: -2 }}
       onClick={onClick}
-      className="group relative bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 p-4 cursor-pointer overflow-hidden shadow-sm"
+      className="group relative bg-white rounded-xl border border-gray-200/60 p-4 cursor-pointer overflow-hidden shadow-sm"
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-12 h-12 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/25 group-hover:border-blue-700/50 transition-all duration-200">
+          <div className="w-12 h-12 bg-blue-700 border-2 border-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
           <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBg(module.status)}`}>

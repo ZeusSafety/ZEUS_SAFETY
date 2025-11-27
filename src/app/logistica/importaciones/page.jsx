@@ -89,24 +89,64 @@ export default function ImportacionesLogisticaPage() {
       
       // Mapear los datos de la API al formato esperado para logística
       const mappedData = Array.isArray(data) 
-        ? data.map((item, index) => ({
-            id: item.id || item.ID || index + 1,
-            fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
-            numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
-            redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
-            productos: item.productos || item.PRODUCTOS || "",
-            fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
-            tipoCarga: item.tipo_carga || item.tipoCarga || item.TIPO_CARGA || "",
-            estado: item.estado || item.ESTADO || "",
-            canal: item.canal || item.CANAL || "",
-            fechaRecepcion: item.fecha_recepcion || item.fechaRecepcion || item.FECHA_RECEPCION || "",
-            fechaAlmacen: item.fecha_almacen || item.fechaAlmacen || item.FECHA_ALMACEN || "",
-            incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
-            fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || "",
-          }))
+        ? data.map((item, index) => {
+            // Buscar el campo PDF en todas las variaciones posibles
+            let pdfField = item.archivo_pdf || item.archivoPdf || item.ARCHIVO_PDF || 
+                           item.pdf_url || item.pdfUrl || item.PDF_URL || 
+                           item.solucion_pdf || item.solucionPdf || item.SOLUCION_PDF ||
+                           item.pdf || item.PDF || item.url_pdf || item.urlPdf || item.URL_PDF ||
+                           item.link_pdf || item.linkPdf || item.LINK_PDF ||
+                           item.documento_pdf || item.documentoPdf || item.DOCUMENTO_PDF ||
+                           // Buscar en todos los campos que contengan "pdf" en el nombre
+                           (() => {
+                             const keys = Object.keys(item);
+                             for (const key of keys) {
+                               if (key.toLowerCase().includes('pdf') && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                                 return item[key];
+                               }
+                             }
+                             return "";
+                           })() || "";
+            
+            // Normalizar la URL del PDF
+            if (pdfField && pdfField.trim() !== "") {
+              // Si no empieza con http:// o https://, agregar https://
+              if (!pdfField.startsWith("http://") && !pdfField.startsWith("https://")) {
+                // Si empieza con //, agregar https:
+                if (pdfField.startsWith("//")) {
+                  pdfField = "https:" + pdfField;
+                } 
+                // Si empieza con /, es una ruta relativa - agregar el dominio base de la API
+                else if (pdfField.startsWith("/")) {
+                  pdfField = "https://importaciones2026-2946605267.us-central1.run.app" + pdfField;
+                }
+                // Si no tiene protocolo, agregar https://
+                else {
+                  pdfField = "https://" + pdfField;
+                }
+              }
+            }
+            
+            return {
+              id: item.id || item.ID || index + 1,
+              fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
+              numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
+              redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
+              productos: item.productos || item.PRODUCTOS || "",
+              fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
+              tipoCarga: item.tipo_carga || item.tipoCarga || item.TIPO_CARGA || "",
+              estado: item.estado || item.ESTADO || "",
+              canal: item.canal || item.CANAL || "",
+              fechaRecepcion: item.fecha_recepcion || item.fechaRecepcion || item.FECHA_RECEPCION || "",
+              fechaAlmacen: item.fecha_almacen || item.fechaAlmacen || item.FECHA_ALMACEN || "",
+              incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
+              fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || item.incidencia_registro || item.incidenciaRegistro || item.INCIDENCIA_REGISTRO || "",
+              archivoPdf: pdfField,
+            };
+          })
         : [];
       
-      console.log("Mapped data:", mappedData);
+      console.log("Mapped data (first item):", mappedData[0]);
       setImportaciones(mappedData);
     } catch (err) {
       console.error("Error al obtener importaciones:", err);
@@ -131,7 +171,7 @@ export default function ImportacionesLogisticaPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -158,25 +198,25 @@ export default function ImportacionesLogisticaPage() {
 
   const getEstadoBadge = (estado) => {
     const estados = {
-      TRANSITO: "bg-yellow-500/20 backdrop-blur-sm border-yellow-500/40 text-yellow-800",
-      ETA: "bg-green-500/20 backdrop-blur-sm border-green-500/40 text-green-800",
-      RECIBIDO: "bg-blue-500/20 backdrop-blur-sm border-blue-500/40 text-blue-800",
+      TRANSITO: "bg-yellow-500 border-yellow-600 text-white",
+      ETA: "bg-green-600 border-green-700 text-white",
+      RECIBIDO: "bg-blue-600 border-2 border-blue-700 text-white",
     };
-    return estados[estado] || "bg-gray-500/20 backdrop-blur-sm border-gray-500/40 text-gray-800";
+    return estados[estado] || "bg-gray-600 border-2 border-gray-700 text-white";
   };
 
   const getCanalBadge = (canal) => {
     if (!canal) return "";
     const canales = {
-      ROJO: "bg-red-500/20 backdrop-blur-sm border-red-500/40 text-red-800",
-      AMARILLO: "bg-yellow-500/20 backdrop-blur-sm border-yellow-500/40 text-yellow-800",
-      VERDE: "bg-green-500/20 backdrop-blur-sm border-green-500/40 text-green-800",
+      ROJO: "bg-red-600 border-2 border-red-700 text-white",
+      AMARILLO: "bg-yellow-500 border-2 border-yellow-600 text-white",
+      VERDE: "bg-green-600 border-2 border-green-700 text-white",
     };
-    return canales[canal] || "bg-gray-500/20 backdrop-blur-sm border-gray-500/40 text-gray-800";
+    return canales[canal] || "bg-gray-600 border-2 border-gray-700 text-white";
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -186,12 +226,12 @@ export default function ImportacionesLogisticaPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/logistica")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 text-blue-800 rounded-lg font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -204,7 +244,7 @@ export default function ImportacionesLogisticaPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -258,7 +298,7 @@ export default function ImportacionesLogisticaPage() {
                 <div className="flex items-end">
                   <button
                     onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-500/20 backdrop-blur-sm border border-yellow-500/40 hover:bg-yellow-500/30 hover:border-yellow-600/60 text-yellow-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -269,7 +309,7 @@ export default function ImportacionesLogisticaPage() {
                 <div className="flex items-end">
                   <button
                     onClick={handleProcedimiento}
-                    className="px-4 py-2.5 bg-green-500/20 backdrop-blur-sm border border-green-500/40 hover:bg-green-500/30 hover:border-green-600/60 text-green-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -284,22 +324,22 @@ export default function ImportacionesLogisticaPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">ID</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">FECHA REGISTRO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">N° DESPACHO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">REDACTADO POR</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">PRODUCTOS</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">ARCHIVO_PDF</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">FECHA LLEGADA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">TIPO DE CARGA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">ESTADO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">CANAL</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">FECHA DE<br />RECEPCIÓN</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">FECHA ALMACÉN</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">INCIDENCIAS</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">FECHA DE<br />INCIDENCIAS</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800 whitespace-nowrap">ACCIONES</th>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA REGISTRO</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° DESPACHO</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">REDACTADO POR</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTOS</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ARCHIVO_PDF</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA LLEGADA</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TIPO DE CARGA</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANAL</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA DE<br />RECEPCIÓN</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA ALMACÉN</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">INCIDENCIAS</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA DE<br />INCIDENCIAS</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -320,7 +360,7 @@ export default function ImportacionesLogisticaPage() {
                               <span className="text-xs text-gray-500">{error}</span>
                               <button
                                 onClick={fetchImportaciones}
-                                className="mt-2 px-4 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200"
+                                className="mt-2 px-4 py-2 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-all duration-200"
                               >
                                 Reintentar
                               </button>
@@ -335,24 +375,103 @@ export default function ImportacionesLogisticaPage() {
                         </tr>
                       ) : (
                         currentImportaciones.map((importacion) => (
-                        <tr key={importacion.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={importacion.id} className="hover:bg-slate-100 transition-colors" onClick={(e) => {
+                          const target = e.target;
+                          if (target.closest('.pdf-button-container')) {
+                            return;
+                          }
+                        }}>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.id}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRegistro}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.numeroDespacho}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                              </svg>
-                              <span>PDF</span>
-                            </button>
+                          <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
+                            {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
+                              <div 
+                                className="pdf-button-container"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.nativeEvent?.stopImmediatePropagation();
+                                  const url = importacion.archivoPdf;
+                                  console.log("PDF clicked, URL:", url);
+                                  
+                                  if (!url || url.trim() === "") {
+                                    alert("No hay enlace PDF disponible");
+                                    return;
+                                  }
+                                  
+                                  try {
+                                    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
+                                    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+                                      window.location.href = url;
+                                    }
+                                  } catch (err) {
+                                    console.error("Error opening PDF:", err);
+                                    window.location.href = url;
+                                  }
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.nativeEvent?.stopImmediatePropagation();
+                                }}
+                                onMouseUp={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.nativeEvent?.stopImmediatePropagation();
+                                }}
+                                onTouchStart={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.nativeEvent?.stopImmediatePropagation();
+                                  const url = importacion.archivoPdf;
+                                  if (url && url.trim() !== "") {
+                                    window.open(url, "_blank", "noopener,noreferrer");
+                                  }
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                role="button"
+                                tabIndex={0}
+                                style={{ 
+                                  position: 'relative', 
+                                  zIndex: 9999, 
+                                  pointerEvents: 'auto',
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none'
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const url = importacion.archivoPdf;
+                                    if (url && url.trim() !== "") {
+                                      window.open(url, "_blank", "noopener,noreferrer");
+                                    }
+                                  }
+                                }}
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                </svg>
+                                <span style={{ pointerEvents: 'none' }}>PDF</span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gray-400 border-2 border-gray-500 text-gray-500 rounded-lg text-[10px] font-semibold cursor-not-allowed opacity-50">
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                </svg>
+                                <span>PDF</span>
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.tipoCarga}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {importacion.estado && (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoBadge(importacion.estado)}`}>
@@ -372,15 +491,15 @@ export default function ImportacionesLogisticaPage() {
                           <td className="px-3 py-2 whitespace-nowrap">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold border ${
                               importacion.incidencias 
-                                ? "bg-red-500/20 backdrop-blur-sm border-red-500/40 text-red-800" 
-                                : "bg-green-500/20 backdrop-blur-sm border-green-500/40 text-green-800"
+                                ? "bg-red-600 border-red-700 text-white" 
+                                : "bg-green-600 border-green-700 text-white"
                             }`}>
                               {importacion.incidencias ? "SI" : "NO"}
                             </span>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaIncidencias || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
@@ -394,18 +513,18 @@ export default function ImportacionesLogisticaPage() {
                   </table>
                 </div>
                 {/* Paginación */}
-                <div className="bg-gray-50 px-3 py-2 flex items-center justify-between border-t border-gray-200">
+                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     «
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &lt;
                   </button>
@@ -415,14 +534,14 @@ export default function ImportacionesLogisticaPage() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &gt;
                   </button>
                   <button
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     »
                   </button>

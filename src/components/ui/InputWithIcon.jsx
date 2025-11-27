@@ -38,7 +38,7 @@ export function InputWithIcon({
           placeholder={placeholder}
           required={required}
           className={`
-            w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50
+            w-full px-4 py-3 border-2 rounded-xl bg-slate-200
             focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
             text-gray-900 placeholder-gray-400 font-medium
             ${icon ? "pl-12" : ""}

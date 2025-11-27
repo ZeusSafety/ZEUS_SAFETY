@@ -20,7 +20,7 @@ export default function MenuPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -163,7 +163,7 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div 
@@ -176,23 +176,7 @@ export default function MenuPage() {
         <main className="flex-1 overflow-y-auto">
           {/* Welcome Banner */}
           <div className="max-w-[95%] mx-auto px-4 pt-4">
-            <div className="relative text-white px-6 py-6 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(37, 99, 235, 0.25)' }}>
-              {/* Background image */}
-              <div className="absolute inset-0">
-                <img
-                  src="/images/fondo_izquierda_new.png"
-                  alt="Fondo Zeus"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Overlay azul con efecto glass */}
-              <div className="absolute inset-0 bg-blue-900/50"></div>
-              {/* Background pattern sutil */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-300 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-300 rounded-full blur-3xl"></div>
-              </div>
-              
+            <div className="relative text-white px-6 py-6 rounded-2xl shadow-xl overflow-hidden bg-blue-700" style={{ boxShadow: '0 20px 60px -12px rgba(37, 99, 235, 0.25)' }}>
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -205,13 +189,13 @@ export default function MenuPage() {
                         : `Accede a tus módulos asignados del sistema ZEUS SAFETY.`}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center space-x-1.5 bg-blue-700/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-blue-700/40 shadow-md">
+                      <div className="flex items-center space-x-1.5 bg-blue-700 px-3 py-1.5 rounded-lg border-2 border-blue-800 shadow-md">
                         <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <span className="text-xs font-semibold text-white">Panel de Control</span>
                       </div>
-                      <div className="flex items-center space-x-1.5 bg-blue-700/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-blue-700/40 shadow-md">
+                      <div className="flex items-center space-x-1.5 bg-blue-700 px-3 py-1.5 rounded-lg border-2 border-blue-800 shadow-md">
                         <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>

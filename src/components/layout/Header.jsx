@@ -34,24 +34,21 @@ export function Header({ onMenuToggle }) {
   return (
     <>
       <header className="h-16 bg-white border-b border-gray-200/80 flex items-center justify-between shadow-sm" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)' }}>
-        <div className="w-full max-w-[1400px] xl:max-w-[1680px] 2xl:max-w-[1920px] mx-auto pl-2 sm:pl-3 md:pl-4 lg:pl-5 xl:pl-6 2xl:pl-7 pr-4 sm:pr-6 md:pr-8 lg:pr-10 xl:pr-12 2xl:pr-14 flex items-center justify-between">
+        <div className="w-full max-w-[1400px] xl:max-w-[1680px] 2xl:max-w-[1920px] mx-auto pl-1 sm:pl-1.5 md:pl-2 lg:pl-2.5 xl:pl-3 2xl:pl-3.5 pr-2 sm:pr-3 md:pr-4 lg:pr-5 xl:pr-6 2xl:pr-7 flex items-center justify-between">
         {/* Left section */}
-        <div className="flex items-center space-x-4 sm:space-x-5 md:space-x-6 lg:space-x-7 xl:space-x-8">
+        <div className="flex items-center space-x-2 sm:space-x-2.5 md:space-x-3 lg:space-x-3.5 xl:space-x-4">
           <button
             onClick={onMenuToggle}
-            className="p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group"
+            className="p-2 rounded-lg hover:bg-slate-200 transition-all duration-200 group"
             aria-label="Toggle menu"
           >
             <svg className="w-5 h-5 text-gray-700 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="flex items-center space-x-2">
-            <div className="h-6 w-0.5 bg-blue-800/60 rounded-full"></div>
-            <h1 className="text-base font-bold text-gray-900 tracking-tight">
-              Sistema de Integración
-            </h1>
-          </div>
+          <h1 className="text-base font-bold text-gray-900 tracking-tight">
+            Sistema de Integración
+          </h1>
         </div>
 
         {/* Right section */}
@@ -62,7 +59,7 @@ export function Header({ onMenuToggle }) {
             className={`relative p-2 rounded-lg transition-all duration-200 group ${
               notificationsOpen 
                 ? "bg-gradient-to-br from-blue-50 to-slate-50 text-blue-600 shadow-md" 
-                : "hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+                : "hover:bg-slate-200 text-gray-700 hover:text-gray-900"
             }`}
             aria-label="Notificaciones"
           >
@@ -80,7 +77,7 @@ export function Header({ onMenuToggle }) {
           {canSeeConfig && (
             <button 
               onClick={() => router.push("/configuracion")}
-              className="p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group text-gray-600 hover:text-blue-800" 
+              className="p-2 rounded-lg hover:bg-slate-200 transition-all duration-200 group text-gray-700 hover:text-blue-800" 
               aria-label="Configuración"
             >
               <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>

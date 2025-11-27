@@ -88,14 +88,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-200 p-4">
       {/* Formulario de Login - Centrado */}
       <div className="w-full flex items-center justify-center">
         <div className="w-full max-w-md mx-auto">
           {/* Card del formulario */}
           <div className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)' }}>
             {/* Barra superior transparente azul */}
-            <div className="h-3 bg-blue-700/30 backdrop-blur-sm border-b border-blue-700/50"></div>
+            <div className="h-3 bg-blue-700 border-b-2 border-blue-800"></div>
             
             <div className="p-6">
               {/* Logo y branding */}
@@ -208,7 +208,7 @@ export default function LoginPage() {
                   <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-700/20 backdrop-blur-sm border-2 border-blue-600/40 hover:bg-blue-700/30 hover:border-blue-700/60 text-blue-800 font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
+                  className="w-full bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ripple-effect relative overflow-hidden"
                 >
                   {isLoading ? (
                     <>
