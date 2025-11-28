@@ -10,7 +10,7 @@ export default function RecursosHumanosPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("gestion-colaboradores");
 
   useEffect(() => {
@@ -18,6 +18,24 @@ export default function RecursosHumanosPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Leer el parámetro de consulta "section" de la URL
@@ -896,7 +914,7 @@ export default function RecursosHumanosPage() {
 
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-60" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />

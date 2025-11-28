@@ -9,7 +9,7 @@ import { Sidebar } from "../../../components/layout/Sidebar";
 export default function ListadoImportacionesPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinal, setFechaFinal] = useState("");
   const [numeroDespacho, setNumeroDespacho] = useState("");
@@ -21,6 +21,24 @@ export default function ListadoImportacionesPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (loading) {
     return (
@@ -185,7 +203,7 @@ export default function ListadoImportacionesPage() {
 
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-60" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />

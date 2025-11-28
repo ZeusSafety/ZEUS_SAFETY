@@ -10,9 +10,9 @@ export function ModuleCard({ module, onClick, index = 0 }) {
   };
 
   const getStatusBg = (status) => {
-    if (status === "Disponible") return "bg-green-50 border-green-200 text-green-700";
-    if (status === "Próximamente") return "bg-orange-50 border-orange-200 text-orange-700";
-    return "bg-slate-200 border-slate-300 text-gray-700";
+    if (status === "Disponible") return "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300/60 text-green-700";
+    if (status === "Próximamente") return "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300/60 text-orange-700";
+    return "bg-gradient-to-r from-slate-100 to-gray-100 border-slate-300/60 text-gray-700";
   };
 
   const getIcon = (iconName) => {
@@ -94,9 +94,16 @@ export function ModuleCard({ module, onClick, index = 0 }) {
           <div className="w-12 h-12 bg-blue-700 border-2 border-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
-          <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBg(module.status)}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor(module.status)}`}></div>
-            <span>{module.status}</span>
+          <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm group-hover:shadow-md transition-all duration-300 ${getStatusBg(module.status)} relative overflow-hidden`}>
+            {/* Efecto de pulso sutil para "Disponible" */}
+            {module.status === "Disponible" && (
+              <>
+                <div className="absolute inset-0 bg-green-400/20 rounded-full animate-pulse-slow"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              </>
+            )}
+            <div className={`w-2 h-2 rounded-full ${getStatusColor(module.status)} shadow-sm relative z-10 ${module.status === "Disponible" ? "animate-pulse-slow" : ""}`}></div>
+            <span className="relative z-10">{module.status}</span>
           </div>
         </div>
         <h3 className="text-base font-semibold text-gray-900 mb-1.5 group-hover:text-blue-800 transition-colors">

@@ -30,9 +30,9 @@ function CustomDropdown({ value, onChange, options }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-xs px-3 py-1.5 pr-2 rounded-lg border-2 border-gray-200/60 bg-white/80 backdrop-blur-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-700/30 focus:border-blue-700 transition-all duration-200 hover:border-gray-300/60 cursor-pointer shadow-sm hover:shadow-md whitespace-nowrap"
+        className="flex items-center justify-between w-full text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 pr-1.5 sm:pr-2 rounded-lg border-2 border-gray-200/60 bg-white sm:bg-white/80 backdrop-blur-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-700/30 focus:border-blue-700 transition-all duration-200 hover:border-gray-300/60 cursor-pointer shadow-sm hover:shadow-md whitespace-nowrap"
       >
-        <span className="flex-1 text-left">{selectedOption.label}</span>
+        <span className="flex-1 text-left truncate">{selectedOption.label}</span>
         <svg
           className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-1.5 ${
             isOpen ? "rotate-180" : ""
@@ -46,7 +46,7 @@ function CustomDropdown({ value, onChange, options }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white/90 backdrop-blur-md rounded-xl border-2 border-gray-200/60 shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white sm:bg-white/90 backdrop-blur-md rounded-xl border-2 border-gray-200/60 shadow-xl z-50 overflow-hidden">
           {options.map((option) => (
             <button
               key={option.value}
@@ -55,7 +55,7 @@ function CustomDropdown({ value, onChange, options }) {
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-4 py-3 text-sm font-medium transition-all duration-200 ${
+              className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 value === option.value
                   ? "bg-blue-100/60 text-blue-900 border-l-4 border-blue-700"
                   : "text-gray-700 hover:bg-slate-200"
@@ -334,22 +334,22 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
       {/* Panel principal */}
       <div
         ref={panelRef}
-        className="fixed top-20 right-[200px] w-[400px] max-h-[450px] bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl z-50 border border-gray-200/60 overflow-hidden flex flex-col"
+        className="fixed top-16 sm:top-20 right-6 sm:right-[200px] w-[calc(100vw-3rem)] sm:w-[400px] max-w-[320px] sm:max-w-none max-h-[calc(100vh-5rem)] sm:max-h-[450px] bg-white sm:bg-white/90 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl z-50 border border-gray-200/60 overflow-hidden flex flex-col"
         style={{
           boxShadow: "0 20px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
         }}
       >
         {/* Header */}
-        <div className="relative bg-blue-700 border-b-2 border-blue-800 px-4 py-5 flex items-center justify-between overflow-hidden">
+        <div className="relative bg-blue-700 border-b-2 border-blue-800 px-3 sm:px-4 py-3 sm:py-5 flex items-center justify-between overflow-hidden">
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-300 rounded-full blur-2xl"></div>
           </div>
           
-          <div className="relative flex items-center space-x-3 flex-1">
-            <div className="p-2 bg-blue-700 border-2 border-blue-800 rounded-lg shadow-sm">
+          <div className="relative flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-blue-700 border-2 border-blue-800 rounded-lg shadow-sm flex-shrink-0">
               <svg
-                className="w-4 h-4 text-white"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -363,12 +363,12 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
               </svg>
             </div>
             
-            <div className="flex-1">
-              <h2 className="text-white font-bold text-base tracking-tight mb-0.5">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-bold text-sm sm:text-base tracking-tight mb-0.5 truncate">
                 Notificaciones
               </h2>
               {unreadCount > 0 && (
-                <p className="text-white text-[11px] font-medium">
+                <p className="text-white text-[10px] sm:text-[11px] font-medium">
                   {unreadCount} sin leer
                 </p>
               )}
@@ -378,11 +378,11 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="relative p-2 bg-blue-700 border-2 border-blue-800 rounded-lg hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm"
+            className="relative p-1.5 sm:p-2 bg-blue-700 border-2 border-blue-800 rounded-lg hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm flex-shrink-0"
             aria-label="Actualizar"
           >
             <svg
-              className={`w-4 h-4 text-white transition-transform duration-500 ${
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white transition-transform duration-500 ${
                 isRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
@@ -400,15 +400,15 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         </div>
 
         {/* Filtros y controles mejorados */}
-        <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 via-blue-50/30 to-gray-50 border-b border-gray-200/60 flex items-center justify-between gap-2 flex-nowrap">
-          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0">
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="px-2 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-gray-50 via-blue-50/30 to-gray-50 border-b border-gray-200/60 flex items-center justify-between gap-1.5 sm:gap-2 flex-nowrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap flex-shrink-0 min-w-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
-              <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">AGRUPAR:</span>
+              <span className="text-[9px] sm:text-[10px] font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap hidden xs:inline">AGRUPAR:</span>
             </div>
-            <div className="flex-shrink-0 min-w-[140px]">
+            <div className="flex-shrink-0 min-w-[90px] sm:min-w-[140px]">
               <CustomDropdown
                 value={groupBy}
                 onChange={setGroupBy}
@@ -470,13 +470,13 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                 <div key={groupName}>
                   {/* Encabezado de grupo */}
                   {groupBy !== "none" && (
-                    <div className="px-4 py-1 bg-slate-200 border-b border-gray-100/60 sticky top-0 z-10">
+                    <div className="px-3 sm:px-4 py-1 bg-slate-200 border-b border-gray-100/60 sticky top-0 z-10">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">
+                        <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                          <h3 className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase tracking-wide truncate">
                             {groupName}
                           </h3>
-                          <span className="text-[10px] text-gray-500">
+                          <span className="text-[9px] sm:text-[10px] text-gray-500 flex-shrink-0">
                             ({groupNotifications.length})
                           </span>
                         </div>
@@ -541,13 +541,13 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                           }`}
                         >
 
-                          <div className="px-4 py-3">
-                            <div className="flex items-start justify-between gap-3">
+                          <div className="px-3 sm:px-4 py-2.5 sm:py-3">
+                            <div className="flex items-start justify-between gap-2 sm:gap-3">
                               <div className="flex-1 min-w-0">
                                 {/* Tags de categoría y prioridad */}
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
                                   <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm ${
+                                    className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold text-white shadow-sm ${
                                       categoryColors[notification.category] ||
                                       "bg-gray-600 border-2 border-gray-700"
                                     }`}
@@ -555,25 +555,25 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                                     {notification.category}
                                   </span>
                                   <span
-                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border flex items-center gap-1 ${priority.badge}`}
+                                    className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-semibold border flex items-center gap-0.5 sm:gap-1 ${priority.badge}`}
                                   >
                                     {priority.icon}
                                     {priority.text}
                                   </span>
                                   {notification.unread && (
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
+                                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
                                   )}
                                 </div>
 
-                                <h3 className="font-bold text-gray-900 text-sm mb-1.5 leading-snug line-clamp-1">
+                                <h3 className="font-bold text-gray-900 text-xs sm:text-sm mb-1 sm:mb-1.5 leading-snug line-clamp-1">
                                   {notification.title}
                                 </h3>
 
-                                <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">
+                                <p className="text-gray-600 text-[10px] sm:text-xs mb-1.5 sm:mb-2 leading-relaxed line-clamp-2">
                                   {notification.description}
                                 </p>
 
-                                <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] text-gray-500 flex-wrap">
                                   <span className="font-semibold text-gray-700">{notification.user}</span>
                                   <span className="text-gray-300">•</span>
                                   <span className="font-mono">ID: {notification.notificationId}</span>
@@ -582,14 +582,14 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                                 </div>
                               </div>
 
-                              <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pt-0.5">
+                              <div className="flex flex-col gap-1 sm:gap-1.5 opacity-0 group-hover:opacity-100 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-300 pt-0.5 flex-shrink-0">
                                 <button
                                   onClick={() => handleOpenDetails(notification.id)}
-                                  className="p-2 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-900 transition-all duration-200 active:scale-95 shadow-sm border border-blue-200/60"
+                                  className="p-1.5 sm:p-2 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-900 transition-all duration-200 active:scale-95 shadow-sm border border-blue-200/60"
                                   aria-label="Ver detalles"
                                 >
                                   <svg
-                                    className="w-3.5 h-3.5"
+                                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -605,11 +605,11 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                                 {notification.unread && (
                                   <button
                                     onClick={() => handleMarkAsRead(notification.id)}
-                                    className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-gray-700 transition-all duration-200 active:scale-95 shadow-sm border border-gray-200/60"
+                                    className="p-1.5 sm:p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-gray-700 transition-all duration-200 active:scale-95 shadow-sm border border-gray-200/60"
                                     aria-label="Marcar como leído"
                                   >
                                     <svg
-                                      className="w-3.5 h-3.5"
+                                      className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -638,8 +638,8 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
 
         {/* Footer */}
         {filteredNotifications.length > 0 && (
-          <div className="px-4 py-3 bg-slate-200 border-t border-gray-100/60">
-            <button className="w-full text-center text-xs font-semibold text-blue-800 hover:text-blue-900 transition-colors duration-200 py-1.5 rounded-lg hover:bg-blue-100/40">
+          <div className="px-3 sm:px-4 py-2 sm:py-3 bg-slate-200 border-t border-gray-100/60">
+            <button className="w-full text-center text-[10px] sm:text-xs font-semibold text-blue-800 hover:text-blue-900 transition-colors duration-200 py-1.5 rounded-lg hover:bg-blue-100/40">
               Ver todas las notificaciones
             </button>
           </div>

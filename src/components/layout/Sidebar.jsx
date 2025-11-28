@@ -648,13 +648,13 @@ export function Sidebar({ isOpen, onClose }) {
         </button>
 
         {/* Navigation */}
-        <nav className={`flex-1 flex flex-col ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-hidden' : 'overflow-hidden'}`}>
+        <nav className={`flex-1 flex flex-col overflow-hidden`}>
           <div className="px-4 pt-1 pb-1 flex-shrink-0 bg-white">
             <h3 className="text-xs font-black text-gray-700 uppercase tracking-widest">
               MÓDULOS
             </h3>
           </div>
-          <div className={`flex-1 ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} py-2`}>
+          <div className={`flex-1 ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-y-auto custom-scrollbar' : 'overflow-y-auto custom-scrollbar lg:overflow-hidden'} py-2`}>
           <ul className="space-y-1 px-2">
             {modules.map((module) => (
               <li key={module.id}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
@@ -9,7 +9,25 @@ import { useAuth } from "../../components/context/AuthContext";
 export default function ConfiguracionPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const sections = [
     {
@@ -105,7 +123,7 @@ export default function ConfiguracionPage() {
       
       <div 
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-60" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -141,44 +159,29 @@ export default function ConfiguracionPage() {
                 </div>
               </div>
 
-              {/* Secciones */}
+              {/* Secciones - Solo títulos como acordeones (aún no funcionales) */}
               <div className="space-y-3">
                 {sections.map((section) => (
                   <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                    {/* Header de Sección */}
+                    {/* Header de Sección - Estilo acordeón */}
                     <div className="px-4 py-3 bg-white border-b-2 border-gray-300">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                          {section.icon}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                            {section.icon}
+                          </div>
+                          <h2 className="text-base font-bold text-gray-800">{section.title}</h2>
                         </div>
-                        <h2 className="text-base font-bold text-gray-800">{section.title}</h2>
-                      </div>
-                    </div>
-
-                    {/* Opciones de la sección */}
-                    <div className="p-4 bg-slate-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {section.options.map((option) => (
-                          <button
-                            key={option.id}
-                            onClick={() => router.push(option.route)}
-                            className="bg-white rounded-lg border border-gray-200/60 p-3 hover:border-blue-700/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm text-left group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-800 transition-colors">
-                                {option.title}
-                              </h3>
-                              <svg
-                                className="w-4 h-4 text-gray-400 group-hover:text-blue-800 transition-colors"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </button>
-                        ))}
+                        {/* Chevron indicador de acordeón (aún no funcional) */}
+                        <svg
+                          className="w-5 h-5 text-gray-400 transition-transform duration-200"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
                     </div>
                   </div>

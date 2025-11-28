@@ -35,7 +35,7 @@ export async function POST(request) {
     }
 
     // Llamar a la API externa
-    const apiUrl = new URL("https://colaboradores2026-2946605267.us-central1.run.app");
+    const apiUrl = new URL("https://api-login-accesos-2946605267.us-central1.run.app");
     apiUrl.searchParams.append("metodo", "login");
     apiUrl.searchParams.append("user", email);
     apiUrl.searchParams.append("password", password);

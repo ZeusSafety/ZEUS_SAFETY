@@ -9,7 +9,7 @@ import { Sidebar } from "../../../components/layout/Sidebar";
 export default function ImportacionesLogisticaPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinal, setFechaFinal] = useState("");
   const [numeroDespacho, setNumeroDespacho] = useState("");
@@ -24,6 +24,24 @@ export default function ImportacionesLogisticaPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Función para obtener datos de la API
   const fetchImportaciones = useCallback(async () => {
@@ -221,7 +239,7 @@ export default function ImportacionesLogisticaPage() {
 
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-60" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
