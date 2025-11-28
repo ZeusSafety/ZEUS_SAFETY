@@ -407,7 +407,7 @@ export default function ImportacionesLogisticaPage() {
                           <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
                             {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
                               <div 
-                                className="pdf-button-container"
+                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -449,7 +449,6 @@ export default function ImportacionesLogisticaPage() {
                                     window.open(url, "_blank", "noopener,noreferrer");
                                   }
                                 }}
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                 role="button"
                                 tabIndex={0}
                                 style={{ 
