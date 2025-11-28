@@ -9,7 +9,7 @@ import { Sidebar } from "../../../components/layout/Sidebar";
 export default function ColaboradoresPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageInactivos, setCurrentPageInactivos] = useState(1);
   const itemsPerPage = 5;
@@ -19,6 +19,24 @@ export default function ColaboradoresPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Datos de ejemplo
   const colaboradores = [
@@ -70,7 +88,7 @@ export default function ColaboradoresPage() {
 
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-72" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -80,7 +98,7 @@ export default function ColaboradoresPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/gerencia")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 text-blue-800 rounded-xl font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
+              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700 border-2 border-blue-800 text-white rounded-xl font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -94,7 +112,7 @@ export default function ColaboradoresPage() {
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-700/30 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                    <div className="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
@@ -113,7 +131,7 @@ export default function ColaboradoresPage() {
                 </div>
 
                 {/* Botón Agregar */}
-                <button className="mb-6 flex items-center space-x-2 px-5 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+                <button className="mb-6 flex items-center space-x-2 px-5 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
@@ -125,7 +143,7 @@ export default function ColaboradoresPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
+                        <tr className="bg-blue-700 border-b-2 border-blue-800">
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Nombre</th>
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Apellido</th>
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Área</th>
@@ -136,7 +154,7 @@ export default function ColaboradoresPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {paginatedActivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={colaborador.id} className="hover:bg-slate-100 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{colaborador.nombre}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.apellido}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.area}</td>
@@ -144,13 +162,13 @@ export default function ColaboradoresPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.fechaCumpleanos}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
                                   <span>Permisos</span>
                                 </button>
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-500/20 backdrop-blur-sm border border-orange-500/40 hover:bg-orange-500/30 hover:border-orange-600/60 text-orange-700 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                   </svg>
@@ -165,11 +183,11 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                  <div className="bg-slate-200 px-6 py-4 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       &lt; Anterior
                     </button>
@@ -179,7 +197,7 @@ export default function ColaboradoresPage() {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                     >
                       Siguiente &gt;
                     </button>
@@ -194,7 +212,7 @@ export default function ColaboradoresPage() {
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-700/30 backdrop-blur-sm rounded-xl flex items-center justify-center text-blue-800 border-2 border-blue-700/50 shadow-sm">
+                    <div className="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
@@ -217,7 +235,7 @@ export default function ColaboradoresPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
+                        <tr className="bg-blue-700 border-b-2 border-blue-800">
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Nombre</th>
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Apellido</th>
                           <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Área</th>
@@ -228,7 +246,7 @@ export default function ColaboradoresPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {paginatedInactivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={colaborador.id} className="hover:bg-slate-100 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{colaborador.nombre}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.apellido}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.area}</td>
@@ -236,13 +254,13 @@ export default function ColaboradoresPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.fechaCumpleanos}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
                                   <span>Permisos</span>
                                 </button>
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-600/20 backdrop-blur-sm border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                   </svg>
@@ -257,11 +275,11 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                  <div className="bg-slate-200 px-6 py-4 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
                       disabled={currentPageInactivos === 1}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       &lt; Anterior
                     </button>
@@ -271,7 +289,7 @@ export default function ColaboradoresPage() {
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
                       disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                     >
                       Siguiente &gt;
                     </button>

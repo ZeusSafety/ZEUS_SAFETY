@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
@@ -9,7 +9,25 @@ import { useAuth } from "../../components/context/AuthContext";
 export default function PerfilPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getIcon = (iconName) => {
     const icons = {
@@ -131,65 +149,65 @@ export default function PerfilPage() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div 
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-72" : "ml-0"
+          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
         }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
-          <div className="max-w-[95%] mx-auto px-6 py-6">
-            {/* Botón Volver - OUTSIDE the white card */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
+          <div className="max-w-[95%] mx-auto px-4 py-4">
+            {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-500/40 text-blue-800 rounded-xl font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver al Menú</span>
             </button>
 
-            {/* Card contenedor blanco - ENCLOSING the rest of the content */}
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
+            {/* Card contenedor blanco */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
-              <div className="mb-8">
-                <div className="flex items-center space-x-4 mb-3">
-                  <div className="w-16 h-16 bg-blue-700/20 backdrop-blur-md border-2 border-blue-400/40 rounded-2xl flex items-center justify-center text-blue-800 shadow-sm">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-12 h-12 bg-blue-700 border-2 border-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-                    <p className="text-gray-600 mt-1">Gestiona tu cuenta y configuración</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mi Perfil</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5">Gestiona tu cuenta y configuración</p>
                   </div>
                 </div>
               </div>
 
               {/* Opciones del menú */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {menuOptions.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => router.push(option.route)}
-                    className="bg-white rounded-2xl border border-gray-200/60 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:border-blue-500/60 hover:bg-white/95 shadow-sm text-left group"
+                    className="bg-white rounded-lg p-4 border border-gray-200/60 hover:border-blue-700/60 hover:shadow-xl hover:bg-white/95 transition-all duration-200 shadow-sm text-left group"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-700/15 backdrop-blur-sm border-2 border-blue-600/30 rounded-xl flex items-center justify-center text-blue-800 shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-700/25 group-hover:border-blue-700/50 transition-all duration-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
                         {getIcon(option.iconName)}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-800 transition-colors">
+                        <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-800 transition-colors">
                           {option.title}
                         </h3>
                       </div>
                       <svg
-                        className="w-5 h-5 text-gray-400 group-hover:text-blue-800 transition-colors"
+                        className="w-4 h-4 text-gray-400 group-hover:text-blue-800 transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
