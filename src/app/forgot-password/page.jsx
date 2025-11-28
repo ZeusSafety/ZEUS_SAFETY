@@ -59,93 +59,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Sección izquierda - Características */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Imagen de fondo */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/fondo_zeus_izquierdo.png"
-            alt="Fondo Zeus"
-            fill
-            className="object-cover"
-            priority
-            quality={90}
-          />
-        </div>
-        
-        {/* Overlay azul oscuro transparente */}
-        <div className="absolute inset-0 bg-blue-900/50"></div>
-        
-        {/* Lista de características */}
-        <div className="relative z-10 flex flex-col justify-center pl-36 pr-12 py-16">
-          <div className="space-y-6">
-            {/* Gestión integral de importaciones */}
-            <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-700 border-2 border-blue-800 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <p className="text-white font-normal text-base leading-relaxed drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}>
-                Gestión integral de importaciones
-              </p>
-            </div>
-
-            {/* Seguimiento en tiempo real */}
-            <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-700 border-2 border-blue-800 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <p className="text-white font-normal text-base leading-relaxed drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}>
-                Seguimiento en tiempo real
-              </p>
-            </div>
-
-            {/* Control de accesos y permisos */}
-            <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-700 border-2 border-blue-800 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <p className="text-white font-normal text-base leading-relaxed drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}>
-                Control de accesos y permisos
-              </p>
-            </div>
-
-            {/* Reportes y documentación */}
-            <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-700 border-2 border-blue-800 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="text-white font-normal text-base leading-relaxed drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}>
-                Reportes y documentación
-              </p>
-            </div>
-
-            {/* Logística y distribución */}
-            <div className="flex items-center space-x-4 group">
-              <div className="flex-shrink-0 w-16 h-16 bg-blue-700 border-2 border-blue-800 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 group-hover:bg-blue-800 group-hover:border-blue-900 transition-all duration-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                </svg>
-              </div>
-              <p className="text-white font-normal text-base leading-relaxed drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}>
-                Logística y distribución
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sección derecha - Formulario */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8 bg-white overflow-hidden">
-        <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-slate-200 p-4">
+      {/* Formulario de Recuperar Contraseña - Centrado */}
+      <div className="w-full flex items-center justify-center">
+        <div className="w-full max-w-md mx-auto">
           {/* Card del formulario */}
           <div className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)' }}>
             {/* Barra superior transparente azul */}
