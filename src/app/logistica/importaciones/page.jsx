@@ -189,7 +189,7 @@ export default function ImportacionesLogisticaPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -234,7 +234,7 @@ export default function ImportacionesLogisticaPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -244,7 +244,7 @@ export default function ImportacionesLogisticaPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
@@ -313,7 +313,7 @@ export default function ImportacionesLogisticaPage() {
                     className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end gap-2">
                   <button
                     onClick={handleFiltrar}
                     className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
@@ -323,8 +323,6 @@ export default function ImportacionesLogisticaPage() {
                     </svg>
                     <span>Filtrar</span>
                   </button>
-                </div>
-                <div className="flex items-end">
                   <button
                     onClick={handleProcedimiento}
                     className="px-4 py-2.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"

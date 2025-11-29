@@ -33,10 +33,10 @@ export function Header({ onMenuToggle }) {
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-gray-200/80 flex items-center justify-between shadow-sm" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)' }}>
+      <header className="h-14 bg-white border-b border-gray-200/80 flex items-center justify-between" style={{ boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04)' }}>
         <div className="w-full max-w-[1400px] xl:max-w-[1680px] 2xl:max-w-[1920px] mx-auto pl-1 sm:pl-1.5 md:pl-2 lg:pl-2.5 xl:pl-3 2xl:pl-3.5 pr-2 sm:pr-3 md:pr-4 lg:pr-5 xl:pr-6 2xl:pr-7 flex items-center justify-between">
         {/* Left section */}
-        <div className="flex items-center space-x-2 sm:space-x-2.5 md:space-x-3 lg:space-x-3.5 xl:space-x-4">
+        <div className="flex items-center space-x-0.5 sm:space-x-1">
           <button
             onClick={onMenuToggle}
             className="p-2 rounded-lg hover:bg-slate-200 transition-all duration-200 group"
@@ -52,18 +52,18 @@ export function Header({ onMenuToggle }) {
         </div>
 
         {/* Right section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           {/* Notifications */}
           <button 
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             className={`relative p-2 rounded-lg transition-all duration-200 group ${
               notificationsOpen 
-                ? "bg-gradient-to-br from-blue-50 to-slate-50 text-blue-600 shadow-md" 
-                : "hover:bg-slate-200 text-gray-700 hover:text-gray-900"
+                ? "bg-[#E9F1FF] text-[#155EEF] shadow-md" 
+                : "hover:bg-slate-200"
             }`}
             aria-label="Notificaciones"
           >
-            <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: notificationsOpen ? '#155EEF' : '#555' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             {notificationCount > 0 && (
@@ -77,7 +77,7 @@ export function Header({ onMenuToggle }) {
           {canSeeConfig && (
             <button 
               onClick={() => router.push("/configuracion")}
-              className="p-2 rounded-lg hover:bg-slate-200 transition-all duration-200 group text-gray-700 hover:text-blue-800" 
+              className="p-2 rounded-lg hover:bg-slate-200 transition-all duration-200 group text-gray-700 hover:text-[#0B327B]" 
               aria-label="Configuración"
             >
               <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -90,7 +90,7 @@ export function Header({ onMenuToggle }) {
           {/* Time */}
           <div className="px-3 py-1.5 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200/60 shadow-sm">
             <div className="flex items-center space-x-1.5">
-              <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: '#555' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-xs font-bold text-gray-800 tabular-nums">{currentTime}</span>

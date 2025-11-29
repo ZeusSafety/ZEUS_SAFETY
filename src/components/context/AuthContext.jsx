@@ -75,6 +75,8 @@ export function AuthProvider({ children }) {
         setUser(data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
+        // Marcar que se acaba de iniciar sesión para mostrar el banner de bienvenida
+        sessionStorage.setItem("showWelcomeBanner", "true");
         return { success: true };
       }
 

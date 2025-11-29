@@ -164,7 +164,7 @@ export default function LogisticaPage() {
     },
     {
       id: "inventario-conteos",
-      title: "Inventario/Conteos",
+      title: "Gestión de Inventario",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -178,7 +178,7 @@ export default function LogisticaPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           ),
-          title: "Gestión de Inventario",
+          title: "Inventario/Conteos",
           description: "Ver y Gestionar inventario",
           buttonText: "Entrar a inventario",
           buttonIcon: (
@@ -202,12 +202,12 @@ export default function LogisticaPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -221,7 +221,7 @@ export default function LogisticaPage() {
             {/* Header */}
             <div className="mb-6">
               <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-blue-700 border-2 border-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                   </svg>
@@ -240,7 +240,7 @@ export default function LogisticaPage() {
                   {/* Header de Sección */}
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-blue-700 border-2 border-blue-800 text-white hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                   >
                     <div className="flex items-center space-x-2">
                       <div className="text-white">{section.icon}</div>
@@ -264,11 +264,11 @@ export default function LogisticaPage() {
                           {section.cards.map((card) => (
                             <div
                               key={card.id}
-                              className="bg-white rounded-lg p-4 border-2 border-gray-300 hover:border-blue-700 hover:shadow-xl transition-all duration-200 shadow-sm"
-                              style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02)' }}
+                              className="bg-[#FFFFFF] rounded-[14px] p-4 border-2 border-gray-300 hover:border-blue-700 hover:shadow-xl transition-all duration-200 shadow-sm"
+                              style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div className="w-12 h-12 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                                   {card.icon}
                                 </div>
                               </div>
@@ -280,7 +280,7 @@ export default function LogisticaPage() {
                                     router.push("/logistica/importaciones");
                                   }
                                 }}
-                                className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] text-sm"
+                                className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
                               >
                                 {card.buttonIcon}
                                 <span>{card.buttonText}</span>
