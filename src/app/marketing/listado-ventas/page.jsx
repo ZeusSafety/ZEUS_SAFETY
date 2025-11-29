@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function ListadoVentasMarketingPage() {
   const router = useRouter();
@@ -98,12 +99,18 @@ export default function ListadoVentasMarketingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const [isVerModalOpen, setIsVerModalOpen] = useState(false);
+  const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
+  const [selectedVenta, setSelectedVenta] = useState(null);
+
   const handleVer = (venta) => {
-    console.log("Ver venta:", venta);
+    setSelectedVenta(venta);
+    setIsVerModalOpen(true);
   };
 
   const handlePago = (venta) => {
-    console.log("Ver pago:", venta);
+    setSelectedVenta(venta);
+    setIsPagoModalOpen(true);
   };
 
   const handleExportarExcel = () => {
@@ -351,6 +358,113 @@ export default function ListadoVentasMarketingPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal Ver Venta */}
+      <Modal
+        isOpen={isVerModalOpen}
+        onClose={() => {
+          setIsVerModalOpen(false);
+          setSelectedVenta(null);
+        }}
+        title={`Detalles de Venta - ${selectedVenta?.cliente || ""}`}
+        size="lg"
+      >
+        {selectedVenta && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
+                <p className="text-sm text-gray-900">{selectedVenta.cliente}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha</label>
+                <p className="text-sm text-gray-900">{selectedVenta.fecha}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Total</label>
+                <p className="text-sm text-gray-900">{selectedVenta.total}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Comprobante</label>
+                <p className="text-sm text-gray-900">{selectedVenta.comprobante}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado</label>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 bg-green-600 border-green-700 text-white">
+                  {selectedVenta.estado}
+                </span>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Cancelado</label>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
+                  selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
+                } text-white`}>
+                  {selectedVenta.cancelado}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsVerModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Ver Pago */}
+      <Modal
+        isOpen={isPagoModalOpen}
+        onClose={() => {
+          setIsPagoModalOpen(false);
+          setSelectedVenta(null);
+        }}
+        title={`Información de Pago - ${selectedVenta?.cliente || ""}`}
+        size="md"
+      >
+        {selectedVenta && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
+                <p className="text-sm text-gray-900">{selectedVenta.cliente}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Total a Pagar</label>
+                <p className="text-lg font-bold text-gray-900">{selectedVenta.total}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado del Pago</label>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
+                  selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
+                } text-white`}>
+                  {selectedVenta.cancelado === "SI" ? "Pendiente" : "Pagado"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsPagoModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  alert("Funcionalidad de procesar pago pendiente de implementar");
+                  setIsPagoModalOpen(false);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Procesar Pago
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

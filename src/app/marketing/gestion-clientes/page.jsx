@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function GestionClientesMarketingPage() {
   const router = useRouter();
@@ -14,6 +15,16 @@ export default function GestionClientesMarketingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [apiConnected, setApiConnected] = useState(true);
+  const [isVerModalOpen, setIsVerModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [isEliminarModalOpen, setIsEliminarModalOpen] = useState(false);
+  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [editForm, setEditForm] = useState({
+    nombre: "",
+    tipo: "",
+    origen: "",
+  });
 
   // Datos ficticios de clientes
   const [clientes] = useState([
@@ -99,23 +110,32 @@ export default function GestionClientesMarketingPage() {
   };
 
   const handleVer = (id) => {
-    console.log("Ver cliente:", id);
-    // Aquí iría la lógica para ver detalles del cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsVerModalOpen(true);
   };
 
   const handleEditar = (id) => {
-    console.log("Editar cliente:", id);
-    // Aquí iría la lógica para editar el cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setEditForm({
+      nombre: cliente?.nombre || "",
+      tipo: cliente?.tipo || "",
+      origen: cliente?.origen || "",
+    });
+    setIsEditarModalOpen(true);
   };
 
   const handleEliminar = (id) => {
-    console.log("Eliminar cliente:", id);
-    // Aquí iría la lógica para eliminar el cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsEliminarModalOpen(true);
   };
 
   const handleHistorial = (id) => {
-    console.log("Ver historial del cliente:", id);
-    // Aquí iría la lógica para ver el historial
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsHistorialModalOpen(true);
   };
 
   if (loading) {
@@ -471,7 +491,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={handleFirstPage}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Primera página"
                     >
                       «
@@ -480,7 +500,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Página anterior"
                     >
                       &lt;
@@ -493,7 +513,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Página siguiente"
                     >
                       &gt;
@@ -502,7 +522,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={handleLastPage}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Última página"
                     >
                       »
@@ -514,6 +534,187 @@ export default function GestionClientesMarketingPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal Ver Cliente */}
+      <Modal
+        isOpen={isVerModalOpen}
+        onClose={() => {
+          setIsVerModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Detalles del Cliente - ${selectedCliente?.id || ""}`}
+        size="md"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">ID</label>
+                <p className="text-sm text-gray-900">{selectedCliente.id}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
+                <p className="text-sm text-gray-900">{selectedCliente.nombre}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
+                <p className="text-sm text-gray-900">{selectedCliente.tipo}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Origen</label>
+                <p className="text-sm text-gray-900">{selectedCliente.origen}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsVerModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Editar Cliente */}
+      <Modal
+        isOpen={isEditarModalOpen}
+        onClose={() => {
+          setIsEditarModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Editar Cliente - ${selectedCliente?.id || ""}`}
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nombre</label>
+            <input
+              type="text"
+              value={editForm.nombre}
+              onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo</label>
+            <select
+              value={editForm.tipo}
+              onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar tipo</option>
+              <option value="PERSONA">PERSONA</option>
+              <option value="EMPRESA">EMPRESA</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Origen</label>
+            <input
+              type="text"
+              value={editForm.origen}
+              onChange={(e) => setEditForm({ ...editForm, origen: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsEditarModalOpen(false);
+                setSelectedCliente(null);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                console.log("Guardar cambios:", editForm);
+                alert("Funcionalidad de guardado pendiente de implementar");
+                setIsEditarModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Eliminar Cliente */}
+      <Modal
+        isOpen={isEliminarModalOpen}
+        onClose={() => {
+          setIsEliminarModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title="Confirmar Eliminación"
+        size="sm"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              ¿Está seguro de que desea eliminar al cliente <strong>{selectedCliente.nombre}</strong> (ID: {selectedCliente.id})?
+            </p>
+            <p className="text-xs text-red-600">Esta acción no se puede deshacer.</p>
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsEliminarModalOpen(false);
+                  setSelectedCliente(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  console.log("Eliminar cliente:", selectedCliente.id);
+                  alert("Funcionalidad de eliminación pendiente de implementar");
+                  setIsEliminarModalOpen(false);
+                  setSelectedCliente(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Historial Cliente */}
+      <Modal
+        isOpen={isHistorialModalOpen}
+        onClose={() => {
+          setIsHistorialModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Historial - ${selectedCliente?.nombre || ""}`}
+        size="lg"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              <p>Historial de transacciones y actividades del cliente.</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-500 text-center py-4">
+                No hay historial disponible para este cliente.
+              </p>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsHistorialModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

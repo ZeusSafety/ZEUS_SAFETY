@@ -354,7 +354,13 @@ export default function GerenciaPage() {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   console.log("Button clicked, card.id:", card.id);
-                                  router.push("/gerencia/colaboradores");
+                                  if (card.id === "productos") {
+                                    router.push("/gerencia/productos");
+                                  } else if (card.id === "accesibilidad-credenciales") {
+                                    router.push("/gerencia/colaboradores");
+                                  } else {
+                                    router.push("/gerencia");
+                                  }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] cursor-pointer text-sm group"
                               >

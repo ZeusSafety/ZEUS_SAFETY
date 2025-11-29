@@ -47,8 +47,8 @@ export function Header({ onMenuToggle }) {
             </svg>
           </button>
           <h1 className="text-sm sm:text-sm md:text-base font-bold text-gray-900 tracking-tight whitespace-nowrap">
-            Sistema de Integración
-          </h1>
+              Sistema de Integración
+            </h1>
         </div>
 
         {/* Right section */}
@@ -95,8 +95,8 @@ export function Header({ onMenuToggle }) {
               </svg>
               <span className="text-xs font-bold text-gray-800 tabular-nums">{currentTime}</span>
             </div>
+            </div>
           </div>
-        </div>
         </div>
       </header>
 

@@ -614,6 +614,12 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
+    if (itemId === "productos") {
+      router.push("/gerencia/productos");
+      setSelectedItem(itemId);
+      return;
+    }
+    
     // Navegación para secciones de Recursos Humanos
     const recursosHumanosSections = [
       "gestion-colaboradores",

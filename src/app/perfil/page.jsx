@@ -89,26 +89,14 @@ export default function PerfilPage() {
     {
       id: "perfil",
       iconName: "perfil",
-      title: "Mi Perfil (editar datos personales)",
-      route: "/perfil",
+      title: "Perfil",
+      route: "/perfil/editar",
     },
     {
       id: "contraseña",
       iconName: "contraseña",
       title: "Cambiar contraseña",
       route: "/cambiar-contraseña",
-    },
-    {
-      id: "2fa",
-      iconName: "2fa",
-      title: "Configurar autenticación 2FA",
-      route: "/2fa",
-    },
-    {
-      id: "dispositivos",
-      iconName: "dispositivos",
-      title: "Ver dispositivos conectados",
-      route: "/dispositivos",
     },
     {
       id: "registro",
