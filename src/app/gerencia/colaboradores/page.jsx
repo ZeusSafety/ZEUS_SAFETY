@@ -93,7 +93,7 @@ export default function ColaboradoresPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-6 py-6">
             {/* Botón Volver */}
             <button

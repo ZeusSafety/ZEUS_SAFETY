@@ -187,7 +187,7 @@ export default function ListadoImportacionesVentasPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
+        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -218,7 +218,7 @@ export default function ListadoImportacionesVentasPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -228,12 +228,12 @@ export default function ListadoImportacionesVentasPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/ventas")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-[#155EEF] border-2 border-[#0B327B] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] hover:border-[#1D4ED8] transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -246,7 +246,7 @@ export default function ListadoImportacionesVentasPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-[#155EEF] rounded-lg flex items-center justify-center text-white border-2 border-blue-700/50 shadow-sm">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -300,7 +300,7 @@ export default function ListadoImportacionesVentasPage() {
                 <div className="flex items-end">
                   <button
                     onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -346,7 +346,7 @@ export default function ListadoImportacionesVentasPage() {
                               <span className="text-xs text-gray-500">{error}</span>
                               <button
                                 onClick={fetchImportaciones}
-                                className="mt-2 px-4 py-2 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-all duration-200"
+                                className="mt-2 px-4 py-2 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-xs font-semibold transition-all duration-200"
                               >
                                 Reintentar
                               </button>
@@ -463,7 +463,7 @@ export default function ListadoImportacionesVentasPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRecepcion || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold border ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                               importacion.incidencias 
                                 ? "bg-red-600 border-2 border-red-700 text-white" 
                                 : "bg-green-600 border-2 border-green-700 text-white"

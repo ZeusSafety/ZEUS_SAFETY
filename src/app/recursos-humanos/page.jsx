@@ -194,7 +194,7 @@ function RecursosHumanosContent() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -210,10 +210,7 @@ function RecursosHumanosContent() {
                 </div>
               </div>
 
-              <button className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+              <button className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
                 <span>+ Agregar Colaborador</span>
               </button>
 
@@ -277,7 +274,7 @@ function RecursosHumanosContent() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -357,7 +354,7 @@ function RecursosHumanosContent() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("clock")}
                   </div>
                   <div>
@@ -423,7 +420,7 @@ function RecursosHumanosContent() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("clock")}
                   </div>
                   <div>
@@ -431,11 +428,11 @@ function RecursosHumanosContent() {
                     <p className="text-xs text-gray-600 mt-0.5">Faltas, tardanzas y justificaciones</p>
                   </div>
                 </div>
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
+                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>+ Registrar Incidencia</span>
+                  <span>Registrar Incidencia</span>
                 </button>
               </div>
 
@@ -488,7 +485,7 @@ function RecursosHumanosContent() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("check")}
                   </div>
                   <div>
@@ -497,11 +494,11 @@ function RecursosHumanosContent() {
                 </div>
               </div>
               <div className="flex items-center space-x-1.5">
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
+                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>+ Nueva Solicitud</span>
+                  <span>Nueva Solicitud</span>
                 </button>
                 <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -583,11 +580,11 @@ function RecursosHumanosContent() {
                 </div>
               </div>
               <div className="flex items-center space-x-1.5">
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
+                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>+ Nueva Solicitud</span>
+                  <span>Nueva Solicitud</span>
                 </button>
                 <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -895,7 +892,7 @@ function RecursosHumanosContent() {
         return (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
             <div className="text-center py-8">
-              <div className="w-12 h-12 bg-blue-700/20 backdrop-blur-md border-2 border-blue-600/40 rounded-xl flex items-center justify-center text-blue-800 shadow-sm mx-auto mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 mx-auto mb-3">
                 {getIcon(sections.find(s => s.id === activeSection)?.icon || "users")}
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -919,12 +916,12 @@ function RecursosHumanosContent() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-100">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 text-blue-800 rounded-lg font-semibold hover:bg-blue-700/30 hover:border-blue-600/60 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -935,7 +932,7 @@ function RecursosHumanosContent() {
             {/* Header Principal */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-blue-700/20 backdrop-blur-md border-2 border-blue-600/40 rounded-xl flex items-center justify-center text-blue-800 shadow-sm">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
@@ -954,11 +951,11 @@ function RecursosHumanosContent() {
                     onClick={() => setActiveSection(section.id)}
                     className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg font-semibold transition-all duration-200 text-sm ${
                       activeSection === section.id
-                        ? "bg-blue-700/30 backdrop-blur-sm border-2 border-blue-600/60 text-blue-900 shadow-md"
+                        ? "bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white shadow-sm hover:shadow-md hover:scale-105"
                         : "bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200 hover:border-gray-400"
                     }`}
                   >
-                    <span className="text-blue-800">{getIcon(section.icon)}</span>
+                    <span className={activeSection === section.id ? "text-white" : "text-blue-800"}>{getIcon(section.icon)}</span>
                     <span>{section.name}</span>
                   </button>
                 ))}

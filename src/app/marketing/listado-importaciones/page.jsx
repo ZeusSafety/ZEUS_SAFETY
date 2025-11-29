@@ -187,7 +187,7 @@ export default function ListadoImportacionesMarketingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -218,7 +218,7 @@ export default function ListadoImportacionesMarketingPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -228,7 +228,7 @@ export default function ListadoImportacionesMarketingPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
@@ -300,7 +300,7 @@ export default function ListadoImportacionesMarketingPage() {
                 <div className="flex items-end">
                   <button
                     onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />

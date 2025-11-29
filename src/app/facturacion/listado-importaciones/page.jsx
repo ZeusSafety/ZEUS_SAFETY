@@ -224,7 +224,7 @@ export default function ListadoImportacionesFacturacionPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
+        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -250,7 +250,7 @@ export default function ListadoImportacionesFacturacionPage() {
   const currentFacturaciones = facturaciones.slice(startIndex, endIndex);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -260,12 +260,12 @@ export default function ListadoImportacionesFacturacionPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-slate-200">
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/facturacion")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-[#155EEF] border-2 border-[#0B327B] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] hover:border-[#1D4ED8] transition-all duration-200 shadow-lg hover:shadow-xl ripple-effect relative overflow-hidden text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -278,7 +278,7 @@ export default function ListadoImportacionesFacturacionPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-md">
+                  <div className="w-10 h-10 bg-[#155EEF] rounded-lg flex items-center justify-center text-white border-2 border-[#0B327B] shadow-md">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -329,21 +329,19 @@ export default function ListadoImportacionesFacturacionPage() {
                     className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end gap-2.5">
                   <button
                     onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-yellow-50/80 border border-yellow-200 hover:bg-yellow-100 hover:border-yellow-300 text-yellow-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     <span>Filtrar</span>
                   </button>
-                </div>
-                <div className="flex items-end">
                   <button
                     onClick={handleProcedimiento}
-                    className="px-4 py-2.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-green-50/80 border border-green-200 hover:bg-green-100 hover:border-green-300 text-green-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -358,7 +356,7 @@ export default function ListadoImportacionesFacturacionPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      <tr className="bg-[#155EEF] border-b-2 border-[#0B327B]">
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA REGISTRO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° DESPACHO</th>
@@ -390,7 +388,7 @@ export default function ListadoImportacionesFacturacionPage() {
                               <span className="text-xs text-gray-500">{error}</span>
                               <button
                                 onClick={fetchFacturaciones}
-                                className="mt-2 px-4 py-2 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-lg"
+                                className="mt-2 px-4 py-2 bg-[#155EEF] border-2 border-[#0B327B] hover:bg-[#1D4ED8] text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-lg"
                               >
                                 Reintentar
                               </button>
@@ -418,7 +416,7 @@ export default function ListadoImportacionesFacturacionPage() {
                           <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
                             {facturacion.archivoPdf && facturacion.archivoPdf.trim() !== "" ? (
                               <div 
-                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.95] cursor-pointer select-none"
+                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -501,10 +499,10 @@ export default function ListadoImportacionesFacturacionPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaIncidencias || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold border-2 ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                               facturacion.incidencias 
-                                ? "bg-red-600 border-red-700 text-white" 
-                                : "bg-green-600 border-green-700 text-white"
+                                ? "bg-red-100 border-red-300 text-red-800" 
+                                : "bg-green-100 border-green-300 text-green-800"
                             }`}>
                               {facturacion.incidencias ? "SI" : "NO"}
                             </span>
@@ -519,7 +517,7 @@ export default function ListadoImportacionesFacturacionPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistroCompleto || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center justify-center w-8 h-8 bg-gray-600 border-2 border-gray-700 hover:bg-gray-700 hover:border-gray-800 text-white rounded-full text-[10px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.95]">
+                            <button className="flex items-center justify-center w-8 h-8 bg-cyan-100 border border-cyan-300 hover:bg-cyan-200 hover:border-cyan-400 text-cyan-800 rounded-full text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -527,7 +525,7 @@ export default function ListadoImportacionesFacturacionPage() {
                             </button>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.95]">
+                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>

@@ -82,20 +82,20 @@ export default function LoginPage() {
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900 overflow-hidden">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#155EEF]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-50 p-2 sm:p-4">
+    <div className="min-h-screen flex items-center justify-center p-2 sm:p-4" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
       {/* Formulario de Login - Centrado */}
       <div className="w-full flex items-center justify-center animate-fadeIn">
         <div className="w-full max-w-md mx-auto">
           {/* Card del formulario */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl sm:rounded-3xl border border-gray-200/80 overflow-hidden shadow-2xl" style={{ boxShadow: '0 20px 60px -15px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5)' }}>
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/80 overflow-hidden" style={{ borderRadius: '14px', boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
             {/* Barra superior */}
-            <div className="h-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800"></div>
+            <div className="h-2 bg-gradient-to-r from-[#155EEF] to-[#3A8DFF]"></div>
             
             <div className="p-5 sm:p-6">
               {/* Logo y branding */}
@@ -116,7 +116,7 @@ export default function LoginPage() {
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                     Iniciar Sesión
                   </h2>
-                  <div className="w-12 sm:w-16 h-0.5 sm:h-1 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 mx-auto rounded-full"></div>
+                  <div className="w-12 sm:w-16 h-0.5 sm:h-1 bg-gradient-to-r from-[#155EEF] to-[#3A8DFF] mx-auto rounded-full"></div>
                   <p className="text-gray-600 text-xs sm:text-sm font-medium pt-0.5 sm:pt-1">
                     Accede al sistema con tus credenciales
                   </p>
@@ -208,7 +208,7 @@ export default function LoginPage() {
                   <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-3/4 sm:w-2/3 sm:max-w-xs bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 border-2 border-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 hover:border-blue-900 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] relative overflow-hidden text-xs sm:text-sm group"
+                  className="w-3/4 sm:w-2/3 sm:max-w-xs bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl flex items-center justify-center space-x-2 shadow-sm hover:shadow-md hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#155EEF] focus:ring-offset-2 transition-all duration-200 active:scale-[0.98] relative overflow-hidden text-xs sm:text-sm group"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer"></span>
                   <span className="relative z-10 flex items-center space-x-2">
@@ -238,7 +238,7 @@ export default function LoginPage() {
                 <div className="text-center">
                   <Link
                     href="/forgot-password"
-                    className="text-sm text-gray-600 hover:text-blue-700 transition-all duration-200 font-medium inline-flex items-center space-x-1.5 group"
+                    className="text-sm text-gray-600 hover:text-[#1D4ED8] transition-all duration-200 font-medium inline-flex items-center space-x-1.5 group"
                   >
                     <span className="group-hover:underline">¿Olvidaste tu contraseña?</span>
                     <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
