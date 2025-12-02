@@ -145,15 +145,86 @@ export default function ListadoImportacionesVentasPage() {
               }
             }
             
+            // Buscar campo "redactado por" en todas las variaciones posibles
+            // Primero, loguear todas las claves disponibles para debugging (solo en el primer item)
+            if (index === 0) {
+              console.log("=== DEBUG: Campos disponibles en item ===");
+              console.log("All keys:", Object.keys(item));
+              console.log("Full item:", JSON.stringify(item, null, 2));
+            }
+            
+            const redactadoPorField = item.redactado_por || item.redactadoPor || item.REDACTADO_POR || 
+              item.redactado || item.REDACTADO || 
+              item.usuario || item.USUARIO || item.usuario_creacion || item.usuarioCreacion || item.USUARIO_CREACION ||
+              item.creado_por || item.creadoPor || item.CREADO_POR || item.creado_por_usuario || item.creadoPorUsuario ||
+              item.autor || item.AUTOR || item.user || item.USER || item.user_name || item.userName || item.USER_NAME ||
+              item.responsable || item.RESPONSABLE || item.responsable_creacion || item.responsableCreacion ||
+              item.registrado_por || item.registradoPor || item.REGISTRADO_POR ||
+              item.elaborado_por || item.elaboradoPor || item.ELABORADO_POR ||
+              item.generado_por || item.generadoPor || item.GENERADO_POR ||
+              (() => {
+                const keys = Object.keys(item);
+                for (const key of keys) {
+                  const lowerKey = key.toLowerCase();
+                  // Buscar en campos que contengan palabras relacionadas
+                  if ((lowerKey.includes('redactado') || lowerKey.includes('usuario') || 
+                       lowerKey.includes('creado') || lowerKey.includes('autor') ||
+                       lowerKey.includes('user') || lowerKey.includes('responsable') ||
+                       lowerKey.includes('registrado') || lowerKey.includes('elaborado') ||
+                       lowerKey.includes('generado') || lowerKey.includes('por')) && 
+                      item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                    if (index === 0) {
+                      console.log(`Found redactadoPor in field: ${key} = ${item[key]}`);
+                    }
+                    return item[key];
+                  }
+                }
+                return "";
+              })() || "";
+
+            // Buscar campo "fecha llegada" en todas las variaciones posibles
+            const fechaLlegadaField = item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA ||
+              item.fecha_lleg || item.fechaLleg || item.FECHA_LLEG ||
+              item.llegada || item.LLEGADA || item.eta || item.ETA ||
+              item.fecha_eta || item.fechaEta || item.FECHA_ETA ||
+              (() => {
+                const keys = Object.keys(item);
+                for (const key of keys) {
+                  const lowerKey = key.toLowerCase();
+                  if ((lowerKey.includes('llegada') || lowerKey.includes('eta')) && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                    return item[key];
+                  }
+                }
+                return "";
+              })() || "";
+
+            // Buscar campo "estado" en todas las variaciones posibles
+            const estadoField = item.estado || item.ESTADO || 
+              item.status || item.STATUS || item.estado_despacho || item.estadoDespacho || item.ESTADO_DESPACHO ||
+              item.estado_importacion || item.estadoImportacion || item.ESTADO_IMPORTACION ||
+              (() => {
+                const keys = Object.keys(item);
+                for (const key of keys) {
+                  const lowerKey = key.toLowerCase();
+                  if ((lowerKey.includes('estado') || lowerKey.includes('status')) && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                    if (index === 0) {
+                      console.log(`Found estado in field: ${key} = ${item[key]}`);
+                    }
+                    return item[key];
+                  }
+                }
+                return "";
+              })() || "";
+
             return {
               id: item.id || item.ID || index + 1,
               fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
               numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
-              redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
+              redactadoPor: redactadoPorField,
               productos: item.productos || item.PRODUCTOS || "",
-              fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
+              fechaLlegada: fechaLlegadaField,
               fechaAlmacen: item.fecha_almacen || item.fechaAlmacen || item.FECHA_ALMACEN || "",
-              estado: item.estado || item.ESTADO || "",
+              estado: estadoField,
               fechaRecepcion: item.fecha_recepcion || item.fechaRecepcion || item.FECHA_RECEPCION || "",
               incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
               fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || item.incidencia_registro || item.incidenciaRegistro || item.INCIDENCIA_REGISTRO || "",
@@ -187,7 +258,7 @@ export default function ListadoImportacionesVentasPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -197,16 +268,55 @@ export default function ListadoImportacionesVentasPage() {
     return null;
   }
 
-  const handleFiltrar = () => {
-    // Recargar datos con filtros
-    fetchImportaciones();
-    setCurrentPage(1);
-  };
+  // Filtrado automático del lado del cliente
+  const [filteredImportaciones, setFilteredImportaciones] = useState([]);
 
-  const totalPages = Math.ceil(importaciones.length / itemsPerPage);
+  useEffect(() => {
+    let filtered = [...importaciones];
+
+    // Filtrar por número de despacho (búsqueda parcial, case insensitive)
+    if (numeroDespacho.trim() !== "") {
+      filtered = filtered.filter((item) => {
+        const despacho = item.numeroDespacho || item.numero_despacho || item.NUMERO_DESPACHO || "";
+        return despacho.toString().toUpperCase().includes(numeroDespacho.toUpperCase());
+      });
+    }
+
+    // Filtrar por rango de fechas
+    if (fechaInicio.trim() !== "") {
+      const partsInicio = fechaInicio.split("/");
+      if (partsInicio.length === 3) {
+        const fechaInicioDate = new Date(parseInt(partsInicio[2]), parseInt(partsInicio[1]) - 1, parseInt(partsInicio[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate >= fechaInicioDate;
+        });
+      }
+    }
+
+    if (fechaFinal.trim() !== "") {
+      const partsFinal = fechaFinal.split("/");
+      if (partsFinal.length === 3) {
+        const fechaFinalDate = new Date(parseInt(partsFinal[2]), parseInt(partsFinal[1]) - 1, parseInt(partsFinal[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate <= fechaFinalDate;
+        });
+      }
+    }
+
+    setFilteredImportaciones(filtered);
+    setCurrentPage(1); // Resetear a la primera página cuando se filtra
+  }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
+
+  const totalPages = Math.ceil(filteredImportaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentImportaciones = importaciones.slice(startIndex, endIndex);
+  const currentImportaciones = filteredImportaciones.slice(startIndex, endIndex);
 
   const getEstadoBadge = (estado) => {
     const estados = {
@@ -218,7 +328,7 @@ export default function ListadoImportacionesVentasPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -228,12 +338,12 @@ export default function ListadoImportacionesVentasPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/ventas")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-[#155EEF] border-2 border-[#0B327B] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] hover:border-[#1D4ED8] transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -246,7 +356,7 @@ export default function ListadoImportacionesVentasPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-[#155EEF] rounded-lg flex items-center justify-center text-white border-2 border-blue-700/50 shadow-sm">
+                  <div className="w-10 h-10 bg-[#1E63F7] rounded-lg flex items-center justify-center text-white border-2 border-blue-700/50 shadow-sm">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -296,17 +406,6 @@ export default function ListadoImportacionesVentasPage() {
                     onChange={(e) => setNumeroDespacho(e.target.value)}
                     className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
                   />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span>Filtrar</span>
-                  </button>
                 </div>
               </div>
 
@@ -369,8 +468,8 @@ export default function ListadoImportacionesVentasPage() {
                         }}>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.fechaRegistro}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
                             {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
                               <div 
@@ -387,15 +486,8 @@ export default function ListadoImportacionesVentasPage() {
                                     return;
                                   }
                                   
-                                  try {
-                                    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
-                                    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-                                      window.location.href = url;
-                                    }
-                                  } catch (err) {
-                                    console.error("Error opening PDF:", err);
-                                    window.location.href = url;
-                                  }
+                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                  window.open(url, "_blank", "noopener,noreferrer");
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault();
@@ -452,13 +544,15 @@ export default function ListadoImportacionesVentasPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaAlmacen || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            {importacion.estado && (
+                            {importacion.estado && importacion.estado.trim() !== "" ? (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoBadge(importacion.estado)}`}>
                                 {importacion.estado}
                               </span>
+                            ) : (
+                              <span className="text-[10px] text-gray-500">-</span>
                             )}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRecepcion || "-"}</td>
@@ -482,14 +576,14 @@ export default function ListadoImportacionesVentasPage() {
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     «
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &lt;
                   </button>
@@ -499,14 +593,14 @@ export default function ListadoImportacionesVentasPage() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &gt;
                   </button>
                   <button
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     »
                   </button>

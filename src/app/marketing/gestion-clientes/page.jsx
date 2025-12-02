@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function GestionClientesMarketingPage() {
   const router = useRouter();
@@ -14,6 +15,16 @@ export default function GestionClientesMarketingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [apiConnected, setApiConnected] = useState(true);
+  const [isVerModalOpen, setIsVerModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [isEliminarModalOpen, setIsEliminarModalOpen] = useState(false);
+  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [editForm, setEditForm] = useState({
+    nombre: "",
+    tipo: "",
+    origen: "",
+  });
 
   // Datos ficticios de clientes
   const [clientes] = useState([
@@ -99,23 +110,32 @@ export default function GestionClientesMarketingPage() {
   };
 
   const handleVer = (id) => {
-    console.log("Ver cliente:", id);
-    // Aquí iría la lógica para ver detalles del cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsVerModalOpen(true);
   };
 
   const handleEditar = (id) => {
-    console.log("Editar cliente:", id);
-    // Aquí iría la lógica para editar el cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setEditForm({
+      nombre: cliente?.nombre || "",
+      tipo: cliente?.tipo || "",
+      origen: cliente?.origen || "",
+    });
+    setIsEditarModalOpen(true);
   };
 
   const handleEliminar = (id) => {
-    console.log("Eliminar cliente:", id);
-    // Aquí iría la lógica para eliminar el cliente
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsEliminarModalOpen(true);
   };
 
   const handleHistorial = (id) => {
-    console.log("Ver historial del cliente:", id);
-    // Aquí iría la lógica para ver el historial
+    const cliente = clientes.find(c => c.id === id);
+    setSelectedCliente(cliente);
+    setIsHistorialModalOpen(true);
   };
 
   if (loading) {
@@ -131,7 +151,7 @@ export default function GestionClientesMarketingPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div 
@@ -141,12 +161,12 @@ export default function GestionClientesMarketingPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-6">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/marketing")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -160,7 +180,7 @@ export default function GestionClientesMarketingPage() {
               <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                       <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
@@ -317,7 +337,7 @@ export default function GestionClientesMarketingPage() {
                         <p className="text-xl sm:text-2xl font-bold text-blue-900 mb-1">S/ 100,986.90</p>
                         <p className="text-[10px] sm:text-xs text-gray-500">Año actual</p>
                       </div>
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                         <span className="text-xl sm:text-2xl font-bold">$</span>
                       </div>
                     </div>
@@ -333,12 +353,12 @@ export default function GestionClientesMarketingPage() {
                         {/* Progress bar */}
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-gradient-to-r from-[#155EEF] via-[#1D4ED8] to-green-500 h-2 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-green-500 h-2 rounded-full transition-all duration-300"
                             style={{ width: '83.3%' }}
                           ></div>
                         </div>
                       </div>
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                         <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
@@ -471,7 +491,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={handleFirstPage}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Primera página"
                     >
                       «
@@ -480,7 +500,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Página anterior"
                     >
                       &lt;
@@ -493,7 +513,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Página siguiente"
                     >
                       &gt;
@@ -502,7 +522,7 @@ export default function GestionClientesMarketingPage() {
                     <button
                       onClick={handleLastPage}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Última página"
                     >
                       »
@@ -514,6 +534,187 @@ export default function GestionClientesMarketingPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal Ver Cliente */}
+      <Modal
+        isOpen={isVerModalOpen}
+        onClose={() => {
+          setIsVerModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Detalles del Cliente - ${selectedCliente?.id || ""}`}
+        size="md"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">ID</label>
+                <p className="text-sm text-gray-900">{selectedCliente.id}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
+                <p className="text-sm text-gray-900">{selectedCliente.nombre}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
+                <p className="text-sm text-gray-900">{selectedCliente.tipo}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Origen</label>
+                <p className="text-sm text-gray-900">{selectedCliente.origen}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsVerModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Editar Cliente */}
+      <Modal
+        isOpen={isEditarModalOpen}
+        onClose={() => {
+          setIsEditarModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Editar Cliente - ${selectedCliente?.id || ""}`}
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nombre</label>
+            <input
+              type="text"
+              value={editForm.nombre}
+              onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo</label>
+            <select
+              value={editForm.tipo}
+              onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar tipo</option>
+              <option value="PERSONA">PERSONA</option>
+              <option value="EMPRESA">EMPRESA</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Origen</label>
+            <input
+              type="text"
+              value={editForm.origen}
+              onChange={(e) => setEditForm({ ...editForm, origen: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsEditarModalOpen(false);
+                setSelectedCliente(null);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                console.log("Guardar cambios:", editForm);
+                alert("Funcionalidad de guardado pendiente de implementar");
+                setIsEditarModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Eliminar Cliente */}
+      <Modal
+        isOpen={isEliminarModalOpen}
+        onClose={() => {
+          setIsEliminarModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title="Confirmar Eliminación"
+        size="sm"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              ¿Está seguro de que desea eliminar al cliente <strong>{selectedCliente.nombre}</strong> (ID: {selectedCliente.id})?
+            </p>
+            <p className="text-xs text-red-600">Esta acción no se puede deshacer.</p>
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsEliminarModalOpen(false);
+                  setSelectedCliente(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  console.log("Eliminar cliente:", selectedCliente.id);
+                  alert("Funcionalidad de eliminación pendiente de implementar");
+                  setIsEliminarModalOpen(false);
+                  setSelectedCliente(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Historial Cliente */}
+      <Modal
+        isOpen={isHistorialModalOpen}
+        onClose={() => {
+          setIsHistorialModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        title={`Historial - ${selectedCliente?.nombre || ""}`}
+        size="lg"
+      >
+        {selectedCliente && (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              <p>Historial de transacciones y actividades del cliente.</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-500 text-center py-4">
+                No hay historial disponible para este cliente.
+              </p>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsHistorialModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

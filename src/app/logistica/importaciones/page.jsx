@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function ImportacionesLogisticaPage() {
   const router = useRouter();
@@ -18,6 +19,14 @@ export default function ImportacionesLogisticaPage() {
   const [importaciones, setImportaciones] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedImportacion, setSelectedImportacion] = useState(null);
+  const [updateForm, setUpdateForm] = useState({
+    observaciones: "",
+    estado: "",
+    fechaAlmacen: "",
+    fechaRecepcion: "",
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -145,13 +154,66 @@ export default function ImportacionesLogisticaPage() {
               }
             }
             
+            // Buscar campo "redactado por" en todas las variaciones posibles
+            // Primero, loguear todas las claves disponibles para debugging (solo en el primer item)
+            if (index === 0) {
+              console.log("=== DEBUG: Campos disponibles en item ===");
+              console.log("All keys:", Object.keys(item));
+              console.log("Full item:", JSON.stringify(item, null, 2));
+            }
+            
+            const redactadoPorField = item.redactado_por || item.redactadoPor || item.REDACTADO_POR || 
+              item.redactado || item.REDACTADO || 
+              item.usuario || item.USUARIO || item.usuario_creacion || item.usuarioCreacion || item.USUARIO_CREACION ||
+              item.creado_por || item.creadoPor || item.CREADO_POR || item.creado_por_usuario || item.creadoPorUsuario ||
+              item.autor || item.AUTOR || item.user || item.USER || item.user_name || item.userName || item.USER_NAME ||
+              item.responsable || item.RESPONSABLE || item.responsable_creacion || item.responsableCreacion ||
+              item.registrado_por || item.registradoPor || item.REGISTRADO_POR ||
+              item.elaborado_por || item.elaboradoPor || item.ELABORADO_POR ||
+              item.generado_por || item.generadoPor || item.GENERADO_POR ||
+              (() => {
+                const keys = Object.keys(item);
+                for (const key of keys) {
+                  const lowerKey = key.toLowerCase();
+                  // Buscar en campos que contengan palabras relacionadas
+                  if ((lowerKey.includes('redactado') || lowerKey.includes('usuario') || 
+                       lowerKey.includes('creado') || lowerKey.includes('autor') ||
+                       lowerKey.includes('user') || lowerKey.includes('responsable') ||
+                       lowerKey.includes('registrado') || lowerKey.includes('elaborado') ||
+                       lowerKey.includes('generado') || lowerKey.includes('por')) && 
+                      item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                    if (index === 0) {
+                      console.log(`Found redactadoPor in field: ${key} = ${item[key]}`);
+                    }
+                    return item[key];
+                  }
+                }
+                return "";
+              })() || "";
+
+            // Buscar campo "fecha llegada" en todas las variaciones posibles
+            const fechaLlegadaField = item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA ||
+              item.fecha_lleg || item.fechaLleg || item.FECHA_LLEG ||
+              item.llegada || item.LLEGADA || item.eta || item.ETA ||
+              item.fecha_eta || item.fechaEta || item.FECHA_ETA ||
+              (() => {
+                const keys = Object.keys(item);
+                for (const key of keys) {
+                  const lowerKey = key.toLowerCase();
+                  if ((lowerKey.includes('llegada') || lowerKey.includes('eta')) && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                    return item[key];
+                  }
+                }
+                return "";
+              })() || "";
+
             return {
               id: item.id || item.ID || index + 1,
               fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
               numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
-              redactadoPor: item.redactado_por || item.redactadoPor || item.REDACTADO_POR || "",
+              redactadoPor: redactadoPorField,
               productos: item.productos || item.PRODUCTOS || "",
-              fechaLlegada: item.fecha_llegada || item.fechaLlegada || item.FECHA_LLEGADA || "",
+              fechaLlegada: fechaLlegadaField,
               tipoCarga: item.tipo_carga || item.tipoCarga || item.TIPO_CARGA || "",
               estado: item.estado || item.ESTADO || "",
               canal: item.canal || item.CANAL || "",
@@ -189,7 +251,7 @@ export default function ImportacionesLogisticaPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -199,20 +261,59 @@ export default function ImportacionesLogisticaPage() {
     return null;
   }
 
-  const handleFiltrar = () => {
-    // Recargar datos con filtros
-    fetchImportaciones();
-    setCurrentPage(1);
-  };
+  // Filtrado automático del lado del cliente
+  const [filteredImportaciones, setFilteredImportaciones] = useState([]);
+
+  useEffect(() => {
+    let filtered = [...importaciones];
+
+    // Filtrar por número de despacho (búsqueda parcial, case insensitive)
+    if (numeroDespacho.trim() !== "") {
+      filtered = filtered.filter((item) => {
+        const despacho = item.numeroDespacho || item.numero_despacho || item.NUMERO_DESPACHO || "";
+        return despacho.toString().toUpperCase().includes(numeroDespacho.toUpperCase());
+      });
+    }
+
+    // Filtrar por rango de fechas
+    if (fechaInicio.trim() !== "") {
+      const partsInicio = fechaInicio.split("/");
+      if (partsInicio.length === 3) {
+        const fechaInicioDate = new Date(parseInt(partsInicio[2]), parseInt(partsInicio[1]) - 1, parseInt(partsInicio[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate >= fechaInicioDate;
+        });
+      }
+    }
+
+    if (fechaFinal.trim() !== "") {
+      const partsFinal = fechaFinal.split("/");
+      if (partsFinal.length === 3) {
+        const fechaFinalDate = new Date(parseInt(partsFinal[2]), parseInt(partsFinal[1]) - 1, parseInt(partsFinal[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate <= fechaFinalDate;
+        });
+      }
+    }
+
+    setFilteredImportaciones(filtered);
+    setCurrentPage(1); // Resetear a la primera página cuando se filtra
+  }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
 
   const handleProcedimiento = () => {
     console.log("Procedimiento");
   };
 
-  const totalPages = Math.ceil(importaciones.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredImportaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentImportaciones = importaciones.slice(startIndex, endIndex);
+  const currentImportaciones = filteredImportaciones.slice(startIndex, endIndex);
 
   const getEstadoBadge = (estado) => {
     const estados = {
@@ -234,7 +335,7 @@ export default function ImportacionesLogisticaPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -244,12 +345,12 @@ export default function ImportacionesLogisticaPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/logistica")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-blue-700 border-2 border-blue-800 text-white rounded-lg font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -314,15 +415,6 @@ export default function ImportacionesLogisticaPage() {
                   />
                 </div>
                 <div className="flex items-end gap-2">
-                  <button
-                    onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span>Filtrar</span>
-                  </button>
                   <button
                     onClick={handleProcedimiento}
                     className="px-4 py-2.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
@@ -400,8 +492,8 @@ export default function ImportacionesLogisticaPage() {
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.id}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRegistro}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
                             {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
                               <div 
@@ -418,15 +510,8 @@ export default function ImportacionesLogisticaPage() {
                                     return;
                                   }
                                   
-                                  try {
-                                    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
-                                    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-                                      window.location.href = url;
-                                    }
-                                  } catch (err) {
-                                    console.error("Error opening PDF:", err);
-                                    window.location.href = url;
-                                  }
+                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                  window.open(url, "_blank", "noopener,noreferrer");
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault();
@@ -485,7 +570,7 @@ export default function ImportacionesLogisticaPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {importacion.estado && (
@@ -514,7 +599,19 @@ export default function ImportacionesLogisticaPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaIncidencias || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                            <button
+                              onClick={() => {
+                                setSelectedImportacion(importacion);
+                                setUpdateForm({
+                                  observaciones: importacion.observaciones || "",
+                                  estado: importacion.estado || "",
+                                  fechaAlmacen: importacion.fechaAlmacen || "",
+                                  fechaRecepcion: importacion.fechaRecepcion || "",
+                                });
+                                setIsUpdateModalOpen(true);
+                              }}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                            >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
@@ -532,14 +629,14 @@ export default function ImportacionesLogisticaPage() {
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     «
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &lt;
                   </button>
@@ -549,14 +646,14 @@ export default function ImportacionesLogisticaPage() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &gt;
                   </button>
                   <button
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     »
                   </button>
@@ -566,6 +663,106 @@ export default function ImportacionesLogisticaPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Actualizar */}
+      <Modal
+        isOpen={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false);
+          setSelectedImportacion(null);
+          setUpdateForm({
+            observaciones: "",
+            estado: "",
+            fechaAlmacen: "",
+            fechaRecepcion: "",
+          });
+        }}
+        title={`Actualizar Importación - ${selectedImportacion?.numeroDespacho || ""}`}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Estado
+            </label>
+            <select
+              value={updateForm.estado}
+              onChange={(e) => setUpdateForm({ ...updateForm, estado: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar estado</option>
+              <option value="TRANSITO">TRANSITO</option>
+              <option value="ETA">ETA</option>
+              <option value="RECIBIDO">RECIBIDO</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Fecha de Almacén
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaAlmacen}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Fecha de Recepción
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaRecepcion}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Observaciones
+            </label>
+            <textarea
+              value={updateForm.observaciones}
+              onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              placeholder="Ingrese observaciones..."
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsUpdateModalOpen(false);
+                setSelectedImportacion(null);
+                setUpdateForm({
+                  observaciones: "",
+                  estado: "",
+                  fechaAlmacen: "",
+                  fechaRecepcion: "",
+                });
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                console.log("Guardar cambios:", updateForm);
+                alert("Funcionalidad de guardado pendiente de implementar");
+                setIsUpdateModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

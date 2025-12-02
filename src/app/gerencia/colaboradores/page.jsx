@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function ColaboradoresPage() {
   const router = useRouter();
@@ -13,6 +14,17 @@ export default function ColaboradoresPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageInactivos, setCurrentPageInactivos] = useState(1);
   const itemsPerPage = 5;
+  const [isPermisosModalOpen, setIsPermisosModalOpen] = useState(false);
+  const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
+  const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
+  const [selectedColaborador, setSelectedColaborador] = useState(null);
+  const [newColaboradorForm, setNewColaboradorForm] = useState({
+    nombre: "",
+    apellido: "",
+    area: "",
+    correo: "",
+    fechaCumpleanos: "",
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -83,42 +95,43 @@ export default function ColaboradoresPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <>
+      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
-      >
-        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+        <div
+          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+            sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
+        >
+          <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
-          <div className="max-w-[95%] mx-auto px-6 py-6">
+          <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
+            <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/gerencia")}
-              className="mb-6 flex items-center space-x-2 px-4 py-2.5 bg-blue-700 border-2 border-blue-800 text-white rounded-xl font-semibold hover:bg-blue-800 hover:border-blue-900 transition-all duration-200 shadow-md hover:shadow-lg ripple-effect relative overflow-hidden"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver a Gerencia</span>
             </button>
 
             {/* Sección: Listado de Colaboradores */}
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8 mb-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Listado de Colaboradores</h2>
+                      <h2 className="text-xl font-bold text-gray-900">Listado de Colaboradores</h2>
                       <p className="text-sm text-gray-600 mt-1">Gestiona los colaboradores activos del sistema</p>
                     </div>
                   </div>
@@ -131,8 +144,20 @@ export default function ColaboradoresPage() {
                 </div>
 
                 {/* Botón Agregar */}
-                <button className="mb-6 flex items-center space-x-2 px-5 py-2.5 bg-blue-700/20 backdrop-blur-md border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <button
+                  onClick={() => {
+                    setNewColaboradorForm({
+                      nombre: "",
+                      apellido: "",
+                      area: "",
+                      correo: "",
+                      fechaCumpleanos: "",
+                    });
+                    setIsAgregarModalOpen(true);
+                  }}
+                  className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                   <span>Agregar Colaborador</span>
@@ -144,32 +169,44 @@ export default function ColaboradoresPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Nombre</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Apellido</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Área</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Correo</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Fecha Cumpleaños</th>
-                          <th className="px-6 py-4 text-center text-sm font-bold uppercase tracking-wider text-blue-800">Acción</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA CUMPLEAÑOS</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {paginatedActivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-slate-100 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{colaborador.nombre}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.apellido}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.area}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.correo}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.fechaCumpleanos}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <tr key={colaborador.id} className="hover:bg-slate-200 transition-colors">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.fechaCumpleanos}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <button
+                                  onClick={() => {
+                                    setSelectedColaborador(colaborador);
+                                    setIsPermisosModalOpen(true);
+                                  }}
+                                  className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
                                   <span>Permisos</span>
                                 </button>
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <button
+                                  onClick={() => {
+                                    setSelectedColaborador(colaborador);
+                                    setIsDesactivarModalOpen(true);
+                                  }}
+                                  className="flex items-center space-x-1 px-2.5 py-1 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                   </svg>
                                   <span>Desactivar</span>
@@ -183,23 +220,37 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      «
+                    </button>
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      &lt; Anterior
+                      &lt;
                     </button>
-                    <span className="text-sm text-gray-700 font-medium">
-                      Página {currentPage} de {totalPages} ({activos.length} registros)
+                    <span className="text-[10px] text-gray-700 font-medium">
+                      Página {currentPage} de {totalPages}
                     </span>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Siguiente &gt;
+                      &gt;
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      »
                     </button>
                   </div>
                 </div>
@@ -207,18 +258,18 @@ export default function ColaboradoresPage() {
             </div>
 
             {/* Sección: Colaboradores Inactivos */}
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-200/60 p-8">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Colaboradores Inactivos</h2>
+                      <h2 className="text-xl font-bold text-gray-900">Colaboradores Inactivos</h2>
                       <p className="text-sm text-gray-600 mt-1">Sin acceso al sistema</p>
                     </div>
                   </div>
@@ -236,32 +287,32 @@ export default function ColaboradoresPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Nombre</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Apellido</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Área</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Correo</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider text-blue-800">Fecha Cumpleaños</th>
-                          <th className="px-6 py-4 text-center text-sm font-bold uppercase tracking-wider text-blue-800">Acción</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA CUMPLEAÑOS</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {paginatedInactivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-slate-100 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{colaborador.nombre}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.apellido}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.area}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.correo}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{colaborador.fechaCumpleanos}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <tr key={colaborador.id} className="hover:bg-slate-200 transition-colors">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.fechaCumpleanos}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
                                   <span>Permisos</span>
                                 </button>
-                                <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                   </svg>
                                   <span>Activar</span>
@@ -275,32 +326,232 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                    <button
+                      onClick={() => setCurrentPageInactivos(1)}
+                      disabled={currentPageInactivos === 1}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      «
+                    </button>
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
                       disabled={currentPageInactivos === 1}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      &lt; Anterior
+                      &lt;
                     </button>
-                    <span className="text-sm text-gray-700 font-medium">
-                      Página {currentPageInactivos} de {totalPagesInactivos} ({inactivos.length} registros)
+                    <span className="text-[10px] text-gray-700 font-medium">
+                      Página {currentPageInactivos} de {totalPagesInactivos}
                     </span>
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
                       disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-4 py-2 text-sm font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-800 hover:border-blue-900 text-blue-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Siguiente &gt;
+                      &gt;
+                    </button>
+                    <button
+                      onClick={() => setCurrentPageInactivos(totalPagesInactivos)}
+                      disabled={currentPageInactivos === totalPagesInactivos}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      »
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+      <Modal
+        isOpen={isPermisosModalOpen}
+        onClose={() => {
+          setIsPermisosModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+        title="Gestionar Permisos"
+        size="lg"
+        primaryButtonText="Guardar"
+        onPrimaryButtonClick={() => {
+          // Aquí iría la lógica para guardar los permisos
+          setIsPermisosModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+        secondaryButtonText="Cancelar"
+        onSecondaryButtonClick={() => {
+          setIsPermisosModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+      >
+        {selectedColaborador && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Gestionando permisos para: <strong>{selectedColaborador.nombre} {selectedColaborador.apellido}</strong>
+              </p>
+              <p className="text-xs text-gray-500">
+                Aquí se mostrarían los permisos y opciones de configuración.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal
+        isOpen={isDesactivarModalOpen}
+        onClose={() => {
+          setIsDesactivarModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+        title="Desactivar Colaborador"
+        size="md"
+        primaryButtonText="Desactivar"
+        onPrimaryButtonClick={() => {
+          // Aquí iría la lógica para desactivar el colaborador
+          setIsDesactivarModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+        secondaryButtonText="Cancelar"
+        onSecondaryButtonClick={() => {
+          setIsDesactivarModalOpen(false);
+          setSelectedColaborador(null);
+        }}
+      >
+        {selectedColaborador && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              ¿Estás seguro de que deseas desactivar a <strong>{selectedColaborador.nombre} {selectedColaborador.apellido}</strong>?
+            </p>
+            <p className="text-xs text-gray-500">
+              El colaborador perderá acceso al sistema pero sus datos se mantendrán.
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Agregar Colaborador */}
+      <Modal
+        isOpen={isAgregarModalOpen}
+        onClose={() => {
+          setIsAgregarModalOpen(false);
+          setNewColaboradorForm({
+            nombre: "",
+            apellido: "",
+            area: "",
+            correo: "",
+            fechaCumpleanos: "",
+          });
+        }}
+        title="Agregar Nuevo Colaborador"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Nombre <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.nombre}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, nombre: e.target.value })}
+                placeholder="Nombre"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Apellido <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.apellido}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, apellido: e.target.value })}
+                placeholder="Apellido"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Área <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newColaboradorForm.area}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
+              placeholder="Ej: Administracion, Ventas, Logistica"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Correo <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={newColaboradorForm.correo}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, correo: e.target.value })}
+              placeholder="correo@ejemplo.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Fecha de Cumpleaños <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newColaboradorForm.fechaCumpleanos}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, fechaCumpleanos: e.target.value })}
+              placeholder="DD/MM/YYYY"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsAgregarModalOpen(false);
+                setNewColaboradorForm({
+                  nombre: "",
+                  apellido: "",
+                  area: "",
+                  correo: "",
+                  fechaCumpleanos: "",
+                });
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                // Validar campos requeridos
+                if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.area || !newColaboradorForm.correo || !newColaboradorForm.fechaCumpleanos) {
+                  alert("Por favor, complete todos los campos requeridos");
+                  return;
+                }
+                console.log("Agregar colaborador:", newColaboradorForm);
+                alert("Funcionalidad de agregado pendiente de implementar");
+                setIsAgregarModalOpen(false);
+                setNewColaboradorForm({
+                  nombre: "",
+                  apellido: "",
+                  area: "",
+                  correo: "",
+                  fechaCumpleanos: "",
+                });
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Agregar Colaborador
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 

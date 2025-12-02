@@ -4,13 +4,13 @@ import { motion } from "framer-motion";
 
 export function ModuleCard({ module, onClick, index = 0 }) {
   const getStatusColor = (status) => {
-    if (status === "Disponible") return "bg-[#155EEF]";
+    if (status === "Disponible") return "bg-[#1E63F7]";
     if (status === "Próximamente") return "bg-orange-500";
     return "bg-gray-500";
   };
 
   const getStatusBg = (status) => {
-    if (status === "Disponible") return "bg-[#D9E8FF] text-[#155EEF]";
+    if (status === "Disponible") return "bg-[#D9E8FF] text-[#1E63F7]";
     if (status === "Próximamente") return "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300/60 text-orange-700";
     return "bg-gradient-to-r from-slate-100 to-gray-100 border-slate-300/60 text-gray-700";
   };
@@ -75,6 +75,12 @@ export function ModuleCard({ module, onClick, index = 0 }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
+      location: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
     };
 
     return icons[iconName] || icons.shield;
@@ -87,12 +93,12 @@ export function ModuleCard({ module, onClick, index = 0 }) {
       transition={{ duration: 0.4, delay: index * 0.1 }}
       whileHover={{ scale: 1.02, y: -2 }}
       onClick={onClick}
-      className="group relative bg-[#FFFFFF] rounded-[14px] border border-gray-200/60 p-4 cursor-pointer overflow-hidden"
+      className="group relative bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] p-4 cursor-pointer overflow-hidden"
       style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
           <div className={`flex items-center space-x-1.5 rounded-full text-xs shadow-sm group-hover:shadow-md transition-all duration-300 ${getStatusBg(module.status)} relative overflow-hidden ${
@@ -101,7 +107,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
             {/* Efecto de pulso sutil para "Disponible" */}
             {module.status === "Disponible" && (
               <>
-                <div className="absolute inset-0 bg-[#155EEF]/20 rounded-full animate-pulse-slow"></div>
+                <div className="absolute inset-0 bg-[#1E63F7]/20 rounded-full animate-pulse-slow"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               </>
             )}

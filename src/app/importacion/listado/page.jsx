@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function ListadoImportacionesPage() {
   const router = useRouter();
@@ -15,45 +16,17 @@ export default function ListadoImportacionesPage() {
   const [numeroDespacho, setNumeroDespacho] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedImportacion, setSelectedImportacion] = useState(null);
+  const [updateForm, setUpdateForm] = useState({
+    observaciones: "",
+    estado: "",
+    fechaAlmacen: "",
+    fechaRecepcion: "",
+  });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  // Detectar si es desktop y abrir sidebar automáticamente
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    // Establecer estado inicial
-    handleResize();
-
-    // Escuchar cambios de tamaño
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (loading) {
-    return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  // Datos ficticios de importaciones
-  const importaciones = [
+  // Datos ficticios de importaciones (memoizados para evitar recreación en cada render)
+  const importaciones = useMemo(() => [
     {
       id: 1,
       fechaRegistro: "2025-11-19",
@@ -166,17 +139,80 @@ export default function ListadoImportacionesPage() {
       fechaRecepcion: "2025-08-12",
       incidencias: true,
     },
-  ];
+  ], []);
 
-  const handleFiltrar = () => {
-    // Lógica de filtrado aquí
-    console.log("Filtrar:", { fechaInicio, fechaFinal, numeroDespacho });
-  };
+  // Filtrado automático
+  const [filteredImportaciones, setFilteredImportaciones] = useState([]);
 
-  const totalPages = Math.ceil(importaciones.length / itemsPerPage);
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Establecer estado inicial
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Filtrado automático
+  useEffect(() => {
+    let filtered = [...importaciones];
+
+    // Filtrar por número de despacho (búsqueda parcial, case insensitive)
+    if (numeroDespacho.trim() !== "") {
+      filtered = filtered.filter((item) =>
+        (item.numeroDespacho || "").toUpperCase().includes(numeroDespacho.toUpperCase())
+      );
+    }
+
+    // Filtrar por rango de fechas
+    if (fechaInicio.trim() !== "") {
+      // Convertir fecha de formato dd/mm/aaaa a Date para comparación
+      const partsInicio = fechaInicio.split("/");
+      if (partsInicio.length === 3) {
+        const fechaInicioDate = new Date(parseInt(partsInicio[2]), parseInt(partsInicio[1]) - 1, parseInt(partsInicio[0]));
+        filtered = filtered.filter((item) => {
+          if (!item.fechaRegistro) return false;
+          const itemDate = new Date(item.fechaRegistro);
+          return itemDate >= fechaInicioDate;
+        });
+      }
+    }
+
+    if (fechaFinal.trim() !== "") {
+      const partsFinal = fechaFinal.split("/");
+      if (partsFinal.length === 3) {
+        const fechaFinalDate = new Date(parseInt(partsFinal[2]), parseInt(partsFinal[1]) - 1, parseInt(partsFinal[0]));
+        filtered = filtered.filter((item) => {
+          if (!item.fechaRegistro) return false;
+          const itemDate = new Date(item.fechaRegistro);
+          return itemDate <= fechaFinalDate;
+        });
+      }
+    }
+
+    setFilteredImportaciones(filtered);
+    setCurrentPage(1); // Resetear a la primera página cuando se filtra
+  }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
+
+  const totalPages = Math.ceil(filteredImportaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentImportaciones = importaciones.slice(startIndex, endIndex);
+  const currentImportaciones = filteredImportaciones.slice(startIndex, endIndex);
 
   const getEstadoBadge = (estado) => {
     const estados = {
@@ -198,7 +234,7 @@ export default function ListadoImportacionesPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -208,12 +244,12 @@ export default function ListadoImportacionesPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/importacion")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -226,7 +262,7 @@ export default function ListadoImportacionesPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -277,17 +313,6 @@ export default function ListadoImportacionesPage() {
                     className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span>Filtrar</span>
-                  </button>
-                </div>
               </div>
 
               {/* Tabla */}
@@ -316,19 +341,38 @@ export default function ListadoImportacionesPage() {
                         <tr key={importacion.id} className="hover:bg-slate-200 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.fechaRegistro}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                              </svg>
-                              <span>PDF</span>
-                            </button>
+                            {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const url = importacion.archivoPdf;
+                                  
+                                  if (!url || url.trim() === "") {
+                                    alert("No hay enlace PDF disponible");
+                                    return;
+                                  }
+                                  
+                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                  window.open(url, "_blank", "noopener,noreferrer");
+                                }}
+                                className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                </svg>
+                                <span>PDF</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-gray-400">-</span>
+                            )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaAlmacen || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
@@ -356,7 +400,19 @@ export default function ListadoImportacionesPage() {
                             </span>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                            <button
+                              onClick={() => {
+                                setSelectedImportacion(importacion);
+                                setUpdateForm({
+                                  observaciones: importacion.observaciones || "",
+                                  estado: importacion.estado || "",
+                                  fechaAlmacen: importacion.fechaAlmacen || "",
+                                  fechaRecepcion: importacion.fechaRecepcion || "",
+                                });
+                                setIsUpdateModalOpen(true);
+                              }}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                            >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
@@ -407,6 +463,107 @@ export default function ListadoImportacionesPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Actualizar */}
+      <Modal
+        isOpen={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false);
+          setSelectedImportacion(null);
+          setUpdateForm({
+            observaciones: "",
+            estado: "",
+            fechaAlmacen: "",
+            fechaRecepcion: "",
+          });
+        }}
+        title={`Actualizar Importación - ${selectedImportacion?.numeroDespacho || ""}`}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Estado
+            </label>
+            <select
+              value={updateForm.estado}
+              onChange={(e) => setUpdateForm({ ...updateForm, estado: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar estado</option>
+              <option value="TRANSITO">TRANSITO</option>
+              <option value="ETA">ETA</option>
+              <option value="RECIBIDO">RECIBIDO</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Fecha de Almacén
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaAlmacen}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Fecha de Recepción
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaRecepcion}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Observaciones
+            </label>
+            <textarea
+              value={updateForm.observaciones}
+              onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              placeholder="Ingrese observaciones..."
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsUpdateModalOpen(false);
+                setSelectedImportacion(null);
+                setUpdateForm({
+                  observaciones: "",
+                  estado: "",
+                  fechaAlmacen: "",
+                  fechaRecepcion: "",
+                });
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                // Aquí iría la lógica para guardar los cambios
+                console.log("Guardar cambios:", updateForm);
+                alert("Funcionalidad de guardado pendiente de implementar");
+                setIsUpdateModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

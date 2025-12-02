@@ -57,7 +57,7 @@ function CustomDropdown({ value, onChange, options }) {
               }}
               className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 value === option.value
-                  ? "bg-[#E9F1FF]/60 text-[#0B327B] border-l-4 border-[#155EEF]"
+                  ? "bg-[#E9F1FF]/60 text-[#0B327B] border-l-4 border-[#1E63F7]"
                   : "text-gray-700 hover:bg-slate-200"
               }`}
             >
@@ -340,14 +340,14 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         }}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-[#155EEF] to-[#3A8DFF] border-b-2 border-blue-300/40 px-3 sm:px-4 py-4 sm:py-6 flex items-center justify-between overflow-hidden">
+        <div className="relative bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] border-b-2 border-blue-300/40 px-3 sm:px-4 py-4 sm:py-6 flex items-center justify-between overflow-hidden">
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-300 rounded-full blur-2xl"></div>
           </div>
           
           <div className="relative flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 flex-shrink-0">
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 fill="none"
@@ -378,7 +378,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="relative w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-50 flex-shrink-0"
+            className="relative w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-50 flex-shrink-0"
             aria-label="Actualizar"
           >
             <svg
@@ -585,7 +585,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
                               <div className="flex flex-col gap-1 sm:gap-1.5 opacity-0 group-hover:opacity-100 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-300 pt-0.5 flex-shrink-0">
                                 <button
                                   onClick={() => handleOpenDetails(notification.id)}
-                                  className="p-1.5 sm:p-2 rounded-lg bg-[#E9F1FF] hover:bg-[#1D4ED8] text-[#0B327B] hover:text-white transition-all duration-200 active:scale-95 shadow-sm border border-[#E9F1FF]/60"
+                                  className="p-1.5 sm:p-2 rounded-lg bg-[#E9F1FF] hover:bg-[#1E63F7] text-[#0B327B] hover:text-white transition-all duration-200 active:scale-95 shadow-sm border border-[#E9F1FF]/60"
                                   aria-label="Ver detalles"
                                 >
                                   <svg
@@ -639,7 +639,7 @@ export function NotificationsPanel({ isOpen, onClose, notificationCount }) {
         {/* Footer */}
         {filteredNotifications.length > 0 && (
           <div className="px-3 sm:px-4 py-2 sm:py-3 bg-slate-200 border-t border-gray-100/60">
-            <button className="w-full text-center text-[10px] sm:text-xs font-semibold text-[#0B327B] hover:text-[#155EEF] transition-colors duration-200 py-1.5 rounded-lg hover:bg-[#E9F1FF]/40">
+            <button className="w-full text-center text-[10px] sm:text-xs font-semibold text-[#0B327B] hover:text-[#1E63F7] transition-colors duration-200 py-1.5 rounded-lg hover:bg-[#E9F1FF]/40">
               Ver todas las notificaciones
             </button>
           </div>

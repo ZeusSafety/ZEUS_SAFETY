@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function ListadoImportacionesFacturacionPage() {
   const router = useRouter();
@@ -18,6 +19,14 @@ export default function ListadoImportacionesFacturacionPage() {
   const [facturaciones, setFacturaciones] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
+  const [isVerModalOpen, setIsVerModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [selectedFacturacion, setSelectedFacturacion] = useState(null);
+  const [editForm, setEditForm] = useState({
+    observaciones: "",
+    estadoVerificacion: "",
+    estadoDespacho: "",
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -224,7 +233,7 @@ export default function ListadoImportacionesFacturacionPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
@@ -234,23 +243,62 @@ export default function ListadoImportacionesFacturacionPage() {
     return null;
   }
 
-  const handleFiltrar = () => {
-    // Recargar datos con filtros
-    fetchFacturaciones();
-    setCurrentPage(1);
-  };
+  // Filtrado automático del lado del cliente
+  const [filteredFacturaciones, setFilteredFacturaciones] = useState([]);
+
+  useEffect(() => {
+    let filtered = [...facturaciones];
+
+    // Filtrar por número de despacho (búsqueda parcial, case insensitive)
+    if (numeroDespacho.trim() !== "") {
+      filtered = filtered.filter((item) => {
+        const despacho = item.numeroDespacho || item.numero_despacho || item.NUMERO_DESPACHO || "";
+        return despacho.toString().toUpperCase().includes(numeroDespacho.toUpperCase());
+      });
+    }
+
+    // Filtrar por rango de fechas
+    if (fechaInicio.trim() !== "") {
+      const partsInicio = fechaInicio.split("/");
+      if (partsInicio.length === 3) {
+        const fechaInicioDate = new Date(parseInt(partsInicio[2]), parseInt(partsInicio[1]) - 1, parseInt(partsInicio[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate >= fechaInicioDate;
+        });
+      }
+    }
+
+    if (fechaFinal.trim() !== "") {
+      const partsFinal = fechaFinal.split("/");
+      if (partsFinal.length === 3) {
+        const fechaFinalDate = new Date(parseInt(partsFinal[2]), parseInt(partsFinal[1]) - 1, parseInt(partsFinal[0]));
+        filtered = filtered.filter((item) => {
+          const fechaReg = item.fechaRegistro || item.fecha_registro || item.FECHA_REGISTRO || "";
+          if (!fechaReg) return false;
+          const itemDate = new Date(fechaReg);
+          return itemDate <= fechaFinalDate;
+        });
+      }
+    }
+
+    setFilteredFacturaciones(filtered);
+    setCurrentPage(1); // Resetear a la primera página cuando se filtra
+  }, [facturaciones, fechaInicio, fechaFinal, numeroDespacho]);
 
   const handleProcedimiento = () => {
     console.log("Procedimiento");
   };
 
-  const totalPages = Math.ceil(facturaciones.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredFacturaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentFacturaciones = facturaciones.slice(startIndex, endIndex);
+  const currentFacturaciones = filteredFacturaciones.slice(startIndex, endIndex);
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -260,12 +308,12 @@ export default function ListadoImportacionesFacturacionPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/facturacion")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-[#155EEF] border-2 border-[#0B327B] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] hover:border-[#1D4ED8] transition-all duration-200 shadow-lg hover:shadow-xl ripple-effect relative overflow-hidden text-sm"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -278,7 +326,7 @@ export default function ListadoImportacionesFacturacionPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-[#155EEF] rounded-lg flex items-center justify-center text-white border-2 border-[#0B327B] shadow-md">
+                  <div className="w-10 h-10 bg-[#1E63F7] rounded-lg flex items-center justify-center text-white border-2 border-[#0B327B] shadow-md">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -331,15 +379,6 @@ export default function ListadoImportacionesFacturacionPage() {
                 </div>
                 <div className="flex items-end gap-2.5">
                   <button
-                    onClick={handleFiltrar}
-                    className="px-4 py-2.5 bg-yellow-50/80 border border-yellow-200 hover:bg-yellow-100 hover:border-yellow-300 text-yellow-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span>Filtrar</span>
-                  </button>
-                  <button
                     onClick={handleProcedimiento}
                     className="px-4 py-2.5 bg-green-50/80 border border-green-200 hover:bg-green-100 hover:border-green-300 text-green-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
@@ -356,7 +395,7 @@ export default function ListadoImportacionesFacturacionPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-[#155EEF] border-b-2 border-[#0B327B]">
+                      <tr className="bg-[#1E63F7] border-b-2 border-[#0B327B]">
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA REGISTRO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° DESPACHO</th>
@@ -388,7 +427,7 @@ export default function ListadoImportacionesFacturacionPage() {
                               <span className="text-xs text-gray-500">{error}</span>
                               <button
                                 onClick={fetchFacturaciones}
-                                className="mt-2 px-4 py-2 bg-[#155EEF] border-2 border-[#0B327B] hover:bg-[#1D4ED8] text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-lg"
+                                className="mt-2 px-4 py-2 bg-[#1E63F7] border-2 border-[#0B327B] hover:bg-[#1E63F7] text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-lg"
                               >
                                 Reintentar
                               </button>
@@ -429,16 +468,8 @@ export default function ListadoImportacionesFacturacionPage() {
                                     return;
                                   }
                                   
-                                  // Intentar abrir el PDF
-                                  try {
-                                    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
-                                    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-                                      window.location.href = url;
-                                    }
-                                  } catch (err) {
-                                    console.error("Error opening PDF:", err);
-                                    window.location.href = url;
-                                  }
+                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                  window.open(url, "_blank", "noopener,noreferrer");
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault();
@@ -517,7 +548,13 @@ export default function ListadoImportacionesFacturacionPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistroCompleto || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center justify-center w-8 h-8 bg-cyan-100 border border-cyan-300 hover:bg-cyan-200 hover:border-cyan-400 text-cyan-800 rounded-full text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                            <button
+                              onClick={() => {
+                                setSelectedFacturacion(facturacion);
+                                setIsVerModalOpen(true);
+                              }}
+                              className="flex items-center justify-center w-8 h-8 bg-cyan-100 border border-cyan-300 hover:bg-cyan-200 hover:border-cyan-400 text-cyan-800 rounded-full text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                            >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -525,7 +562,18 @@ export default function ListadoImportacionesFacturacionPage() {
                             </button>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                            <button
+                              onClick={() => {
+                                setSelectedFacturacion(facturacion);
+                                setEditForm({
+                                  observaciones: facturacion.observaciones || "",
+                                  estadoVerificacion: facturacion.estadoVerificacion || "",
+                                  estadoDespacho: facturacion.estadoDespacho || "",
+                                });
+                                setIsEditarModalOpen(true);
+                              }}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                            >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
@@ -543,14 +591,14 @@ export default function ListadoImportacionesFacturacionPage() {
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-800 bg-white border-2 border-gray-400 rounded-lg hover:bg-gray-100 hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     «
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-800 bg-white border-2 border-gray-400 rounded-lg hover:bg-gray-100 hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &lt;
                   </button>
@@ -560,14 +608,14 @@ export default function ListadoImportacionesFacturacionPage() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-800 bg-white border-2 border-gray-400 rounded-lg hover:bg-gray-100 hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     &gt;
                   </button>
                   <button
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-800 bg-white border-2 border-gray-400 rounded-lg hover:bg-gray-100 hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     »
                   </button>
@@ -577,6 +625,133 @@ export default function ListadoImportacionesFacturacionPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal Ver Facturación */}
+      <Modal
+        isOpen={isVerModalOpen}
+        onClose={() => {
+          setIsVerModalOpen(false);
+          setSelectedFacturacion(null);
+        }}
+        title={`Detalles de Facturación - ${selectedFacturacion?.numeroDespacho || ""}`}
+        size="lg"
+      >
+        {selectedFacturacion && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">N° Despacho</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.numeroDespacho}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha de Registro</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.fechaRegistroCompleto || "-"}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado de Verificación</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.estadoVerificacion || "-"}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado de Despacho</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.estadoDespacho || "-"}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Incidencia</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.incidencias || "NO"}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha de Incidencias</label>
+                <p className="text-sm text-gray-900">{selectedFacturacion.fechaIncidencias || "-"}</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Observaciones</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                {selectedFacturacion.observaciones || "Sin observaciones"}
+              </p>
+            </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsVerModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Editar Facturación */}
+      <Modal
+        isOpen={isEditarModalOpen}
+        onClose={() => {
+          setIsEditarModalOpen(false);
+          setSelectedFacturacion(null);
+        }}
+        title={`Editar Facturación - ${selectedFacturacion?.numeroDespacho || ""}`}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Estado de Verificación</label>
+            <select
+              value={editForm.estadoVerificacion}
+              onChange={(e) => setEditForm({ ...editForm, estadoVerificacion: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar estado</option>
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="VERIFICADO">VERIFICADO</option>
+              <option value="RECHAZADO">RECHAZADO</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Estado de Despacho</label>
+            <select
+              value={editForm.estadoDespacho}
+              onChange={(e) => setEditForm({ ...editForm, estadoDespacho: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Seleccionar estado</option>
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="EN PROCESO">EN PROCESO</option>
+              <option value="DESPACHADO">DESPACHADO</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Observaciones</label>
+            <textarea
+              value={editForm.observaciones}
+              onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              placeholder="Ingrese observaciones..."
+            />
+          </div>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsEditarModalOpen(false);
+                setSelectedFacturacion(null);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                console.log("Guardar cambios:", editForm);
+                alert("Funcionalidad de guardado pendiente de implementar");
+                setIsEditarModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -6,13 +6,13 @@ export function WelcomeBanner({ userName, onClose }) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Auto-cerrar después de 2 segundos
+    // Auto-cerrar después de 3 segundos
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => {
         if (onClose) onClose();
       }, 300); // Esperar a que termine la animación
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [onClose]);
@@ -37,7 +37,7 @@ export function WelcomeBanner({ userName, onClose }) {
         {/* Mensaje de bienvenida */}
         <div className="flex-1 min-w-0 relative z-10">
           <p className="text-green-700 font-semibold text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis">
-            ¡Bienvenido, {userName}! Tu sesión ha sido iniciada
+            ¡Bienvenido, {userName}! Tu sesión ha sido iniciada.
           </p>
         </div>
 

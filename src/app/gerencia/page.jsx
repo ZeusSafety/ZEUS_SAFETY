@@ -266,12 +266,12 @@ export default function GerenciaPage() {
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -280,12 +280,12 @@ export default function GerenciaPage() {
             </button>
             
             {/* Card contenedor blanco */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+            <div className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] p-6" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
 
             {/* Header */}
             <div className="mb-6">
               <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -309,12 +309,12 @@ export default function GerenciaPage() {
                   toggleSection(sectionId);
                 };
                 return (
-                  <div key={sectionId} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div key={sectionId} className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] overflow-hidden" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
                     {/* Header de Sección */}
                     <button
                       onClick={handleClick}
                       type="button"
-                      className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                      className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                     >
                       <div className="flex items-center space-x-2">
                         <div className="text-white">{section.icon}</div>
@@ -338,11 +338,11 @@ export default function GerenciaPage() {
                           {section.cards.map((card) => (
                             <div
                               key={card.id}
-                              className="bg-[#FFFFFF] rounded-[14px] p-4 border-2 border-gray-300 hover:border-blue-700 hover:shadow-xl transition-all duration-200 shadow-sm"
+                              className="bg-[#FFFFFF] rounded-[16px] p-4 border border-[#E6EAF2] hover:border-blue-700 transition-all duration-200"
                               style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                                   {card.icon}
                                 </div>
                               </div>
@@ -354,9 +354,15 @@ export default function GerenciaPage() {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   console.log("Button clicked, card.id:", card.id);
-                                  router.push("/gerencia/colaboradores");
+                                  if (card.id === "productos") {
+                                    router.push("/gerencia/productos");
+                                  } else if (card.id === "accesibilidad-credenciales") {
+                                    router.push("/gerencia/colaboradores");
+                                  } else {
+                                    router.push("/gerencia");
+                                  }
                                 }}
-                                className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] cursor-pointer text-sm group"
+                                className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:opacity-90 cursor-pointer text-sm group"
                               >
                                 {card.buttonIcon}
                                 <span>{card.buttonText}</span>

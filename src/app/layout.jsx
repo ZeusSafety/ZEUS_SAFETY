@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import { AuthProviderWrapper } from "../components/providers/AuthProviderWrapper";
+import { ChatBotButton } from "../components/ui/ChatBotButton";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,6 +22,7 @@ export default function RootLayout({ children }) {
       >
         <AuthProviderWrapper>
           {children}
+          <ChatBotButton />
         </AuthProviderWrapper>
       </body>
     </html>

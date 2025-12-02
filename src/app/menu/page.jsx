@@ -52,7 +52,7 @@ export default function MenuPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+        <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -134,6 +134,13 @@ export default function MenuPage() {
       description: "Gestión de permisos y solicitudes",
       status: "Disponible",
     },
+    {
+      id: "seguimiento-monitoreo",
+      name: "Seguimiento y Monitoreo",
+      icon: "location",
+      description: "Seguimiento de ubicaciones y monitoreo en tiempo real",
+      status: "Próximamente",
+    },
   ];
 
   // Filtrar módulos según los permisos del usuario
@@ -195,7 +202,7 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div 
@@ -216,7 +223,7 @@ export default function MenuPage() {
 
           {/* Welcome Banner */}
           <div className="max-w-[95%] mx-auto px-2 sm:px-4 pt-3 sm:pt-4">
-            <div className="relative text-white px-3 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden bg-gradient-to-r from-[#0052CC] via-[#0066FF] to-[#1D4ED8] backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(21, 94, 239, 0.25)' }}>
+            <div className="relative text-white px-3 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(21, 94, 239, 0.25)' }}>
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -229,13 +236,13 @@ export default function MenuPage() {
                         : `Accede a tus módulos asignados del sistema ZEUS SAFETY.`}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#0052CC] via-[#0066FF] to-[#1D4ED8] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#0052CC] shadow-md">
+                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#1E63F7] shadow-md">
                         <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <span className="text-[10px] sm:text-xs font-semibold text-white">Panel de Control</span>
                       </div>
-                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#0052CC] via-[#0066FF] to-[#1D4ED8] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#0052CC] shadow-md">
+                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#1E63F7] shadow-md">
                         <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -252,7 +259,7 @@ export default function MenuPage() {
           <div className="max-w-[95%] mx-auto px-4 pt-6 pb-4">
             <div className="mb-4">
               <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">MÓDULOS DISPONIBLES</h2>
-              <div className="w-16 h-1 bg-gradient-to-r from-[#0052CC] via-[#0066FF] to-[#1D4ED8] rounded-full"></div>
+              <div className="w-16 h-1 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full"></div>
             </div>
             {availableModules.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

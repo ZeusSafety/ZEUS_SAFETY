@@ -31,6 +31,7 @@ export function Header({ onMenuToggle }) {
     return () => clearInterval(interval);
   }, []);
 
+
   return (
     <>
       <header className="h-14 bg-white border-b border-gray-200/80 flex items-center justify-between" style={{ boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04)' }}>
@@ -47,8 +48,8 @@ export function Header({ onMenuToggle }) {
             </svg>
           </button>
           <h1 className="text-sm sm:text-sm md:text-base font-bold text-gray-900 tracking-tight whitespace-nowrap">
-            Sistema de Integración
-          </h1>
+              Sistema de Integración
+            </h1>
         </div>
 
         {/* Right section */}
@@ -58,12 +59,12 @@ export function Header({ onMenuToggle }) {
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             className={`relative p-2 rounded-lg transition-all duration-200 group ${
               notificationsOpen 
-                ? "bg-[#E9F1FF] text-[#155EEF] shadow-md" 
+                ? "bg-[#E9F1FF] text-[#1E63F7] shadow-md" 
                 : "hover:bg-slate-200"
             }`}
             aria-label="Notificaciones"
           >
-            <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: notificationsOpen ? '#155EEF' : '#555' }}>
+            <svg className="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: notificationsOpen ? '#1E63F7' : '#555' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             {notificationCount > 0 && (
@@ -95,8 +96,8 @@ export function Header({ onMenuToggle }) {
               </svg>
               <span className="text-xs font-bold text-gray-800 tabular-nums">{currentTime}</span>
             </div>
+            </div>
           </div>
-        </div>
         </div>
       </header>
 
