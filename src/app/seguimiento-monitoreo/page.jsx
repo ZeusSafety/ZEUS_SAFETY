@@ -5,122 +5,20 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
-import dynamic from "next/dynamic";
 
-// Crear el componente del mapa completamente inline para evitar problemas de build
-const MapComponent = dynamic(
-  () => {
-    // Solo se ejecuta en el cliente
-    if (typeof window === "undefined") {
-      return Promise.resolve({ default: () => null });
-    }
-
-    return Promise.all([
-      import("leaflet/dist/leaflet.css").catch(() => {}),
-      import("react-leaflet"),
-      import("leaflet")
-    ])
-      .then(([cssModule, reactLeaflet, leaflet]) => {
-        const { MapContainer, TileLayer, Marker, useMap } = reactLeaflet;
-        const L = leaflet.default || leaflet;
-        
-        // Fix para los iconos de Leaflet
-        if (L && L.Icon && L.Icon.Default) {
-          delete L.Icon.Default.prototype._getIconUrl;
-          L.Icon.Default.mergeOptions({
-            iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-            iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-          });
-        }
-
-        const center = [-11.9994, -77.0775];
-
-        function ZoomInButton() {
-          const map = useMap();
-          return (
-            <button
-              onClick={() => map.zoomIn()}
-              className="w-10 h-10 bg-white hover:bg-[#1E63F7] text-[#1E63F7] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#1E63F7] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 group backdrop-blur-sm"
-              aria-label="Acercar"
-              style={{ boxShadow: '0 4px 12px rgba(30, 99, 247, 0.15)' }}
-            >
-              <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          );
-        }
-
-        function ZoomOutButton() {
-          const map = useMap();
-          return (
-            <button
-              onClick={() => map.zoomOut()}
-              className="w-10 h-10 bg-white hover:bg-[#1E63F7] text-[#1E63F7] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#1E63F7] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-sm"
-              aria-label="Alejar"
-              style={{ boxShadow: '0 4px 12px rgba(30, 99, 247, 0.15)' }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-              </svg>
-            </button>
-          );
-        }
-
-        function ZoomControls() {
-          return (
-            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 pointer-events-none">
-              <div className="pointer-events-auto">
-                <ZoomInButton />
-              </div>
-              <div className="pointer-events-auto">
-                <ZoomOutButton />
-              </div>
-            </div>
-          );
-        }
-
-        return {
-          default: () => (
-            <MapContainer
-              center={center}
-              zoom={13}
-              style={{ height: "100%", width: "100%", zIndex: 1 }}
-              scrollWheelZoom={true}
-              attributionControl={false}
-              zoomControl={false}
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <Marker position={center} />
-              <ZoomControls />
-            </MapContainer>
-          )
-        };
-      })
-      .catch(() => {
-        // Fallback si falla la carga
-        return {
-          default: () => (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
-              <div className="text-center">
-                <p className="mb-2">Mapa no disponible</p>
-                <p className="text-sm">El componente del mapa se cargará cuando esté disponible</p>
-              </div>
-            </div>
-          )
-        };
-      });
-  },
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+// Placeholder de mapa mientras se implementa la versión con Leaflet
+function MapPlaceholder() {
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
+      <div className="text-center">
+        <p className="mb-2 font-semibold">Mapa próximamente</p>
+        <p className="text-sm">
+          El mapa interactivo se habilitará en una próxima versión de ZEUS SAFETY.
+        </p>
       </div>
-    )
-  }
-);
+    </div>
+  );
+}
 
 export default function SeguimientoMonitoreoPage() {
   const router = useRouter();
@@ -230,15 +128,9 @@ export default function SeguimientoMonitoreoPage() {
                 </p>
               </div>
 
-              {/* Mapa Grande y Limpio con Leaflet */}
+              {/* Mapa / Sección visual principal */}
               <div className="w-full h-[600px] sm:h-[650px] md:h-[700px] lg:h-[750px] rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg relative">
-                <MapComponent />
-                {/* Estilos personalizados para ocultar controles de Leaflet */}
-                <style jsx global>{`
-                  .leaflet-control-zoom {
-                    display: none !important;
-                  }
-                `}</style>
+                <MapPlaceholder />
               </div>
             </div>
           </div>
