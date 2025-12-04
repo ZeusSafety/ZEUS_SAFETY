@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-export async function GET(request) {
+// Función auxiliar para hacer peticiones a la API externa
+async function fetchFromAPI(method, request, body = null) {
   try {
-    console.log("=== API PRODUCTOS PROXY ===");
+    console.log(`=== API PRODUCTOS PROXY - ${method} ===`);
     
     // Obtener el token de los headers de la petición
     const authHeader = request.headers.get("authorization");
@@ -13,6 +14,10 @@ export async function GET(request) {
     const apiUrl = "https://api-productos-zeus-2946605267.us-central1.run.app/productos";
     
     console.log("Llamando a API:", apiUrl);
+    console.log("Método:", method);
+    if (body) {
+      console.log("Body:", JSON.stringify(body, null, 2));
+    }
     
     // Preparar headers para la petición a la API externa
     const headers = {
@@ -25,12 +30,20 @@ export async function GET(request) {
       headers["Authorization"] = `Bearer ${token}`;
     }
     
+    // Configurar opciones de fetch
+    const fetchOptions = {
+      method: method,
+      headers: headers,
+    };
+    
+    // Agregar body solo para POST y PUT
+    if ((method === "POST" || method === "PUT") && body) {
+      fetchOptions.body = JSON.stringify(body);
+    }
+    
     let response;
     try {
-      response = await fetch(apiUrl, {
-        method: "GET",
-        headers: headers,
-      });
+      response = await fetch(apiUrl, fetchOptions);
       
       console.log("Response status:", response.status);
       console.log("Response headers:", Object.fromEntries(response.headers.entries()));
@@ -52,13 +65,35 @@ export async function GET(request) {
     }
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error de la API:", response.status, errorText);
+      let errorText = "";
+      let errorJson = null;
+      
+      try {
+        errorText = await response.text();
+        // Intentar parsear como JSON
+        try {
+          errorJson = JSON.parse(errorText);
+        } catch (e) {
+          // Si no es JSON, usar el texto directamente
+        }
+      } catch (e) {
+        errorText = "No se pudo leer el error de la API";
+      }
+      
+      console.error("=== ERROR DE LA API ===");
+      console.error("Status:", response.status);
+      console.error("Error text:", errorText);
+      console.error("Error JSON:", errorJson);
+      console.error("Body enviado:", body ? JSON.stringify(body, null, 2) : "N/A");
+      console.error("======================");
+      
+      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status} en la operación`;
       
       return NextResponse.json(
         { 
-          error: `Error ${response.status} al obtener productos`,
-          details: errorText || "No se pudieron obtener los datos"
+          error: errorMessage,
+          details: errorText || "No se pudo completar la operación",
+          status: response.status
         },
         { status: response.status }
       );
@@ -87,7 +122,7 @@ export async function GET(request) {
     return NextResponse.json(data, { status: 200 });
     
   } catch (error) {
-    console.error("=== ERROR EN API PRODUCTOS PROXY ===");
+    console.error(`=== ERROR EN API PRODUCTOS PROXY - ${method} ===`);
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
@@ -102,4 +137,35 @@ export async function GET(request) {
     );
   }
 }
+
+export async function GET(request) {
+  return fetchFromAPI("GET", request);
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    return fetchFromAPI("POST", request, body);
+  } catch (error) {
+    console.error("Error al parsear body en POST:", error);
+    return NextResponse.json(
+      { error: "Error al procesar el cuerpo de la petición" },
+      { status: 400 }
+    );
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    return fetchFromAPI("PUT", request, body);
+  } catch (error) {
+    console.error("Error al parsear body en PUT:", error);
+    return NextResponse.json(
+      { error: "Error al procesar el cuerpo de la petición" },
+      { status: 400 }
+    );
+  }
+}
+
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
@@ -12,6 +12,11 @@ function RecursosHumanosContent() {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("gestion-colaboradores");
+  const [cumpleanos, setCumpleanos] = useState([]);
+  const [loadingCumpleanos, setLoadingCumpleanos] = useState(false);
+  const [errorCumpleanos, setErrorCumpleanos] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,12 +55,241 @@ function RecursosHumanosContent() {
         "control-documentos",
         "gestion-remuneraciones",
         "auto-servicio",
+        "calendario-cumpleanos",
       ];
       if (validSections.includes(section)) {
         setActiveSection(section);
       }
     }
   }, [searchParams]);
+
+  // Función para obtener cumpleaños de la API
+  const fetchCumpleanos = useCallback(async () => {
+    try {
+      setLoadingCumpleanos(true);
+      setErrorCumpleanos(null);
+      
+      const token = localStorage.getItem("token");
+      
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      
+      if (token && token.trim() !== "") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch("/api/cumpleanos", {
+        method: "GET",
+        headers: headers,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status} al obtener cumpleaños`);
+      }
+      
+      const data = await response.json();
+      
+      console.log("=== DATOS RECIBIDOS DE API CUMPLEAÑOS ===");
+      console.log("Tipo de datos:", typeof data);
+      console.log("Es array?", Array.isArray(data));
+      console.log("Datos completos:", JSON.stringify(data, null, 2));
+      
+      // La API puede devolver un array o un objeto con una propiedad
+      let cumpleanosArray = [];
+      if (Array.isArray(data)) {
+        cumpleanosArray = data;
+        console.log("✅ Datos encontrados como array directo");
+      } else if (data.data && Array.isArray(data.data)) {
+        cumpleanosArray = data.data;
+        console.log("✅ Datos encontrados en data.data");
+      } else if (data.cumpleanos && Array.isArray(data.cumpleanos)) {
+        cumpleanosArray = data.cumpleanos;
+        console.log("✅ Datos encontrados en data.cumpleanos");
+      } else {
+        cumpleanosArray = [];
+        console.log("⚠️ No se encontró array de cumpleaños");
+      }
+      
+      console.log("Cantidad de registros:", cumpleanosArray.length);
+      
+      // Mostrar estructura del primer elemento si existe
+      if (cumpleanosArray.length > 0) {
+        console.log("=== ESTRUCTURA DEL PRIMER ELEMENTO ===");
+        console.log("Primer elemento completo:", JSON.stringify(cumpleanosArray[0], null, 2));
+        console.log("Claves del primer elemento:", Object.keys(cumpleanosArray[0]));
+        console.log("Valores del primer elemento:");
+        Object.keys(cumpleanosArray[0]).forEach(key => {
+          console.log(`  ${key}:`, cumpleanosArray[0][key], `(tipo: ${typeof cumpleanosArray[0][key]})`);
+        });
+      }
+      
+      // Helper function para obtener valores con múltiples variaciones
+      const getValue = (obj, ...keys) => {
+        if (!obj) return "";
+        for (const key of keys) {
+          // Buscar en minúsculas
+          const value = obj[key];
+          if (value !== undefined && value !== null && value !== "" && value !== "null" && value !== "undefined") {
+            return String(value);
+          }
+          // Buscar en mayúsculas
+          const upperKey = key.toUpperCase();
+          const upperValue = obj[upperKey];
+          if (upperValue !== undefined && upperValue !== null && upperValue !== "" && upperValue !== "null" && upperValue !== "undefined") {
+            return String(upperValue);
+          }
+          // Buscar case-insensitive en todas las claves del objeto
+          const objKeys = Object.keys(obj);
+          for (const objKey of objKeys) {
+            if (objKey.toUpperCase() === upperKey && obj[objKey] !== undefined && obj[objKey] !== null && obj[objKey] !== "" && obj[objKey] !== "null" && obj[objKey] !== "undefined") {
+              return String(obj[objKey]);
+            }
+          }
+        }
+        return "";
+      };
+      
+      // Mapear los datos al formato esperado
+      const cumpleanosMapeados = cumpleanosArray.map((item, index) => {
+        // Extraer fecha de cumpleaños - puede venir en diferentes formatos
+        const fechaRaw = getValue(item, "FECHA_NACIMIENTO", "fecha_nacimiento", "FECHA_NAC", "fechaNacimiento", "fecha", "FECHA_NACIMIENTO");
+        
+        // Parsear la fecha
+        let fechaNacimiento = null;
+        if (fechaRaw) {
+          // Intentar diferentes formatos
+          if (fechaRaw.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // YYYY-MM-DD
+            fechaNacimiento = new Date(fechaRaw);
+          } else if (fechaRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+            // DD/MM/YYYY
+            const [day, month, year] = fechaRaw.split('/');
+            fechaNacimiento = new Date(`${year}-${month}-${day}`);
+          } else {
+            fechaNacimiento = new Date(fechaRaw);
+          }
+        }
+        
+        // Obtener ID único - usar índice si no hay ID válido
+        const itemId = item.ID || item.id || item.id_colaborador || item.ID_COLABORADOR || `temp-${index}`;
+        
+        // Obtener área con múltiples variaciones
+        const areaValue = getValue(item, "AREA", "area", "A.NOMBRE", "a.nombre", "AREA_PRINCIPAL", "areaPrincipal", "DEPARTAMENTO", "departamento", "DEPARTAMENTO_PRINCIPAL");
+        
+        const mappedItem = {
+          id: itemId,
+          uniqueId: `${itemId}-${index}`, // ID único para evitar keys duplicadas
+          nombre: getValue(item, "NOMBRE", "nombre", "NOMBRE_COMPLETO", "nombre_completo", "NOMBRE1", "primerNombre"),
+          apellido: getValue(item, "APELLIDO", "apellido", "APELLIDO1", "primerApellido", "APELLIDO_PATERNO"),
+          fechaNacimiento: fechaNacimiento,
+          fechaRaw: fechaRaw,
+          area: areaValue,
+        };
+        
+        // Log para debug del primer elemento
+        if (index === 0) {
+          console.log("=== MAPEO DEL PRIMER ELEMENTO ===");
+          console.log("Item original:", JSON.stringify(item, null, 2));
+          console.log("Item mapeado:", JSON.stringify(mappedItem, null, 2));
+          console.log("Área encontrada:", areaValue || "NO ENCONTRADA");
+          console.log("Todas las claves del item original:", Object.keys(item));
+        }
+        
+        return mappedItem;
+      }).filter(item => item.fechaNacimiento && !isNaN(item.fechaNacimiento.getTime()));
+      
+      console.log("=== RESUMEN DE MAPEO ===");
+      console.log("Total de elementos mapeados:", cumpleanosMapeados.length);
+      console.log("Elementos con área:", cumpleanosMapeados.filter(c => c.area).length);
+      console.log("Elementos sin área:", cumpleanosMapeados.filter(c => !c.area).length);
+      
+      setCumpleanos(cumpleanosMapeados);
+    } catch (err) {
+      console.error("Error al obtener cumpleaños:", err);
+      setErrorCumpleanos(err.message || "Error al cargar los cumpleaños");
+    } finally {
+      setLoadingCumpleanos(false);
+    }
+  }, []);
+
+  // Cargar cumpleaños cuando se active la sección
+  useEffect(() => {
+    if (activeSection === "calendario-cumpleanos" && user && !loading) {
+      fetchCumpleanos();
+    }
+  }, [activeSection, user, loading, fetchCumpleanos]);
+
+  // Función para obtener cumpleaños de un día específico
+  const getCumpleanosDelDia = (day, month) => {
+    return cumpleanos.filter(c => {
+      if (!c.fechaNacimiento) return false;
+      const fechaNac = c.fechaNacimiento;
+      return fechaNac.getDate() === day && fechaNac.getMonth() === month;
+    });
+  };
+
+  // Función para generar el calendario del mes
+  const generarCalendario = () => {
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const semanas = [];
+    let semana = [];
+    
+    // Días vacíos al inicio
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      semana.push(null);
+    }
+    
+    // Días del mes
+    for (let day = 1; day <= daysInMonth; day++) {
+      semana.push(day);
+      if (semana.length === 7) {
+        semanas.push(semana);
+        semana = [];
+      }
+    }
+    
+    // Días vacíos al final
+    if (semana.length > 0) {
+      while (semana.length < 7) {
+        semana.push(null);
+      }
+      semanas.push(semana);
+    }
+    
+    return semanas;
+  };
+
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+  const cambiarMes = (direccion) => {
+    if (direccion === "anterior") {
+      if (currentMonth === 0) {
+        setCurrentMonth(11);
+        setCurrentYear(currentYear - 1);
+      } else {
+        setCurrentMonth(currentMonth - 1);
+      }
+    } else {
+      if (currentMonth === 11) {
+        setCurrentMonth(0);
+        setCurrentYear(currentYear + 1);
+      } else {
+        setCurrentMonth(currentMonth + 1);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -142,6 +376,7 @@ function RecursosHumanosContent() {
     { id: "control-documentos", name: "Control de Documentos Laborales", icon: "document" },
     { id: "gestion-remuneraciones", name: "Gestión de Remuneraciones", icon: "money" },
     { id: "auto-servicio", name: "Auto-Servicio del Colaborador (ESS)", icon: "user" },
+    { id: "calendario-cumpleanos", name: "Calendario de Cumpleaños", icon: "birthday" },
   ];
 
   const getIcon = (iconName) => {
@@ -179,6 +414,11 @@ function RecursosHumanosContent() {
       user: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+      birthday: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
         </svg>
       ),
     };
@@ -884,6 +1124,193 @@ function RecursosHumanosContent() {
                   Acceder
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case "calendario-cumpleanos":
+        const semanas = generarCalendario();
+        const hoy = new Date();
+        const esHoy = (day) => {
+          return day === hoy.getDate() && 
+                 currentMonth === hoy.getMonth() && 
+                 currentYear === hoy.getFullYear();
+        };
+        
+        return (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm">
+                  {getIcon("birthday")}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Calendario de Cumpleaños</h2>
+                  <p className="text-xs text-gray-600 mt-0.5">Cumpleaños de colaboradores</p>
+                </div>
+              </div>
+              <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
+                loadingCumpleanos 
+                  ? 'bg-yellow-50 border border-yellow-200' 
+                  : errorCumpleanos 
+                    ? 'bg-red-50 border border-red-200' 
+                    : 'bg-green-50 border border-green-200'
+              }`}>
+                {loadingCumpleanos ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                    <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                  </>
+                ) : errorCumpleanos ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-red-700">Error</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-green-700">API Conectada</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {errorCumpleanos && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{errorCumpleanos}</p>
+              </div>
+            )}
+
+            {/* Controles de navegación del calendario */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => cambiarMes("anterior")}
+                className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h3 className="text-lg font-bold text-gray-900">
+                {meses[currentMonth]} {currentYear}
+              </h3>
+              <button
+                onClick={() => cambiarMes("siguiente")}
+                className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Calendario */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
+              {/* Encabezados de días */}
+              <div className="grid grid-cols-7 bg-blue-700/20 border-b border-blue-700/40">
+                {diasSemana.map((dia) => (
+                  <div key={dia} className="px-2 py-2 text-center text-[10px] font-bold uppercase text-blue-800">
+                    {dia}
+                  </div>
+                ))}
+              </div>
+
+              {/* Días del calendario */}
+              <div className="divide-y divide-gray-100">
+                {semanas.map((semana, semanaIndex) => (
+                  <div key={semanaIndex} className="grid grid-cols-7 divide-x divide-gray-100">
+                    {semana.map((day, dayIndex) => {
+                      if (day === null) {
+                        return (
+                          <div key={dayIndex} className="min-h-[80px] bg-gray-50"></div>
+                        );
+                      }
+                      
+                      const cumpleanosDelDia = getCumpleanosDelDia(day, currentMonth);
+                      const esHoyDia = esHoy(day);
+                      
+                      return (
+                        <div
+                          key={dayIndex}
+                          className={`min-h-[80px] p-1.5 ${
+                            esHoyDia ? "bg-blue-100 border-2 border-blue-500" : "bg-white hover:bg-gray-50"
+                          } transition-colors`}
+                        >
+                          <div className={`text-xs font-semibold mb-1 ${
+                            esHoyDia ? "text-blue-700" : "text-gray-700"
+                          }`}>
+                            {day}
+                          </div>
+                          <div className="space-y-1">
+                            {cumpleanosDelDia.slice(0, 2).map((cumple, idx) => (
+                              <div
+                                key={cumple.uniqueId || `${cumple.id}-${day}-${idx}`}
+                                className="text-[9px] px-1.5 py-0.5 bg-pink-100 border border-pink-300 rounded text-pink-800 font-medium truncate"
+                                title={`${cumple.nombre} ${cumple.apellido}`}
+                              >
+                                🎂 {cumple.nombre}
+                              </div>
+                            ))}
+                            {cumpleanosDelDia.length > 2 && (
+                              <div className="text-[9px] px-1.5 py-0.5 bg-pink-200 border border-pink-400 rounded text-pink-900 font-medium">
+                                +{cumpleanosDelDia.length - 2} más
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Lista de cumpleaños del mes */}
+            <div className="mt-6 bg-white rounded-xl shadow-lg border border-gray-200/60 p-4">
+              <h3 className="text-base font-bold text-gray-900 mb-3">Cumpleaños de {meses[currentMonth]}</h3>
+              {loadingCumpleanos ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {cumpleanos
+                    .filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth)
+                    .sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate())
+                    .map((cumple, idx) => (
+                      <div
+                        key={cumple.uniqueId || `${cumple.id}-list-${idx}`}
+                        className="flex items-center justify-between p-2 bg-pink-50 border border-pink-200 rounded-lg hover:bg-pink-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">🎂</span>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {cumple.nombre} {cumple.apellido}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {cumple.area || "Sin área asignada"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-pink-700">
+                            {cumple.fechaNacimiento.getDate()} de {meses[cumple.fechaNacimiento.getMonth()]}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  {cumpleanos.filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No hay cumpleaños registrados para este mes
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );

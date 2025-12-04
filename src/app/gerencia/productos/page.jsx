@@ -12,9 +12,8 @@ export default function ProductosPage() {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentPageInactivos, setCurrentPageInactivos] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
   const [isVerModalOpen, setIsVerModalOpen] = useState(false);
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
@@ -39,8 +38,13 @@ export default function ProductosPage() {
     codigo: "",
     nombre: "",
     categoria: "",
+    tipoProducto: "",
+    colorTipo: "",
+    tamano: "",
+    paresPorCaja: "",
     precio: "",
     stock: "",
+    fichaTecnica: "",
   });
 
   useEffect(() => {
@@ -217,6 +221,213 @@ export default function ProductosPage() {
     }
   }, [user, loading, fetchProductos]);
 
+  // Función para agregar un nuevo producto
+  const agregarProducto = useCallback(async (productoData) => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      const token = localStorage.getItem("token");
+      
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      
+      if (token && token.trim() !== "") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      // Mapear los datos del formulario al formato de la API
+      // La API requiere todos estos campos según el error
+      const apiData = {
+        codigo: productoData.codigo || "",
+        nombre: productoData.nombre || "",
+        categoria: productoData.categoria || "",
+        tipo_producto: productoData.tipoProducto || "",
+        color_tipo: productoData.colorTipo || "",
+        tamaño: productoData.tamano || "",
+        pares_por_caja: productoData.paresPorCaja ? parseInt(productoData.paresPorCaja) : 0,
+        precio: productoData.precio ? parseFloat(productoData.precio) : 0,
+        stock: productoData.stock ? parseInt(productoData.stock) : 0,
+        ficha_tecnica: productoData.fichaTecnica || "",
+      };
+      
+      console.log("=== AGREGANDO PRODUCTO ===");
+      console.log("Datos del formulario:", productoData);
+      console.log("Datos mapeados para API:", apiData);
+      
+      const response = await fetch("/api/productos", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(apiData),
+      });
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          const errorText = await response.text();
+          errorData = { error: errorText || `Error ${response.status} al agregar producto` };
+        }
+        
+        console.error("=== ERROR AL AGREGAR PRODUCTO ===");
+        console.error("Status:", response.status);
+        console.error("Error data:", errorData);
+        console.error("================================");
+        
+        throw new Error(errorData.error || errorData.details || `Error ${response.status} al agregar producto`);
+      }
+      
+      const data = await response.json();
+      console.log("Producto agregado exitosamente:", data);
+      
+      // Recargar la lista de productos
+      await fetchProductos();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error("Error al agregar producto:", err);
+      throw err;
+    } finally {
+      setLoadingData(false);
+    }
+  }, [fetchProductos]);
+
+  // Función para desactivar un producto
+  const desactivarProducto = useCallback(async (productoId) => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      const token = localStorage.getItem("token");
+      
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      
+      if (token && token.trim() !== "") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      // Buscar el producto actual para mantener sus datos
+      const productoActual = productos.find(p => p.id === productoId);
+      
+      if (!productoActual) {
+        throw new Error("No se encontró el producto a desactivar");
+      }
+      
+      // Mapear los datos del producto al formato de la API, marcando como inactivo
+      const apiData = {
+        id: productoId,
+        codigo: productoActual.codigo || "",
+        nombre: productoActual.nombre || "",
+        categoria: productoActual.categoria || "",
+        tipo_producto: productoActual.tipoProducto || "",
+        color_tipo: productoActual.colorTipo || "",
+        tamaño: productoActual.tamano || "",
+        pares_por_caja: productoActual.paresPorCaja || 0,
+        precio: productoActual.precio || 0,
+        stock: productoActual.stock || 0,
+        ficha_tecnica: productoActual.fichaTecnica || "",
+        activo: false, // Marcar como inactivo
+      };
+      
+      console.log("Desactivando producto:", apiData);
+      
+      const response = await fetch("/api/productos", {
+        method: "PUT",
+        headers: headers,
+        body: JSON.stringify(apiData),
+      });
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          const errorText = await response.text();
+          errorData = { error: errorText || `Error ${response.status} al desactivar producto` };
+        }
+        
+        console.error("Error al desactivar producto:", errorData);
+        throw new Error(errorData.error || errorData.details || `Error ${response.status} al desactivar producto`);
+      }
+      
+      const data = await response.json();
+      console.log("Producto desactivado exitosamente:", data);
+      
+      // Recargar la lista de productos
+      await fetchProductos();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error("Error al desactivar producto:", err);
+      throw err;
+    } finally {
+      setLoadingData(false);
+    }
+  }, [productos, fetchProductos]);
+
+  // Función para actualizar un producto existente
+  const actualizarProducto = useCallback(async (productoId, productoData) => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      const token = localStorage.getItem("token");
+      
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      
+      if (token && token.trim() !== "") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      // Mapear los datos del formulario al formato de la API
+      const apiData = {
+        ID: productoId,
+        CODIGO: productoData.codigo,
+        NOMBRE: productoData.nombre,
+        CATEGORIA: productoData.categoria,
+        TIPO_PRODUCTO: productoData.tipoProducto || null,
+        COLOR_TIPO: productoData.colorTipo || null,
+        TAMAÑO: productoData.tamano || null,
+        PARES_POR_CAJA: productoData.paresPorCaja ? parseInt(productoData.paresPorCaja) : null,
+      };
+      
+      console.log("Actualizando producto:", apiData);
+      
+      const response = await fetch("/api/productos", {
+        method: "PUT",
+        headers: headers,
+        body: JSON.stringify(apiData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status} al actualizar producto`);
+      }
+      
+      const data = await response.json();
+      console.log("Producto actualizado exitosamente:", data);
+      
+      // Recargar la lista de productos
+      await fetchProductos();
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error("Error al actualizar producto:", err);
+      throw err;
+    } finally {
+      setLoadingData(false);
+    }
+  }, [fetchProductos]);
+
   // Filtrar productos por búsqueda
   const filteredProductos = productos.filter(p => 
     (p.codigo && p.codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -227,13 +438,10 @@ export default function ProductosPage() {
   );
 
   const activos = filteredProductos.filter(p => p.activo !== false);
-  const inactivos = filteredProductos.filter(p => p.activo === false);
 
   const totalPages = Math.ceil(activos.length / itemsPerPage);
-  const totalPagesInactivos = Math.ceil(inactivos.length / itemsPerPage);
 
   const paginatedActivos = activos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const paginatedInactivos = inactivos.slice((currentPageInactivos - 1) * itemsPerPage, currentPageInactivos * itemsPerPage);
 
   if (loading) {
     return (
@@ -351,8 +559,13 @@ export default function ProductosPage() {
                         codigo: "",
                         nombre: "",
                         categoria: "",
+                        tipoProducto: "",
+                        colorTipo: "",
+                        tamano: "",
+                        paresPorCaja: "",
                         precio: "",
                         stock: "",
+                        fichaTecnica: "",
                       });
                       setIsAgregarModalOpen(true);
                     }}
@@ -537,189 +750,6 @@ export default function ProductosPage() {
                 </div>
               </div>
             </div>
-
-            {/* Sección: Productos Inactivos */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-              <div>
-                {/* Header de Sección */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Productos Inactivos</h2>
-                      <p className="text-sm text-gray-600 mt-1">Sin disponibilidad en el sistema</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
-                    loadingData 
-                      ? 'bg-yellow-50 border border-yellow-200' 
-                      : error 
-                        ? 'bg-red-50 border border-red-200' 
-                        : 'bg-green-50 border border-green-200'
-                  }`}>
-                    {loadingData ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
-                      </>
-                    ) : error ? (
-                      <>
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm font-semibold text-red-700">Error de conexión</span>
-                      </>
-                    ) : (
-                      <>
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-700">API Conectada</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tabla */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CATEGORÍA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TIPO DE PRODUCTO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">COLOR/TIPO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TAMAÑO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PARES POR CAJA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FICHA TÉCNICA</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {!loadingData && paginatedInactivos.length === 0 ? (
-                          <tr>
-                            <td colSpan="10" className="px-3 py-8 text-center text-sm text-gray-500">
-                              No hay productos inactivos disponibles
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedInactivos.map((producto) => (
-                          <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.id}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.codigo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.nombre}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.categoria}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tipoProducto || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.colorTipo || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tamano || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.paresPorCaja || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {producto.fichaTecnica ? (
-                                <div className="flex items-center justify-center">
-                                  <button
-                                    onClick={() => window.open(producto.fichaTecnica, '_blank')}
-                                    className="flex items-center space-x-1.5 text-blue-700 hover:text-blue-800 rounded-lg transition-all duration-200 active:scale-[0.98]"
-                                    title="Ver ficha técnica en PDF"
-                                  >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                    </svg>
-                                    <span className="font-semibold text-[10px]">Ver Ficha</span>
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center">
-                                  <span className="text-gray-400 text-[10px]">-</span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                {producto.fichaTecnica && (
-                                  <button
-                                    onClick={() => {
-                                      setSelectedProducto(producto);
-                                      setSelectedFile(null);
-                                      setIsGestionarPDFModalOpen(true);
-                                    }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                    title="Gestionar PDF del producto"
-                                  >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                    </svg>
-                                    <span style={{ pointerEvents: 'none' }}>PDF</span>
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    setSelectedProducto(producto);
-                                    setIsActivarModalOpen(true);
-                                  }}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                  <span>Activar</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                    <button
-                      onClick={() => setCurrentPageInactivos(1)}
-                      disabled={currentPageInactivos === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
-                      disabled={currentPageInactivos === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      &lt;
-                    </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
-                      Página {currentPageInactivos} de {totalPagesInactivos}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
-                      disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPageInactivos(totalPagesInactivos)}
-                      disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      »
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </main>
       </div>
@@ -888,17 +918,34 @@ export default function ProductosPage() {
               Cancelar
             </button>
             <button
-              onClick={() => {
-                console.log("Guardar cambios:", editForm);
-                alert("Funcionalidad de guardado pendiente de implementar");
-                setIsEditarModalOpen(false);
+              onClick={async () => {
+                try {
+                  if (!selectedProducto || !selectedProducto.id) {
+                    alert("Error: No se pudo identificar el producto a editar");
+                    return;
+                  }
+                  
+                  // Validar campos requeridos
+                  if (!editForm.codigo || !editForm.nombre || !editForm.categoria) {
+                    alert("Por favor, complete todos los campos requeridos");
+                    return;
+                  }
+                  
+                  await actualizarProducto(selectedProducto.id, editForm);
+                  alert("Producto actualizado exitosamente");
+                  setIsEditarModalOpen(false);
+                  setSelectedProducto(null);
+                } catch (err) {
+                  alert(`Error al actualizar producto: ${err.message}`);
+                }
               }}
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              disabled={loadingData}
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
-              <span>Guardar Cambios</span>
+              <span>{loadingData ? "Guardando..." : "Guardar Cambios"}</span>
             </button>
           </div>
         </div>
@@ -931,15 +978,25 @@ export default function ProductosPage() {
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  console.log("Desactivar producto:", selectedProducto.id);
-                  alert("Funcionalidad de desactivación pendiente de implementar");
-                  setIsDesactivarModalOpen(false);
-                  setSelectedProducto(null);
+                onClick={async () => {
+                  try {
+                    if (!selectedProducto || !selectedProducto.id) {
+                      alert("Error: No se pudo identificar el producto a desactivar");
+                      return;
+                    }
+                    
+                    await desactivarProducto(selectedProducto.id);
+                    alert("Producto desactivado exitosamente");
+                    setIsDesactivarModalOpen(false);
+                    setSelectedProducto(null);
+                  } catch (err) {
+                    alert(`Error al desactivar producto: ${err.message}`);
+                  }
                 }}
-                className="px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+                disabled={loadingData}
+                className="px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Desactivar
+                {loadingData ? "Desactivando..." : "Desactivar"}
               </button>
             </div>
           </div>
@@ -997,8 +1054,13 @@ export default function ProductosPage() {
             codigo: "",
             nombre: "",
             categoria: "",
+            tipoProducto: "",
+            colorTipo: "",
+            tamano: "",
+            paresPorCaja: "",
             precio: "",
             stock: "",
+            fichaTecnica: "",
           });
         }}
         title="Agregar Nuevo Producto"
@@ -1014,7 +1076,7 @@ export default function ProductosPage() {
               value={newProductForm.codigo}
               onChange={(e) => setNewProductForm({ ...newProductForm, codigo: e.target.value })}
               placeholder="Ej: PROD001"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
           <div>
@@ -1026,7 +1088,7 @@ export default function ProductosPage() {
               value={newProductForm.nombre}
               onChange={(e) => setNewProductForm({ ...newProductForm, nombre: e.target.value })}
               placeholder="Nombre del producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
           <div>
@@ -1038,7 +1100,70 @@ export default function ProductosPage() {
               value={newProductForm.categoria}
               onChange={(e) => setNewProductForm({ ...newProductForm, categoria: e.target.value })}
               placeholder="Categoría del producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Tipo de Producto <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newProductForm.tipoProducto}
+              onChange={(e) => setNewProductForm({ ...newProductForm, tipoProducto: e.target.value })}
+              placeholder="Tipo de producto"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Color/Tipo <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newProductForm.colorTipo}
+              onChange={(e) => setNewProductForm({ ...newProductForm, colorTipo: e.target.value })}
+              placeholder="Color o tipo"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Tamaño <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newProductForm.tamano}
+                onChange={(e) => setNewProductForm({ ...newProductForm, tamano: e.target.value })}
+                placeholder="Tamaño"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Pares por Caja <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={newProductForm.paresPorCaja}
+                onChange={(e) => setNewProductForm({ ...newProductForm, paresPorCaja: e.target.value })}
+                placeholder="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Ficha Técnica (URL) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newProductForm.fichaTecnica}
+              onChange={(e) => setNewProductForm({ ...newProductForm, fichaTecnica: e.target.value })}
+              placeholder="URL de la ficha técnica (puede estar vacío)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -1053,7 +1178,7 @@ export default function ProductosPage() {
                 value={newProductForm.precio}
                 onChange={(e) => setNewProductForm({ ...newProductForm, precio: e.target.value })}
                 placeholder="0.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
               />
             </div>
             <div>
@@ -1066,7 +1191,7 @@ export default function ProductosPage() {
                 value={newProductForm.stock}
                 onChange={(e) => setNewProductForm({ ...newProductForm, stock: e.target.value })}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
               />
             </div>
           </div>
@@ -1078,8 +1203,13 @@ export default function ProductosPage() {
                   codigo: "",
                   nombre: "",
                   categoria: "",
+                  tipoProducto: "",
+                  colorTipo: "",
+                  tamano: "",
+                  paresPorCaja: "",
                   precio: "",
                   stock: "",
+                  fichaTecnica: "",
                 });
               }}
               className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -1087,26 +1217,39 @@ export default function ProductosPage() {
               Cancelar
             </button>
             <button
-              onClick={() => {
-                // Validar campos requeridos
-                if (!newProductForm.codigo || !newProductForm.nombre || !newProductForm.categoria || !newProductForm.precio || !newProductForm.stock) {
-                  alert("Por favor, complete todos los campos requeridos");
-                  return;
+              onClick={async () => {
+                try {
+                  // Validar campos requeridos según la API
+                  if (!newProductForm.codigo || !newProductForm.nombre || !newProductForm.categoria || 
+                      !newProductForm.tipoProducto || !newProductForm.colorTipo || !newProductForm.tamano || 
+                      !newProductForm.paresPorCaja || !newProductForm.fichaTecnica) {
+                    alert("Por favor, complete todos los campos requeridos");
+                    return;
+                  }
+                  
+                  await agregarProducto(newProductForm);
+                  alert("Producto agregado exitosamente");
+                  setIsAgregarModalOpen(false);
+                  setNewProductForm({
+                    codigo: "",
+                    nombre: "",
+                    categoria: "",
+                    tipoProducto: "",
+                    colorTipo: "",
+                    tamano: "",
+                    paresPorCaja: "",
+                    precio: "",
+                    stock: "",
+                    fichaTecnica: "",
+                  });
+                } catch (err) {
+                  alert(`Error al agregar producto: ${err.message}`);
                 }
-                console.log("Agregar producto:", newProductForm);
-                alert("Funcionalidad de agregado pendiente de implementar");
-                setIsAgregarModalOpen(false);
-                setNewProductForm({
-                  codigo: "",
-                  nombre: "",
-                  categoria: "",
-                  precio: "",
-                  stock: "",
-                });
               }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              disabled={loadingData}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Agregar Producto
+              {loadingData ? "Agregando..." : "Agregar Producto"}
             </button>
           </div>
         </div>
