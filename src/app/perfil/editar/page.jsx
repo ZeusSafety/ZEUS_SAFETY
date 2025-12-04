@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import { useAuth } from "../../../components/context/AuthContext";
 
 // Componente de Dropdown personalizado
-const CustomSelect = ({ name, value, onChange, options, placeholder, required, label }) => {
+const CustomSelect = ({ name, value, onChange, options, placeholder, required, label, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const selectRef = useRef(null);
@@ -16,11 +16,13 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
   const selectedOption = options.find(opt => opt.value === value);
 
   const handleSelect = (optionValue) => {
+    if (disabled) return;
     onChange({ target: { name, value: optionValue } });
     setIsOpen(false);
   };
 
   const handleToggle = () => {
+    if (disabled) return;
     if (!isOpen && buttonRef.current) {
       // Calcular si hay espacio suficiente abajo
       const rect = buttonRef.current.getBoundingClientRect();
@@ -56,16 +58,25 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
-        className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white text-gray-900 flex items-center justify-between shadow-sm hover:shadow-md ${
+        disabled={disabled}
+        className={`w-full px-4 py-2.5 border rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
+          disabled 
+            ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
+            : `border-gray-200 bg-white text-gray-900 shadow-sm hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
           isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+              }`
         }`}
         style={{ borderRadius: '0.5rem' }}
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={value ? (disabled ? 'text-gray-600' : 'text-gray-900') : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`}
+          className={`w-5 h-5 transition-transform duration-200 ${
+            disabled 
+              ? 'text-gray-400' 
+              : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -74,7 +85,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         </svg>
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div 
           className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden ${
             openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
@@ -120,6 +131,8 @@ export default function EditarPerfilPage() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
+  const [error, setError] = useState(null);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -152,45 +165,413 @@ export default function EditarPerfilPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Cargar datos del usuario (simulado)
-  useEffect(() => {
-    if (user) {
-      // Determinar si user.email es realmente un email (contiene @) o es un username
-      const userEmail = user.email || "";
-      const isEmail = userEmail.includes("@");
+  // Función para obtener datos del perfil de usuario desde la API
+  const fetchPerfilUsuario = useCallback(async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
       
-      // Si user.email no contiene @, entonces es un username
-      // Si contiene @, entonces es un email real
-      let username = user.username || user.name || user.usuario || "";
-      let email = user.correo || "";
-      
-      if (!isEmail && userEmail) {
-        // Si no es un email, es un username
-        username = userEmail;
-        email = ""; // No hay email real
-      } else if (isEmail) {
-        // Si es un email real, usarlo para el campo correo
-        email = userEmail;
-        // El username debe venir de otra propiedad
-        username = user.username || user.name || user.usuario || "";
+      // Verificar que estamos en el cliente
+      if (typeof window === "undefined") {
+        throw new Error("Este código debe ejecutarse en el cliente");
       }
       
-      setFormData({
-        primerNombre: user.primerNombre || "",
-        segundoNombre: user.segundoNombre || "",
-        primerApellido: user.primerApellido || "",
-        segundoApellido: user.segundoApellido || "",
-        fechaNacimiento: user.fechaNacimiento || "",
-        fechaIngreso: user.fechaIngreso || "2024-01-15",
-        fechaPlanilla: user.fechaPlanilla || "2024-01-15",
-        usuario: username,
-        contraseña: "••••••••", // Mostrar como no modificable
-        correo: email,
-        areaPrincipal: user.areaPrincipal || "",
-        rol: user.rol || "",
+      // Obtener el token del localStorage
+      const token = localStorage.getItem("token");
+      
+      if (!token || token.trim() === "") {
+        throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
+      }
+      
+      // Obtener el usuario del contexto o del localStorage
+      const storedUser = localStorage.getItem("user");
+      const currentUser = user || (storedUser ? JSON.parse(storedUser) : null);
+      
+      // Obtener el nombre de usuario para la API
+      // El objeto de usuario del login tiene: id, email, name, modules, isAdmin, rol
+      // No tiene 'username' ni 'usuario', así que usamos name, id o email
+      const username = currentUser?.name || currentUser?.id || currentUser?.email || "";
+      
+      if (!username) {
+        throw new Error("No se pudo identificar el usuario. Por favor, inicia sesión nuevamente.");
+      }
+      
+      console.log("Fetching perfil usuario with token:", token.substring(0, 20) + "...");
+      console.log("Usuario actual:", currentUser);
+      console.log("Username para API:", username);
+      
+      // Construir la URL con el parámetro user
+      const apiUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
+      
+      console.log("API URL:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
       });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+        
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
+      }
+      
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textData = await response.text();
+        try {
+          data = JSON.parse(textData);
+        } catch (parseError) {
+          throw new Error("La respuesta no es un JSON válido");
+        }
+      }
+      
+      console.log("=== DATOS RECIBIDOS DE LA API ===");
+      console.log("Tipo de datos:", typeof data);
+      console.log("Es array?", Array.isArray(data));
+      console.log("Datos completos:", JSON.stringify(data, null, 2));
+      console.log("Claves del objeto:", data ? Object.keys(data) : "No hay datos");
+      
+      // La API devuelve directamente el perfil del usuario (no una lista)
+      // Puede venir como objeto directo o dentro de una propiedad
+      let perfilUsuario = null;
+      
+      if (data && typeof data === 'object') {
+        // Si es un objeto, puede estar directamente o dentro de una propiedad
+        if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+          perfilUsuario = data.data;
+          console.log("✅ Perfil encontrado en data.data");
+        } else if (data.perfil && typeof data.perfil === 'object') {
+          perfilUsuario = data.perfil;
+          console.log("✅ Perfil encontrado en data.perfil");
+        } else if (data.perfil_usuario && typeof data.perfil_usuario === 'object') {
+          perfilUsuario = data.perfil_usuario;
+          console.log("✅ Perfil encontrado en data.perfil_usuario");
+        } else if (data.usuario && typeof data.usuario === 'object') {
+          perfilUsuario = data.usuario;
+          console.log("✅ Perfil encontrado en data.usuario");
+        } else if (data.user && typeof data.user === 'object') {
+          perfilUsuario = data.user;
+          console.log("✅ Perfil encontrado en data.user");
+        } else if (Array.isArray(data) && data.length > 0) {
+          // Si es un array, tomar el primer elemento
+          perfilUsuario = data[0];
+          console.log("✅ Perfil encontrado en array[0]");
+        } else if (!Array.isArray(data)) {
+          // Si no tiene propiedades anidadas y no es un array, usar el objeto directamente
+          perfilUsuario = data;
+          console.log("✅ Usando objeto directamente como perfil");
+        }
+      }
+      
+      console.log("=== PERFIL USUARIO EXTRAÍDO ===");
+      console.log("Perfil usuario:", JSON.stringify(perfilUsuario, null, 2));
+      console.log("Claves del perfil:", perfilUsuario ? Object.keys(perfilUsuario) : "No hay perfil");
+      
+      // Mostrar TODOS los valores del perfil para debug
+      if (perfilUsuario) {
+        console.log("=== TODOS LOS VALORES DEL PERFIL ===");
+        Object.keys(perfilUsuario).forEach(key => {
+          console.log(`${key}:`, perfilUsuario[key], `(tipo: ${typeof perfilUsuario[key]})`);
+        });
+      }
+      
+      // Formatear fechas si vienen en formato diferente
+      const formatDate = (dateString) => {
+        if (!dateString || dateString === "null" || dateString === "undefined") return "";
+        // Si ya está en formato YYYY-MM-DD, devolverlo tal cual
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dateString;
+        }
+        // Si viene en formato DD/MM/YYYY, convertirlo
+        if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+          const [day, month, year] = dateString.split('/');
+          return `${year}-${month}-${day}`;
+        }
+        // Si viene en otro formato, intentar parsearlo
+        try {
+          const date = new Date(dateString);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Error al formatear fecha:", e);
+        }
+        return "";
+      };
+      
+        // Función helper para obtener valores con múltiples variaciones de nombres (incluyendo mayúsculas)
+        const getValue = (obj, ...keys) => {
+          if (!obj) return "";
+          
+          // Primero buscar con las claves exactas proporcionadas
+          for (const key of keys) {
+            // Buscar en minúsculas
+            const value = obj[key];
+            if (value !== undefined && value !== null && value !== "" && value !== "null" && value !== "undefined") {
+              return String(value);
+            }
+            // Buscar en mayúsculas
+            const upperKey = key.toUpperCase();
+            const upperValue = obj[upperKey];
+            if (upperValue !== undefined && upperValue !== null && upperValue !== "" && upperValue !== "null" && upperValue !== "undefined") {
+              return String(upperValue);
+            }
+            // Buscar case-insensitive en todas las claves del objeto
+            const objKeys = Object.keys(obj);
+            for (const objKey of objKeys) {
+              if (objKey.toUpperCase() === upperKey && obj[objKey] !== undefined && obj[objKey] !== null && obj[objKey] !== "" && obj[objKey] !== "null" && obj[objKey] !== "undefined") {
+                return String(obj[objKey]);
+              }
+            }
+          }
+          return "";
+        };
+        
+        if (perfilUsuario) {
+          // Determinar si el correo es realmente un email (contiene @) o es un username
+          const userEmail = getValue(perfilUsuario, "correo", "email", "correo_electronico", "CORREO");
+          const isEmail = userEmail.includes("@");
+          
+          const currentUsername = currentUser?.name || currentUser?.id || currentUser?.email || username;
+          let usernameFinal = getValue(perfilUsuario, "usuario", "username", "name", "user", "user_name", "USUARIO") || currentUsername || username || "";
+          let emailFinal = userEmail;
+          
+          if (!isEmail && userEmail) {
+            usernameFinal = userEmail;
+            emailFinal = "";
+          } else if (isEmail) {
+            emailFinal = userEmail;
+            if (!usernameFinal) {
+              usernameFinal = currentUsername || username || "";
+            }
+          }
+          
+          // Función para mapear el área de la API a las opciones del dropdown
+          const mapArea = (areaValue) => {
+            if (!areaValue) return "";
+            const areaUpper = String(areaValue).toUpperCase().trim();
+            const areaMap = {
+              "ADMINISTRACION": "Administración",
+              "ADMINISTRACIÓN": "Administración",
+              "GERENCIA": "Gerencia",
+              "IMPORTACION": "Importación",
+              "IMPORTACIÓN": "Importación",
+              "LOGISTICA": "Logística",
+              "LOGÍSTICA": "Logística",
+              "FACTURACION": "Facturación",
+              "FACTURACIÓN": "Facturación",
+              "MARKETING": "Marketing",
+              "SISTEMAS": "Sistemas",
+              "RECURSOS HUMANOS": "Recursos Humanos",
+              "VENTAS": "Ventas",
+            };
+            return areaMap[areaUpper] || areaValue;
+          };
+          
+          // Función para mapear el rol de la API a las opciones del dropdown
+          const mapRol = (rolValue) => {
+            if (!rolValue) return "";
+            const rolUpper = String(rolValue).toUpperCase().trim();
+            const rolMap = {
+              "GERENCIA": "Gerente",
+              "GERENTE": "Gerente",
+              "ADMINISTRADOR": "Administrador",
+              "ADMIN": "Administrador",
+              "USUARIO": "Usuario",
+              "USER": "Usuario",
+              "SUPERVISOR": "Supervisor",
+            };
+            return rolMap[rolUpper] || rolValue;
+          };
+          
+          // Obtener valores de área y rol de la API
+          const areaFromAPI = perfilUsuario["A.NOMBRE"] || perfilUsuario["a.nombre"] || getValue(perfilUsuario, "areaPrincipal", "area_principal", "area", "department", "departamento");
+          const rolFromAPI = perfilUsuario["R.NOMBRE"] || perfilUsuario["r.nombre"] || getValue(perfilUsuario, "rol", "role", "cargo", "position", "rol_usuario");
+          
+          console.log("=== MAPEO DE ÁREA Y ROL ===");
+          console.log("areaFromAPI (raw):", areaFromAPI);
+          console.log("rolFromAPI (raw):", rolFromAPI);
+          console.log("areaFromAPI (mapeado):", mapArea(areaFromAPI));
+          console.log("rolFromAPI (mapeado):", mapRol(rolFromAPI));
+          
+          // Mapear los campos según los nombres que vienen de la API en MAYÚSCULAS
+          // Nota: La API devuelve campos con puntos como "A.NOMBRE" y "R.NOMBRE"
+          const formDataToSet = {
+            primerNombre: getValue(perfilUsuario, "NOMBRE", "primerNombre", "primer_nombre", "nombre1", "first_name", "nombre"),
+            segundoNombre: getValue(perfilUsuario, "SEGUNDO_NOMBRE", "segundoNombre", "segundo_nombre", "nombre2", "second_name"),
+            primerApellido: getValue(perfilUsuario, "APELLIDO", "primerApellido", "primer_apellido", "apellido1", "last_name", "apellido"),
+            // El segundo apellido puede venir en diferentes formatos o puede no existir en la API
+            segundoApellido: getValue(perfilUsuario, "SEGUNDO_APELLIDO", "SEGUNDO APELLIDO", "segundoApellido", "segundo_apellido", "apellido2", "second_last_name", "apellido_materno", "APELLIDO_MATERNO", "apellidoMaterno"),
+            // FECHA_NACIMIENTO - buscar en múltiples variaciones, incluyendo si viene con valor inválido como "MAITA"
+            fechaNacimiento: (() => {
+              const fechaRaw = getValue(perfilUsuario, "FECHA_NACIMIENTO", "fechaNacimiento", "fecha_nacimiento", "nacimiento", "birth_date", "fecha_nac", "FECHA_NAC", "fechaNac");
+              // Si el valor es "MAITA" o similar (no es una fecha), retornar vacío
+              if (fechaRaw && fechaRaw.toUpperCase() !== "MAITA" && !isNaN(new Date(fechaRaw).getTime())) {
+                return formatDate(fechaRaw);
+              }
+              return "";
+            })(),
+            fechaIngreso: formatDate(getValue(perfilUsuario, "FECHA_INGRESO", "fechaIngreso", "fecha_ingreso", "ingreso", "entry_date", "fecha_ing")),
+            fechaPlanilla: formatDate(getValue(perfilUsuario, "FECHA_PLANILLA", "fechaPlanilla", "fecha_planilla", "planilla", "payroll_date", "fecha_plan")),
+            usuario: usernameFinal || username || currentUsername || "",
+            contraseña: "••••••••", // Mostrar como no modificable
+            correo: emailFinal,
+            // Mapear área y rol a los valores correctos del dropdown
+            areaPrincipal: mapArea(areaFromAPI),
+            rol: mapRol(rolFromAPI),
+          };
+        
+        console.log("=== DATOS DEL FORMULARIO A ESTABLECER ===");
+        console.log(JSON.stringify(formDataToSet, null, 2));
+        console.log("Valores individuales:");
+        console.log("- primerNombre:", formDataToSet.primerNombre);
+        console.log("- primerApellido:", formDataToSet.primerApellido);
+        console.log("- correo:", formDataToSet.correo);
+        console.log("- areaPrincipal:", formDataToSet.areaPrincipal);
+        console.log("- rol:", formDataToSet.rol);
+        
+        // Establecer los datos del formulario de forma forzada
+        // Usar una función de actualización para asegurar que se apliquen todos los valores
+        setFormData(prev => {
+          const newData = { ...formDataToSet };
+          console.log("🔄 Actualizando formData:");
+          console.log("  - Datos anteriores:", JSON.stringify(prev, null, 2));
+          console.log("  - Datos nuevos:", JSON.stringify(newData, null, 2));
+          return newData;
+        });
+        console.log("✅ setFormData ejecutado correctamente");
+        
+        // Forzar re-render después de un pequeño delay para asegurar que se actualice
+        setTimeout(() => {
+          setFormData(current => {
+            console.log("🔄 Verificación post-setFormData:", JSON.stringify(current, null, 2));
+            return current;
+          });
+        }, 100);
+      } else {
+        // Si no se encuentra el colaborador en la API, usar los datos del contexto como fallback
+        console.log("No se encontró colaborador en la API, usando datos del contexto");
+        const userEmail = currentUser?.email || "";
+        const isEmail = userEmail.includes("@");
+        
+        let username = currentUser?.name || currentUser?.id || currentUser?.email || "";
+        let email = currentUser?.correo || "";
+      
+        if (!isEmail && userEmail) {
+        username = userEmail;
+          email = "";
+      } else if (isEmail) {
+        email = userEmail;
+          username = currentUser?.name || currentUser?.id || currentUser?.email || "";
+        }
+        
+        const fallbackData = {
+          primerNombre: currentUser?.primerNombre || "",
+          segundoNombre: currentUser?.segundoNombre || "",
+          primerApellido: currentUser?.primerApellido || "",
+          segundoApellido: currentUser?.segundoApellido || "",
+          fechaNacimiento: currentUser?.fechaNacimiento || "",
+          fechaIngreso: currentUser?.fechaIngreso || "",
+          fechaPlanilla: currentUser?.fechaPlanilla || "",
+          usuario: username,
+          contraseña: "••••••••",
+          correo: email,
+          areaPrincipal: currentUser?.areaPrincipal || "",
+          rol: currentUser?.rol || "",
+        };
+        
+        console.log("Datos de fallback del contexto:", fallbackData);
+        setFormData(fallbackData);
+      }
+    } catch (err) {
+      console.error("Error al obtener datos del colaborador:", err);
+      setError(err.message || "Error al cargar los datos del perfil");
+      
+      // Si hay error pero tenemos datos del contexto o localStorage, usarlos como fallback
+      const storedUser = localStorage.getItem("user");
+      const currentUser = user || (storedUser ? JSON.parse(storedUser) : null);
+      
+      if (currentUser) {
+        const userEmail = currentUser.email || "";
+        const isEmail = userEmail.includes("@");
+        
+        let username = currentUser.name || currentUser.id || currentUser.email || "";
+        let email = currentUser.correo || "";
+        
+        if (!isEmail && userEmail) {
+          username = userEmail;
+          email = "";
+        } else if (isEmail) {
+          email = userEmail;
+          username = currentUser.name || currentUser.id || currentUser.email || "";
+        }
+        
+        const fallbackData = {
+          primerNombre: currentUser.primerNombre || "",
+          segundoNombre: currentUser.segundoNombre || "",
+          primerApellido: currentUser.primerApellido || "",
+          segundoApellido: currentUser.segundoApellido || "",
+          fechaNacimiento: currentUser.fechaNacimiento || "",
+          fechaIngreso: currentUser.fechaIngreso || "",
+          fechaPlanilla: currentUser.fechaPlanilla || "",
+        usuario: username,
+          contraseña: "••••••••",
+        correo: email,
+          areaPrincipal: currentUser.areaPrincipal || "",
+          rol: currentUser.rol || "",
+        };
+        
+        console.log("Usando datos de fallback debido a error:", fallbackData);
+        setFormData(fallbackData);
+      }
+    } finally {
+      setLoadingData(false);
     }
-  }, [user]);
+  }, [user, router]);
+
+  // Cargar datos del usuario desde la API
+  useEffect(() => {
+    // Intentar cargar datos siempre, incluso si no hay user en el contexto
+    // porque puede estar en localStorage
+    const storedUser = localStorage.getItem("user");
+    const userToUse = user || (storedUser ? JSON.parse(storedUser) : null);
+    
+    console.log("=== useEffect ejecutado ===");
+    console.log("user del contexto:", user);
+    console.log("storedUser:", storedUser);
+    console.log("userToUse:", userToUse);
+    
+    if (userToUse) {
+      console.log("✅ Ejecutando fetchPerfilUsuario con usuario:", userToUse);
+      fetchPerfilUsuario();
+    } else {
+      console.log("❌ No hay usuario disponible para cargar datos");
+      setError("No se encontró información del usuario. Por favor, inicia sesión nuevamente.");
+    }
+  }, [user, fetchPerfilUsuario]);
+
+  // Debug: Ver cuando cambia formData
+  useEffect(() => {
+    console.log("=== formData actualizado ===");
+    console.log("formData:", JSON.stringify(formData, null, 2));
+  }, [formData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -262,20 +643,35 @@ export default function EditarPerfilPage() {
                 </div>
               </div>
 
+              {/* Mensaje de error */}
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {/* Loading state */}
+              {loadingData && (
+                <div className="mb-4 flex items-center justify-center p-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-sm text-gray-600">Cargando datos del perfil...</span>
+                </div>
+              )}
+
               {/* Formulario */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Primer Nombre */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Primer Nombre <span className="text-red-500">*</span>
+                      Primer Nombre
                     </label>
                     <input
                       type="text"
                       name="primerNombre"
                       value={formData.primerNombre}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
                       required
                     />
                   </div>
@@ -290,21 +686,21 @@ export default function EditarPerfilPage() {
                       name="segundoNombre"
                       value={formData.segundoNombre}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
                     />
                   </div>
 
                   {/* Primer Apellido */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Primer Apellido <span className="text-red-500">*</span>
+                      Primer Apellido
                     </label>
                     <input
                       type="text"
                       name="primerApellido"
                       value={formData.primerApellido}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
                       required
                     />
                   </div>
@@ -319,22 +715,21 @@ export default function EditarPerfilPage() {
                       name="segundoApellido"
                       value={formData.segundoApellido}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
                     />
                   </div>
 
-                  {/* Fecha de Nacimiento */}
+                  {/* Fecha de Nacimiento (no modificable) */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Fecha de Nacimiento <span className="text-red-500">*</span>
+                      Fecha de Nacimiento
                     </label>
                     <input
                       type="date"
                       name="fechaNacimiento"
                       value={formData.fechaNacimiento}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
-                      required
+                      disabled
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
                     />
                   </div>
 
@@ -411,7 +806,7 @@ export default function EditarPerfilPage() {
                   {/* Área Principal */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Área Principal <span className="text-red-500">*</span>
+                      Área Principal
                     </label>
                     <CustomSelect
                       name="areaPrincipal"
@@ -419,6 +814,7 @@ export default function EditarPerfilPage() {
                       onChange={handleInputChange}
                       placeholder="Seleccionar área"
                       required
+                      disabled={true}
                       options={[
                         { value: "Gerencia", label: "Gerencia" },
                         { value: "Administración", label: "Administración" },
@@ -436,7 +832,7 @@ export default function EditarPerfilPage() {
                   {/* Rol */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Rol <span className="text-red-500">*</span>
+                      Rol
                     </label>
                     <CustomSelect
                       name="rol"
@@ -444,6 +840,7 @@ export default function EditarPerfilPage() {
                       onChange={handleInputChange}
                       placeholder="Seleccionar rol"
                       required
+                      disabled={true}
                       options={[
                         { value: "Administrador", label: "Administrador" },
                         { value: "Usuario", label: "Usuario" },
