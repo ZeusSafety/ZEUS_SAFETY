@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -17,7 +17,45 @@ export default function ColaboradoresPage() {
   const [isPermisosModalOpen, setIsPermisosModalOpen] = useState(false);
   const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
+  const [isVerDetallesModalOpen, setIsVerDetallesModalOpen] = useState(false);
   const [selectedColaborador, setSelectedColaborador] = useState(null);
+  const [selectedColaboradorCompleto, setSelectedColaboradorCompleto] = useState(null);
+  const [datosEditables, setDatosEditables] = useState([]);
+
+  // Inicializar datosEditables cuando se abre el modal
+  useEffect(() => {
+    if (isVerDetallesModalOpen && selectedColaboradorCompleto) {
+      const getValue = (obj, keys) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+            return obj[key];
+          }
+        }
+        return null;
+      };
+      
+      const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
+      let datosArray = null;
+      
+      if (typeof datosField === "string") {
+        try {
+          datosArray = JSON.parse(datosField);
+        } catch (e) {
+          console.error("Error al parsear DATOS:", e);
+        }
+      } else if (Array.isArray(datosField)) {
+        datosArray = datosField;
+      }
+      
+      if (datosArray && Array.isArray(datosArray)) {
+        setDatosEditables(datosArray);
+      } else {
+        setDatosEditables([]);
+      }
+    } else {
+      setDatosEditables([]);
+    }
+  }, [isVerDetallesModalOpen, selectedColaboradorCompleto]);
   const [newColaboradorForm, setNewColaboradorForm] = useState({
     nombre: "",
     apellido: "",
@@ -25,6 +63,12 @@ export default function ColaboradoresPage() {
     correo: "",
     fechaCumpleanos: "",
   });
+  
+  // Estados para datos de la API
+  const [colaboradores, setColaboradores] = useState([]);
+  const [colaboradoresCompletos, setColaboradoresCompletos] = useState([]); // Datos originales de la API
+  const [loadingColaboradores, setLoadingColaboradores] = useState(true);
+  const [errorColaboradores, setErrorColaboradores] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,31 +94,130 @@ export default function ColaboradoresPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Datos de ejemplo
-  const colaboradores = [
-    { id: 1, nombre: "HERVIN", apellido: "CORONEL", area: "Administracion", correo: "permisos.zeus@gmail.com", fechaCumpleanos: "03/07/1991", activo: true },
-    { id: 2, nombre: "MARIA", apellido: "GONZALEZ", area: "Ventas", correo: "maria.gonzalez@zeus.com", fechaCumpleanos: "15/03/1988", activo: true },
-    { id: 3, nombre: "JUAN", apellido: "PEREZ", area: "Logistica", correo: "juan.perez@zeus.com", fechaCumpleanos: "22/11/1990", activo: true },
-    { id: 4, nombre: "ANA", apellido: "LOPEZ", area: "Marketing", correo: "ana.lopez@zeus.com", fechaCumpleanos: "08/05/1992", activo: true },
-    { id: 5, nombre: "CARLOS", apellido: "RODRIGUEZ", area: "Sistemas", correo: "carlos.rodriguez@zeus.com", fechaCumpleanos: "12/09/1987", activo: true },
-    { id: 6, nombre: "LAURA", apellido: "MARTINEZ", area: "Administracion", correo: "laura.martinez@zeus.com", fechaCumpleanos: "25/12/1993", activo: true },
-    { id: 7, nombre: "PEDRO", apellido: "SANCHEZ", area: "Ventas", correo: "pedro.sanchez@zeus.com", fechaCumpleanos: "30/01/1989", activo: true },
-    { id: 8, nombre: "SOFIA", apellido: "TORRES", area: "Logistica", correo: "sofia.torres@zeus.com", fechaCumpleanos: "14/07/1991", activo: true },
-    { id: 9, nombre: "DIEGO", apellido: "RAMIREZ", area: "Marketing", correo: "diego.ramirez@zeus.com", fechaCumpleanos: "06/03/1994", activo: true },
-    { id: 10, nombre: "ELENA", apellido: "FERNANDEZ", area: "Sistemas", correo: "elena.fernandez@zeus.com", fechaCumpleanos: "19/08/1990", activo: true },
-    { id: 11, nombre: "ROBERTO", apellido: "GUTIERREZ", area: "Administracion", correo: "roberto.gutierrez@zeus.com", fechaCumpleanos: "02/10/1986", activo: true },
-    { id: 12, nombre: "CARMEN", apellido: "JIMENEZ", area: "Ventas", correo: "carmen.jimenez@zeus.com", fechaCumpleanos: "11/04/1992", activo: true },
-    { id: 13, nombre: "FERNANDO", apellido: "MORALES", area: "Logistica", correo: "fernando.morales@zeus.com", fechaCumpleanos: "27/06/1988", activo: true },
-    { id: 14, nombre: "ISABEL", apellido: "ORTEGA", area: "Marketing", correo: "isabel.ortega@zeus.com", fechaCumpleanos: "09/02/1995", activo: true },
-    { id: 15, nombre: "MIGUEL", apellido: "CASTRO", area: "Sistemas", correo: "miguel.castro@zeus.com", fechaCumpleanos: "16/11/1987", activo: true },
-  ];
+  // Función para obtener colaboradores de la API
+  const fetchColaboradores = useCallback(async () => {
+    try {
+      setLoadingColaboradores(true);
+      setErrorColaboradores(null);
 
-  const colaboradoresInactivos = [
-    { id: 16, nombre: "JOSELYN", apellido: "", area: "LOGISTICA", correo: "zeussafety2024@gmail.com", fechaCumpleanos: "23/11/1995", activo: false },
-  ];
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
 
-  const activos = colaboradores.filter(c => c.activo);
-  const inactivos = colaboradoresInactivos.filter(c => !c.activo);
+      const response = await fetch("/api/colaboradores", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Datos recibidos de la API:", data);
+
+      // Guardar los datos originales completos
+      setColaboradoresCompletos(Array.isArray(data) ? data : []);
+
+      // Mapear los datos de la API al formato esperado
+      // La API puede devolver diferentes estructuras, así que intentamos varias opciones
+      const colaboradoresMapeados = Array.isArray(data) ? data.map((colab) => {
+        // Intentar obtener los campos con diferentes nombres posibles
+        const getValue = (obj, keys) => {
+          for (const key of keys) {
+            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+              return obj[key];
+            }
+          }
+          return "";
+        };
+
+        // Formatear fecha de cumpleaños
+        const fechaNac = getValue(colab, ["fecha_nacimiento", "fechaNacimiento", "fecha_cumpleanos", "fechaCumpleanos", "FECHA_NACIMIENTO", "FECHA_CUMPLEANOS"]);
+        let fechaFormateada = "";
+        if (fechaNac) {
+          try {
+            // Intentar parsear diferentes formatos de fecha
+            const fecha = new Date(fechaNac);
+            if (!isNaN(fecha.getTime())) {
+              const dia = String(fecha.getDate()).padStart(2, "0");
+              const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+              const año = fecha.getFullYear();
+              fechaFormateada = `${dia}/${mes}/${año}`;
+            } else {
+              // Si ya está en formato DD/MM/YYYY, usarlo directamente
+              fechaFormateada = fechaNac;
+            }
+          } catch (e) {
+            fechaFormateada = fechaNac;
+          }
+        }
+
+        // Obtener área - puede estar en un objeto anidado
+        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
+        if (!areaValue && colab.A && colab.A.NOMBRE) {
+          areaValue = colab.A.NOMBRE;
+        }
+        if (!areaValue && colab.a && colab.a.nombre) {
+          areaValue = colab.a.nombre;
+        }
+        // Buscar en objetos anidados con diferentes estructuras
+        if (!areaValue) {
+          for (const key in colab) {
+            if (typeof colab[key] === "object" && colab[key] !== null) {
+              const nestedArea = getValue(colab[key], ["NOMBRE", "nombre", "NOMBRE_AREA", "nombre_area", "AREA", "area"]);
+              if (nestedArea) {
+                areaValue = nestedArea;
+                break;
+              }
+            }
+          }
+        }
+
+        // Determinar si está activo
+        const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
+        const isActivo = estadoValue !== false && 
+                        estadoValue !== "inactivo" && 
+                        estadoValue !== "INACTIVO" && 
+                        estadoValue !== 0 &&
+                        estadoValue !== "0";
+
+        return {
+          id: getValue(colab, ["id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
+          nombre: getValue(colab, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]) || "",
+          apellido: getValue(colab, ["apellido", "APELLIDO", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
+          area: areaValue || "Sin área asignada",
+          correo: getValue(colab, ["correo", "CORREO", "Correo", "email", "EMAIL", "Email", "correo_electronico", "CORREO_ELECTRONICO"]) || "",
+          fechaCumpleanos: fechaFormateada,
+          activo: isActivo,
+        };
+      }) : [];
+
+      console.log("Colaboradores mapeados:", colaboradoresMapeados);
+      setColaboradores(colaboradoresMapeados);
+    } catch (error) {
+      console.error("Error al obtener colaboradores:", error);
+      setErrorColaboradores(error.message || "Error al obtener colaboradores");
+    } finally {
+      setLoadingColaboradores(false);
+    }
+  }, []);
+
+  // Cargar colaboradores al montar el componente
+  useEffect(() => {
+    if (!loading && user) {
+      fetchColaboradores();
+    }
+  }, [loading, user, fetchColaboradores]);
+
+  const activos = colaboradores.filter(c => c.activo !== false);
+  const inactivos = colaboradores.filter(c => c.activo === false);
 
   const totalPages = Math.ceil(activos.length / itemsPerPage);
   const totalPagesInactivos = Math.ceil(inactivos.length / itemsPerPage);
@@ -135,13 +278,50 @@ export default function ColaboradoresPage() {
                       <p className="text-sm text-gray-600 mt-1">Gestiona los colaboradores activos del sistema</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
+                    loadingColaboradores 
+                      ? "bg-yellow-50 border border-yellow-200" 
+                      : errorColaboradores 
+                        ? "bg-red-50 border border-red-200" 
+                        : "bg-green-50 border border-green-200"
+                  }`}>
+                    {loadingColaboradores ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
+                      </>
+                    ) : errorColaboradores ? (
+                      <>
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="text-sm font-semibold text-red-700">Error: {errorColaboradores}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* Mensaje de error */}
+                {errorColaboradores && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">
+                      <strong>Error:</strong> {errorColaboradores}
+                    </p>
+                    <button
+                      onClick={fetchColaboradores}
+                      className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                    >
+                      Intentar de nuevo
+                    </button>
+                  </div>
+                )}
 
                 {/* Botón Agregar */}
                 <button
@@ -178,43 +358,90 @@ export default function ColaboradoresPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {paginatedActivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.fechaCumpleanos}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                        {loadingColaboradores ? (
+                          <tr>
+                            <td colSpan={5} className="px-3 py-8 text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedColaborador(colaborador);
-                                    setIsPermisosModalOpen(true);
-                                  }}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                  </svg>
-                                  <span>Permisos</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedColaborador(colaborador);
-                                    setIsDesactivarModalOpen(true);
-                                  }}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                  <span>Desactivar</span>
-                                </button>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                                <span className="text-sm text-gray-600">Cargando colaboradores...</span>
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        ) : paginatedActivos.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                              No hay colaboradores activos
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedActivos.map((colaborador, index) => {
+                            // Encontrar el colaborador completo original
+                            const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                              const getValue = (obj, keys) => {
+                                for (const key of keys) {
+                                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                                    return obj[key];
+                                  }
+                                }
+                                return "";
+                              };
+                              const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                              const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                              return (idOriginal && idOriginal === colaborador.id) || 
+                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
+                            }) || colaboradoresCompletos[index] || null;
+
+                            return (
+                              <tr key={colaborador.id || `colab-${index}`} className="hover:bg-slate-200 transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedColaboradorCompleto(colaboradorCompleto);
+                                        setIsVerDetallesModalOpen(true);
+                                      }}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      <span>Ver Detalles</span>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedColaborador(colaborador);
+                                        setIsPermisosModalOpen(true);
+                                      }}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                      </svg>
+                                      <span>Permisos</span>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedColaborador(colaborador);
+                                        setIsDesactivarModalOpen(true);
+                                      }}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                      <span>Desactivar</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -273,11 +500,33 @@ export default function ColaboradoresPage() {
                       <p className="text-sm text-gray-600 mt-1">Sin acceso al sistema</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
+                    loadingColaboradores 
+                      ? "bg-yellow-50 border border-yellow-200" 
+                      : errorColaboradores 
+                        ? "bg-red-50 border border-red-200" 
+                        : "bg-green-50 border border-green-200"
+                  }`}>
+                    {loadingColaboradores ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
+                      </>
+                    ) : errorColaboradores ? (
+                      <>
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="text-sm font-semibold text-red-700">Error: {errorColaboradores}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -291,36 +540,82 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA CUMPLEAÑOS</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {paginatedInactivos.map((colaborador) => (
-                          <tr key={colaborador.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.fechaCumpleanos}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                        {loadingColaboradores ? (
+                          <tr>
+                            <td colSpan={5} className="px-3 py-8 text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                  </svg>
-                                  <span>Permisos</span>
-                                </button>
-                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                  <span>Activar</span>
-                                </button>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                                <span className="text-sm text-gray-600">Cargando colaboradores...</span>
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        ) : paginatedInactivos.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                              No hay colaboradores inactivos
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedInactivos.map((colaborador, index) => {
+                            // Encontrar el colaborador completo original
+                            const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                              const getValue = (obj, keys) => {
+                                for (const key of keys) {
+                                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                                    return obj[key];
+                                  }
+                                }
+                                return "";
+                              };
+                              const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                              const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                              return (idOriginal && idOriginal === colaborador.id) || 
+                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
+                            }) || colaboradoresCompletos[colaboradores.length + index] || null;
+
+                            return (
+                              <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-slate-200 transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedColaboradorCompleto(colaboradorCompleto);
+                                        setIsVerDetallesModalOpen(true);
+                                      }}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      <span>Ver Detalles</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                      </svg>
+                                      <span>Permisos</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      <span>Activar</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -551,7 +846,292 @@ export default function ColaboradoresPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Ver Detalles */}
+      <Modal
+        isOpen={isVerDetallesModalOpen}
+        onClose={() => {
+          setIsVerDetallesModalOpen(false);
+          setSelectedColaboradorCompleto(null);
+        }}
+        title={`Detalles del Colaborador - ${selectedColaboradorCompleto ? (selectedColaboradorCompleto.nombre || selectedColaboradorCompleto.NOMBRE || selectedColaboradorCompleto.name || selectedColaboradorCompleto.NAME || "") : ""}`}
+        size="lg"
+      >
+        {selectedColaboradorCompleto && (
+          <div className="space-y-4">
+            {/* Función helper para obtener valores */}
+            {(() => {
+              const getValue = (obj, keys) => {
+                for (const key of keys) {
+                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                    return obj[key];
+                  }
+                }
+                return null;
+              };
+
+              const formatValue = (value) => {
+                if (value === null || value === undefined || value === "") {
+                  return "No disponible";
+                }
+                if (typeof value === "object") {
+                  return JSON.stringify(value, null, 2);
+                }
+                return String(value);
+              };
+
+              const formatDate = (dateValue) => {
+                if (!dateValue) return "No disponible";
+                try {
+                  const date = new Date(dateValue);
+                  if (!isNaN(date.getTime())) {
+                    const dia = String(date.getDate()).padStart(2, "0");
+                    const mes = String(date.getMonth() + 1).padStart(2, "0");
+                    const año = date.getFullYear();
+                    return `${dia}/${mes}/${año}`;
+                  }
+                  return dateValue;
+                } catch (e) {
+                  return dateValue;
+                }
+              };
+
+              // Obtener todos los campos del objeto
+              const campos = Object.keys(selectedColaboradorCompleto);
+              
+              // Campos principales a mostrar primero
+              const camposPrincipales = [
+                { keys: ["id", "ID", "Id"], label: "ID" },
+                { keys: ["nombre", "NOMBRE", "Nombre", "name", "NAME"], label: "Nombre" },
+                { keys: ["apellido", "APELLIDO", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"], label: "Apellido" },
+                { keys: ["correo", "CORREO", "Correo", "email", "EMAIL", "Email", "correo_electronico", "CORREO_ELECTRONICO"], label: "Correo Electrónico" },
+                { keys: ["fecha_nacimiento", "fechaNacimiento", "fecha_cumpleanos", "fechaCumpleanos", "FECHA_NACIMIENTO", "FECHA_CUMPLEANOS"], label: "Fecha de Nacimiento", isDate: true },
+                { keys: ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"], label: "Área" },
+                { keys: ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"], label: "Estado" },
+              ];
+
+              // Resto de campos (excluyendo DATOS que ya se muestra arriba)
+              const camposRestantes = campos.filter(campo => {
+                const campoLower = campo.toLowerCase();
+                // Excluir DATOS ya que se muestra en su sección especial arriba
+                if (campoLower === "datos") {
+                  return false;
+                }
+                const esPrincipal = camposPrincipales.some(cp => 
+                  cp.keys.some(key => key.toLowerCase() === campo.toLowerCase())
+                );
+                return !esPrincipal && typeof selectedColaboradorCompleto[campo] !== "object";
+              });
+
+              return (
+                <>
+                  {/* Campos principales */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {camposPrincipales.map((campo, index) => {
+                      const value = getValue(selectedColaboradorCompleto, campo.keys);
+                      const displayValue = campo.isDate ? formatDate(value) : formatValue(value);
+                      
+                      return (
+                        <div key={index}>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            {campo.label}
+                          </label>
+                          <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                            {displayValue}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Separador */}
+                  {camposRestantes.length > 0 && (
+                    <>
+                      <div className="border-t border-gray-200 pt-4 mt-4">
+                        <h3 className="text-sm font-bold text-gray-800 mb-3">Información Adicional</h3>
+                      </div>
+
+                      {/* Campos restantes */}
+                      <div className="grid grid-cols-2 gap-4">
+                        {camposRestantes.map((campo, index) => {
+                          const value = selectedColaboradorCompleto[campo];
+                          const displayValue = formatValue(value);
+                          
+                          return (
+                            <div key={index}>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                {campo.charAt(0).toUpperCase() + campo.slice(1).replace(/_/g, " ")}
+                              </label>
+                              <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                {displayValue}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Campo DATOS especial - Array de teléfonos, correos, etc. */}
+                  {(() => {
+                    const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
+                    
+                    // Usar datosEditables (ya inicializados en useEffect)
+                    const datosParaMostrar = datosEditables;
+                    
+                    if (datosParaMostrar && Array.isArray(datosParaMostrar) && datosParaMostrar.length > 0) {
+                      // Agrupar por MEDIO
+                      const agrupados = {};
+                      datosParaMostrar.forEach((item, idx) => {
+                        if (item && typeof item === "object") {
+                          const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
+                          const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
+                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                          
+                          if (!agrupados[medio]) {
+                            agrupados[medio] = [];
+                          }
+                          agrupados[medio].push({
+                            tipo,
+                            nombre,
+                            contenido,
+                            index: idx,
+                            originalItem: item
+                          });
+                        }
+                      });
+
+                      return (
+                        <div className="border-t border-gray-200 pt-4 mt-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
+                          </div>
+                          {Object.keys(agrupados).map((medio, medioIndex) => (
+                            <div key={medioIndex} className="mb-5">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
+                                  {medio}
+                                </h4>
+                                <button
+                                  onClick={() => {
+                                    const nuevoItem = {
+                                      TIPO: "",
+                                      MEDIO: medio,
+                                      NOMBRE: "",
+                                      CONTENIDO: ""
+                                    };
+                                    setDatosEditables([...datosParaMostrar, nuevoItem]);
+                                  }}
+                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  <span>Agregar</span>
+                                </button>
+                              </div>
+                              <div className="space-y-3">
+                                {agrupados[medio].map((item, itemIndex) => (
+                                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
+                                    <button
+                                      onClick={() => {
+                                        const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
+                                        setDatosEditables(nuevosDatos);
+                                      }}
+                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                                      title="Eliminar"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                      <span>Eliminar</span>
+                                    </button>
+                                    <div className="space-y-2 pr-8">
+                                      {item.tipo && (
+                                        <div className="flex items-start">
+                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Tipo:</span>
+                                          <span className="text-xs font-semibold text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
+                                            {item.tipo}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {item.nombre && (
+                                        <div className="flex items-start">
+                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Nombre:</span>
+                                          <span className="text-xs text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
+                                            {item.nombre}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {item.contenido && (
+                                        <div className="flex items-start">
+                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Contenido:</span>
+                                          <span className="text-xs font-semibold text-blue-900 bg-white px-2 py-1 rounded border border-blue-300 break-all">
+                                            {item.contenido}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Otros objetos anidados (excluyendo DATOS) */}
+                  {campos.filter(campo => {
+                    const campoLower = campo.toLowerCase();
+                    const valor = selectedColaboradorCompleto[campo];
+                    // Excluir DATOS (ya se muestra arriba) tanto si es array como objeto
+                    if (campoLower === "datos") {
+                      return false;
+                    }
+                    return typeof valor === "object" && 
+                           valor !== null &&
+                           !Array.isArray(valor);
+                  }).map((campo, index) => {
+                    const objeto = selectedColaboradorCompleto[campo];
+                    const subCampos = Object.keys(objeto);
+                    
+                    return (
+                      <div key={`nested-${index}`} className="border-t border-gray-200 pt-4 mt-4">
+                        <h3 className="text-sm font-bold text-gray-800 mb-3">
+                          {campo.charAt(0).toUpperCase() + campo.slice(1).replace(/_/g, " ")}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          {subCampos.map((subCampo, subIndex) => {
+                            const value = objeto[subCampo];
+                            const displayValue = formatValue(value);
+                            
+                            return (
+                              <div key={subIndex}>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                  {subCampo.charAt(0).toUpperCase() + subCampo.slice(1).replace(/_/g, " ")}
+                                </label>
+                                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                  {displayValue}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </Modal>
     </>
   );
 }
+
 

@@ -32,9 +32,10 @@ export function Sidebar({ isOpen, onClose }) {
   const isAdmin = user?.isAdmin || false;
   
   // Si es admin o no tiene módulos definidos, mostrar todos
-  const modules = isAdmin || userModules.length === 0 
+  // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
+  const modules = (isAdmin || userModules.length === 0 
     ? allModules 
-    : allModules.filter((module) => userModules.includes(module.id));
+    : allModules.filter((module) => userModules.includes(module.id))).filter((module) => module.id !== "seguimiento-monitoreo");
 
   // Submenús de Gerencia
   const gerenciaSubmenu = [

@@ -234,7 +234,7 @@ export default function ListadoImportacionesFacturacionPage() {
   if (loading) {
     return (
         <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E63F7]"></div>
       </div>
     );
   }
@@ -326,7 +326,7 @@ export default function ListadoImportacionesFacturacionPage() {
               {/* Header */}
               <div className="mb-4 flex items-center justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-[#1E63F7] rounded-lg flex items-center justify-center text-white border-2 border-[#0B327B] shadow-md">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg flex items-center justify-center text-white shadow-sm">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -345,7 +345,7 @@ export default function ListadoImportacionesFacturacionPage() {
                       placeholder="dd/mm/aaaa"
                       value={fechaInicio}
                       onChange={(e) => setFechaInicio(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
+                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-[#1E63F7] transition-colors placeholder:text-gray-400 rounded-none"
                     />
                     <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -360,7 +360,7 @@ export default function ListadoImportacionesFacturacionPage() {
                       placeholder="dd/mm/aaaa"
                       value={fechaFinal}
                       onChange={(e) => setFechaFinal(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
+                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-[#1E63F7] transition-colors placeholder:text-gray-400 rounded-none"
                     />
                     <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -380,7 +380,7 @@ export default function ListadoImportacionesFacturacionPage() {
                 <div className="flex items-end gap-2.5">
                   <button
                     onClick={handleProcedimiento}
-                    className="px-4 py-2.5 bg-green-50/80 border border-green-200 hover:bg-green-100 hover:border-green-300 text-green-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    className="px-4 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -395,7 +395,7 @@ export default function ListadoImportacionesFacturacionPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-[#1E63F7] border-b-2 border-[#0B327B]">
+                      <tr className="bg-[#1E63F7] border-b-2 border-blue-800">
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA REGISTRO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° DESPACHO</th>
@@ -414,7 +414,7 @@ export default function ListadoImportacionesFacturacionPage() {
                         <tr>
                           <td colSpan={11} className="px-3 py-8 text-center">
                             <div className="flex items-center justify-center space-x-2">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1E63F7]"></div>
                               <span className="text-sm text-gray-600">Cargando datos...</span>
                             </div>
                           </td>
@@ -427,7 +427,7 @@ export default function ListadoImportacionesFacturacionPage() {
                               <span className="text-xs text-gray-500">{error}</span>
                               <button
                                 onClick={fetchFacturaciones}
-                                className="mt-2 px-4 py-2 bg-[#1E63F7] border-2 border-[#0B327B] hover:bg-[#1E63F7] text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-lg"
+                                className="mt-2 px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-xs font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md"
                               >
                                 Reintentar
                               </button>
@@ -455,7 +455,7 @@ export default function ListadoImportacionesFacturacionPage() {
                           <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
                             {facturacion.archivoPdf && facturacion.archivoPdf.trim() !== "" ? (
                               <div 
-                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -530,10 +530,10 @@ export default function ListadoImportacionesFacturacionPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaIncidencias || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${
                               facturacion.incidencias 
-                                ? "bg-red-100 border-red-300 text-red-800" 
-                                : "bg-green-100 border-green-300 text-green-800"
+                                ? "bg-red-600 border-red-700 text-white" 
+                                : "bg-green-600 border-green-700 text-white"
                             }`}>
                               {facturacion.incidencias ? "SI" : "NO"}
                             </span>
@@ -553,7 +553,7 @@ export default function ListadoImportacionesFacturacionPage() {
                                 setSelectedFacturacion(facturacion);
                                 setIsVerModalOpen(true);
                               }}
-                              className="flex items-center justify-center w-8 h-8 bg-cyan-100 border border-cyan-300 hover:bg-cyan-200 hover:border-cyan-400 text-cyan-800 rounded-full text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-full text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -572,7 +572,7 @@ export default function ListadoImportacionesFacturacionPage() {
                                 });
                                 setIsEditarModalOpen(true);
                               }}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50/80 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
