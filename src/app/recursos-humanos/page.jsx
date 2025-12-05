@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
+import Modal from "../../components/ui/Modal";
 
 function RecursosHumanosContent() {
   const router = useRouter();
@@ -17,6 +18,9 @@ function RecursosHumanosContent() {
   const [errorCumpleanos, setErrorCumpleanos] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [vistaTipo, setVistaTipo] = useState("mes"); // "mes" o "año"
+  const [isModalCumpleanosOpen, setIsModalCumpleanosOpen] = useState(false);
+  const [selectedCumpleanos, setSelectedCumpleanos] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -229,6 +233,54 @@ function RecursosHumanosContent() {
       const fechaNac = c.fechaNacimiento;
       return fechaNac.getDate() === day && fechaNac.getMonth() === month;
     });
+  };
+
+  // Función para obtener cumpleaños por mes (sin filtrar por año de nacimiento, ya que los cumpleaños se repiten cada año)
+  const getCumpleanosPorMes = (mes) => {
+    return cumpleanos.filter(c => {
+      if (!c.fechaNacimiento) return false;
+      return c.fechaNacimiento.getMonth() === mes;
+    }).sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate());
+  };
+
+  // Función para calcular la edad (usa el año seleccionado en la vista, no el año actual del sistema)
+  const calcularEdad = (fechaNacimiento, añoReferencia = null) => {
+    if (!fechaNacimiento) return null;
+    
+    // Usar el año de referencia si se proporciona, de lo contrario usar el año actual del sistema
+    const añoParaCalcular = añoReferencia !== null ? añoReferencia : new Date().getFullYear();
+    const añoActual = new Date().getFullYear();
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const diaActual = hoy.getDate();
+    
+    const añoNacimiento = fechaNacimiento.getFullYear();
+    const mesNacimiento = fechaNacimiento.getMonth();
+    const diaNacimiento = fechaNacimiento.getDate();
+    
+    let edad = añoParaCalcular - añoNacimiento;
+    
+    // Ajustar la edad según el año de referencia
+    if (añoParaCalcular === añoActual) {
+      // Si el año de referencia es el año actual, verificar si ya cumplió años este año
+      if (mesActual < mesNacimiento || (mesActual === mesNacimiento && diaActual < diaNacimiento)) {
+        edad--;
+      }
+    } else if (añoParaCalcular > añoActual) {
+      // Si el año de referencia es futuro, asumimos que ya cumplió años en ese año
+      // (no restamos, la edad ya está calculada correctamente)
+    } else {
+      // Si el año de referencia es pasado, ya cumplió años en ese año
+      // (no restamos, la edad ya está calculada correctamente)
+    }
+    
+    return edad;
+  };
+
+  // Función para abrir modal de cumpleaños
+  const abrirModalCumpleanos = (cumple) => {
+    setSelectedCumpleanos(cumple);
+    setIsModalCumpleanosOpen(true);
   };
 
   // Función para generar el calendario del mes
@@ -1149,33 +1201,44 @@ function RecursosHumanosContent() {
                   <p className="text-xs text-gray-600 mt-0.5">Cumpleaños de colaboradores</p>
                 </div>
               </div>
-              <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
-                loadingCumpleanos 
-                  ? 'bg-yellow-50 border border-yellow-200' 
-                  : errorCumpleanos 
-                    ? 'bg-red-50 border border-red-200' 
-                    : 'bg-green-50 border border-green-200'
-              }`}>
-                {loadingCumpleanos ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                    <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
-                  </>
-                ) : errorCumpleanos ? (
-                  <>
-                    <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-red-700">Error</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                  </>
-                )}
+              <div className="flex items-center space-x-3">
+                {/* Combobox para cambiar tipo de vista */}
+                <select
+                  value={vistaTipo}
+                  onChange={(e) => setVistaTipo(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                >
+                  <option value="mes">Por Mes</option>
+                  <option value="año">Por Año</option>
+                </select>
+                <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
+                  loadingCumpleanos 
+                    ? 'bg-yellow-50 border border-yellow-200' 
+                    : errorCumpleanos 
+                      ? 'bg-red-50 border border-red-200' 
+                      : 'bg-green-50 border border-green-200'
+                }`}>
+                  {loadingCumpleanos ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                      <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                    </>
+                  ) : errorCumpleanos ? (
+                    <>
+                      <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-red-700">Error</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-green-700">API Conectada</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1185,133 +1248,219 @@ function RecursosHumanosContent() {
               </div>
             )}
 
-            {/* Controles de navegación del calendario */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => cambiarMes("anterior")}
-                className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <h3 className="text-lg font-bold text-gray-900">
-                {meses[currentMonth]} {currentYear}
-              </h3>
-              <button
-                onClick={() => cambiarMes("siguiente")}
-                className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Calendario */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
-              {/* Encabezados de días */}
-              <div className="grid grid-cols-7 bg-blue-700/20 border-b border-blue-700/40">
-                {diasSemana.map((dia) => (
-                  <div key={dia} className="px-2 py-2 text-center text-[10px] font-bold uppercase text-blue-800">
-                    {dia}
-                  </div>
-                ))}
-              </div>
-
-              {/* Días del calendario */}
-              <div className="divide-y divide-gray-100">
-                {semanas.map((semana, semanaIndex) => (
-                  <div key={semanaIndex} className="grid grid-cols-7 divide-x divide-gray-100">
-                    {semana.map((day, dayIndex) => {
-                      if (day === null) {
-                        return (
-                          <div key={dayIndex} className="min-h-[80px] bg-gray-50"></div>
-                        );
-                      }
-                      
-                      const cumpleanosDelDia = getCumpleanosDelDia(day, currentMonth);
-                      const esHoyDia = esHoy(day);
-                      
-                      return (
-                        <div
-                          key={dayIndex}
-                          className={`min-h-[80px] p-1.5 ${
-                            esHoyDia ? "bg-blue-100 border-2 border-blue-500" : "bg-white hover:bg-gray-50"
-                          } transition-colors`}
-                        >
-                          <div className={`text-xs font-semibold mb-1 ${
-                            esHoyDia ? "text-blue-700" : "text-gray-700"
-                          }`}>
-                            {day}
-                          </div>
-                          <div className="space-y-1">
-                            {cumpleanosDelDia.slice(0, 2).map((cumple, idx) => (
-                              <div
-                                key={cumple.uniqueId || `${cumple.id}-${day}-${idx}`}
-                                className="text-[9px] px-1.5 py-0.5 bg-pink-100 border border-pink-300 rounded text-pink-800 font-medium truncate"
-                                title={`${cumple.nombre} ${cumple.apellido}`}
-                              >
-                                🎂 {cumple.nombre}
-                              </div>
-                            ))}
-                            {cumpleanosDelDia.length > 2 && (
-                              <div className="text-[9px] px-1.5 py-0.5 bg-pink-200 border border-pink-400 rounded text-pink-900 font-medium">
-                                +{cumpleanosDelDia.length - 2} más
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Lista de cumpleaños del mes */}
-            <div className="mt-6 bg-white rounded-xl shadow-lg border border-gray-200/60 p-4">
-              <h3 className="text-base font-bold text-gray-900 mb-3">Cumpleaños de {meses[currentMonth]}</h3>
-              {loadingCumpleanos ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            {vistaTipo === "mes" ? (
+              <>
+                {/* Controles de navegación del calendario */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => cambiarMes("anterior")}
+                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {meses[currentMonth]} {currentYear}
+                  </h3>
+                  <button
+                    onClick={() => cambiarMes("siguiente")}
+                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {cumpleanos
-                    .filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth)
-                    .sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate())
-                    .map((cumple, idx) => (
-                      <div
-                        key={cumple.uniqueId || `${cumple.id}-list-${idx}`}
-                        className="flex items-center justify-between p-2 bg-pink-50 border border-pink-200 rounded-lg hover:bg-pink-100 transition-colors"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">🎂</span>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {cumple.nombre} {cumple.apellido}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {cumple.area || "Sin área asignada"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-pink-700">
-                            {cumple.fechaNacimiento.getDate()} de {meses[cumple.fechaNacimiento.getMonth()]}
-                          </p>
-                        </div>
+
+                {/* Calendario */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
+                  {/* Encabezados de días */}
+                  <div className="grid grid-cols-7 bg-blue-700/20 border-b border-blue-700/40">
+                    {diasSemana.map((dia) => (
+                      <div key={dia} className="px-2 py-2 text-center text-[10px] font-bold uppercase text-blue-800">
+                        {dia}
                       </div>
                     ))}
-                  {cumpleanos.filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth).length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No hay cumpleaños registrados para este mes
-                    </p>
+                  </div>
+
+                  {/* Días del calendario */}
+                  <div className="divide-y divide-gray-100">
+                    {semanas.map((semana, semanaIndex) => (
+                      <div key={semanaIndex} className="grid grid-cols-7 divide-x divide-gray-100">
+                        {semana.map((day, dayIndex) => {
+                          if (day === null) {
+                            return (
+                              <div key={dayIndex} className="min-h-[80px] bg-gray-50"></div>
+                            );
+                          }
+                          
+                          const cumpleanosDelDia = getCumpleanosDelDia(day, currentMonth);
+                          const esHoyDia = esHoy(day);
+                          
+                          return (
+                            <div
+                              key={dayIndex}
+                              className={`min-h-[80px] p-1.5 ${
+                                esHoyDia ? "bg-blue-100 border-2 border-blue-500" : "bg-white hover:bg-gray-50"
+                              } transition-colors`}
+                            >
+                              <div className={`text-xs font-semibold mb-1 ${
+                                esHoyDia ? "text-blue-700" : "text-gray-700"
+                              }`}>
+                                {day}
+                              </div>
+                              <div className="space-y-1">
+                                {cumpleanosDelDia.slice(0, 2).map((cumple, idx) => (
+                                  <div
+                                    key={cumple.uniqueId || `${cumple.id}-${day}-${idx}`}
+                                    onClick={() => abrirModalCumpleanos(cumple)}
+                                    className="text-[9px] px-1.5 py-0.5 bg-blue-100 border border-blue-300 rounded text-blue-800 font-medium truncate cursor-pointer hover:bg-blue-200 transition-colors"
+                                    title={`${cumple.nombre} ${cumple.apellido} - Click para ver detalles`}
+                                  >
+                                    🎂 {cumple.nombre}
+                                  </div>
+                                ))}
+                                {cumpleanosDelDia.length > 2 && (
+                                  <div className="text-[9px] px-1.5 py-0.5 bg-blue-200 border border-blue-400 rounded text-blue-900 font-medium">
+                                    +{cumpleanosDelDia.length - 2} más
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Lista de cumpleaños del mes */}
+                <div className="mt-6 bg-white rounded-xl shadow-lg border border-gray-200/60 p-4">
+                  <h3 className="text-base font-bold text-gray-900 mb-3">Cumpleaños de {meses[currentMonth]}</h3>
+                  {loadingCumpleanos ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {cumpleanos
+                        .filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth)
+                        .sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate())
+                        .map((cumple, idx) => (
+                          <div
+                            key={cumple.uniqueId || `${cumple.id}-list-${idx}`}
+                            onClick={() => abrirModalCumpleanos(cumple)}
+                            className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">🎂</span>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {cumple.nombre} {cumple.apellido}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {cumple.area || "Sin área asignada"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-blue-700">
+                                {cumple.fechaNacimiento.getDate()} de {meses[cumple.fechaNacimiento.getMonth()]}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      {cumpleanos.filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth).length === 0 && (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          No hay cumpleaños registrados para este mes
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                {/* Vista por año - Todos los meses */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setCurrentYear(currentYear - 1)}
+                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Cumpleaños del Año {currentYear}
+                  </h3>
+                  <button
+                    onClick={() => setCurrentYear(currentYear + 1)}
+                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {meses.map((mes, mesIndex) => {
+                    const cumpleanosDelMes = getCumpleanosPorMes(mesIndex);
+                    return (
+                      <div
+                        key={mesIndex}
+                        className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 hover:shadow-xl transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+                          <h4 className="text-base font-bold text-gray-900">{mes}</h4>
+                          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                            {cumpleanosDelMes.length} {cumpleanosDelMes.length === 1 ? 'cumpleaños' : 'cumpleaños'}
+                          </span>
+                        </div>
+                        {loadingCumpleanos ? (
+                          <div className="text-center py-4">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto"></div>
+                          </div>
+                        ) : cumpleanosDelMes.length > 0 ? (
+                          <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {cumpleanosDelMes.map((cumple, idx) => (
+                              <div
+                                key={cumple.uniqueId || `${cumple.id}-${mesIndex}-${idx}`}
+                                onClick={() => abrirModalCumpleanos(cumple)}
+                                className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                  <span className="text-sm">🎂</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-gray-900 truncate">
+                                      {cumple.nombre} {cumple.apellido}
+                                    </p>
+                                    <p className="text-[10px] text-gray-600 truncate">
+                                      {cumple.area || "Sin área asignada"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right ml-2 flex-shrink-0">
+                                  <p className="text-xs font-bold text-blue-700">
+                                    {cumple.fechaNacimiento.getDate()}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 text-center py-4">
+                            No hay cumpleaños este mes
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         );
 
@@ -1394,6 +1543,86 @@ function RecursosHumanosContent() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Detalles de Cumpleaños */}
+      <Modal
+        isOpen={isModalCumpleanosOpen}
+        onClose={() => {
+          setIsModalCumpleanosOpen(false);
+          setSelectedCumpleanos(null);
+        }}
+        title="Detalles del Cumpleaños"
+        size="md"
+      >
+        {selectedCumpleanos && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white text-4xl shadow-lg">
+                🎂
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre Completo</label>
+                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {selectedCumpleanos.nombre} {selectedCumpleanos.apellido}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Área/Departamento</label>
+                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {selectedCumpleanos.area || "Sin área asignada"}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha de Nacimiento</label>
+                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {selectedCumpleanos.fechaNacimiento ? (
+                    `${selectedCumpleanos.fechaNacimiento.getDate()} de ${meses[selectedCumpleanos.fechaNacimiento.getMonth()]} de ${selectedCumpleanos.fechaNacimiento.getFullYear()}`
+                  ) : (
+                    "No disponible"
+                  )}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Edad que Cumple en {currentYear}</label>
+                <p className="text-sm font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                  {calcularEdad(selectedCumpleanos.fechaNacimiento, currentYear) !== null ? (
+                    `${calcularEdad(selectedCumpleanos.fechaNacimiento, currentYear)} años`
+                  ) : (
+                    "No disponible"
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {selectedCumpleanos.fechaRaw && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Original</label>
+                <p className="text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {selectedCumpleanos.fechaRaw}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsModalCumpleanosOpen(false);
+                  setSelectedCumpleanos(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -388,16 +388,16 @@ export default function ProductosPage() {
         headers["Authorization"] = `Bearer ${token}`;
       }
       
-      // Mapear los datos del formulario al formato de la API
+      // Mapear los datos del formulario al formato de la API (usar el mismo formato que desactivarProducto)
       const apiData = {
-        ID: productoId,
-        CODIGO: productoData.codigo,
-        NOMBRE: productoData.nombre,
-        CATEGORIA: productoData.categoria,
-        TIPO_PRODUCTO: productoData.tipoProducto || null,
-        COLOR_TIPO: productoData.colorTipo || null,
-        TAMAÑO: productoData.tamano || null,
-        PARES_POR_CAJA: productoData.paresPorCaja ? parseInt(productoData.paresPorCaja) : null,
+        id: productoId,
+        codigo: productoData.codigo || "",
+        nombre: productoData.nombre || "",
+        categoria: productoData.categoria || "",
+        tipo_producto: productoData.tipoProducto || "",
+        color_tipo: productoData.colorTipo || "",
+        tamaño: productoData.tamano || "",
+        pares_por_caja: productoData.paresPorCaja ? parseInt(productoData.paresPorCaja) : 0,
       };
       
       console.log("Actualizando producto:", apiData);
@@ -599,7 +599,6 @@ export default function ProductosPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CATEGORÍA</th>
@@ -614,14 +613,13 @@ export default function ProductosPage() {
                       <tbody className="divide-y divide-gray-100">
                         {!loadingData && paginatedActivos.length === 0 ? (
                           <tr>
-                            <td colSpan="10" className="px-3 py-8 text-center text-sm text-gray-500">
+                            <td colSpan="9" className="px-3 py-8 text-center text-sm text-gray-500">
                               No hay productos activos disponibles
                             </td>
                           </tr>
                         ) : (
                           paginatedActivos.map((producto) => (
                           <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.id}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.codigo}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.nombre}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.categoria}</td>
@@ -921,7 +919,8 @@ export default function ProductosPage() {
               onClick={async () => {
                 try {
                   if (!selectedProducto || !selectedProducto.id) {
-                    alert("Error: No se pudo identificar el producto a editar");
+                    alert("Error: No se pudo identificar el producto a editar. El ID del producto es requerido.");
+                    console.error("selectedProducto:", selectedProducto);
                     return;
                   }
                   
@@ -931,11 +930,15 @@ export default function ProductosPage() {
                     return;
                   }
                   
+                  console.log("Actualizando producto con ID:", selectedProducto.id);
+                  console.log("Datos del formulario:", editForm);
+                  
                   await actualizarProducto(selectedProducto.id, editForm);
                   alert("Producto actualizado exitosamente");
                   setIsEditarModalOpen(false);
                   setSelectedProducto(null);
                 } catch (err) {
+                  console.error("Error completo al actualizar:", err);
                   alert(`Error al actualizar producto: ${err.message}`);
                 }
               }}
