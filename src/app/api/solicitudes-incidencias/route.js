@@ -1,14 +1,36 @@
 import { NextResponse } from "next/server";
 
-// Función auxiliar para hacer peticiones a la API externa de franja de precios
-async function fetchFromAPI(method, request, tablaId) {
+// Función auxiliar para hacer peticiones a la API externa de solicitudes/incidencias
+async function fetchFromAPI(method, request, params = {}) {
   try {
     // Obtener el token de los headers de la petición
     const authHeader = request.headers.get("authorization");
     const token = authHeader ? authHeader.replace("Bearer ", "") : null;
     
-    // Construir la URL con los parámetros correctos
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=franja_precios&id=${encodeURIComponent(tablaId)}`;
+    // Construir la URL base
+    let apiUrl = "https://api-incidencias-solicitudes-2946605267.us-central1.run.app";
+    
+    // Agregar parámetros de query si existen
+    const queryParams = new URLSearchParams();
+    if (params.method) {
+      queryParams.append("method", params.method);
+    }
+    if (params.id) {
+      queryParams.append("id", params.id);
+    }
+    if (params.area) {
+      queryParams.append("area", params.area);
+    }
+    if (params.estado) {
+      queryParams.append("estado", params.estado);
+    }
+    if (params.colaborador) {
+      queryParams.append("colaborador", params.colaborador);
+    }
+    
+    if (queryParams.toString()) {
+      apiUrl += "?" + queryParams.toString();
+    }
     
     // Preparar headers para la petición a la API externa
     const headers = {
@@ -67,7 +89,7 @@ async function fetchFromAPI(method, request, tablaId) {
     return NextResponse.json(data, { status: 200 });
     
   } catch (error) {
-    console.error("Error en API franja precios:", error.message);
+    console.error("Error en API solicitudes-incidencias:", error.message);
     
     return NextResponse.json(
       { 
@@ -81,8 +103,35 @@ async function fetchFromAPI(method, request, tablaId) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const tablaId = searchParams.get("id") || "MALVINAS";
   
-  return fetchFromAPI("GET", request, tablaId);
+  // El procedimiento almacenado requiere al menos un parámetro (probablemente el área)
+  // Si no se proporciona área, usar "TODAS" o un valor por defecto
+  const areaParam = searchParams.get("area") || "TODAS";
+  
+  const params = {
+    method: searchParams.get("method") || "listado_solicitudes",
+    id: searchParams.get("id"),
+    area: areaParam, // Siempre enviar área, al menos con valor por defecto
+    estado: searchParams.get("estado"),
+    colaborador: searchParams.get("colaborador"),
+  };
+  
+  return fetchFromAPI("GET", request, params);
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const params = {
+      method: body.method || "crear_solicitud",
+      ...body
+    };
+    return fetchFromAPI("POST", request, params);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error al procesar el cuerpo de la petición" },
+      { status: 400 }
+    );
+  }
 }
 

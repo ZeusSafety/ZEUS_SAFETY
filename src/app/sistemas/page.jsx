@@ -201,7 +201,14 @@ export default function SistemasPage() {
                             </div>
                             <h3 className="text-base font-bold text-gray-900 mb-1.5">{card.title}</h3>
                             <p className="text-xs text-gray-600 mb-3 leading-relaxed">{card.description}</p>
-                            <button className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group">
+                            <button 
+                              onClick={() => {
+                                if (card.id === "listado-solicitudes") {
+                                  router.push("/sistemas/solicitudes-incidencias");
+                                }
+                              }}
+                              className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
+                            >
                               {card.buttonIcon}
                               <span>{card.buttonText}</span>
                             </button>

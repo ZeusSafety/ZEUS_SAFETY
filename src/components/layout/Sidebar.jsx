@@ -238,6 +238,15 @@ export function Sidebar({ isOpen, onClose }) {
         { id: "listado-solicitudes-incidencias-ventas", name: "Listado de Solicitudes/Incidencias", icon: "list" },
       ],
     },
+    {
+      id: "franja-precios-ventas",
+      name: "Franja de precios",
+      icon: "dollar",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-precios-ventas", name: "Listado de precios", icon: "list" },
+      ],
+    },
   ];
 
   // Submenús de Marketing
@@ -286,6 +295,15 @@ export function Sidebar({ isOpen, onClose }) {
         { id: "listado-solicitudes-incidencias-marketing", name: "Listado de Solicitudes/Incidencias", icon: "list" },
       ],
     },
+    {
+      id: "franja-precios-marketing",
+      name: "Franja de precios",
+      icon: "dollar",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-precios-marketing", name: "Listado de precios", icon: "list" },
+      ],
+    },
   ];
 
   // Submenús de Sistemas
@@ -328,43 +346,15 @@ export function Sidebar({ isOpen, onClose }) {
       id: "gestion-colaboradores",
       name: "Gestión de Colaboradores",
       icon: "users",
-      hasSubmenu: false,
-    },
-    {
-      id: "control-asistencia",
-      name: "Control de Asistencia",
-      icon: "clock",
-      hasSubmenu: false,
-    },
-    {
-      id: "gestion-permisos",
-      name: "Gestión de Permisos",
-      icon: "check",
-      hasSubmenu: false,
-    },
-    {
-      id: "gestion-vacaciones",
-      name: "Gestión de Vacaciones",
-      icon: "calendar",
-      hasSubmenu: false,
-    },
-    {
-      id: "control-documentos",
-      name: "Control de Documentos Laborales",
-      icon: "document",
-      hasSubmenu: false,
-    },
-    {
-      id: "gestion-remuneraciones",
-      name: "Gestión de Remuneraciones",
-      icon: "money",
-      hasSubmenu: false,
-    },
-    {
-      id: "auto-servicio",
-      name: "Auto-Servicio del Colaborador (ESS)",
-      icon: "user",
-      hasSubmenu: false,
+      hasSubmenu: true,
+      subItems: [
+        { id: "control-asistencia", name: "Control de Asistencia", icon: "clock" },
+        { id: "gestion-permisos", name: "Gestión de Permisos", icon: "check" },
+        { id: "gestion-vacaciones", name: "Gestión de Vacaciones", icon: "calendar" },
+        { id: "control-documentos", name: "Control de Documentos Laborales", icon: "document" },
+        { id: "gestion-remuneraciones", name: "Gestión de Remuneraciones", icon: "money" },
+        { id: "auto-servicio", name: "Auto-Servicio del Colaborador (ESS)", icon: "user" },
+      ],
     },
   ];
 
@@ -393,6 +383,15 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "listado-solicitudes-facturacion", name: "Listado de Solicitudes", icon: "list" },
+      ],
+    },
+    {
+      id: "franja-precios-facturacion",
+      name: "Franja de precios",
+      icon: "dollar",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-precios-facturacion", name: "Listado de precios", icon: "list" },
       ],
     },
   ];
@@ -643,6 +642,13 @@ export function Sidebar({ isOpen, onClose }) {
     }
     
     if (itemId === "listado-precios") {
+      router.push("/gerencia/listado-precios");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Franja de precios en Marketing, Facturación y Ventas
+    if (itemId === "listado-precios-marketing" || itemId === "listado-precios-facturacion" || itemId === "listado-precios-ventas") {
       router.push("/gerencia/listado-precios");
       setSelectedItem(itemId);
       return;
