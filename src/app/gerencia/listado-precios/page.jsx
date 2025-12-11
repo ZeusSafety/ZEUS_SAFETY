@@ -25,7 +25,6 @@ export default function ListadoPreciosPage() {
     { value: "ONLINE", label: "Online", disponible: false },
     { value: "FERRETERIA", label: "Ferretería", disponible: true },
     { value: "CLIENTES_FINALES", label: "Clientes Finales", disponible: true },
-    { value: "COPIA_FERRETERIA", label: "Copia de Ferretería", disponible: false },
   ]);
 
   useEffect(() => {
@@ -49,6 +48,19 @@ export default function ListadoPreciosPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Mapeo de valores internos a valores de API
+  const getApiId = (tablaId) => {
+    const mapping = {
+      "MALVINAS": "MALVINAS",
+      "PROVINCIA": "PROVINCIA",
+      "JICAMARCA": "JICAMARCA",
+      "ONLINE": "ONLINE",
+      "FERRETERIA": "Ferretería",
+      "CLIENTES_FINALES": "Clientes finales"
+    };
+    return mapping[tablaId] || tablaId;
+  };
+
   // Función para obtener precios de una tabla específica
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
@@ -62,8 +74,11 @@ export default function ListadoPreciosPage() {
         throw new Error("Token no encontrado. Por favor, inicie sesión.");
       }
       
+      // Convertir el ID interno al formato que espera la API
+      const apiId = getApiId(tablaId);
+      
       // Usar el endpoint proxy de Next.js
-      const apiUrl = `/api/franja-precios?id=${tablaId}`;
+      const apiUrl = `/api/franja-precios?id=${encodeURIComponent(apiId)}`;
       
       const headers = {
         "Content-Type": "application/json",
@@ -191,6 +206,57 @@ export default function ListadoPreciosPage() {
   // Obtener precios de la tabla activa
   const precios = preciosData[activeTab] || [];
 
+  // Obtener columnas de precio dinámicamente basadas en los datos
+  const getPriceColumns = useMemo(() => {
+    if (precios.length === 0) return [];
+    
+    // Campos que NO son columnas de precio
+    const excludedFields = [
+      'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
+      'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
+      'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
+      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
+    ];
+    
+    // Obtener todas las keys del primer registro
+    const firstRecord = precios[0];
+    const allKeys = Object.keys(firstRecord);
+    
+    // Filtrar solo las columnas de precio (que son numéricas y no están excluidas)
+    const priceColumns = allKeys
+      .filter(key => {
+        const keyUpper = key.toUpperCase();
+        return !excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase())) &&
+               (typeof firstRecord[key] === 'number' || 
+                (!isNaN(parseFloat(firstRecord[key])) && firstRecord[key] !== null && firstRecord[key] !== ''));
+      })
+      .sort((a, b) => {
+        // Ordenar: primero CAJA, luego DOCENA, luego PAR, luego UNIDAD
+        const aUpper = a.toUpperCase();
+        const bUpper = b.toUpperCase();
+        
+        const getOrder = (str) => {
+          if (str.includes('CAJA')) return 1;
+          if (str.includes('DOCENA')) return 2;
+          if (str.includes('PAR')) return 3;
+          if (str.includes('UNIDAD')) return 4;
+          return 5;
+        };
+        
+        const orderA = getOrder(aUpper);
+        const orderB = getOrder(bUpper);
+        
+        if (orderA !== orderB) return orderA - orderB;
+        
+        // Si mismo tipo, ordenar por número
+        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+        return numA - numB;
+      });
+    
+    return priceColumns;
+  }, [precios]);
+
   // Función para copiar texto al portapapeles
   const copyToClipboard = async (text, index) => {
     try {
@@ -276,8 +342,17 @@ export default function ListadoPreciosPage() {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className={`flex-1 transition-all duration-300 overflow-y-auto h-full ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
           <div className="p-4 lg:p-8">
-            {/* Título */}
-            <div className="mb-6">
+            {/* Header con botón Volver y Título */}
+            <div className="mb-6 flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => router.push("/gerencia")}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Volver
+              </button>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Listado de Precios</h1>
             </div>
 
@@ -399,20 +474,27 @@ export default function ListadoPreciosPage() {
                         </p>
                       )}
                       <div className="flex items-center gap-2 ml-auto">
-                        <label className="text-xs text-gray-600">Elementos por página:</label>
-                        <select
-                          value={itemsPerPage}
-                          onChange={(e) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                          }}
-                          className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value={25}>25</option>
-                          <option value={50}>50</option>
-                          <option value={100}>100</option>
-                          <option value={200}>200</option>
-                        </select>
+                        <label className="text-xs font-semibold text-gray-700">Elementos por página:</label>
+                        <div className="relative">
+                          <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                              setItemsPerPage(Number(e.target.value));
+                              setCurrentPage(1);
+                            }}
+                            className="px-4 py-2 border-2 border-gray-300 rounded-lg text-xs font-semibold text-gray-900 bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md appearance-none pr-8 min-w-[80px]"
+                          >
+                            <option value={25} className="bg-white text-gray-900 py-2 font-medium">25</option>
+                            <option value={50} className="bg-white text-gray-900 py-2 font-medium">50</option>
+                            <option value={100} className="bg-white text-gray-900 py-2 font-medium">100</option>
+                            <option value={200} className="bg-white text-gray-900 py-2 font-medium">200</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -439,24 +521,14 @@ export default function ListadoPreciosPage() {
                               <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                                 FICHA TÉCNICA
                               </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                1 CAJA
-                              </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                5 CAJAS
-                              </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                10 CAJAS
-                              </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                20 CAJAS
-                              </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                PAR 1
-                              </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                PAR 5
-                              </th>
+                              {getPriceColumns.map((columna) => (
+                                <th 
+                                  key={columna}
+                                  className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                                >
+                                  {columna.replace(/_/g, ' ')}
+                                </th>
+                              ))}
                               <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                                 ACCIONES
                               </th>
@@ -486,22 +558,11 @@ export default function ListadoPreciosPage() {
                           };
 
                           // Mapeo de campos según la estructura real de la API
-                          // Estructura: CODIGO, NOMBRE, CANTIDAD_CAJA, FICHA_TECNICA_ENLACE, TEXTO_COPIAR, CAJA 1, CAJA 5, CAJA 10, CAJA 20, PAR 1, PAR 5
                           const codigo = getField(["CODIGO", "codigo"]);
                           const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
                           const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]);
                           const fichaTecnica = getField(["FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", "FICHA_TECNICA", "ficha_tecnica"]);
                           const textoCopiar = getField(["TEXTO_COPIAR", "texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
-                          
-                          // Campos de cajas - la API usa "CAJA 1", "CAJA 5", "CAJA 10", "CAJA 20" (con espacios)
-                          const caja1 = formatPrice(getField(["CAJA 1", "CAJA_1", "caja 1"]));
-                          const caja5 = formatPrice(getField(["CAJA 5", "CAJA_5", "caja 5"]));
-                          const caja10 = formatPrice(getField(["CAJA 10", "CAJA_10", "caja 10"]));
-                          const caja20 = formatPrice(getField(["CAJA 20", "CAJA_20", "caja 20"]));
-                          
-                          // Campos de pares - para productos que se venden por par
-                          const par1 = formatPrice(getField(["PAR 1", "PAR_1", "par 1"]));
-                          const par5 = formatPrice(getField(["PAR 5", "PAR_5", "par 5"]));
 
                           return (
                             <tr key={globalIndex} className="hover:bg-slate-200 transition-colors">
@@ -539,24 +600,17 @@ export default function ListadoPreciosPage() {
                                   <span className="text-gray-400">-</span>
                                 )}
                               </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${caja1.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {caja1.text}
-                              </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${caja5.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {caja5.text}
-                              </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${caja10.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {caja10.text}
-                              </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${caja20.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {caja20.text}
-                              </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${par1.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {par1.text}
-                              </td>
-                              <td className={`px-3 py-2 whitespace-nowrap text-[10px] ${par5.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}>
-                                {par5.text}
-                              </td>
+                              {getPriceColumns.map((columna) => {
+                                const precioValue = formatPrice(precio[columna]);
+                                return (
+                                  <td 
+                                    key={columna}
+                                    className={`px-3 py-2 whitespace-nowrap text-[10px] ${precioValue.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}
+                                  >
+                                    {precioValue.text}
+                                  </td>
+                                );
+                              })}
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
                                 {textoCopiar ? (
                                   <button

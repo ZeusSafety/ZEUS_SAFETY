@@ -145,6 +145,22 @@ export default function GerenciaPage() {
             </svg>
           ),
         },
+        {
+          id: "gestion-precios",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          ),
+          title: "Gestión de precios",
+          description: "Administrar y configurar precios de productos",
+          buttonText: "Gestionar",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          ),
+        },
       ],
     },
     {
@@ -388,6 +404,9 @@ export default function GerenciaPage() {
                                     router.push("/gerencia/colaboradores");
                                   } else if (card.id === "listado-precios") {
                                     router.push("/gerencia/listado-precios");
+                                  } else if (card.id === "gestion-precios") {
+                                    // TODO: Agregar ruta cuando esté disponible
+                                    console.log("Gestión de precios - Ruta pendiente");
                                   } else {
                                     router.push("/gerencia");
                                   }

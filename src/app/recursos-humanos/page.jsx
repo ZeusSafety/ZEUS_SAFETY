@@ -1972,45 +1972,62 @@ function RecursosHumanosContent() {
                 }
               };
 
-              // Obtener todos los campos del objeto
-              const campos = Object.keys(selectedColaboradorCompleto);
+              // Obtener todos los campos del objeto, excluyendo ID y ID_PERSONA
+              const campos = Object.keys(selectedColaboradorCompleto).filter(campo => {
+                const campoUpper = campo.toUpperCase();
+                return campoUpper !== "ID" && campoUpper !== "ID_PERSONA";
+              });
               
-              // Campos principales a mostrar primero
-              const camposPrincipales = [
-                { keys: ["id", "ID", "Id"], label: "ID" },
-                { keys: ["nombre", "NOMBRE", "Nombre", "name", "NAME"], label: "Nombre" },
-                { keys: ["apellido", "APELLIDO", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"], label: "Apellido" },
-                { keys: ["correo", "CORREO", "Correo", "email", "EMAIL", "Email", "correo_electronico", "CORREO_ELECTRONICO"], label: "Correo Electrónico" },
-                { keys: ["fecha_nacimiento", "fechaNacimiento", "fecha_cumpleanos", "fechaCumpleanos", "FECHA_NACIMIENTO", "FECHA_CUMPLEANOS"], label: "Fecha de Nacimiento", isDate: true },
-                { keys: ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"], label: "Área" },
-                { keys: ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"], label: "Estado" },
-              ];
+              // Función para formatear fechas
+              const formatDateValue = (value) => {
+                if (!value || value === null || value === undefined || value === "") {
+                  return "-";
+                }
+                // Si ya es una fecha formateada, retornarla
+                if (typeof value === "string" && value.includes("/")) {
+                  return value;
+                }
+                // Intentar parsear como fecha
+                try {
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    const dia = String(date.getDate()).padStart(2, "0");
+                    const mes = String(date.getMonth() + 1).padStart(2, "0");
+                    const año = date.getFullYear();
+                    return `${dia}/${mes}/${año}`;
+                  }
+                } catch (e) {
+                  // Si no es fecha, retornar el valor original
+                }
+                return String(value);
+              };
 
-              // Resto de campos (excluyendo DATOS que ya se muestra arriba)
-              const camposRestantes = campos.filter(campo => {
+              // Separar campos simples de objetos/arrays
+              const camposSimples = campos.filter(campo => {
+                const valor = selectedColaboradorCompleto[campo];
                 const campoLower = campo.toLowerCase();
-                // Excluir DATOS ya que se muestra en su sección especial arriba
+                // Excluir DATOS que se maneja por separado
                 if (campoLower === "datos") {
                   return false;
                 }
-                const esPrincipal = camposPrincipales.some(cp => 
-                  cp.keys.some(key => key.toLowerCase() === campo.toLowerCase())
-                );
-                return !esPrincipal && typeof selectedColaboradorCompleto[campo] !== "object";
+                return typeof valor !== "object" || valor === null;
               });
 
               return (
                 <>
-                  {/* Campos principales */}
+                  {/* Todos los campos simples (incluyendo null) */}
                   <div className="grid grid-cols-2 gap-4">
-                    {camposPrincipales.map((campo, index) => {
-                      const value = getValue(selectedColaboradorCompleto, campo.keys);
-                      const displayValue = campo.isDate ? formatDate(value) : formatValue(value);
+                    {camposSimples.map((campo, index) => {
+                      const value = selectedColaboradorCompleto[campo];
+                      // Detectar si es una fecha
+                      const campoLower = campo.toLowerCase();
+                      const isDateField = campoLower.includes("fecha") || campoLower.includes("date");
+                      const displayValue = isDateField ? formatDateValue(value) : formatValue(value);
                       
                       return (
                         <div key={index}>
                           <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            {campo.label}
+                            {campo.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                           </label>
                           <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {displayValue}
@@ -2019,34 +2036,6 @@ function RecursosHumanosContent() {
                       );
                     })}
                   </div>
-
-                  {/* Separador */}
-                  {camposRestantes.length > 0 && (
-                    <>
-                      <div className="border-t border-gray-200 pt-4 mt-4">
-                        <h3 className="text-sm font-bold text-gray-800 mb-3">Información Adicional</h3>
-                      </div>
-
-                      {/* Campos restantes */}
-                      <div className="grid grid-cols-2 gap-4">
-                        {camposRestantes.map((campo, index) => {
-                          const value = selectedColaboradorCompleto[campo];
-                          const displayValue = formatValue(value);
-                          
-                          return (
-                            <div key={index}>
-                              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                {campo.charAt(0).toUpperCase() + campo.slice(1).replace(/_/g, " ")}
-                              </label>
-                              <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                                {displayValue}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
 
                   {/* Campo DATOS especial - Array de teléfonos, correos, etc. */}
                   {(() => {
