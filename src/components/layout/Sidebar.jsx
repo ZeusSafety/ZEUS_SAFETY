@@ -720,13 +720,13 @@ export function Sidebar({ isOpen, onClose }) {
     }
     
     // Navegación para Permisos/Solicitudes e Incidencias
-    const permisosItems = [
-      "registro-permisos",
-      "registro-solicitudes-incidencias",
-      "mis-solicitudes-incidencias",
-    ];
+    if (itemId === "registro-solicitudes-incidencias") {
+      router.push("/permisos?section=registro-solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
     
-    if (permisosItems.includes(itemId)) {
+    if (itemId === "registro-permisos" || itemId === "mis-solicitudes-incidencias") {
       router.push("/permisos");
       setSelectedItem(itemId);
       return;
