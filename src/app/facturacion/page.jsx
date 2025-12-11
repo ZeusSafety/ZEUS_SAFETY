@@ -11,8 +11,10 @@ export default function FacturacionPage() {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
+    "ventas": false,
+    "regularizacion": false,
     "listados": false,
-    "solicitudes-incidencias": false,
+    "configuracion": false,
   });
 
   useEffect(() => {
@@ -60,6 +62,95 @@ export default function FacturacionPage() {
 
   const sections = [
     {
+      id: "ventas",
+      title: "Ventas",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l8 0c1.657 0 3-1.343 3-3s-1.343-3-3-3l-8 0M3 13l8 0c1.657 0 3 1.343 3 3s-1.343 3-3 3l-8 0M13 8l8 0M13 16l8 0" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "registrar-venta",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          ),
+          title: "Registrar Venta",
+          description: "Registrar nueva venta en el sistema",
+          buttonText: "Crear Venta",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          ),
+        },
+        {
+          id: "gestionar-venta",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          ),
+          title: "Gestionar Venta",
+          description: "Ver y gestionar todas las ventas registradas",
+          buttonText: "Ver Listado",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
+      id: "regularizacion",
+      title: "Regularización",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "registrar-regularizacion",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          ),
+          title: "Registrar Regularización",
+          description: "Registrar nueva regularización",
+          buttonText: "Crear Regularización",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          ),
+        },
+        {
+          id: "gestionar-regularizacion",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          ),
+          title: "Gestionar Regularización",
+          description: "Ver y gestionar todas las regularizaciones",
+          buttonText: "Ver Listado",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
       id: "listados",
       title: "Listados",
       icon: (
@@ -105,28 +196,28 @@ export default function FacturacionPage() {
       ],
     },
     {
-      id: "solicitudes-incidencias",
-      title: "Solicitudes/Incidencias",
+      id: "configuracion",
+      title: "Configuración",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
       cards: [
         {
-          id: "listado-solicitudes",
+          id: "gestionar-configuracion",
           icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           ),
-          title: "Listado de Solicitudes/Incidencias",
-          description: "Ver y gestionar Solicitudes/Incidencias",
-          buttonText: "Ver Solicitudes/Incidencias",
+          title: "Gestionar Configuración",
+          description: "Gestionar configuraciones de Facturación",
+          buttonText: "Abrir Configuración",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           ),
         },
@@ -202,34 +293,51 @@ export default function FacturacionPage() {
 
                   {/* Cards de la Sección */}
                   {expandedSections[section.id] && (
-                    <div className="p-4 bg-slate-200">
-                      <div className={`grid gap-3 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
-                        {section.cards.map((card) => (
-                          <div
-                            key={card.id}
-                            className="bg-[#FFFFFF] rounded-[14px] p-4 border-2 border-gray-300 hover:border-[#1E63F7] transition-all duration-200"
-                            style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
-                          >
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <div className="p-4 bg-white">
+                      <div className={`grid gap-4 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}>
+                        {section.cards.map((card) => {
+                          const isRegistrar = card.id.includes("registrar");
+                          const isConfiguracion = card.id.includes("configuracion");
+                          const iconShape = (isRegistrar || isConfiguracion) ? "rounded-full" : "rounded-lg";
+                          
+                          return (
+                            <div
+                              key={card.id}
+                              className="bg-[#FFFFFF] rounded-[14px] p-6 border-2 border-gray-300 hover:border-[#1E63F7] transition-all duration-200 flex flex-col items-center text-center"
+                              style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
+                            >
+                              <div className={`w-12 h-12 ${iconShape} bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] flex items-center justify-center text-white shadow-sm mb-4`}>
                                 {card.icon}
                               </div>
+                              <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
+                              <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
+                              <button 
+                                onClick={() => {
+                                  if (card.id === "listado-importaciones") {
+                                    router.push("/facturacion/listado-importaciones");
+                                  } else if (card.id === "registrar-venta") {
+                                    router.push("/facturacion/crear-venta");
+                                  } else if (card.id === "gestionar-venta") {
+                                    router.push("/facturacion/gestionar-venta");
+                                  } else if (card.id === "registrar-regularizacion") {
+                                    router.push("/facturacion/crear-regularizacion");
+                                  } else if (card.id === "gestionar-regularizacion") {
+                                    router.push("/facturacion/gestionar-regularizacion");
+                                  } else if (card.id === "incidencia-proformas") {
+                                    router.push("/facturacion/incidencia-proformas");
+                                  } else if (card.id === "gestionar-configuracion") {
+                                    router.push("/facturacion/configuracion");
+                                  }
+                                  // Add more routes as needed
+                                }}
+                                className="w-full flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
+                              >
+                                {card.buttonIcon}
+                                <span>{card.buttonText}</span>
+                              </button>
                             </div>
-                            <h3 className="text-base font-bold text-gray-900 mb-1.5">{card.title}</h3>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">{card.description}</p>
-                            <button 
-                              onClick={() => {
-                                if (card.id === "listado-importaciones") {
-                                  router.push("/facturacion/listado-importaciones");
-                                }
-                              }}
-                              className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
-                            >
-                              {card.buttonIcon}
-                              <span>{card.buttonText}</span>
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

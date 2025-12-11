@@ -1,11 +1,216 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+
+// Componente de Select personalizado
+const CustomSelect = ({ name, value, onChange, options, placeholder, required, label, disabled = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const selectRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  const handleSelect = (optionValue) => {
+    if (disabled) return;
+    onChange({ target: { name, value: optionValue } });
+    setIsOpen(false);
+  };
+
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownHeight = 240;
+      setOpenUpward(spaceAbove > spaceBelow && spaceBelow < dropdownHeight);
+    }
+    setIsOpen(!isOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={selectRef}>
+      {label && (
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {label}
+        </label>
+      )}
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        disabled={disabled}
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
+          disabled 
+            ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed' 
+            : `border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${
+              isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+            }`
+        }`}
+      >
+        <span className={`${value ? 'text-gray-900' : 'text-gray-500'} whitespace-nowrap overflow-hidden text-ellipsis`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <svg
+          className={`w-5 h-5 transition-transform duration-200 flex-shrink-0 ml-2 ${
+            disabled 
+              ? 'text-gray-400' 
+              : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && !disabled && (
+        <div 
+          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden mt-1 mb-1 ${
+            openUpward ? 'bottom-full' : 'top-full'
+          }`}
+          style={{ 
+            borderRadius: '0.5rem',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}
+        >
+          <div className="max-h-48 overflow-y-auto custom-scrollbar p-1">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option.value)}
+                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${
+                  value === option.value
+                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                    : 'text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <input type="hidden" name={name} value={value || ''} required={required} />
+    </div>
+  );
+};
+
+// Componente de Acordeón para Categorías
+const CategoriaAccordion = ({ value, onChange, label, required, categorias = [] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const accordionRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (accordionRef.current && !accordionRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const selectedCategoria = categorias.find(cat => cat.value === value);
+
+  return (
+    <div className="relative" ref={accordionRef}>
+      {label && (
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {label}
+        </label>
+      )}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
+          `border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${
+            isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+          }`
+        }`}
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+          {selectedCategoria ? selectedCategoria.label : "Seleccione una categoría"}
+        </span>
+        <svg
+          className={`w-5 h-5 transition-transform duration-200 text-gray-400 ${
+            isOpen ? 'transform rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div 
+          className="absolute z-50 w-full bg-white shadow-xl overflow-hidden mt-1 mb-1"
+          style={{ 
+            borderRadius: '0.5rem',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}
+        >
+          <div className="max-h-48 overflow-y-auto custom-scrollbar p-1">
+            {categorias.map((categoria) => (
+              <button
+                key={categoria.value}
+                type="button"
+                onClick={() => {
+                  onChange({ target: { name: 'categoria', value: categoria.value } });
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${
+                  value === categoria.value
+                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                    : 'text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {categoria.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <input type="hidden" name="categoria" value={value || ''} required={required} />
+    </div>
+  );
+};
 
 export default function ProductosPage() {
   const router = useRouter();
@@ -25,6 +230,8 @@ export default function ProductosPage() {
   const [productos, setProductos] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState(null);
+  const [categoriasUnicas, setCategoriasUnicas] = useState([]);
+  const [tiposPorCategoria, setTiposPorCategoria] = useState({});
   const [editForm, setEditForm] = useState({
     codigo: "",
     nombre: "",
@@ -34,6 +241,11 @@ export default function ProductosPage() {
     tamano: "",
     paresPorCaja: "",
   });
+
+  // Función para obtener tipos de producto según categoría (desde BD)
+  const getTiposProducto = (categoria) => {
+    return tiposPorCategoria[categoria] || [];
+  };
   const [newProductForm, setNewProductForm] = useState({
     codigo: "",
     nombre: "",
@@ -190,6 +402,42 @@ export default function ProductosPage() {
       
       console.log("Productos mapeados:", productosMapeados);
       setProductos(productosMapeados);
+
+      // Extraer categorías únicas de los productos
+      const categoriasSet = new Set();
+      productosMapeados.forEach(producto => {
+        if (producto.categoria && producto.categoria.trim() !== "") {
+          categoriasSet.add(producto.categoria);
+        }
+      });
+      const categoriasArray = Array.from(categoriasSet).sort().map(cat => ({
+        value: cat,
+        label: cat
+      }));
+      setCategoriasUnicas(categoriasArray);
+      console.log("Categorías extraídas de BD:", categoriasArray);
+
+      // Extraer tipos de producto únicos por categoría
+      const tiposPorCat = {};
+      productosMapeados.forEach(producto => {
+        if (producto.categoria && producto.categoria.trim() !== "" && 
+            producto.tipoProducto && producto.tipoProducto.trim() !== "") {
+          if (!tiposPorCat[producto.categoria]) {
+            tiposPorCat[producto.categoria] = new Set();
+          }
+          tiposPorCat[producto.categoria].add(producto.tipoProducto);
+        }
+      });
+      
+      // Convertir Sets a arrays ordenados
+      const tiposPorCategoriaFormateado = {};
+      Object.keys(tiposPorCat).forEach(categoria => {
+        tiposPorCategoriaFormateado[categoria] = Array.from(tiposPorCat[categoria])
+          .sort()
+          .map(tipo => ({ value: tipo, label: tipo }));
+      });
+      setTiposPorCategoria(tiposPorCategoriaFormateado);
+      console.log("Tipos por categoría extraídos de BD:", tiposPorCategoriaFormateado);
     } catch (err) {
       console.error("Error al obtener productos:", err);
       console.error("Error completo:", {
@@ -319,7 +567,7 @@ export default function ProductosPage() {
         throw new Error("No se encontró el producto a desactivar");
       }
       
-      // Mapear los datos del producto al formato de la API, marcando como inactivo
+      // Mapear los datos del producto al formato de la API, cambiando el estado a 0
       const apiData = {
         id: productoId,
         codigo: productoActual.codigo || "",
@@ -332,7 +580,7 @@ export default function ProductosPage() {
         precio: productoActual.precio || 0,
         stock: productoActual.stock || 0,
         ficha_tecnica: productoActual.fichaTecnica || "",
-        activo: false, // Marcar como inactivo
+        estado: 0, // Cambiar el estado a 0 en lugar de eliminar
       };
       
       console.log("Desactivando producto:", apiData);
@@ -816,102 +1064,107 @@ export default function ProductosPage() {
         title={`Editar Producto - ${selectedProducto?.codigo || ""}`}
         size="md"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
             {/* Columna Izquierda */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Código <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Código
                 </label>
                 <input
                   type="text"
                   value={editForm.codigo}
                   onChange={(e) => setEditForm({ ...editForm, codigo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Categoría <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
+                <CategoriaAccordion
                   value={editForm.categoria}
-                  onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  onChange={(e) => {
+                    setEditForm({ 
+                      ...editForm, 
+                      categoria: e.target.value,
+                      tipoProducto: "" // Resetear tipo de producto al cambiar categoría
+                    });
+                  }}
+                  label="Categoría"
+                  required
+                  categorias={categoriasUnicas}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Color/Tipo <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Color/Tipo
                 </label>
                 <input
                   type="text"
                   value={editForm.colorTipo}
                   onChange={(e) => setEditForm({ ...editForm, colorTipo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Pares por Caja <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Pares por Caja
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={editForm.paresPorCaja}
                   onChange={(e) => setEditForm({ ...editForm, paresPorCaja: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                 />
               </div>
             </div>
 
             {/* Columna Derecha */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Nombre <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nombre
                 </label>
                 <input
                   type="text"
                   value={editForm.nombre}
                   onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Tipo de Producto <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
+                <CustomSelect
+                  name="tipoProducto"
                   value={editForm.tipoProducto}
                   onChange={(e) => setEditForm({ ...editForm, tipoProducto: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  options={getTiposProducto(editForm.categoria)}
+                  placeholder={editForm.categoria ? "Seleccione un tipo de producto" : "Primero seleccione una categoría"}
+                  label="Tipo de Producto"
+                  required
+                  disabled={!editForm.categoria}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Tamaño
                 </label>
                 <input
                   type="text"
                   value={editForm.tamano}
                   onChange={(e) => setEditForm({ ...editForm, tamano: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
             <button
               onClick={() => {
                 setIsEditarModalOpen(false);
                 setSelectedProducto(null);
               }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-200"
             >
               Cancelar
             </button>
@@ -943,10 +1196,10 @@ export default function ProductosPage() {
                 }
               }}
               disabled={loadingData}
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-[#1a56e0] hover:to-[#1a56e0] hover:shadow-lg rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               <span>{loadingData ? "Guardando..." : "Guardar Cambios"}</span>
             </button>
@@ -1072,7 +1325,7 @@ export default function ProductosPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Código <span className="text-red-500">*</span>
+              Código
             </label>
             <input
               type="text"
@@ -1084,7 +1337,7 @@ export default function ProductosPage() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Nombre <span className="text-red-500">*</span>
+              Nombre
             </label>
             <input
               type="text"
@@ -1095,32 +1348,35 @@ export default function ProductosPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Categoría <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+            <CategoriaAccordion
               value={newProductForm.categoria}
-              onChange={(e) => setNewProductForm({ ...newProductForm, categoria: e.target.value })}
-              placeholder="Categoría del producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              onChange={(e) => {
+                setNewProductForm({ 
+                  ...newProductForm, 
+                  categoria: e.target.value,
+                  tipoProducto: "" // Resetear tipo de producto al cambiar categoría
+                });
+              }}
+              label="Categoría"
+              required
+              categorias={categoriasUnicas}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Tipo de Producto <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+            <CustomSelect
+              name="tipoProducto"
               value={newProductForm.tipoProducto}
               onChange={(e) => setNewProductForm({ ...newProductForm, tipoProducto: e.target.value })}
-              placeholder="Tipo de producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              options={getTiposProducto(newProductForm.categoria)}
+              placeholder={newProductForm.categoria ? "Seleccione un tipo de producto" : "Primero seleccione una categoría"}
+              label="Tipo de Producto"
+              required
+              disabled={!newProductForm.categoria}
             />
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Color/Tipo <span className="text-red-500">*</span>
+              Color/Tipo
             </label>
             <input
               type="text"
@@ -1133,7 +1389,7 @@ export default function ProductosPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Tamaño <span className="text-red-500">*</span>
+                Tamaño
               </label>
               <input
                 type="text"
@@ -1145,7 +1401,7 @@ export default function ProductosPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Pares por Caja <span className="text-red-500">*</span>
+                Pares por Caja
               </label>
               <input
                 type="number"
@@ -1159,7 +1415,7 @@ export default function ProductosPage() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Ficha Técnica (URL) <span className="text-red-500">*</span>
+              Ficha Técnica (URL)
             </label>
             <input
               type="text"
@@ -1172,7 +1428,7 @@ export default function ProductosPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Precio <span className="text-red-500">*</span>
+                Precio
               </label>
               <input
                 type="number"
@@ -1186,7 +1442,7 @@ export default function ProductosPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Stock <span className="text-red-500">*</span>
+                Stock
               </label>
               <input
                 type="number"
