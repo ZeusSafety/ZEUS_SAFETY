@@ -9,9 +9,8 @@ async function fetchFromAPI(method, request, body = null) {
     
     // Obtener el token de los headers de la petición
     const authHeader = request.headers.get("authorization");
-    const token = authHeader ? authHeader.replace("Bearer ", "") : null;
     
-    console.log("Token recibido:", token ? token.substring(0, 20) + "..." : "No hay token");
+    console.log("Token recibido:", authHeader ? authHeader.substring(0, 30) + "..." : "No hay token");
     console.log("Llamando a API:", API_ENDPOINT);
     console.log("Método:", method);
     
@@ -21,8 +20,9 @@ async function fetchFromAPI(method, request, body = null) {
     };
     
     // Incluir token si está disponible
-    if (token && token.trim() !== "") {
-      headers["Authorization"] = `Bearer ${token}`;
+    if (authHeader && authHeader.trim() !== "") {
+      // Reenviar exactamente lo que llegó en Authorization
+      headers["Authorization"] = authHeader;
     }
     
     // Para FormData, no establecer Content-Type (el navegador lo hace automáticamente)

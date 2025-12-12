@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const API_ENDPOINT = "/api/solicitudes-incidencias";
+const API_PROXY_URL = "/api/solicitudes-incidencias";
 
 // Mapeo de usuarios
 const userMapping = {
@@ -54,14 +54,15 @@ async function getNextSolicitudNumber(area) {
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('No hay token de autenticación');
-      return '';
+      throw new Error('No hay token de autenticación. Inicie sesión nuevamente.');
     }
+    const authHeader = token.startsWith('Bearer') ? token : `Bearer ${token}`;
     
-    const response = await fetch(API_ENDPOINT, {
+    const response = await fetch(API_PROXY_URL, { 
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': authHeader
       },
       body: JSON.stringify({ area })
     });
@@ -211,11 +212,10 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       }, 200);
 
       // Enviar datos
-      const response = await fetch(API_ENDPOINT, {
+      const response = await fetch(API_PROXY_URL, { 
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-          // No establecer Content-Type para FormData, el navegador lo hace automáticamente
+          'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
         },
         body: formDataToSend
       });
