@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
 import FormularioRegistroSolicitudes from "../../components/permisos/FormularioRegistroSolicitudes";
 
-export default function PermisosPage() {
+function PermisosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -166,6 +166,18 @@ export default function PermisosPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function PermisosPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    }>
+      <PermisosContent />
+    </Suspense>
   );
 }
 
