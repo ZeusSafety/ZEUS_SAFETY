@@ -30,8 +30,8 @@ function getCurrentUserFullName(user) {
       try {
         const parsedUser = JSON.parse(storedUser);
         const username = parsedUser?.name || parsedUser?.email || parsedUser?.id || '';
-        return userMapping[username.toLowerCase()] 
-          ? userMapping[username.toLowerCase()].toUpperCase() 
+        return userMapping[username.toLowerCase()]
+          ? userMapping[username.toLowerCase()].toUpperCase()
           : username.toUpperCase();
       } catch (e) {
         return null;
@@ -39,45 +39,11 @@ function getCurrentUserFullName(user) {
     }
     return null;
   }
-  
-  const username = user.name || user.email || user.id || '';
-  return userMapping[username.toLowerCase()] 
-    ? userMapping[username.toLowerCase()].toUpperCase() 
-    : username.toUpperCase();
-}
 
-// Función para obtener el número de solicitud
-async function getNextSolicitudNumber(area) {
-  if (!area) return '';
-  
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No hay token de autenticación');
-      throw new Error('No hay token de autenticación. Inicie sesión nuevamente.');
-    }
-    const authHeader = token.startsWith('Bearer') ? token : `Bearer ${token}`;
-    
-    const response = await fetch(API_PROXY_URL, { 
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': authHeader
-      },
-      body: JSON.stringify({ area })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-      throw new Error(errorData.error || `Error ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.numeroSolicitud || '';
-  } catch (error) {
-    console.error('Error al obtener número de solicitud:', error);
-    return '';
-  }
+  const username = user.name || user.email || user.id || '';
+  return userMapping[username.toLowerCase()]
+    ? userMapping[username.toLowerCase()].toUpperCase()
+    : username.toUpperCase();
 }
 
 export default function FormularioRegistroSolicitudes({ onBack }) {
@@ -86,7 +52,6 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
     FECHA_CONSULTA: '',
     REGISTRADO_POR: '',
     AREA: '',
-    NUMERO_SOLICITUD: '',
     CON_INCIDENCIA: false,
     RES_INCIDENCIA: '',
     REQUERIMIENTOS: '',
@@ -99,7 +64,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [loadingNumero, setLoadingNumero] = useState(false);
+  const [numeroGenerado, setNumeroGenerado] = useState('');
 
   // Inicializar fecha y hora actual
   useEffect(() => {
@@ -123,24 +88,9 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
     }
   }, [user]);
 
-  // Obtener número de solicitud cuando cambia el área
-  useEffect(() => {
-    if (formData.AREA) {
-      setLoadingNumero(true);
-      getNextSolicitudNumber(formData.AREA).then(numero => {
-        setFormData(prev => ({ ...prev, NUMERO_SOLICITUD: numero }));
-        setLoadingNumero(false);
-      }).catch(() => {
-        setLoadingNumero(false);
-      });
-    } else {
-      setFormData(prev => ({ ...prev, NUMERO_SOLICITUD: '' }));
-    }
-  }, [formData.AREA]);
-
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
-    
+
     if (type === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else if (type === 'file') {
@@ -175,14 +125,10 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       if (!formData.AREA_RECEPCION) {
         throw new Error('Debe seleccionar un Área de Recepción');
       }
-      if (!formData.NUMERO_SOLICITUD) {
-        throw new Error('No se pudo generar el número de solicitud');
-      }
 
       // Crear FormData para enviar archivos
       const formDataToSend = new FormData();
       formDataToSend.append('REGISTRADO_POR', formData.REGISTRADO_POR);
-      formDataToSend.append('NUMERO_SOLICITUD', formData.NUMERO_SOLICITUD);
       formDataToSend.append('AREA', formData.AREA);
       formDataToSend.append('REQUERIMIENTOS', formData.REQUERIMIENTOS || '');
       formDataToSend.append('AREA_RECEPCION', formData.AREA_RECEPCION);
@@ -212,7 +158,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       }, 200);
 
       // Enviar datos
-      const response = await fetch(API_PROXY_URL, { 
+      const response = await fetch(API_PROXY_URL, {
         method: 'POST',
         headers: {
           'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
@@ -230,7 +176,10 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
 
       const result = await response.json();
       setSuccess(true);
-      
+
+      // Capturar el número generado en el backend y mostrarlo
+      setNumeroGenerado(result.numeroSolicitud || 'N/A');
+
       // Resetear formulario después de 2 segundos
       setTimeout(() => {
         const now = new Date();
@@ -250,10 +199,11 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           CON_INCIDENCIA: false,
           RES_INCIDENCIA: '',
           REQUERIMIENTOS: '',
-          INFORME: null,
+          INFORME: '',
           AREA_RECEPCION: '',
           ESTADO: 'PENDIENTE'
         });
+        setNumeroGenerado('');
         setSuccess(false);
         setUploadProgress(0);
       }, 2000);
@@ -282,35 +232,6 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           </div>
         </div>
       </div>
-
-      {/* Mensajes de error y éxito */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-medium text-red-800">{error}</p>
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm font-medium text-green-800">¡Solicitud registrada correctamente!</p>
-        </div>
-      )}
-
-      {/* Barra de progreso */}
-      {loading && uploadProgress > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Subiendo solicitud...</span>
-            <span className="text-sm font-bold text-[#1E63F7]">{uploadProgress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-[#1E63F7] to-[#3A8DFF] h-3 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -367,18 +288,6 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           </select>
         </div>
 
-        {/* NUMERO_SOLICITUD - Generado automáticamente */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-800 mb-2.5">
-            Número de Solicitud
-          </label>
-          <input
-            type="text"
-            value={loadingNumero ? 'Generando...' : formData.NUMERO_SOLICITUD}
-            readOnly
-            className="w-full px-4 py-3 border-2 rounded-xl bg-gray-100 border-gray-300 text-gray-700 font-medium cursor-not-allowed"
-          />
-        </div>
 
         {/* CON INCIDENCIA - Checkbox */}
         <div>
@@ -469,6 +378,35 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
             <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
           </select>
         </div>
+
+        {/* Mensajes de error y éxito */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-medium text-green-800">¡Solicitud registrada correctamente!</p>
+          </div>
+        )}
+
+        {/* Barra de progreso */}
+        {loading && uploadProgress > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Subiendo solicitud...</span>
+              <span className="text-sm font-bold text-[#1E63F7]">{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-[#1E63F7] to-[#3A8DFF] h-3 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Botones */}
         <div className="flex space-x-4 pt-4">

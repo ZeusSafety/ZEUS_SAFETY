@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 // Componente de Select personalizado con dropdown compacto
 const CompactSelect = ({ value, onChange, options, placeholder, disabled = false }) => {
@@ -137,53 +138,27 @@ export default function CotizacionesPage() {
   const [unidadMedida, setUnidadMedida] = useState("");
   const [precioVenta, setPrecioVenta] = useState("");
   const [total, setTotal] = useState(0.00);
+  const [clasificacion, setClasificacion] = useState("");
+  
+  // Estados para búsqueda de productos
+  const [productoBusqueda, setProductoBusqueda] = useState("");
+  const [sugerenciasProductos, setSugerenciasProductos] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const [buscandoProductos, setBuscandoProductos] = useState(false);
+  const [todosLosProductos, setTodosLosProductos] = useState([]);
+  const [productosCargados, setProductosCargados] = useState(false);
+  const productoInputRef = useRef(null);
+  const sugerenciasRef = useRef(null);
+  
+  // Estados para modal de precios
+  const [modalPreciosAbierto, setModalPreciosAbierto] = useState(false);
+  const [preciosDisponibles, setPreciosDisponibles] = useState([]);
+  const [cargandoPrecios, setCargandoPrecios] = useState(false);
+
   // Datos de prueba para la tabla de productos
   const [productosLista, setProductosLista] = useState([
-    {
-      id: 1,
-      cantidad: 10,
-      unidad: "UN",
-      codigo: "ARZ-359",
-      producto: "Arnes de Seguridad Amarillo",
-      precioUnit: 99.00,
-      subtotal: 990.00
-    },
-    {
-      id: 2,
-      cantidad: 5,
-      unidad: "CAJA",
-      codigo: "GZ-AC01-7",
-      producto: "Guantes Extremo Cut 5 - 7",
-      precioUnit: 75.00,
-      subtotal: 375.00
-    },
-    {
-      id: 3,
-      cantidad: 20,
-      unidad: "UN",
-      codigo: "RZ-3200",
-      producto: "Respirador Monovia 3200",
-      precioUnit: 13.00,
-      subtotal: 260.00
-    },
-    {
-      id: 4,
-      cantidad: 3,
-      unidad: "PAR",
-      codigo: "BZ-MS01-36",
-      producto: "Zapato Modelo Tokio - Talla 36",
-      precioUnit: 55.50,
-      subtotal: 166.50
-    },
-    {
-      id: 5,
-      cantidad: 15,
-      unidad: "UN",
-      codigo: "CZ-A02",
-      producto: "Cinta Antideslizante 5 cm",
-      precioUnit: 22.50,
-      subtotal: 337.50
-    }
+    
   ]);
 
   useEffect(() => {
@@ -270,6 +245,224 @@ export default function CotizacionesPage() {
     const precioNum = parseFloat(precioVenta) || 0;
     setTotal(cantidadNum * precioNum);
   }, [cantidad, precioVenta]);
+
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sugerenciasRef.current &&
+        !sugerenciasRef.current.contains(event.target) &&
+        productoInputRef.current &&
+        !productoInputRef.current.contains(event.target)
+      ) {
+        setMostrarSugerencias(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Función para obtener el token de autenticación desde localStorage
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token") || "";
+    }
+    return "";
+  };
+
+  // Función para cargar todos los productos desde la API
+  const cargarTodosLosProductos = async () => {
+    if (productosCargados) {
+      return; // Ya están cargados, no volver a cargar
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      alert("Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.");
+      return;
+    }
+
+    setBuscandoProductos(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Error 401: Token de autenticación inválido o expirado");
+          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
+        } else {
+          console.error(`Error ${response.status}: ${response.statusText}`);
+          alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
+        }
+        throw new Error(`Error al cargar productos: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Asegurarse de que data sea un array
+      const productos = Array.isArray(data) ? data : (data.data || []);
+      
+      setTodosLosProductos(productos);
+      setProductosCargados(true);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+      // El error ya fue manejado arriba con alert
+    } finally {
+      setBuscandoProductos(false);
+    }
+  };
+
+  // Función para filtrar productos localmente
+  const buscarProductos = (termino) => {
+    if (!termino || termino.trim().length < 2) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    // Si no hay productos cargados, cargarlos primero
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos().then(() => {
+        // Después de cargar, filtrar con el término
+        filtrarProductos(termino);
+      });
+      return;
+    }
+
+    filtrarProductos(termino);
+  };
+
+  // Función para filtrar productos localmente
+  const filtrarProductos = (termino) => {
+    if (todosLosProductos.length === 0) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    const terminoLower = termino.toLowerCase().trim();
+    const productosFiltrados = todosLosProductos.filter(prod => {
+      const nombre = (prod.NOMBRE || prod.nombre || "").toLowerCase();
+      const codigo = (prod.CODIGO || prod.codigo || "").toLowerCase();
+      return nombre.includes(terminoLower) || codigo.includes(terminoLower);
+    });
+    
+    setSugerenciasProductos(productosFiltrados);
+    setMostrarSugerencias(productosFiltrados.length > 0);
+  };
+
+  // Manejar cambio en el campo de búsqueda de producto
+  const handleProductoBusquedaChange = (e) => {
+    const valor = e.target.value;
+    setProductoBusqueda(valor);
+    buscarProductos(valor);
+  };
+
+  // Manejar cuando el usuario enfoca el campo de producto
+  const handleProductoFocus = () => {
+    // Cargar productos si no están cargados
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos();
+    }
+    
+    // Si hay sugerencias previas, mostrarlas
+    if (sugerenciasProductos.length > 0) {
+      setMostrarSugerencias(true);
+    }
+  };
+
+  // Seleccionar producto de las sugerencias
+  const seleccionarProducto = (productoItem) => {
+    setProductoBusqueda(productoItem.NOMBRE || productoItem.nombre || "");
+    setProducto(productoItem.NOMBRE || productoItem.nombre || "");
+    setCodigo(productoItem.CODIGO || productoItem.codigo || "");
+    setProductoSeleccionado(productoItem);
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    
+    // Si ya hay clasificación seleccionada, abrir modal de precios
+    if (clasificacion) {
+      obtenerPrecios(productoItem.CODIGO || productoItem.codigo, clasificacion);
+    }
+  };
+
+  // Función para obtener precios
+  const obtenerPrecios = async (codigoProducto, tipoClasificacion) => {
+    if (!codigoProducto || !tipoClasificacion) {
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      alert("Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.");
+      return;
+    }
+
+    setCargandoPrecios(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/franja-precios/5?method=OBTENER_PRECIO_PRODUCTO&id=${encodeURIComponent(codigoProducto)}/${tipoClasificacion}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Error 401: Token de autenticación inválido o expirado");
+          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
+        } else {
+          console.error(`Error ${response.status}: ${response.statusText}`);
+          alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
+        }
+        throw new Error(`Error al obtener precios: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const precios = Array.isArray(data) ? data : (data.data || []);
+      
+      setPreciosDisponibles(precios);
+      setModalPreciosAbierto(true);
+    } catch (error) {
+      console.error("Error al obtener precios:", error);
+      alert("Error al obtener los precios del producto");
+    } finally {
+      setCargandoPrecios(false);
+    }
+  };
+
+  // Manejar cambio en clasificación
+  const handleClasificacionChange = (e) => {
+    const nuevaClasificacion = e.target.value;
+    setClasificacion(nuevaClasificacion);
+    
+    // Si ya hay producto seleccionado, obtener precios
+    if (nuevaClasificacion && codigo) {
+      obtenerPrecios(codigo, nuevaClasificacion);
+    }
+  };
+
+  // Seleccionar precio del modal
+  const seleccionarPrecio = (precioItem) => {
+    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || 0;
+    setPrecioVenta(precio.toString());
+    setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
+    setModalPreciosAbierto(false);
+  };
 
   // Función para buscar RUC
   const handleBuscarRuc = async () => {
@@ -439,15 +632,20 @@ export default function CotizacionesPage() {
       subtotal: total
     };
 
+    
+
     setProductosLista([...productosLista, nuevoProducto]);
     
-    // Limpiar campos
+    // Limpiar campos excepto clasificación
     setProducto("");
+    setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
     setUnidadMedida("");
     setPrecioVenta("");
     setTotal(0.00);
+    setProductoSeleccionado(null);
+    // NO limpiar clasificación
   };
 
   const handleEliminarProducto = (id) => {
@@ -725,7 +923,7 @@ export default function CotizacionesPage() {
                         <td>${prod.cantidad}</td>
                         <td>${prod.unidad}</td>
                         <td>${prod.codigo}</td>
-                        <td>${prod.producto}</td>
+                        <td style="text-align: left;">${prod.producto}</td>
                         <td>S/ ${prod.precioUnit.toFixed(2)}</td>
                         <td>S/ ${prod.subtotal.toFixed(2)}</td>
                     </tr>
@@ -1049,8 +1247,8 @@ export default function CotizacionesPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
                     <option value="" className="text-gray-500">Seleccione moneda</option>
-                    <option value="PEN" className="text-gray-900">Soles (PEN)</option>
-                    <option value="USD" className="text-gray-900">Dólares (USD)</option>
+                    <option value="SOLES" className="text-gray-900">Soles (PEN)</option>
+                    <option value="DOLARES" className="text-gray-900">Dólares (USD)</option>
                   </select>
                 </div>
                 <div>
@@ -1061,8 +1259,11 @@ export default function CotizacionesPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
                     <option value="" className="text-gray-500">Seleccione un asesor</option>
-                    <option value="asesor1" className="text-gray-900">Asesor 1</option>
-                    <option value="asesor2" className="text-gray-900">Asesor 2</option>
+                    <option value="HERVIN-9447673667" className="text-gray-900">HERVIN-9447673667</option>
+                    <option value="KIMBERLY-987560590" className="text-gray-900">KIMBERLY-987560590</option>
+                    <option value="ALVARO-935447178" className="text-gray-900">ÁLVARO-935447178</option>
+                    <option value="KRISTEL-916532849" className="text-gray-900">CRISTEL-916532849</option>
+                    <option value="ZEUS-908917879" className="text-gray-900">ZEUS-908917879</option>
                   </select>
                 </div>
               </div>
@@ -1076,26 +1277,71 @@ export default function CotizacionesPage() {
                   </svg>
                   Detalle de Productos
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+                <div className="relative">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Producto:</label>
-                  <input
-                    type="text"
-                    value={producto}
-                    onChange={(e) => setProducto(e.target.value)}
-                    placeholder="Nombre del producto"
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  />
+                  <div className="relative">
+                    <input
+                      ref={productoInputRef}
+                      type="text"
+                      value={productoBusqueda}
+                      onChange={handleProductoBusquedaChange}
+                      onFocus={handleProductoFocus}
+                      placeholder="Buscar producto..."
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    />
+                    {buscandoProductos && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                      </div>
+                    )}
+                  </div>
+                  {mostrarSugerencias && sugerenciasProductos.length > 0 && (
+                    <div
+                      ref={sugerenciasRef}
+                      className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      {sugerenciasProductos.map((prod, index) => (
+                        <button
+                          key={prod.ID || prod.id || index}
+                          type="button"
+                          onClick={() => seleccionarProducto(prod)}
+                          className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="text-sm font-medium text-gray-900">
+                            {prod.NOMBRE || prod.nombre}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Código: {prod.CODIGO || prod.codigo}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Código:</label>
                   <input
                     type="text"
                     value={codigo}
-                    onChange={(e) => setCodigo(e.target.value)}
+                    readOnly
                     placeholder="Código del producto"
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-900 cursor-not-allowed"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">CLASIFICACIÓN:</label>
+                  <select
+                    value={clasificacion}
+                    onChange={handleClasificacionChange}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                  >
+                    <option value="" className="text-gray-500">Seleccione clasificación</option>
+                    <option value="MALVINAS" className="text-gray-900">MALVINAS</option>
+                    <option value="FERRETERIA" className="text-gray-900">FERRETERIA</option>
+                    <option value="PROVINCIA" className="text-gray-900">PROVINCIA</option>
+                    <option value="CLIENTES FINALES" className="text-gray-900">CLIENTES FINALES</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad:</label>
@@ -1106,20 +1352,6 @@ export default function CotizacionesPage() {
                     min="1"
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Unidad de Medida:</label>
-                  <select
-                    value={unidadMedida}
-                    onChange={(e) => setUnidadMedida(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione una Unidad de Medida</option>
-                    <option value="UN" className="text-gray-900">Unidad (UN)</option>
-                    <option value="PAR" className="text-gray-900">Par (PAR)</option>
-                    <option value="CAJA" className="text-gray-900">Caja (CAJA)</option>
-                    <option value="DOCENA" className="text-gray-900">Docena (DOCENA)</option>
-                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Precio de Venta:</label>
@@ -1152,6 +1384,54 @@ export default function CotizacionesPage() {
                 Agregar a la lista
               </button>
             </div>
+
+            {/* Modal de Precios */}
+            <Modal
+              isOpen={modalPreciosAbierto}
+              onClose={() => setModalPreciosAbierto(false)}
+              title="Seleccionar Precio"
+              size="md"
+            >
+              {cargandoPrecios ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                </div>
+              ) : preciosDisponibles.length === 0 ? (
+                <div className="text-center py-8 text-gray-600">
+                  No hay precios disponibles para este producto y clasificación.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Seleccione el precio para el producto: <strong>{producto}</strong>
+                  </p>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {preciosDisponibles.map((precioItem, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => seleccionarPrecio(precioItem)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {precioItem.MEDIDA || precioItem.medida || "Sin medida"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Código: {precioItem.CODIGO || precioItem.codigo || codigo}
+                            </div>
+                          </div>
+                          <div className="text-lg font-bold text-blue-700">
+                            S/ {(precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || 0).toFixed(2)}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Modal>
 
               {/* Lista de Productos */}
               <div className="mb-4 pb-4 mt-4">
