@@ -34,7 +34,7 @@ export function Header({ onMenuToggle }) {
 
   return (
     <>
-      <header className="h-14 bg-white border-b border-gray-200/80 flex items-center justify-between" style={{ boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04)' }}>
+      <header className="bg-white border-b border-gray-200/80 flex items-center justify-between py-3" style={{ boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04)' }}>
         <div className="w-full max-w-[1400px] xl:max-w-[1680px] 2xl:max-w-[1920px] mx-auto pl-1 sm:pl-1.5 md:pl-2 lg:pl-2.5 xl:pl-3 2xl:pl-3.5 pr-2 sm:pr-3 md:pr-4 lg:pr-5 xl:pr-6 2xl:pr-7 flex items-center justify-between">
         {/* Left section */}
         <div className="flex items-center space-x-0.5 sm:space-x-1">

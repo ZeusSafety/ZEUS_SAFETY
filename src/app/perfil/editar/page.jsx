@@ -148,6 +148,7 @@ export default function EditarPerfilPage() {
     correo: "",
     areaPrincipal: "",
     rol: "",
+    imgUrl: "",
   });
 
   // Detectar si es desktop y abrir sidebar automáticamente
@@ -436,6 +437,8 @@ export default function EditarPerfilPage() {
             // Mapear área y rol a los valores correctos del dropdown
             areaPrincipal: mapArea(areaFromAPI),
             rol: mapRol(rolFromAPI),
+            // Obtener URL de imagen
+            imgUrl: getValue(perfilUsuario, "IMG_URL", "img_url", "imagen", "IMAGEN", "foto", "FOTO", "foto_url", "FOTO_URL"),
           };
         
         console.log("=== DATOS DEL FORMULARIO A ESTABLECER ===");
@@ -495,6 +498,7 @@ export default function EditarPerfilPage() {
           correo: email,
           areaPrincipal: currentUser?.areaPrincipal || "",
           rol: currentUser?.rol || "",
+          imgUrl: currentUser?.imgUrl || currentUser?.IMG_URL || "",
         };
         
         console.log("Datos de fallback del contexto:", fallbackData);
@@ -536,6 +540,7 @@ export default function EditarPerfilPage() {
         correo: email,
           areaPrincipal: currentUser.areaPrincipal || "",
           rol: currentUser.rol || "",
+          imgUrl: currentUser.imgUrl || currentUser.IMG_URL || "",
         };
         
         console.log("Usando datos de fallback debido a error:", fallbackData);
@@ -586,10 +591,11 @@ export default function EditarPerfilPage() {
     setIsLoading(true);
 
     try {
-      // Aquí iría la lógica para guardar los datos
+      // Preparar datos para enviar
       console.log("Datos a guardar:", formData);
       
-      // Simulación de guardado
+      // Aquí iría la lógica para guardar los datos en la API
+      // Por ahora simulamos el guardado
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       alert("Perfil actualizado correctamente");
@@ -660,6 +666,37 @@ export default function EditarPerfilPage() {
 
               {/* Formulario */}
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Cuadro de imagen de perfil */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Foto de Perfil
+                  </label>
+                  <div className="w-40 h-40 rounded-lg border-2 border-gray-300 bg-gray-100 overflow-hidden flex items-center justify-center shadow-sm">
+                    {formData.imgUrl ? (
+                      <img
+                        key={formData.imgUrl}
+                        src={formData.imgUrl}
+                        alt="Foto de perfil"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '';
+                          e.target.style.display = 'none';
+                          const placeholder = e.target.nextElementSibling;
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-full h-full flex items-center justify-center ${formData.imgUrl ? 'hidden' : 'flex'}`}
+                    >
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Primer Nombre */}
                   <div>
