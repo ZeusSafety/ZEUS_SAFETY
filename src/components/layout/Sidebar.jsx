@@ -70,6 +70,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "listado-precios", name: "Listado de precios", icon: "list" },
+        { id: "gestion-precios", name: "Gestión de precios", icon: "plus-circle" },
       ],
     },
     {
@@ -647,6 +648,12 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
+    if (itemId === "gestion-precios") {
+      router.push("/gerencia/gestion-precios");
+      setSelectedItem(itemId);
+      return;
+    }
+    
     // Navegación para Franja de precios en Marketing, Facturación y Ventas
     if (itemId === "listado-precios-marketing" || itemId === "listado-precios-facturacion" || itemId === "listado-precios-ventas") {
       router.push("/gerencia/listado-precios");
@@ -737,6 +744,7 @@ export function Sidebar({ isOpen, onClose }) {
       setSelectedItem(itemId);
       return;
     }
+
     
     // Aquí iría la navegación real para otros items
     setSelectedItem(itemId);
@@ -1487,6 +1495,7 @@ export function Sidebar({ isOpen, onClose }) {
                     </div>
                   </div>
                 )}
+
               </li>
             ))}
           </ul>

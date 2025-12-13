@@ -405,8 +405,7 @@ export default function GerenciaPage() {
                                   } else if (card.id === "listado-precios") {
                                     router.push("/gerencia/listado-precios");
                                   } else if (card.id === "gestion-precios") {
-                                    // TODO: Agregar ruta cuando esté disponible
-                                    console.log("Gestión de precios - Ruta pendiente");
+                                    router.push("/gerencia/gestion-precios");
                                   } else {
                                     router.push("/gerencia");
                                   }
