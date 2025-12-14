@@ -2228,29 +2228,57 @@ function RecursosHumanosContent() {
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                      <span>× Eliminar</span>
+                                      <span>Eliminar</span>
                                     </button>
                                     <div className="space-y-3 pr-24">
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
-                                        <input
-                                          type="text"
-                                          value={item.tipo || ""}
-                                          onChange={(e) => {
-                                            const nuevosDatos = [...datosParaMostrar];
-                                            const itemActual = nuevosDatos[item.index] || {};
-                                            nuevosDatos[item.index] = {
-                                              ...itemActual,
-                                              TIPO: e.target.value,
-                                              tipo: e.target.value,
-                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
-                                            };
-                                            setDatosEditables(nuevosDatos);
-                                          }}
-                                          placeholder="Ej: CORPORATIVO, PERSONAL"
-                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
+                                        <div className="flex-1 flex items-center space-x-4">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "CORPORATIVO" || item.tipo === "corporativo" || item.TIPO === "CORPORATIVO"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                // Si se selecciona CORPORATIVO, deseleccionar PERSONAL
+                                                const nuevoTipo = e.target.checked ? "CORPORATIVO" : "";
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  TIPO: nuevoTipo,
+                                                  tipo: nuevoTipo,
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORPORATIVO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "PERSONAL" || item.tipo === "personal" || item.TIPO === "PERSONAL"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                // Si se selecciona PERSONAL, deseleccionar CORPORATIVO
+                                                const nuevoTipo = e.target.checked ? "PERSONAL" : "";
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  TIPO: nuevoTipo,
+                                                  tipo: nuevoTipo,
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">PERSONAL</span>
+                                          </label>
+                                        </div>
                                       </div>
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>

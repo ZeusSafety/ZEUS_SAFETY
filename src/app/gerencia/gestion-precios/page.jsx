@@ -17,6 +17,14 @@ export default function GestionPreciosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("create"); // "create" o "update"
+  const [selectedPrecio, setSelectedPrecio] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [precioToDelete, setPrecioToDelete] = useState(null);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
   const [tablasDisponibles, setTablasDisponibles] = useState([
     { value: "MALVINAS", label: "Malvinas", disponible: true },
     { value: "PROVINCIA", label: "Provincia", disponible: true },
@@ -56,6 +64,60 @@ export default function GestionPreciosPage() {
     };
     return mapping[tablaId] || tablaId;
   };
+
+  // Función para obtener fichas técnicas de productos por código
+  const fetchFichasTecnicas = useCallback(async (codigos) => {
+    try {
+      if (!codigos || codigos.length === 0) return {};
+      
+      let token = localStorage.getItem("token") || 
+                  (user?.token || user?.accessToken || user?.access_token) || 
+                  sessionStorage.getItem("token");
+      
+      if (!token) return {};
+      
+      // Obtener todos los productos de la API
+      const apiUrl = `/api/productos`;
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`,
+      };
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
+      if (!response.ok) {
+        console.warn("No se pudieron obtener las fichas técnicas de productos");
+        return {};
+      }
+      
+      const data = await response.json();
+      const productosArray = Array.isArray(data) ? data : 
+                            (data?.data && Array.isArray(data.data) ? data.data : []);
+      
+      // Crear un mapa de código -> ficha técnica
+      const fichasMap = {};
+      productosArray.forEach(producto => {
+        const codigo = producto.CODIGO || producto.codigo || producto.CÓDIGO;
+        const ficha = producto.FICHA_TECNICA_ENLACE || producto.ficha_tecnica_enlace || 
+                     producto.FICHA_TECNICA || producto.ficha_tecnica ||
+                     producto.fichaTecnica || producto.fichaTecnicaEnlace;
+        
+        if (codigo && ficha) {
+          fichasMap[codigo] = ficha;
+        }
+      });
+      
+      console.log(`✅ Fichas técnicas obtenidas: ${Object.keys(fichasMap).length} productos con ficha`);
+      return fichasMap;
+    } catch (err) {
+      console.warn("Error al obtener fichas técnicas:", err.message);
+      return {};
+    }
+  }, [user]);
 
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
@@ -110,7 +172,26 @@ export default function GestionPreciosPage() {
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
       
-      return preciosArray;
+      // Obtener fichas técnicas de productos (aunque no las mostremos, las obtenemos para mantener consistencia con la API)
+      const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
+      const fichasMap = await fetchFichasTecnicas(codigos);
+      
+      // Combinar fichas técnicas con los datos de precios (aunque no las mostremos)
+      const preciosConFichas = preciosArray.map(precio => {
+        const codigo = precio.CODIGO || precio.codigo;
+        const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
+                     precio.FICHA_TECNICA || precio.ficha_tecnica;
+        
+        return {
+          ...precio,
+          FICHA_TECNICA_ENLACE: ficha,
+          ficha_tecnica_enlace: ficha,
+          FICHA_TECNICA: ficha,
+          ficha_tecnica: ficha
+        };
+      });
+      
+      return preciosConFichas;
     } catch (err) {
       const errorMessage = err.message || "";
       const isExpectedError = errorMessage.includes("'PRECIO'") || 
@@ -124,7 +205,7 @@ export default function GestionPreciosPage() {
       
       return [];
     }
-  }, [user, router]);
+  }, [user, router, fetchFichasTecnicas]);
 
   useEffect(() => {
     let isMounted = true;
@@ -321,7 +402,8 @@ export default function GestionPreciosPage() {
       };
 
       const codigo = getField(["CODIGO", "codigo"]);
-      const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
+      // El backend devuelve el nombre en PRODUCTO (priorizar este campo)
+      const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
 
       return codigo.includes(term) || producto.includes(term);
     });
@@ -337,24 +419,324 @@ export default function GestionPreciosPage() {
   }, [searchTerm, activeTab]);
 
   const handleAgregar = () => {
-    // TODO: Implementar modal/formulario para agregar nuevo producto
-    alert("Función de agregar producto - Pendiente de implementar");
+    setModalType("create");
+    setSelectedPrecio(null);
+    // Inicializar formulario con valores por defecto
+    const defaultFormData = {
+      CODIGO: "",
+      NOMBRE: "",
+      UNIDAD_MEDIDA_VENTA: "UNIDAD",
+      CANTIDAD_UNIDAD_MEDIDA_VENTA: 1,
+      PRECIO_UNIDAD_MEDIDA_VENTA: 0,
+      UNIDAD_MEDIDA_CAJA: "UNIDAD",
+      CANTIDAD_CAJA: 0,
+      CLASIFICACION: activeTab,
+      TEXTO_COPIAR: ""
+    };
+    setFormData(defaultFormData);
+    setShowModal(true);
   };
 
   const handleActualizar = (precio) => {
-    // TODO: Implementar modal/formulario para actualizar producto
-    console.log("Actualizar producto:", precio);
-    alert("Función de actualizar producto - Pendiente de implementar");
+    setModalType("update");
+    setSelectedPrecio(precio);
+    
+    // Mapear los datos del precio al formulario
+    const getField = (variations) => {
+      for (const variation of variations) {
+        if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
+          return precio[variation];
+        }
+      }
+      return "";
+    };
+
+    // Buscar ID en todas las variaciones posibles
+    let idValue = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
+    
+    // Si no se encuentra, buscar manualmente en todas las keys
+    if (!idValue || idValue === "") {
+      const allKeys = Object.keys(precio);
+      for (const key of allKeys) {
+        const keyUpper = key.toUpperCase();
+        if ((keyUpper.includes("ID") || keyUpper === "ID") && 
+            !keyUpper.includes("CODIGO") && 
+            !keyUpper.includes("CLASIFICACION")) {
+          const value = precio[key];
+          if (value !== null && value !== undefined && value !== "") {
+            idValue = value;
+            console.log(`✅ ID encontrado en campo: ${key} = ${idValue}`);
+            break;
+          }
+        }
+      }
+    }
+
+    console.log("=== DATOS DEL PRECIO PARA ACTUALIZAR ===");
+    console.log("Precio completo:", precio);
+    console.log("ID encontrado:", idValue);
+    console.log("Todos los campos:", Object.keys(precio));
+
+    // Obtener el nombre - el backend devuelve el nombre en PRODUCTO
+    // Priorizar PRODUCTO ya que es el campo que devuelve el backend
+    const nombreValue = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
+    
+    const formDataToSet = {
+      ID: idValue,
+      id: idValue, // También enviar como 'id' por si la API lo requiere
+      CODIGO: getField(["CODIGO", "codigo"]),
+      NOMBRE: nombreValue || "", // Si no hay nombre, usar string vacío
+      UNIDAD_MEDIDA_VENTA: getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]) || "UNIDAD",
+      CANTIDAD_UNIDAD_MEDIDA_VENTA: parseFloat(getField(["CANTIDAD_UNIDAD_MEDIDA_VENTA", "cantidad_unidad_medida_venta"])) || 1,
+      PRECIO_UNIDAD_MEDIDA_VENTA: parseFloat(getField(["PRECIO_UNIDAD_MEDIDA_VENTA", "precio_unidad_medida_venta"])) || 0,
+      UNIDAD_MEDIDA_CAJA: getField(["UNIDAD_MEDIDA_CAJA", "unidad_medida_caja"]) || "UNIDAD",
+      CANTIDAD_CAJA: parseFloat(getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"])) || 0,
+      CLASIFICACION: activeTab,
+      TEXTO_COPIAR: getField(["TEXTO_COPIAR", "texto_copiar", "textoCopiar"]) || ""
+    };
+    
+    console.log("FormData a enviar:", formDataToSet);
+    
+    setFormData(formDataToSet);
+    setShowModal(true);
   };
 
   const handleEliminar = async (precio) => {
-    if (!confirm("¿Está seguro de que desea eliminar este producto?")) {
-      return;
-    }
+    setPrecioToDelete(precio);
+    setShowDeleteModal(true);
+  };
 
-    // TODO: Implementar llamada a API para eliminar
-    console.log("Eliminar producto:", precio);
-    alert("Función de eliminar producto - Pendiente de implementar");
+  const confirmarEliminar = async () => {
+    if (!precioToDelete) return;
+
+    try {
+      setSaving(true);
+      const precio = precioToDelete;
+      let token = localStorage.getItem("token") || 
+                  (user?.token || user?.accessToken || user?.access_token) || 
+                  sessionStorage.getItem("token");
+      
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const getField = (variations) => {
+        for (const variation of variations) {
+          if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
+            return precio[variation];
+          }
+        }
+        return null;
+      };
+
+      const id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
+      
+      if (!id) {
+        alert("Error: No se pudo obtener el ID del producto para eliminar.");
+        setSaving(false);
+        return;
+      }
+
+      const clasificacion = activeTab;
+
+      console.log("--- Datos para eliminar ---");
+      console.log("ID a eliminar:", id);
+      console.log("Clasificación:", clasificacion);
+
+      // Llamar a API para eliminar
+      const apiUrl = `/api/franja-precios`;
+      const response = await fetch(apiUrl, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ID: id,
+          id: id,
+          CLASIFICACION: clasificacion,
+          clasificacion: clasificacion
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `Error ${response.status}` }));
+        throw new Error(errorData.error || "Error al eliminar el producto");
+      }
+
+      // Recargar los datos
+      const newPreciosData = { ...preciosData };
+      newPreciosData[activeTab] = newPreciosData[activeTab].filter(p => {
+        const pId = p.ID || p.id;
+        return pId !== id;
+      });
+      setPreciosData(newPreciosData);
+      
+      // Mostrar notificación de éxito
+      setNotification({ show: true, message: "Producto eliminado correctamente", type: "success" });
+      setTimeout(() => {
+        setNotification({ show: false, message: "", type: "success" });
+      }, 2000);
+      
+      setShowDeleteModal(false);
+      setPrecioToDelete(null);
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      alert(`Error al eliminar el producto: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      let token = localStorage.getItem("token") || 
+                  (user?.token || user?.accessToken || user?.access_token) || 
+                  sessionStorage.getItem("token");
+      
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // Validar que los campos requeridos estén presentes
+      // Para crear, NOMBRE es requerido; para actualizar, no es necesario porque está deshabilitado
+      if (!formData.CODIGO) {
+        alert("Por favor complete todos los campos requeridos");
+        setSaving(false);
+        return;
+      }
+      
+      if (modalType === "create" && !formData.NOMBRE) {
+        alert("Por favor complete todos los campos requeridos");
+        setSaving(false);
+        return;
+      }
+
+      // Para actualizar, asegurarse de que el ID esté presente
+      if (modalType === "update" && !formData.ID && !formData.id) {
+        alert("Error: No se pudo obtener el ID del producto. Por favor, intente nuevamente.");
+        setSaving(false);
+        return;
+      }
+
+      const apiUrl = `/api/franja-precios`;
+      const method = modalType === "create" ? "POST" : "PUT";
+      
+      // Preparar el body con todos los datos necesarios
+      const textoCopiarValue = formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "";
+      
+      // Para actualizar, el nombre viene de PRODUCTO (campo que devuelve el backend)
+      // El backend protege el CODIGO y el nombre, así que solo necesitamos enviarlo si es creación
+      const nombreValue = modalType === "create" 
+        ? (formData.NOMBRE || formData.nombre || "")
+        : (formData.NOMBRE || formData.nombre || selectedPrecio?.PRODUCTO || selectedPrecio?.producto || selectedPrecio?.NOMBRE || selectedPrecio?.nombre || "");
+      
+      const requestBody = {
+        CODIGO: formData.CODIGO || formData.codigo,
+        // El backend protege el nombre en actualización, pero lo enviamos por si acaso
+        NOMBRE: nombreValue,
+        UNIDAD_MEDIDA_VENTA: formData.UNIDAD_MEDIDA_VENTA || formData.unidad_medida_venta || "UNIDAD",
+        CANTIDAD_UNIDAD_MEDIDA_VENTA: formData.CANTIDAD_UNIDAD_MEDIDA_VENTA || formData.cantidad_unidad_medida_venta || 1,
+        PRECIO_UNIDAD_MEDIDA_VENTA: formData.PRECIO_UNIDAD_MEDIDA_VENTA || formData.precio_unidad_medida_venta || formData.precio || 0,
+        UNIDAD_MEDIDA_CAJA: formData.UNIDAD_MEDIDA_CAJA || formData.unidad_medida_caja || "UNIDAD",
+        CANTIDAD_CAJA: formData.CANTIDAD_CAJA || formData.cantidad_caja || 0,
+        CLASIFICACION: formData.CLASIFICACION || activeTab,
+        // Enviar en ambos formatos para mayor compatibilidad
+        TEXTO_COPIAR: textoCopiarValue,
+        texto_copiar: textoCopiarValue,
+        texto: textoCopiarValue,
+        // Asegurar que el ID esté presente en ambos formatos para actualizar
+        ...(modalType === "update" && {
+          ID: formData.ID || formData.id,
+          id: formData.ID || formData.id
+        })
+      };
+
+      // Validar campos críticos
+      if (!requestBody.CODIGO || requestBody.CODIGO === "") {
+        alert("Error: El campo Código es requerido");
+        setSaving(false);
+        return;
+      }
+
+      // Solo validar NOMBRE si es creación; en actualización puede estar vacío si el producto no existe en la tabla productos
+      if (modalType === "create" && (!requestBody.NOMBRE || requestBody.NOMBRE === "")) {
+        alert("Error: El campo Nombre es requerido");
+        setSaving(false);
+        return;
+      }
+
+      console.log("=== ENVIANDO REQUEST ===");
+      console.log("Method:", method);
+      console.log("FormData original:", formData);
+      console.log("Body a enviar:", requestBody);
+      
+      const response = await fetch(apiUrl, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `Error ${response.status}` }));
+        throw new Error(errorData.error || `Error al ${modalType === "create" ? "crear" : "actualizar"} el producto`);
+      }
+
+      // Recargar los datos de la tabla activa
+      const newData = await fetchPrecios(activeTab);
+      
+      // Si es creación y el backend no devolvió el NOMBRE, agregarlo temporalmente desde el formData
+      if (modalType === "create" && requestBody.NOMBRE) {
+        const codigoCreado = requestBody.CODIGO;
+        // Buscar el producto recién creado y agregar el NOMBRE si no lo tiene
+        const dataConNombre = newData.map(item => {
+          const itemCodigo = item.CODIGO || item.codigo;
+          if (itemCodigo === codigoCreado && (!item.NOMBRE && !item.nombre && !item.PRODUCTO && !item.producto)) {
+            return {
+              ...item,
+              NOMBRE: requestBody.NOMBRE,
+              nombre: requestBody.NOMBRE,
+              PRODUCTO: requestBody.NOMBRE,
+              producto: requestBody.NOMBRE
+            };
+          }
+          return item;
+        });
+        
+        const newPreciosData = { ...preciosData };
+        newPreciosData[activeTab] = dataConNombre;
+        setPreciosData(newPreciosData);
+      } else {
+        const newPreciosData = { ...preciosData };
+        newPreciosData[activeTab] = newData;
+        setPreciosData(newPreciosData);
+      }
+      
+      setShowModal(false);
+      
+      // Mostrar notificación de éxito
+      setNotification({ 
+        show: true, 
+        message: `Producto ${modalType === "create" ? "creado" : "actualizado"} correctamente`, 
+        type: "success" 
+      });
+      setTimeout(() => {
+        setNotification({ show: false, message: "", type: "success" });
+      }, 2000);
+    } catch (error) {
+      console.error(`Error al ${modalType === "create" ? "crear" : "actualizar"}:`, error);
+      alert(`Error al ${modalType === "create" ? "crear" : "actualizar"} el producto: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -548,9 +930,6 @@ export default function GestionPreciosPage() {
                               <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                                 CANTIDAD EN CAJA
                               </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                                FICHA TÉCNICA
-                              </th>
                               {getPriceColumns.map((columna) => (
                                 <th 
                                   key={columna}
@@ -585,7 +964,8 @@ export default function GestionPreciosPage() {
                               };
 
                               const codigo = getField(["CODIGO", "codigo"]);
-                              const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
+                              // El backend devuelve el nombre en PRODUCTO (priorizar este campo)
+      const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
                               const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]);
                               const fichaTecnica = getField(["FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", "FICHA_TECNICA", "ficha_tecnica"]);
 
@@ -599,31 +979,6 @@ export default function GestionPreciosPage() {
                                   </td>
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
                                     {cantidadCaja || "-"}
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
-                                    {fichaTecnica ? (
-                                      <a
-                                        href={fichaTecnica}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                      >
-                                        <svg
-                                          className="w-3.5 h-3.5"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                        PDF
-                                      </a>
-                                    ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
                                   </td>
                                   {getPriceColumns.map((columna) => {
                                     const precioValue = formatPrice(precio[columna]);
@@ -639,7 +994,12 @@ export default function GestionPreciosPage() {
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
                                     <div className="flex items-center justify-center gap-1.5">
                                       <button
-                                        onClick={() => handleActualizar(precio)}
+                                        onClick={() => {
+                                          console.log("=== CLICK EN ACTUALIZAR ===");
+                                          console.log("Precio completo:", precio);
+                                          console.log("ID disponible:", precio.ID || precio.id || precio.Id || precio._id);
+                                          handleActualizar(precio);
+                                        }}
                                         className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                                         title="Actualizar"
                                       >
@@ -719,6 +1079,371 @@ export default function GestionPreciosPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal para Crear/Actualizar */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header con gradiente */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-blue-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    {modalType === "create" ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    )}
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  {modalType === "create" ? "Agregar Producto" : "Actualizar Producto"}
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido del formulario */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Código <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.CODIGO || ""}
+                    onChange={(e) => setFormData({ ...formData, CODIGO: e.target.value })}
+                    readOnly={modalType === "update"}
+                    className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
+                      modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
+                    }`}
+                    required
+                  />
+                  {/* Input hidden para asegurar que el CODIGO se envíe incluso si está readonly */}
+                  {modalType === "update" && (
+                    <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nombre del Producto {modalType === "create" && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.NOMBRE || ""}
+                    onChange={(e) => setFormData({ ...formData, NOMBRE: e.target.value })}
+                    disabled={modalType === "update"}
+                    readOnly={modalType === "update"}
+                    className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
+                      modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
+                    }`}
+                    required={modalType === "create"}
+                    placeholder={modalType === "update" ? "El nombre no se puede editar" : ""}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Unidad de Medida Venta <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
+                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      required
+                    >
+                      <option value="UNIDAD">UNIDAD</option>
+                      <option value="DOCENA">DOCENA</option>
+                      <option value="CAJA">CAJA</option>
+                      <option value="PAR">PAR</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Cantidad Unidad Medida Venta <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.CANTIDAD_UNIDAD_MEDIDA_VENTA ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                        setFormData({ ...formData, CANTIDAD_UNIDAD_MEDIDA_VENTA: value });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                          setFormData({ ...formData, CANTIDAD_UNIDAD_MEDIDA_VENTA: 1 });
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Precio Unidad Medida Venta <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.PRECIO_UNIDAD_MEDIDA_VENTA ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                      setFormData({ ...formData, PRECIO_UNIDAD_MEDIDA_VENTA: value });
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                        setFormData({ ...formData, PRECIO_UNIDAD_MEDIDA_VENTA: 0 });
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Unidad de Medida Caja <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
+                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      required
+                    >
+                      <option value="UNIDAD">UNIDAD</option>
+                      <option value="DOCENA">DOCENA</option>
+                      <option value="CAJA">CAJA</option>
+                      <option value="PAR">PAR</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Cantidad en Caja
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.CANTIDAD_CAJA ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                        setFormData({ ...formData, CANTIDAD_CAJA: value });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                          setFormData({ ...formData, CANTIDAD_CAJA: 0 });
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer con botones */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200/60 bg-gray-50/50">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm shadow-sm"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-[#1a56e6] hover:to-[#1a56e6] text-white rounded-lg font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    {modalType === "create" ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Agregar
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Actualizar
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación para Eliminar */}
+      {showDeleteModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => !saving && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-xl border border-gray-200/60 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-red-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Confirmar Eliminación
+                </h2>
+              </div>
+              {!saving && (
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Contenido */}
+            <div className="px-6 py-5">
+              <p className="text-gray-700 mb-1">
+                ¿Está seguro de que desea eliminar este producto?
+              </p>
+              {precioToDelete && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">Código:</span> {precioToDelete.CODIGO || precioToDelete.codigo || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">Producto:</span> {precioToDelete.NOMBRE || precioToDelete.nombre || "N/A"}
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-red-600 mt-3 font-medium">
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            {/* Footer con botones */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200/60">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={saving}
+                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminar}
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Eliminar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notificación en esquina superior izquierda */}
+      {notification.show && (
+        <div className="fixed top-4 left-4 z-[60] animate-slide-in-left">
+          <div className={`rounded-3xl shadow-xl border max-w-md w-full overflow-hidden ${
+            notification.type === "success" 
+              ? "bg-white border-green-200" 
+              : "bg-white border-red-200"
+          }`}>
+            <div className={`flex items-center gap-3 px-5 py-4 ${
+              notification.type === "success"
+                ? "bg-gradient-to-r from-green-50 to-white"
+                : "bg-gradient-to-r from-red-50 to-white"
+            }`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
+                notification.type === "success"
+                  ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+                  : "bg-gradient-to-br from-red-500 to-red-600 text-white"
+              }`}>
+                {notification.type === "success" ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </div>
+              <p className="flex-1 text-sm font-semibold text-gray-900">
+                {notification.message}
+              </p>
+              <button
+                onClick={() => setNotification({ show: false, message: "", type: notification.type })}
+                className="p-1 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
