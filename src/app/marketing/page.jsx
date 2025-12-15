@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
+import { title } from "process";
+import { m } from "framer-motion";
+import { button } from "framer-motion/client";
 
 export default function MarketingPage() {
   const router = useRouter();
@@ -108,10 +111,11 @@ export default function MarketingPage() {
           ),
           title: "Gestión de Clientes",
           description: "Administrar información de clientes.",
-          buttonText: "Acceder",
+          buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           ),
         },
@@ -124,10 +128,11 @@ export default function MarketingPage() {
           ),
           title: "Listado de Ventas",
           description: "Ver y revisar ventas de Marketing.",
-          buttonText: "Acceder",
+          buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           ),
         },
@@ -141,10 +146,11 @@ export default function MarketingPage() {
           ),
           title: "Recencia de Clientes",
           description: "Análisis de actividad reciente de clientes.",
-          buttonText: "Acceder",
+          buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           ),
         },
@@ -157,7 +163,7 @@ export default function MarketingPage() {
           ),
           title: "Cotizaciones",
           description: "Sistema de cotizaciones para clientes.",
-          buttonText: "Ver Cotizaciones",
+          buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -165,6 +171,23 @@ export default function MarketingPage() {
             </svg>
           ),
         },
+        {
+          id: "historial-cotizaciones",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Historial de Cotizaciones",
+          description: "Historial de cotizaciones registradas",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        }
       ],
     },
     {
@@ -346,7 +369,9 @@ export default function MarketingPage() {
                                   // TODO: Agregar ruta cuando esté disponible
                                   console.log("Recencia de Clientes - Ruta pendiente");
                                 } else if (card.id === "cotizaciones") {
-                                  router.push("/marketing/cotizaciones");
+                                  router.push("/marketing/cotizaciones");                         
+                                } else if (card.id === "historial-cotizaciones"){
+                                  router.push("/marketing/historial-cotizaciones");
                                 } else if (card.id === "stock-precios-mayor") {
                                   // TODO: Agregar ruta cuando esté disponible
                                   console.log("Stock y Precios por Mayor - Ruta pendiente");

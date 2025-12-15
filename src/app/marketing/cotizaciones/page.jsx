@@ -1266,11 +1266,11 @@ export default function CotizacionesPage() {
                     <div className="space-y-1.5 text-sm text-gray-800">
                       <p><span className="font-semibold text-gray-900">RUC:</span> {empresaInfo.ruc}</p>
                       <p><span className="font-semibold text-gray-900">DIRECCIÓN:</span> {empresaInfo.direccion}</p>
-                      <p><span className="font-semibold text-gray-900">Teléfono:</span> {empresaInfo.telefono}</p>
+                      <p><span className="font-semibold text-gray-900">TELÉFONO:</span> {empresaInfo.telefono}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-center lg:justify-end">
-                    <div className="relative w-32 h-32">
+                    <div className="relative w-60 h-30">
                       <Image
                         src="/images/logo_zeus_safety.png"
                         alt="Zeus Safety Logo"
@@ -1382,9 +1382,9 @@ export default function CotizacionesPage() {
                     onChange={(e) => setFormaPago(e.target.value)}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
-                    <option value="" className="text-gray-500">Seleccionar</option>
-                    <option value="contado" className="text-gray-900">Contado</option>
-                    <option value="credito" className="text-gray-900">Crédito</option>
+                    <option value="" className="text-gray-500">Seleccione Pago</option>
+                    <option value="AL CONTADO" className="text-gray-900">AL CONTADO</option>
+                    <option value="CREDITO" className="text-gray-900">CRÉDITO</option>
                   </select>
                 </div>
                 <div>
@@ -1440,8 +1440,8 @@ export default function CotizacionesPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
                     <option value="" className="text-gray-500">Seleccione moneda</option>
-                    <option value="SOLES" className="text-gray-900">Soles (PEN)</option>
-                    <option value="DOLARES" className="text-gray-900">Dólares (USD)</option>
+                    <option value="SOLES" className="text-gray-900">SOLES (PEN)</option>
+                    <option value="DOLARES" className="text-gray-900">DÓLARES (USD)</option>
                   </select>
                 </div>
                 <div>
