@@ -146,6 +146,8 @@ export default function CotizacionesPage() {
   const [unidadMedida, setUnidadMedida] = useState("");
   const [precioVenta, setPrecioVenta] = useState("");
   const [total, setTotal] = useState(0.00);
+  
+  // Estado para el modal de confirmación
   const [clasificacion, setClasificacion] = useState("");
   
   // Estados para búsqueda de productos
@@ -163,7 +165,6 @@ export default function CotizacionesPage() {
   const [modalPreciosAbierto, setModalPreciosAbierto] = useState(false);
   const [preciosDisponibles, setPreciosDisponibles] = useState([]);
   const [cargandoPrecios, setCargandoPrecios] = useState(false);
-
   // Datos de prueba para la tabla de productos
   const [productosLista, setProductosLista] = useState([
     

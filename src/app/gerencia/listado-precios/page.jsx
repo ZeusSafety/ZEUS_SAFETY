@@ -61,6 +61,60 @@ export default function ListadoPreciosPage() {
     return mapping[tablaId] || tablaId;
   };
 
+  // Función para obtener fichas técnicas de productos por código
+  const fetchFichasTecnicas = useCallback(async (codigos) => {
+    try {
+      if (!codigos || codigos.length === 0) return {};
+      
+      let token = localStorage.getItem("token") || 
+                  (user?.token || user?.accessToken || user?.access_token) || 
+                  sessionStorage.getItem("token");
+      
+      if (!token) return {};
+      
+      // Obtener todos los productos de la API
+      const apiUrl = `/api/productos`;
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`,
+      };
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
+      if (!response.ok) {
+        console.warn("No se pudieron obtener las fichas técnicas de productos");
+        return {};
+      }
+      
+      const data = await response.json();
+      const productosArray = Array.isArray(data) ? data : 
+                            (data?.data && Array.isArray(data.data) ? data.data : []);
+      
+      // Crear un mapa de código -> ficha técnica
+      const fichasMap = {};
+      productosArray.forEach(producto => {
+        const codigo = producto.CODIGO || producto.codigo || producto.CÓDIGO;
+        const ficha = producto.FICHA_TECNICA_ENLACE || producto.ficha_tecnica_enlace || 
+                     producto.FICHA_TECNICA || producto.ficha_tecnica ||
+                     producto.fichaTecnica || producto.fichaTecnicaEnlace;
+        
+        if (codigo && ficha) {
+          fichasMap[codigo] = ficha;
+        }
+      });
+      
+      console.log(`✅ Fichas técnicas obtenidas: ${Object.keys(fichasMap).length} productos con ficha`);
+      return fichasMap;
+    } catch (err) {
+      console.warn("Error al obtener fichas técnicas:", err.message);
+      return {};
+    }
+  }, [user]);
+
   // Función para obtener precios de una tabla específica
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
@@ -117,7 +171,26 @@ export default function ListadoPreciosPage() {
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
       
-      return preciosArray;
+      // Obtener fichas técnicas de productos
+      const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
+      const fichasMap = await fetchFichasTecnicas(codigos);
+      
+      // Combinar fichas técnicas con los datos de precios
+      const preciosConFichas = preciosArray.map(precio => {
+        const codigo = precio.CODIGO || precio.codigo;
+        const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
+                     precio.FICHA_TECNICA || precio.ficha_tecnica;
+        
+        return {
+          ...precio,
+          FICHA_TECNICA_ENLACE: ficha,
+          ficha_tecnica_enlace: ficha,
+          FICHA_TECNICA: ficha,
+          ficha_tecnica: ficha
+        };
+      });
+      
+      return preciosConFichas;
     } catch (err) {
       // Solo mostrar error si no es un error esperado de tabla sin datos
       const errorMessage = err.message || "";
@@ -132,7 +205,7 @@ export default function ListadoPreciosPage() {
       
       return [];
     }
-  }, [user, router]);
+  }, [user, router, fetchFichasTecnicas]);
 
   // Cargar todos los datos al entrar a la página
   useEffect(() => {
@@ -158,11 +231,34 @@ export default function ListadoPreciosPage() {
           newPreciosData[tabla] = data;
         });
         
-        // Log para verificar qué tablas tienen datos
+        // Log para verificar qué tablas tienen datos y estructura de los datos
         console.log("=== DATOS CARGADOS POR TABLA ===");
         Object.keys(newPreciosData).forEach(tabla => {
           const cantidad = newPreciosData[tabla]?.length || 0;
           console.log(`${tabla}: ${cantidad} productos`);
+          // Mostrar estructura del primer registro para debugging
+          if (newPreciosData[tabla] && newPreciosData[tabla].length > 0) {
+            console.log(`Estructura del primer registro de ${tabla}:`, Object.keys(newPreciosData[tabla][0]));
+            const primerRegistro = newPreciosData[tabla][0];
+            // Buscar todos los campos relacionados con ficha técnica
+            const fichaKeys = Object.keys(primerRegistro).filter(key => 
+              key.toUpperCase().includes('FICHA') || 
+              key.toUpperCase().includes('PDF') || 
+              key.toUpperCase().includes('ENLACE') ||
+              key.toUpperCase().includes('URL')
+            );
+            console.log(`📋 Ejemplo de registro completo de ${tabla}:`, primerRegistro);
+            console.log(`🔑 Todas las keys del registro:`, Object.keys(primerRegistro));
+            if (fichaKeys.length > 0) {
+              console.log(`✅ Campos relacionados con ficha técnica encontrados:`, fichaKeys);
+              fichaKeys.forEach(key => {
+                console.log(`   ${key}:`, primerRegistro[key]);
+              });
+            } else {
+              console.log(`⚠️ NO se encontraron campos de ficha técnica en ${tabla}`);
+              console.log(`💡 El procedimiento CONFIGURACION_FRANJA_PRECIOS debe incluir P.FICHA_TECNICA_ENLACE en el SELECT`);
+            }
+          }
         });
         console.log("=================================");
         
@@ -206,14 +302,16 @@ export default function ListadoPreciosPage() {
   // Obtener precios de la tabla activa
   const precios = preciosData[activeTab] || [];
 
-  // Obtener columnas de precio dinámicamente basadas en los datos
+  // Obtener columnas de precio dinámicamente basadas en los datos reales de la API
   const getPriceColumns = useMemo(() => {
     if (precios.length === 0) return [];
     
-    // Campos que NO son columnas de precio
+    // Campos que NO son columnas de precio según la estructura real de la BD
     const excludedFields = [
       'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
-      'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
+      'CANTIDAD_UNIDAD_MEDIDA_VENTA', 'cantidad_unidad_medida_venta',
+      'UNIDAD_MEDIDA_VENTA', 'unidad_medida_venta',
+      'UNIDAD_MEDIDA_CAJA', 'unidad_medida_caja',
       'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
       'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
     ];
@@ -223,12 +321,21 @@ export default function ListadoPreciosPage() {
     const allKeys = Object.keys(firstRecord);
     
     // Filtrar solo las columnas de precio (que son numéricas y no están excluidas)
+    // Los datos reales de la API tendrán campos como PRECIO_UNIDAD_MEDIDA_VENTA
     const priceColumns = allKeys
       .filter(key => {
         const keyUpper = key.toUpperCase();
-        return !excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase())) &&
-               (typeof firstRecord[key] === 'number' || 
-                (!isNaN(parseFloat(firstRecord[key])) && firstRecord[key] !== null && firstRecord[key] !== ''));
+        // Excluir campos de configuración de la BD
+        if (excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()))) {
+          return false;
+        }
+        // Incluir campos que contengan PRECIO y sean numéricos
+        if (keyUpper.includes('PRECIO')) {
+          const value = firstRecord[key];
+          return typeof value === 'number' || 
+                 (!isNaN(parseFloat(value)) && value !== null && value !== '');
+        }
+        return false;
       })
       .sort((a, b) => {
         // Ordenar: primero CAJA, luego DOCENA, luego PAR, luego UNIDAD
@@ -557,11 +664,53 @@ export default function ListadoPreciosPage() {
                             return { text: `S/.${num.toFixed(2)}`, isZero: num === 0 };
                           };
 
-                          // Mapeo de campos según la estructura real de la API
+                          // Mapeo de campos según la estructura real de la API (datos reales de CONFIGURACION_FRANJA_PRECIOS)
                           const codigo = getField(["CODIGO", "codigo"]);
                           const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
-                          const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]);
-                          const fichaTecnica = getField(["FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", "FICHA_TECNICA", "ficha_tecnica"]);
+                          
+                          // Campos según la estructura real de la BD:
+                          // UNIDAD_MEDIDA_VENTA, CANTIDAD_UNIDAD_MEDIDA_VENTA, PRECIO_UNIDAD_MEDIDA_VENTA, UNIDAD_MEDIDA_CAJA
+                          const unidadMedidaVenta = getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]);
+                          const cantidadUnidadMedidaVenta = getField(["CANTIDAD_UNIDAD_MEDIDA_VENTA", "cantidad_unidad_medida_venta"]);
+                          const unidadMedidaCaja = getField(["UNIDAD_MEDIDA_CAJA", "unidad_medida_caja"]);
+                          
+                          // Formatear cantidad en caja según los datos reales
+                          const cantidadCaja = cantidadUnidadMedidaVenta && unidadMedidaVenta 
+                            ? `${unidadMedidaVenta} ${cantidadUnidadMedidaVenta}`
+                            : getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]) || "-";
+                          
+                          // Ficha técnica viene del LEFT JOIN con gestión de productos
+                          // IMPORTANTE: El procedimiento CONFIGURACION_FRANJA_PRECIOS no incluye P.FICHA_TECNICA_ENLACE en el SELECT
+                          // pero hace LEFT JOIN con productos, así que debemos buscar en TODOS los campos posibles
+                          // Buscar primero con getField, luego buscar manualmente en todas las keys del objeto
+                          let fichaTecnica = getField([
+                            "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", 
+                            "FICHA_TECNICA", "ficha_tecnica",
+                            "FICHA_TECNICA_URL", "ficha_tecnica_url",
+                            "PDF", "pdf", "PDF_URL", "pdf_url",
+                            "ENLACE_FICHA", "enlace_ficha",
+                            "URL_FICHA", "url_ficha",
+                            "P.FICHA_TECNICA_ENLACE", "p.ficha_tecnica_enlace"
+                          ]);
+                          
+                          // Si no se encontró, buscar manualmente en todas las keys del objeto
+                          if (!fichaTecnica || fichaTecnica === "" || fichaTecnica === null) {
+                            const allKeys = Object.keys(precio);
+                            const fichaKey = allKeys.find(key => {
+                              const keyUpper = key.toUpperCase();
+                              return keyUpper.includes('FICHA') || 
+                                     keyUpper.includes('PDF') || 
+                                     (keyUpper.includes('ENLACE') && !keyUpper.includes('TEXTO')) ||
+                                     (keyUpper.includes('URL') && !keyUpper.includes('IMG'));
+                            });
+                            if (fichaKey) {
+                              fichaTecnica = precio[fichaKey];
+                              // Log para debugging
+                              if (globalIndex === 0) {
+                                console.log(`🔍 Ficha técnica encontrada en campo: ${fichaKey} = ${fichaTecnica}`);
+                              }
+                            }
+                          }
                           const textoCopiar = getField(["TEXTO_COPIAR", "texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
 
                           return (
@@ -576,12 +725,13 @@ export default function ListadoPreciosPage() {
                                 {cantidadCaja || "-"}
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
-                                {fichaTecnica ? (
+                                {fichaTecnica && fichaTecnica !== "" && fichaTecnica !== null && fichaTecnica !== undefined ? (
                                   <a
                                     href={fichaTecnica}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                    title="Abrir ficha técnica en nueva pestaña"
                                   >
                                     <svg
                                       className="w-3.5 h-3.5"
