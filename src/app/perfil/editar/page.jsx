@@ -148,6 +148,7 @@ export default function EditarPerfilPage() {
     correo: "",
     areaPrincipal: "",
     rol: "",
+    imgUrl: "",
   });
 
   // Detectar si es desktop y abrir sidebar automáticamente
@@ -290,6 +291,23 @@ export default function EditarPerfilPage() {
         Object.keys(perfilUsuario).forEach(key => {
           console.log(`${key}:`, perfilUsuario[key], `(tipo: ${typeof perfilUsuario[key]})`);
         });
+        
+        // Buscar específicamente campos relacionados con imagen/foto
+        const imageKeys = Object.keys(perfilUsuario).filter(key => {
+          const keyUpper = key.toUpperCase();
+          return keyUpper.includes("IMG") || keyUpper.includes("FOTO") || 
+                 keyUpper.includes("PHOTO") || keyUpper.includes("AVATAR") || 
+                 keyUpper.includes("IMAGE") || keyUpper.includes("URL");
+        });
+        
+        if (imageKeys.length > 0) {
+          console.log("=== CAMPOS RELACIONADOS CON IMAGEN/FOTO ===");
+          imageKeys.forEach(key => {
+            console.log(`${key}:`, perfilUsuario[key]);
+          });
+        } else {
+          console.log("⚠️ No se encontraron campos relacionados con imagen/foto");
+        }
       }
       
       // Formatear fechas si vienen en formato diferente
@@ -401,15 +419,36 @@ export default function EditarPerfilPage() {
             return rolMap[rolUpper] || rolValue;
           };
           
-          // Obtener valores de área y rol de la API
-          const areaFromAPI = perfilUsuario["A.NOMBRE"] || perfilUsuario["a.nombre"] || getValue(perfilUsuario, "areaPrincipal", "area_principal", "area", "department", "departamento");
-          const rolFromAPI = perfilUsuario["R.NOMBRE"] || perfilUsuario["r.nombre"] || getValue(perfilUsuario, "rol", "role", "cargo", "position", "rol_usuario");
+          // Obtener valores de área y rol de la API - buscar en múltiples variaciones
+          const areaFromAPI = perfilUsuario["A.NOMBRE"] || perfilUsuario["a.nombre"] || getValue(perfilUsuario, "areaPrincipal", "area_principal", "area", "department", "departamento", "AREA", "AREA_PRINCIPAL");
+          
+          // Buscar rol en múltiples variaciones posibles
+          let rolFromAPI = perfilUsuario["R.NOMBRE"] || perfilUsuario["r.nombre"] || 
+                          getValue(perfilUsuario, "rol", "role", "cargo", "position", "rol_usuario", "ROL", "ROL_USUARIO", "CARGO");
+          
+          // Si no se encontró, buscar manualmente en todas las keys
+          if (!rolFromAPI || rolFromAPI === "" || rolFromAPI === "null" || rolFromAPI === "undefined") {
+            const allKeys = Object.keys(perfilUsuario);
+            for (const key of allKeys) {
+              const keyUpper = key.toUpperCase();
+              if ((keyUpper.includes("ROL") || keyUpper.includes("ROLE") || keyUpper.includes("CARGO")) && 
+                  !keyUpper.includes("AREA") && !keyUpper.includes("DEPARTAMENTO")) {
+                const value = perfilUsuario[key];
+                if (value && value !== "" && value !== "null" && value !== "undefined" && typeof value === "string") {
+                  rolFromAPI = value;
+                  console.log(`✅ Rol encontrado en campo: ${key} = ${rolFromAPI}`);
+                  break;
+                }
+              }
+            }
+          }
           
           console.log("=== MAPEO DE ÁREA Y ROL ===");
           console.log("areaFromAPI (raw):", areaFromAPI);
           console.log("rolFromAPI (raw):", rolFromAPI);
           console.log("areaFromAPI (mapeado):", mapArea(areaFromAPI));
           console.log("rolFromAPI (mapeado):", mapRol(rolFromAPI));
+          console.log("Todos los campos del perfil:", Object.keys(perfilUsuario));
           
           // Mapear los campos según los nombres que vienen de la API en MAYÚSCULAS
           // Nota: La API devuelve campos con puntos como "A.NOMBRE" y "R.NOMBRE"
@@ -436,6 +475,52 @@ export default function EditarPerfilPage() {
             // Mapear área y rol a los valores correctos del dropdown
             areaPrincipal: mapArea(areaFromAPI),
             rol: mapRol(rolFromAPI),
+            // Obtener URL de imagen - buscar en múltiples variaciones posibles
+            imgUrl: (() => {
+              // Buscar en todas las variaciones posibles del campo de imagen
+              const imgFields = [
+                "IMG_URL", "img_url", "IMGURL", "imgUrl",
+                "IMAGEN", "imagen", "IMAGEN_URL", "imagen_url",
+                "FOTO", "foto", "FOTO_URL", "foto_url", "FOTOURL", "fotoUrl",
+                "PHOTO", "photo", "PHOTO_URL", "photo_url",
+                "AVATAR", "avatar", "AVATAR_URL", "avatar_url",
+                "PERFIL_IMG", "perfil_img", "PERFIL_IMAGEN", "perfil_imagen",
+                "FOTO_PERFIL", "foto_perfil", "FOTO_PERFIL_URL", "foto_perfil_url",
+                "IMAGE", "image", "IMAGE_URL", "image_url",
+                "URL_IMAGEN", "url_imagen", "URL_FOTO", "url_foto"
+              ];
+              
+              // Buscar con getValue primero
+              let imgUrl = getValue(perfilUsuario, ...imgFields);
+              
+              // Si no se encontró, buscar manualmente en todas las keys
+              if (!imgUrl || imgUrl === "" || imgUrl === "null" || imgUrl === "undefined") {
+                const allKeys = Object.keys(perfilUsuario);
+                for (const key of allKeys) {
+                  const keyUpper = key.toUpperCase();
+                  if ((keyUpper.includes("IMG") || keyUpper.includes("FOTO") || keyUpper.includes("PHOTO") || 
+                       keyUpper.includes("AVATAR") || keyUpper.includes("IMAGE")) && 
+                      (keyUpper.includes("URL") || keyUpper.includes("ENLACE") || keyUpper.includes("LINK"))) {
+                    const value = perfilUsuario[key];
+                    if (value && value !== "" && value !== "null" && value !== "undefined" && typeof value === "string") {
+                      imgUrl = value;
+                      console.log(`✅ Foto encontrada en campo: ${key} = ${imgUrl}`);
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              // Log para debugging
+              if (imgUrl && imgUrl !== "" && imgUrl !== "null" && imgUrl !== "undefined") {
+                console.log(`📸 Foto de perfil encontrada: ${imgUrl}`);
+              } else {
+                console.log("⚠️ No se encontró foto de perfil en la API");
+                console.log("Campos disponibles:", Object.keys(perfilUsuario));
+              }
+              
+              return imgUrl || "";
+            })(),
           };
         
         console.log("=== DATOS DEL FORMULARIO A ESTABLECER ===");
@@ -495,6 +580,7 @@ export default function EditarPerfilPage() {
           correo: email,
           areaPrincipal: currentUser?.areaPrincipal || "",
           rol: currentUser?.rol || "",
+          imgUrl: currentUser?.imgUrl || currentUser?.IMG_URL || "",
         };
         
         console.log("Datos de fallback del contexto:", fallbackData);
@@ -536,6 +622,7 @@ export default function EditarPerfilPage() {
         correo: email,
           areaPrincipal: currentUser.areaPrincipal || "",
           rol: currentUser.rol || "",
+          imgUrl: currentUser.imgUrl || currentUser.IMG_URL || "",
         };
         
         console.log("Usando datos de fallback debido a error:", fallbackData);
@@ -586,10 +673,11 @@ export default function EditarPerfilPage() {
     setIsLoading(true);
 
     try {
-      // Aquí iría la lógica para guardar los datos
+      // Preparar datos para enviar
       console.log("Datos a guardar:", formData);
       
-      // Simulación de guardado
+      // Aquí iría la lógica para guardar los datos en la API
+      // Por ahora simulamos el guardado
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       alert("Perfil actualizado correctamente");
@@ -626,40 +714,169 @@ export default function EditarPerfilPage() {
               <span>Volver</span>
             </button>
 
-            {/* Card contenedor blanco */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)', borderRadius: '14px' }}>
-              {/* Header */}
-              <div className="mb-6">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+            {/* Layout vertical: Card Perfil (arriba) y Formulario (abajo) */}
+            <div className="space-y-6">
+              {/* Card PERFIL - Arriba - Diseño Premium */}
+              <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200/60 overflow-hidden" style={{ 
+                boxShadow: '0px 4px 12px rgba(0,0,0,0.06)',
+                borderRadius: '14px'
+              }}>
+                {/* Decorative gradient overlay sutil */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-50/30 to-transparent rounded-full blur-2xl -mr-24 -mt-24"></div>
+                
+                <div className="relative p-5">
+                  {/* Header con título elegante */}
+                  <div className="mb-5 pb-4 border-b border-gray-200/60">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                        Perfil
+                      </h2>
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Editar Perfil</h1>
-                    <p className="text-sm text-gray-600 font-medium mt-0.5">Actualiza tu información personal</p>
+                  
+                  <div className="flex items-start space-x-6">
+                    {/* Foto de Perfil - Más grande */}
+                    <div className="flex-shrink-0 relative">
+                      {/* Outer glow effect sutil */}
+                      <div className="absolute -inset-1 bg-gradient-to-br from-[#1E63F7]/20 to-blue-300/10 rounded-xl opacity-50 blur-sm"></div>
+                      
+                      {/* Photo container */}
+                      <div className="relative w-52 h-52 rounded-xl border-3 border-white bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shadow-lg" style={{ 
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                      }}>
+                        {formData.imgUrl && formData.imgUrl !== "" && formData.imgUrl !== "null" && formData.imgUrl !== "undefined" ? (
+                          <img
+                            key={formData.imgUrl}
+                            src={formData.imgUrl}
+                            alt="Foto de perfil"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error("Error al cargar imagen:", formData.imgUrl);
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              const placeholder = e.target.nextElementSibling;
+                              if (placeholder) placeholder.style.display = 'flex';
+                            }}
+                            onLoad={() => {
+                              console.log("✅ Imagen cargada correctamente:", formData.imgUrl);
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 ${formData.imgUrl && formData.imgUrl !== "" && formData.imgUrl !== "null" && formData.imgUrl !== "undefined" ? 'hidden' : 'flex'}`}
+                        >
+                          <svg className="w-28 h-28 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Información del Perfil - Diseño elegante */}
+                    <div className="flex-1 pt-0.5">
+                      {/* Nombre Completo - Tipografía premium */}
+                      <div className="mb-4">
+                        <h3 className="text-xl font-extrabold text-gray-900 leading-tight tracking-tight mb-1.5" style={{ 
+                          letterSpacing: '-0.01em',
+                          lineHeight: '1.2'
+                        }}>
+                          {[formData.primerNombre, formData.segundoNombre, formData.primerApellido, formData.segundoApellido].filter(Boolean).join(" ").toUpperCase() || "Sin nombre"}
+                        </h3>
+                        <div className="w-14 h-0.5 bg-gradient-to-r from-[#1E63F7] to-blue-400 rounded-full"></div>
+                      </div>
+
+                      {/* Información con iconos y badges */}
+                      <div className="space-y-3">
+                        {/* Usuario */}
+                        <div className="flex items-center group">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
+                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Usuario</div>
+                            <div className="text-sm font-bold text-gray-900">{formData.usuario || "-"}</div>
+                          </div>
+                        </div>
+
+                        {/* Área */}
+                        <div className="flex items-center group">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
+                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Área</div>
+                            <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50">
+                              <span className="text-xs font-bold text-[#1E63F7]">{formData.areaPrincipal || "-"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Rol */}
+                        <div className="flex items-center group">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
+                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Rol</div>
+                            <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50">
+                              <span className="text-xs font-bold text-[#1E63F7]">{formData.rol || "-"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Mensaje de error */}
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
+              {/* Formulario - Abajo */}
+              <div>
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)', borderRadius: '14px' }}>
+                  {/* Header */}
+                  <div className="mb-6">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Editar Perfil</h1>
+                        <p className="text-sm text-gray-600 font-medium mt-0.5">Actualiza tu información personal</p>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Loading state */}
-              {loadingData && (
-                <div className="mb-4 flex items-center justify-center p-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-sm text-gray-600">Cargando datos del perfil...</span>
-                </div>
-              )}
+                  {/* Mensaje de error */}
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
 
-              {/* Formulario */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Loading state */}
+                  {loadingData && (
+                    <div className="mb-4 flex items-center justify-center p-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-sm text-gray-600">Cargando datos del perfil...</span>
+                    </div>
+                  )}
+
+                  {/* Formulario */}
+                  <form onSubmit={handleSubmit} className="space-y-4">
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Primer Nombre */}
                   <div>
@@ -869,6 +1086,8 @@ export default function EditarPerfilPage() {
                   </button>
                 </div>
               </form>
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -30,6 +30,8 @@ function RecursosHumanosContent() {
   const [isVerDetallesModalOpen, setIsVerDetallesModalOpen] = useState(false);
   const [selectedColaboradorCompleto, setSelectedColaboradorCompleto] = useState(null);
   const [datosEditables, setDatosEditables] = useState([]);
+  const [savingDatos, setSavingDatos] = useState(false);
+  const [errorSavingDatos, setErrorSavingDatos] = useState(null);
 
   // Inicializar datosEditables cuando se abre el modal
   useEffect(() => {
@@ -503,6 +505,86 @@ function RecursosHumanosContent() {
       fetchColaboradores();
     }
   }, [loading, user, activeSection, fetchColaboradores]);
+
+  // Función para guardar los datos de medios de comunicación
+  const handleGuardarDatos = async () => {
+    if (!selectedColaboradorCompleto) return;
+
+    try {
+      setSavingDatos(true);
+      setErrorSavingDatos(null);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      // Obtener el ID del colaborador
+      const getValue = (obj, keys) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+            return obj[key];
+          }
+        }
+        return null;
+      };
+
+      const colaboradorId = getValue(selectedColaboradorCompleto, ["id", "ID", "Id", "_id", "ID_COLABORADOR", "id_colaborador"]);
+
+      if (!colaboradorId) {
+        throw new Error("No se pudo obtener el ID del colaborador");
+      }
+
+      // Preparar los datos actualizados
+      const datosActualizados = {
+        ...selectedColaboradorCompleto,
+        DATOS: datosEditables,
+        datos: datosEditables,
+        Datos: datosEditables
+      };
+
+      // Llamar a la API para actualizar
+      const response = await fetch("/api/colaboradores", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: colaboradorId,
+          datos: datosEditables
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Actualizar el colaborador completo en el estado
+      setSelectedColaboradorCompleto(datosActualizados);
+
+      // Actualizar también en la lista de colaboradores completos
+      setColaboradoresCompletos(prev => 
+        prev.map(colab => {
+          const colabId = getValue(colab, ["id", "ID", "Id", "_id", "ID_COLABORADOR", "id_colaborador"]);
+          if (colabId === colaboradorId) {
+            return datosActualizados;
+          }
+          return colab;
+        })
+      );
+
+      alert("Datos guardados correctamente");
+    } catch (error) {
+      console.error("Error al guardar datos:", error);
+      setErrorSavingDatos(error.message || "Error al guardar los datos");
+      alert(`Error al guardar: ${error.message}`);
+    } finally {
+      setSavingDatos(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -2042,36 +2124,70 @@ function RecursosHumanosContent() {
                     const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
                     
                     // Usar datosEditables (ya inicializados en useEffect)
-                    const datosParaMostrar = datosEditables;
+                    const datosParaMostrar = datosEditables || [];
                     
-                    if (datosParaMostrar && Array.isArray(datosParaMostrar) && datosParaMostrar.length > 0) {
-                      // Agrupar por MEDIO
-                      const agrupados = {};
-                      datosParaMostrar.forEach((item, idx) => {
-                        if (item && typeof item === "object") {
-                          const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
-                          const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
-                          
-                          if (!agrupados[medio]) {
-                            agrupados[medio] = [];
-                          }
-                          agrupados[medio].push({
-                            tipo,
-                            nombre,
-                            contenido,
-                            index: idx,
-                            originalItem: item
-                          });
+                    // Agrupar por MEDIO
+                    const agrupados = {};
+                    datosParaMostrar.forEach((item, idx) => {
+                      if (item && typeof item === "object") {
+                        const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
+                        const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
+                        const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                        const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                        
+                        if (!agrupados[medio]) {
+                          agrupados[medio] = [];
                         }
-                      });
+                        agrupados[medio].push({
+                          tipo,
+                          nombre,
+                          contenido,
+                          medio,
+                          index: idx,
+                          originalItem: item
+                        });
+                      }
+                    });
+
+                    // Si no hay datos, mostrar al menos la opción de agregar para CORREO
+                    if (Object.keys(agrupados).length === 0) {
+                      agrupados["CORREO"] = [];
+                    }
+                    
+                    if (Object.keys(agrupados).length > 0) {
 
                       return (
                         <div className="border-t border-gray-200 pt-4 mt-4">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
+                            <button
+                              onClick={handleGuardarDatos}
+                              disabled={savingDatos}
+                              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                            >
+                              {savingDatos ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  <span>Guardando...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  <span>Guardar Cambios</span>
+                                </>
+                              )}
+                            </button>
                           </div>
+                          {errorSavingDatos && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-sm text-red-600">{errorSavingDatos}</p>
+                            </div>
+                          )}
                           {Object.keys(agrupados).map((medio, medioIndex) => (
                             <div key={medioIndex} className="mb-5">
                               <div className="flex items-center justify-between mb-3">
@@ -2083,10 +2199,12 @@ function RecursosHumanosContent() {
                                     const nuevoItem = {
                                       TIPO: "",
                                       MEDIO: medio,
+                                      medio: medio,
                                       NOMBRE: "",
                                       CONTENIDO: ""
                                     };
-                                    setDatosEditables([...datosParaMostrar, nuevoItem]);
+                                    const nuevosDatos = [...datosParaMostrar, nuevoItem];
+                                    setDatosEditables(nuevosDatos);
                                   }}
                                   className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                                 >
@@ -2104,7 +2222,7 @@ function RecursosHumanosContent() {
                                         const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
                                         setDatosEditables(nuevosDatos);
                                       }}
-                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm z-10"
                                       title="Eliminar"
                                     >
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -2112,31 +2230,98 @@ function RecursosHumanosContent() {
                                       </svg>
                                       <span>Eliminar</span>
                                     </button>
-                                    <div className="space-y-2 pr-8">
-                                      {item.tipo && (
-                                        <div className="flex items-start">
-                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Tipo:</span>
-                                          <span className="text-xs font-semibold text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
-                                            {item.tipo}
-                                          </span>
+                                    <div className="space-y-3 pr-24">
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
+                                        <div className="flex-1 flex items-center space-x-4">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "CORPORATIVO" || item.tipo === "corporativo" || item.TIPO === "CORPORATIVO"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                // Si se selecciona CORPORATIVO, deseleccionar PERSONAL
+                                                const nuevoTipo = e.target.checked ? "CORPORATIVO" : "";
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  TIPO: nuevoTipo,
+                                                  tipo: nuevoTipo,
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORPORATIVO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "PERSONAL" || item.tipo === "personal" || item.TIPO === "PERSONAL"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                // Si se selecciona PERSONAL, deseleccionar CORPORATIVO
+                                                const nuevoTipo = e.target.checked ? "PERSONAL" : "";
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  TIPO: nuevoTipo,
+                                                  tipo: nuevoTipo,
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">PERSONAL</span>
+                                          </label>
                                         </div>
-                                      )}
-                                      {item.nombre && (
-                                        <div className="flex items-start">
-                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Nombre:</span>
-                                          <span className="text-xs text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
-                                            {item.nombre}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {item.contenido && (
-                                        <div className="flex items-start">
-                                          <span className="text-xs font-bold text-gray-700 min-w-[80px]">Contenido:</span>
-                                          <span className="text-xs font-semibold text-blue-900 bg-white px-2 py-1 rounded border border-blue-300 break-all">
-                                            {item.contenido}
-                                          </span>
-                                        </div>
-                                      )}
+                                      </div>
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
+                                        <input
+                                          type="text"
+                                          value={item.nombre || ""}
+                                          onChange={(e) => {
+                                            const nuevosDatos = [...datosParaMostrar];
+                                            const itemActual = nuevosDatos[item.index] || {};
+                                            nuevosDatos[item.index] = {
+                                              ...itemActual,
+                                              NOMBRE: e.target.value,
+                                              nombre: e.target.value,
+                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                            };
+                                            setDatosEditables(nuevosDatos);
+                                          }}
+                                          placeholder="Ej: CORREO PERSONAL 1"
+                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                      </div>
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Contenido:</label>
+                                        <input
+                                          type="text"
+                                          value={item.contenido || ""}
+                                          onChange={(e) => {
+                                            const nuevosDatos = [...datosParaMostrar];
+                                            const itemActual = nuevosDatos[item.index] || {};
+                                            nuevosDatos[item.index] = {
+                                              ...itemActual,
+                                              CONTENIDO: e.target.value,
+                                              contenido: e.target.value,
+                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                            };
+                                            setDatosEditables(nuevosDatos);
+                                          }}
+                                          placeholder="Ej: correo@ejemplo.com"
+                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                 ))}
@@ -2146,7 +2331,67 @@ function RecursosHumanosContent() {
                         </div>
                       );
                     }
-                    return null;
+                    // Si no hay datos, mostrar la sección vacía con opción de agregar
+                    return (
+                      <div className="border-t border-gray-200 pt-4 mt-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
+                          <button
+                            onClick={handleGuardarDatos}
+                            disabled={savingDatos}
+                            className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                          >
+                            {savingDatos ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Guardando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar Cambios</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        {errorSavingDatos && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-600">{errorSavingDatos}</p>
+                          </div>
+                        )}
+                        <div className="mb-5">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
+                              CORREO
+                            </h4>
+                            <button
+                              onClick={() => {
+                                const nuevoItem = {
+                                  TIPO: "",
+                                  MEDIO: "CORREO",
+                                  medio: "CORREO",
+                                  NOMBRE: "",
+                                  CONTENIDO: ""
+                                };
+                                setDatosEditables([nuevoItem]);
+                              }}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span>Agregar</span>
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
+                        </div>
+                      </div>
+                    );
                   })()}
 
                   {/* Otros objetos anidados (excluyendo DATOS) */}

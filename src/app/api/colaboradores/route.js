@@ -9,7 +9,13 @@ async function fetchFromAPI(method, request, body = null) {
 
     console.log("Token recibido:", token ? token.substring(0, 20) + "..." : "No hay token");
 
-    const apiUrl = "https://colaboradores2026-2946605267.us-central1.run.app?method=listado_colaboradores";
+    // Construir URL según el método
+    let apiUrl = "https://colaboradores2026-2946605267.us-central1.run.app";
+    if (method === "GET") {
+      apiUrl += "?method=listado_colaboradores";
+    } else if (method === "PUT") {
+      apiUrl += "?method=actualizar_colaborador";
+    }
 
     console.log("Llamando a API:", apiUrl);
     console.log("Método:", method);

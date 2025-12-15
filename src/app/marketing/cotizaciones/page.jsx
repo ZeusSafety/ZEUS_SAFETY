@@ -120,7 +120,15 @@ export default function CotizacionesPage() {
   const [dni, setDni] = useState("");
   const [cel, setCel] = useState("");
   const [buscandoRuc, setBuscandoRuc] = useState(false);
-  const [fechaEmision, setFechaEmision] = useState(new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+  // Inicializar fecha de emisión con la fecha actual en formato yyyy-mm-dd para el input type="date"
+  const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [fechaEmision, setFechaEmision] = useState(getCurrentDate());
   const [formaPago, setFormaPago] = useState("");
   const [region, setRegion] = useState("");
   const [distrito, setDistrito] = useState("");
@@ -138,6 +146,8 @@ export default function CotizacionesPage() {
   const [unidadMedida, setUnidadMedida] = useState("");
   const [precioVenta, setPrecioVenta] = useState("");
   const [total, setTotal] = useState(0.00);
+  
+  // Estado para el modal de confirmación
   const [clasificacion, setClasificacion] = useState("");
   
   // Estados para búsqueda de productos
@@ -155,7 +165,6 @@ export default function CotizacionesPage() {
   const [modalPreciosAbierto, setModalPreciosAbierto] = useState(false);
   const [preciosDisponibles, setPreciosDisponibles] = useState([]);
   const [cargandoPrecios, setCargandoPrecios] = useState(false);
-
   // Datos de prueba para la tabla de productos
   const [productosLista, setProductosLista] = useState([
     
@@ -652,7 +661,7 @@ export default function CotizacionesPage() {
     setProductosLista(productosLista.filter(prod => prod.id !== id));
   };
 
-  const handleRegistrarCotizacion = () => {
+  const handleRegistrarCotizacion = async () => {
     if (productosLista.length === 0) {
       alert("Debe agregar al menos un producto");
       return;
@@ -662,10 +671,46 @@ export default function CotizacionesPage() {
     const regionSeleccionada = regiones.find(r => r.ID_REGION === region);
     const distritoSeleccionado = distritos.find(d => d.ID_DISTRITO === distrito);
     
-    // Generar número de cotización (por ahora un número aleatorio, después se puede obtener de la API)
-    const numeroCotizacion = `C001-${String(Math.floor(Math.random() * 100000000)).padStart(8, '0')}`;
+    // Primero guardar la cotización en la base de datos para obtener el código
+    let numeroCotizacion = '';
+    try {
+      const response = await fetch('/api/cotizaciones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre_cliente: cliente || '',
+          region: regionSeleccionada?.REGION || region || '',
+          distrito: distritoSeleccionado?.DISTRITO || distrito || '',
+          monto_total: totalGeneral,
+          ruta_pdf: '', // Por ahora vacío, se puede actualizar después si se guarda el PDF en el servidor
+          atendido_por: atendidoPor || ''
+        }),
+      });
 
-    // Generar el HTML del PDF
+      const data = await response.json();
+      
+      if (!response.ok) {
+        alert(`Error al guardar la cotización: ${data.error || 'Error desconocido'}`);
+        return;
+      }
+
+      // Usar el código de cotización que viene del backend
+      numeroCotizacion = data.codigo_cotizacion;
+      
+      // Actualizar localStorage con el número del backend
+      if (numeroCotizacion) {
+        const numeroBackend = parseInt(numeroCotizacion.split('-')[1], 10);
+        localStorage.setItem('lastCotizacionNumber', numeroBackend.toString());
+      }
+    } catch (error) {
+      console.error('Error al guardar cotización:', error);
+      alert('Error al guardar la cotización. Por favor, intente nuevamente.');
+      return;
+    }
+
+    // Generar el HTML del PDF - Exactamente como el código original con botón de descarga
     const pdfHTML = `
 <!DOCTYPE html>
 <html lang="es">
@@ -673,7 +718,43 @@ export default function CotizacionesPage() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cotización Zeus Safety</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* Botón de descarga */
+        .download-button-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .download-button {
+            background: linear-gradient(135deg, #1E63F7 0%, #1E63F7 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .download-button:active {
+            transform: translateY(0);
+        }
+        .download-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* Configuración General */
+        /* Configuración General */
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
@@ -681,16 +762,18 @@ export default function CotizacionesPage() {
             background-color: #f0f0f0;
             display: flex;
             justify-content: center;
+            min-width: 960px; /* Ancho mínimo para centrar correctamente */
         }
         .page-container {
             background-color: white;
-            width: 100%;
-            max-width: 900px;
+            width: 700px; /* Ancho reducido para que quepa mejor en A4 */
+            margin: 0 auto;
             padding: 30px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
         }
+        /* --- Header --- */
         header {
             display: flex;
             justify-content: space-between;
@@ -726,7 +809,7 @@ export default function CotizacionesPage() {
             font-weight: bold;
         }
         .ruc-header {
-            background-color: #5b9bd5;
+            background-color: #5b9bd5; /* Azul claro de la imagen */
             padding: 5px;
             border-bottom: 1px solid #5b9bd5;
         }
@@ -740,6 +823,7 @@ export default function CotizacionesPage() {
             background-color: #5b9bd5; 
             padding: 8px;
         }
+        /* --- Cliente Info --- */
         .client-info {
             display: flex;
             justify-content: space-between;
@@ -754,6 +838,7 @@ export default function CotizacionesPage() {
         .client-right {
             width: 35%;
         }
+        /* --- Tablas Generales --- */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -761,34 +846,39 @@ export default function CotizacionesPage() {
             margin-bottom: 5px;
         }
         th, td {
-            border: 1px solid #000;
+            border: 1px solid #000; /* Bordes negros sólidos */
             padding: 4px 5px;
             text-align: center;
         }
+        /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
         .meta-table th {
             background-color: #5b9bd5;
             font-weight: bold;
             text-transform: uppercase;
         }
         .meta-table td {
-            height: 20px;
+            height: 20px; /* Altura vacía */
         }
+        /* Espaciador */
         .spacer {
             height: 10px;
         }
+        /* --- Tabla Principal de Productos --- */
         .product-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
         }
         .product-table tr {
-            height: 22px;
+            height: 22px; /* Altura de filas vacías */
         }
+        /* Column widths para imitar la imagen */
         .col-cant { width: 8%; }
         .col-uni { width: 10%; }
         .col-cod { width: 12%; }
         .col-prod { width: 45%; }
         .col-punit { width: 12%; }
         .col-sub { width: 13%; }
+        /* --- Total Section --- */
         .total-section {
             display: flex;
             justify-content: flex-end;
@@ -811,6 +901,7 @@ export default function CotizacionesPage() {
             width: 95px;
             padding: 5px;
         }
+        /* --- Tabla de Bancos --- */
         .bank-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
@@ -818,13 +909,15 @@ export default function CotizacionesPage() {
         }
         .bank-table td {
             font-size: 9px;
-            border: 1px solid #000;
+            border: none; /* La imagen parece tener bordes internos sutiles o solo filas, pero pondré bordes estándar para mantener estructura */
+            border-bottom: 1px solid #ccc;
             padding: 3px;
         }
         .bank-table {
             border: 1px solid #000;
             margin-bottom: 20px;
         }
+        /* --- Footer --- */
         .footer {
             margin-top: 20px;
             width: 100%;
@@ -840,7 +933,7 @@ export default function CotizacionesPage() {
             width: 100%;
         }
         .footer-stripe-dark {
-            background-color: #1f4e79;
+            background-color: #1f4e79; /* Azul oscuro */
             color: white;
             text-align: center;
             font-weight: bold;
@@ -848,6 +941,7 @@ export default function CotizacionesPage() {
             font-size: 14px;
             text-transform: uppercase;
         }
+        /* Para impresión */
         @media print {
             body { background-color: white; margin: 0; padding: 0; }
             .page-container { box-shadow: none; width: 100%; max-width: 100%; padding: 10px; }
@@ -856,8 +950,10 @@ export default function CotizacionesPage() {
 </head>
 <body>
     <div class="page-container">
+        <!-- Header -->
         <header>
             <div class="logo-section">
+                <!-- Logo desde la URL proporcionada -->
                 <img src="https://cibertecedgar.github.io/img-archivo/logo.png" alt="Zeus Safety Logo">
             </div>
             <div class="company-info">
@@ -872,6 +968,7 @@ export default function CotizacionesPage() {
                 <div class="ruc-number">${numeroCotizacion}</div>
             </div>
         </header>
+        <!-- Información del Cliente -->
         <div class="client-info">
             <div class="client-left">
                 <div>CLIENTE: ${cliente || ''}</div>
@@ -883,6 +980,7 @@ export default function CotizacionesPage() {
                 <div>CEL: ${cel || ''}</div>
             </div>
         </div>
+        <!-- Tabla Metadatos -->
         <table class="meta-table">
             <thead>
                 <tr>
@@ -896,7 +994,7 @@ export default function CotizacionesPage() {
             </thead>
             <tbody>
                 <tr>
-                    <td>${fechaEmision || ''}</td>
+                    <td>${fechaEmision ? new Date(fechaEmision).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}</td>
                     <td>${formaPago || ''}</td>
                     <td>${regionSeleccionada?.REGION || ''}</td>
                     <td>${distritoSeleccionado?.DISTRITO || ''}</td>
@@ -906,6 +1004,7 @@ export default function CotizacionesPage() {
             </tbody>
         </table>
         <div class="spacer"></div>
+        <!-- Tabla de Productos -->
         <table class="product-table">
             <thead>
                 <tr>
@@ -917,7 +1016,7 @@ export default function CotizacionesPage() {
                     <th class="col-sub">SUBTOTAL</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="product-rows">
                 ${productosLista.map(prod => `
                     <tr>
                         <td>${prod.cantidad}</td>
@@ -940,12 +1039,14 @@ export default function CotizacionesPage() {
                 `).join('')}
             </tbody>
         </table>
+        <!-- Total -->
         <div class="total-section">
             <div class="total-box">
                 <div class="total-label">TOTAL S/ :</div>
                 <div class="total-value">S/ ${totalGeneral.toFixed(2)}</div>
             </div>
         </div>
+        <!-- Tabla de Bancos -->
         <table class="bank-table">
             <thead>
                 <tr>
@@ -958,35 +1059,36 @@ export default function CotizacionesPage() {
             </thead>
             <tbody>
                 <tr>
-                    <td style="border: 1px solid #000">CORRIENTE</td>
-                    <td style="border: 1px solid #000">BCP Soles</td>
-                    <td style="border: 1px solid #000">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                    <td style="border: 1px solid #000">191-2233941-0-59</td>
-                    <td style="border: 1px solid #000">00219100223394105953</td>
+                    <td style="border: 1px solid #000" >CORRIENTE</td>
+                    <td style="border: 1px solid #000" > BCP Soles</td>
+                    <td style="border: 1px solid #000" >BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                    <td style="border: 1px solid #000" >191-2233941-0-59</td>
+                    <td style="border: 1px solid #000" >00219100223394105953</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000">CORRIENTE</td>
-                    <td style="border: 1px solid #000">BBVA Soles</td>
-                    <td style="border: 1px solid #000">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                    <td style="border: 1px solid #000">0011-0364-01000453-46</td>
-                    <td style="border: 1px solid #000">011-364-000100045346-72</td>
+                    <td style="border: 1px solid #000" >CORRIENTE</td>
+                    <td style="border: 1px solid #000" >BBVA Soles</td>
+                    <td style="border: 1px solid #000" >BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                    <td style="border: 1px solid #000" >0011-0364-01000453-46</td>
+                    <td style="border: 1px solid #000" >011-364-000100045346-72</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000">CORRIENTE</td>
-                    <td style="border: 1px solid #000">INTERBANK Soles</td>
-                    <td style="border: 1px solid #000">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                    <td style="border: 1px solid #000">2003006034134</td>
-                    <td style="border: 1px solid #000"></td>
+                    <td style="border: 1px solid #000" >CORRIENTE</td>
+                    <td style="border: 1px solid #000" >INTERBANK Soles</td>
+                    <td style="border: 1px solid #000" >BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                    <td style="border: 1px solid #000" >2003006034134</td>
+                    <td style="border: 1px solid #000" ></td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000">CORRIENTE</td>
-                    <td style="border: 1px solid #000">SCOTIABANK Soles</td>
-                    <td style="border: 1px solid #000">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                    <td style="border: 1px solid #000">000-4024129</td>
-                    <td style="border: 1px solid #000">00908100000402412911</td>
+                    <td style="border: 1px solid #000" >CORRIENTE</td>
+                    <td style="border: 1px solid #000" >SCOTIABANK Soles</td>
+                    <td style="border: 1px solid #000" >BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                    <td style="border: 1px solid #000" >000-4024129</td>
+                    <td style="border: 1px solid #000" >00908100000402412911</td>
                 </tr>
             </tbody>
         </table>
+        <!-- Footer -->
         <footer class="footer">
             <div class="footer-stripe-light-suave"></div>
             <div class="footer-stripe-light"></div>
@@ -995,15 +1097,106 @@ export default function CotizacionesPage() {
             </div>
         </footer>
     </div>
+    <!-- Botón de descarga -->
+    <div class="download-button-container">
+        <button class="download-button" id="downloadBtn" onclick="descargarPDF()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Descargar PDF
+        </button>
+    </div>
+    <script>
+        function descargarPDF() {
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...';
+            
+            // Esperar a que las imágenes carguen
+            const images = document.querySelectorAll('img');
+            const imagePromises = Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            });
+            
+            Promise.all(imagePromises).then(() => {
+                setTimeout(() => {
+                    const pageContainer = document.querySelector('.page-container');
+                    if (!pageContainer) {
+                        alert('Error: No se pudo encontrar el contenido del PDF.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
+                        return;
+                    }
+                    
+                    const numeroCotizacion = '${numeroCotizacion}';
+                    // Ocultar el botón de descarga antes de generar el PDF
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.style.display = 'none';
+                    
+                    const opt = {
+                        margin: [10, 10, 10, 10], // Márgenes iguales
+                        filename: 'Cotizacion_' + numeroCotizacion + '.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { 
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#ffffff',
+                            letterRendering: true,
+                            allowTaint: false,
+                            scrollX: 0,
+                            scrollY: 0
+                        },
+                        jsPDF: { 
+                            unit: 'mm', 
+                            format: 'a4', 
+                            orientation: 'portrait',
+                            compress: true
+                        },
+                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                    };
+                    
+                    html2pdf()
+                        .set(opt)
+                        .from(pageContainer)
+                        .save()
+                        .then(() => {
+                            // Mostrar el botón de nuevo
+                            downloadBtn.style.display = 'flex';
+                            btn.disabled = false;
+                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ¡Descargado!';
+                            setTimeout(() => {
+                                btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
+                            }, 2000);
+                        })
+                        .catch((error) => {
+                            console.error('Error al guardar PDF:', error);
+                            // Mostrar el botón de nuevo en caso de error
+                            downloadBtn.style.display = 'flex';
+                            alert('Error al generar el PDF. Por favor, intente nuevamente.');
+                            btn.disabled = false;
+                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
+                        });
+                }, 500);
+            });
+        }
+    </script>
 </body>
 </html>
     `;
 
-    // Abrir el PDF en una nueva ventana
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(pdfHTML);
-      newWindow.document.close();
+
+    // Abrir una nueva ventana con el HTML de la cotización
+    const nuevaVentana = window.open('', '_blank');
+    if (nuevaVentana) {
+      nuevaVentana.document.write(pdfHTML);
+      nuevaVentana.document.close();
+    } else {
+      alert('Por favor, permite las ventanas emergentes para ver la cotización.');
     }
   };
 
@@ -1073,11 +1266,11 @@ export default function CotizacionesPage() {
                     <div className="space-y-1.5 text-sm text-gray-800">
                       <p><span className="font-semibold text-gray-900">RUC:</span> {empresaInfo.ruc}</p>
                       <p><span className="font-semibold text-gray-900">DIRECCIÓN:</span> {empresaInfo.direccion}</p>
-                      <p><span className="font-semibold text-gray-900">Teléfono:</span> {empresaInfo.telefono}</p>
+                      <p><span className="font-semibold text-gray-900">TELÉFONO:</span> {empresaInfo.telefono}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-center lg:justify-end">
-                    <div className="relative w-32 h-32">
+                    <div className="relative w-60 h-30">
                       <Image
                         src="/images/logo_zeus_safety.png"
                         alt="Zeus Safety Logo"
@@ -1189,9 +1382,9 @@ export default function CotizacionesPage() {
                     onChange={(e) => setFormaPago(e.target.value)}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
-                    <option value="" className="text-gray-500">Seleccionar</option>
-                    <option value="contado" className="text-gray-900">Contado</option>
-                    <option value="credito" className="text-gray-900">Crédito</option>
+                    <option value="" className="text-gray-500">Seleccione Pago</option>
+                    <option value="AL CONTADO" className="text-gray-900">AL CONTADO</option>
+                    <option value="CREDITO" className="text-gray-900">CRÉDITO</option>
                   </select>
                 </div>
                 <div>
@@ -1247,8 +1440,8 @@ export default function CotizacionesPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                   >
                     <option value="" className="text-gray-500">Seleccione moneda</option>
-                    <option value="SOLES" className="text-gray-900">Soles (PEN)</option>
-                    <option value="DOLARES" className="text-gray-900">Dólares (USD)</option>
+                    <option value="SOLES" className="text-gray-900">SOLES (PEN)</option>
+                    <option value="DOLARES" className="text-gray-900">DÓLARES (USD)</option>
                   </select>
                 </div>
                 <div>
@@ -1496,7 +1689,7 @@ export default function CotizacionesPage() {
               <div className="flex justify-end pt-2 mt-2 mb-4">
                 <button
                   onClick={handleRegistrarCotizacion}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
                   Registrar Cotización
                 </button>
@@ -1505,6 +1698,7 @@ export default function CotizacionesPage() {
           </div>
         </main>
       </div>
+
     </div>
   );
 }
