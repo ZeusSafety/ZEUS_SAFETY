@@ -60,13 +60,19 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between"
+        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between transition-all ${
+          isOpen 
+            ? 'border-blue-500 shadow-md' 
+            : 'border-gray-300 hover:border-blue-300'
+        } ${disabled ? 'border-gray-200' : ''}`}
       >
-        <span className={`${selectedOption ? "text-gray-900" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis`}>
+        <span className={`${selectedOption ? "text-gray-900 font-medium" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis uppercase`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${
+            isOpen ? 'transform rotate-180' : ''
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -76,24 +82,28 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
       </button>
       {isOpen && (
         <div
-          className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden ${
+          className={`absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl overflow-hidden ${
             openUpward ? 'bottom-full mb-1' : 'top-full'
           }`}
-          style={{ maxHeight: '180px', overflowY: 'auto' }}
+          style={{ maxHeight: '200px', overflowY: 'auto' }}
         >
-          {options.map((option) => (
+          {options.map((option, index) => (
             <button
-              key={option.value}
+              key={option.value || index}
               type="button"
               onClick={() => handleSelect(option.value)}
-              className={`w-full px-3 py-1.5 text-xs text-left hover:bg-blue-50 transition-colors ${
+              className={`w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${
                 value === option.value
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'text-gray-900'
-              }`}
-              style={{ lineHeight: '1.3' }}
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'text-gray-900 hover:bg-blue-50'
+              } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              style={{ 
+                lineHeight: '1.4'
+              }}
             >
-              {option.label}
+              <span className={value === option.value ? 'uppercase' : ''}>
+                {option.label}
+              </span>
             </button>
           ))}
         </div>
@@ -184,6 +194,7 @@ export default function CotizacionesPage() {
       setCargandoRegiones(true);
       try {
         const response = await fetch("/api/regiones");
+        await handleApiResponse(response);
         if (!response.ok) {
           throw new Error("Error al cargar regiones");
         }
@@ -193,6 +204,9 @@ export default function CotizacionesPage() {
         }
       } catch (error) {
         console.error("Error al cargar regiones:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
       } finally {
         setCargandoRegiones(false);
       }
@@ -213,6 +227,7 @@ export default function CotizacionesPage() {
       setCargandoDistritos(true);
       try {
         const response = await fetch(`/api/distritos?id_region=${encodeURIComponent(region)}`);
+        await handleApiResponse(response);
         if (!response.ok) {
           throw new Error("Error al cargar distritos");
         }
@@ -226,6 +241,9 @@ export default function CotizacionesPage() {
         setDistrito("");
       } catch (error) {
         console.error("Error al cargar distritos:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
         setDistritos([]);
       } finally {
         setCargandoDistritos(false);
@@ -284,6 +302,18 @@ export default function CotizacionesPage() {
     return "";
   };
 
+  // Función helper para manejar respuestas de API y redirigir al login si el token expiró
+  const handleApiResponse = async (response) => {
+    // Si el token expiró (401), redirigir al login
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      router.push("/login");
+      throw new Error("Token expirado. Por favor, inicie sesión nuevamente.");
+    }
+    return response;
+  };
+
   // Función para cargar todos los productos desde la API
   const cargarTodosLosProductos = async () => {
     if (productosCargados) {
@@ -308,14 +338,11 @@ export default function CotizacionesPage() {
         }
       });
       
+      await handleApiResponse(response);
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          console.error("Error 401: Token de autenticación inválido o expirado");
-          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
-        } else {
-          console.error(`Error ${response.status}: ${response.statusText}`);
-          alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
-        }
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
         throw new Error(`Error al cargar productos: ${response.status}`);
       }
 
@@ -432,14 +459,11 @@ export default function CotizacionesPage() {
         }
       });
       
+      await handleApiResponse(response);
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          console.error("Error 401: Token de autenticación inválido o expirado");
-          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
-        } else {
-          console.error(`Error ${response.status}: ${response.statusText}`);
-          alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
-        }
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
         throw new Error(`Error al obtener precios: ${response.status}`);
       }
 
@@ -469,10 +493,16 @@ export default function CotizacionesPage() {
 
   // Seleccionar precio del modal
   const seleccionarPrecio = (precioItem) => {
-    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || 0;
-    setPrecioVenta(precio.toString());
+    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || precioItem.PRECIO || 0;
+    const precioNum = parseFloat(precio) || 0;
+    console.log("Precio seleccionado:", precioNum, "de item:", precioItem); // Debug
+    setPrecioVenta(precioNum.toString());
     setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
     setModalPreciosAbierto(false);
+    
+    // Recalcular total inmediatamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    setTotal(cantidadNum * precioNum);
   };
 
   // Función para buscar RUC
@@ -500,6 +530,8 @@ export default function CotizacionesPage() {
         },
         body: JSON.stringify({ ruc: rucTrimmed }),
       });
+
+      await handleApiResponse(response);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
@@ -633,17 +665,28 @@ export default function CotizacionesPage() {
       return;
     }
 
+    // Asegurarse de que el precio sea un número válido
+    const precioNum = parseFloat(precioVenta) || 0;
+    if (precioNum <= 0) {
+      alert("El precio debe ser mayor a 0");
+      return;
+    }
+
+    // Calcular subtotal correctamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    const subtotalCalculado = cantidadNum * precioNum;
+
     const nuevoProducto = {
       id: Date.now(),
-      cantidad: cantidad,
+      cantidad: cantidadNum,
       unidad: unidadMedida || "UN",
       codigo: codigo,
       producto: producto,
-      precioUnit: parseFloat(precioVenta),
-      subtotal: total
+      precioUnit: precioNum,
+      subtotal: subtotalCalculado
     };
 
-    
+    console.log("Agregando producto:", nuevoProducto); // Debug
 
     setProductosLista([...productosLista, nuevoProducto]);
     
@@ -699,6 +742,8 @@ export default function CotizacionesPage() {
         }),
       });
 
+      await handleApiResponse(response);
+
       const data = await response.json();
       
       if (!response.ok) {
@@ -727,8 +772,9 @@ export default function CotizacionesPage() {
         const tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute';
         tempDiv.style.left = '-9999px';
-        tempDiv.style.width = '700px';
-        tempDiv.style.padding = '30px';
+        tempDiv.style.width = '900px'; // Ancho aumentado para que se vea más ancho
+        tempDiv.style.maxWidth = 'none';
+        tempDiv.style.padding = '15px 20px';
         tempDiv.style.backgroundColor = 'white';
         tempDiv.style.fontFamily = 'Arial, Helvetica, sans-serif';
         tempDiv.className = 'page-container';
@@ -857,18 +903,21 @@ export default function CotizacionesPage() {
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 5px;
             background-color: #f0f0f0;
             display: flex;
             justify-content: center;
-            min-width: 960px; /* Ancho mínimo para centrar correctamente */
+            min-width: 100%;
+            width: 100%;
+            max-width: none;
             color: #000000;
         }
         .page-container {
             background-color: white;
-            width: 700px; /* Ancho reducido para que quepa mejor en A4 */
+            width: 900px; /* Ancho aumentado para que se vea más ancho */
+            max-width: none;
             margin: 0 auto;
-            padding: 30px;
+            padding: 15px 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
@@ -1398,15 +1447,16 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">FORMA DE PAGO</label>
-                  <select
+                  <CompactSelect
                     value={formaPago}
                     onChange={(e) => setFormaPago(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccionar</option>
-                    <option value="contado" className="text-gray-900">Contado</option>
-                    <option value="credito" className="text-gray-900">Crédito</option>
-                  </select>
+                    placeholder="Seleccionar"
+                    options={[
+                      { value: "", label: "Seleccionar" },
+                      { value: "contado", label: "Contado" },
+                      { value: "credito", label: "Crédito" }
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">REGION</label>
@@ -1455,30 +1505,32 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">MONEDA</label>
-                  <select
+                  <CompactSelect
                     value={moneda}
                     onChange={(e) => setMoneda(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione moneda</option>
-                    <option value="SOLES" className="text-gray-900">Soles (PEN)</option>
-                    <option value="DOLARES" className="text-gray-900">Dólares (USD)</option>
-                  </select>
+                    placeholder="Seleccione moneda"
+                    options={[
+                      { value: "", label: "Seleccione moneda" },
+                      { value: "SOLES", label: "Soles (PEN)" },
+                      { value: "DOLARES", label: "Dólares (USD)" }
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">ATENDIDO POR</label>
-                  <select
+                  <CompactSelect
                     value={atendidoPor}
                     onChange={(e) => setAtendidoPor(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione un asesor</option>
-                    <option value="HERVIN-9447673667" className="text-gray-900">HERVIN-9447673667</option>
-                    <option value="KIMBERLY-987560590" className="text-gray-900">KIMBERLY-987560590</option>
-                    <option value="ALVARO-935447178" className="text-gray-900">ÁLVARO-935447178</option>
-                    <option value="KRISTEL-916532849" className="text-gray-900">CRISTEL-916532849</option>
-                    <option value="ZEUS-908917879" className="text-gray-900">ZEUS-908917879</option>
-                  </select>
+                    placeholder="Seleccione un asesor"
+                    options={[
+                      { value: "", label: "Seleccione un asesor" },
+                      { value: "HERVIN-9447673667", label: "HERVIN-9447673667" },
+                      { value: "KIMBERLY-987560590", label: "KIMBERLY-987560590" },
+                      { value: "ALVARO-935447178", label: "ÁLVARO-935447178" },
+                      { value: "KRISTEL-916532849", label: "CRISTEL-916532849" },
+                      { value: "ZEUS-908917879", label: "ZEUS-908917879" }
+                    ]}
+                  />
                 </div>
               </div>
               </div>
@@ -1545,17 +1597,18 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">CLASIFICACIÓN:</label>
-                  <select
+                  <CompactSelect
                     value={clasificacion}
                     onChange={handleClasificacionChange}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione clasificación</option>
-                    <option value="MALVINAS" className="text-gray-900">MALVINAS</option>
-                    <option value="FERRETERIA" className="text-gray-900">FERRETERIA</option>
-                    <option value="PROVINCIA" className="text-gray-900">PROVINCIA</option>
-                    <option value="CLIENTES FINALES" className="text-gray-900">CLIENTES FINALES</option>
-                  </select>
+                    placeholder="Seleccione clasificación"
+                    options={[
+                      { value: "", label: "Seleccione clasificación" },
+                      { value: "MALVINAS", label: "MALVINAS" },
+                      { value: "FERRETERIA", label: "FERRETERIA" },
+                      { value: "PROVINCIA", label: "PROVINCIA" },
+                      { value: "CLIENTES FINALES", label: "CLIENTES FINALES" }
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad:</label>
@@ -1660,31 +1713,31 @@ export default function CotizacionesPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO UNIT.</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">SUBTOTAL</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO UNIT.</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">SUBTOTAL</th>
+                          <th className="px-3 py-2.5 text-center text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {productosLista.map((prod) => (
                           <tr key={prod.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{prod.cantidad}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{prod.unidad}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{prod.codigo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{prod.producto}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {prod.precioUnit.toFixed(2)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-semibold">S/ {prod.subtotal.toFixed(2)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.cantidad}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.unidad}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.codigo}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.producto}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">S/ {(prod.precioUnit || 0).toFixed(2)}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700 font-semibold">S/ {(prod.subtotal || 0).toFixed(2)}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center">
                                 <button
                                   onClick={() => handleEliminarProducto(prod.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[11px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                   <span>Eliminar</span>
@@ -1696,9 +1749,9 @@ export default function CotizacionesPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-slate-200 px-3 py-2.5 flex items-center justify-between border-t-2 border-slate-300">
                     <div></div>
-                    <p className="text-[10px] font-medium text-gray-700">
+                    <p className="text-[11px] font-bold text-gray-900">
                       TOTAL: S/ {totalGeneral.toFixed(2)}
                     </p>
                   </div>

@@ -113,11 +113,44 @@ export default function ListadoPreciosPage() {
       // Parsear respuesta JSON directamente
       const data = await response.json();
       
+      // 🔍 LOG: Datos recibidos de la API
+      console.log("🔍 [FRONTEND] ===== DATOS RECIBIDOS DE LA API =====");
+      console.log("🔍 [FRONTEND] Tipo de data:", typeof data);
+      console.log("🔍 [FRONTEND] Es array?", Array.isArray(data));
+      console.log("🔍 [FRONTEND] Data completa:", data);
+      
       // La API devuelve un array directamente con todos los campos incluidos
       // La nueva API (franja_precios) ya incluye: CODIGO, NOMBRE, CANTIDAD_CAJA, 
       // FICHA_TECNICA_ENLACE, TEXTO_COPIAR, y campos dinámicos de precio (CAJA 1, DOCENA 1, etc.)
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
+      
+      console.log("🔍 [FRONTEND] PreciosArray procesado - Total:", preciosArray.length);
+      
+      if (preciosArray.length > 0) {
+        console.log("🔍 [FRONTEND] Primer registro completo:", preciosArray[0]);
+        console.log("🔍 [FRONTEND] Claves del primer registro:", Object.keys(preciosArray[0]));
+        
+        // Mostrar solo campos de precio
+        const primerRegistro = preciosArray[0];
+        const camposPrecio = Object.keys(primerRegistro).filter(key => {
+          const keyUpper = key.toUpperCase();
+          return !['ID', 'CODIGO', 'NOMBRE', 'PRODUCTO', 'CANTIDAD_CAJA', 'CANTIDAD_EN_CAJA', 
+                   'FICHA_TECNICA_ENLACE', 'TEXTO_COPIAR', 'MEDIDA', 'PRECIO'].includes(keyUpper) &&
+                 (keyUpper.includes('CAJA') || keyUpper.includes('DOCENA') || 
+                  keyUpper.includes('PAR') || keyUpper.includes('UNIDAD'));
+        });
+        
+        console.log("🔍 [FRONTEND] Campos de precio encontrados:", camposPrecio);
+        console.log("🔍 [FRONTEND] Valores de precios en primer registro:");
+        camposPrecio.forEach(campo => {
+          console.log(`  - ${campo}: ${primerRegistro[campo]} (tipo: ${typeof primerRegistro[campo]})`);
+        });
+      } else {
+        console.warn("⚠️ [FRONTEND] No hay registros en preciosArray");
+      }
+      
+      console.log("🔍 [FRONTEND] ===== FIN DATOS API =====");
       
       return preciosArray;
     } catch (err) {
@@ -233,7 +266,13 @@ export default function ListadoPreciosPage() {
 
   // Obtener columnas de precio dinámicamente basadas en los datos reales de la API
   const getPriceColumns = useMemo(() => {
-    if (precios.length === 0) return [];
+    console.log("🔍 [FRONTEND-LISTADO] ===== DETECTANDO COLUMNAS DE PRECIO =====");
+    console.log("🔍 [FRONTEND-LISTADO] Total de precios:", precios.length);
+    
+    if (precios.length === 0) {
+      console.warn("⚠️ [FRONTEND-LISTADO] No hay precios, retornando array vacío");
+      return [];
+    }
     
     // Campos que NO son columnas de precio según la estructura real de la BD
     const excludedFields = [
@@ -249,6 +288,9 @@ export default function ListadoPreciosPage() {
     // Obtener todas las keys del primer registro
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
+    
+    console.log("🔍 [FRONTEND-LISTADO] Primer registro:", firstRecord);
+    console.log("🔍 [FRONTEND-LISTADO] Todas las claves disponibles:", allKeys);
     
     // Filtrar solo las columnas de precio
     // La nueva API devuelve campos dinámicos como "CAJA 1", "DOCENA 1", "PAR 1", "UNIDAD 1"
@@ -306,6 +348,13 @@ export default function ListadoPreciosPage() {
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
+    
+    console.log("🔍 [FRONTEND-LISTADO] Columnas de precio detectadas:", priceColumns);
+    console.log("🔍 [FRONTEND-LISTADO] Valores de precios en primer registro:");
+    priceColumns.forEach(col => {
+      console.log(`  - ${col}: ${firstRecord[col]} (tipo: ${typeof firstRecord[col]})`);
+    });
+    console.log("🔍 [FRONTEND-LISTADO] ===== FIN DETECCIÓN COLUMNAS =====");
     
     return priceColumns;
   }, [precios]);
