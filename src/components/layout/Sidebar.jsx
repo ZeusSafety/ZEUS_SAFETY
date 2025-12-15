@@ -276,6 +276,7 @@ export function Sidebar({ isOpen, onClose }) {
         { id: "gestion-clientes-marketing", name: "Gestión de Clientes", icon: "users" },
         { id: "listado-ventas-marketing", name: "Listado de Ventas", icon: "document-list" },
         { id: "recencia-clientes", name: "Recencia de Clientes", icon: "clock" },
+        { id: "cotizaciones-marketing", name: "Cotizaciones", icon: "document" },
       ],
     },
     {
@@ -728,6 +729,12 @@ export function Sidebar({ isOpen, onClose }) {
     
     if (itemId === "listado-ventas-marketing") {
       router.push("/marketing/listado-ventas");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    if (itemId === "cotizaciones-marketing") {
+      router.push("/marketing/cotizaciones");
       setSelectedItem(itemId);
       return;
     }
