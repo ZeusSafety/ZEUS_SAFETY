@@ -7,6 +7,8 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 // Componente de Select personalizado con dropdown compacto
 const CompactSelect = ({ value, onChange, options, placeholder, disabled = false }) => {
@@ -674,10 +676,18 @@ export default function CotizacionesPage() {
     // Primero guardar la cotización en la base de datos para obtener el código
     let numeroCotizacion = '';
     try {
+      // Obtener el token de autenticación
+      const token = getAuthToken();
+      if (!token) {
+        alert('Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.');
+        return;
+      }
+
       const response = await fetch('/api/cotizaciones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           nombre_cliente: cliente || '',
@@ -710,15 +720,101 @@ export default function CotizacionesPage() {
       return;
     }
 
-    // Generar el HTML del PDF - Exactamente como el código original con botón de descarga
-    const pdfHTML = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotización Zeus Safety</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    // Función para generar PDF desde imagen
+    const generarPDFDesdeImagen = async (numeroCotizacion) => {
+      try {
+        // Crear un elemento temporal para renderizar la cotización
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '700px';
+        tempDiv.style.padding = '30px';
+        tempDiv.style.backgroundColor = 'white';
+        tempDiv.style.fontFamily = 'Arial, Helvetica, sans-serif';
+        tempDiv.className = 'page-container';
+        
+        // Generar el HTML de la cotización
+        const cotizacionHTML = generarHTMLCotizacion(numeroCotizacion);
+        tempDiv.innerHTML = cotizacionHTML;
+        document.body.appendChild(tempDiv);
+
+        // Esperar a que las imágenes carguen
+        const images = tempDiv.querySelectorAll('img');
+        const imagePromises = Array.from(images).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        });
+        
+        await Promise.all(imagePromises);
+        
+        // Esperar un poco más para que se renderice completamente
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Generar imagen con html2canvas
+        const canvas = await html2canvas(tempDiv, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          letterRendering: true,
+          allowTaint: false,
+          scrollX: 0,
+          scrollY: 0,
+          width: tempDiv.scrollWidth,
+          height: tempDiv.scrollHeight
+        });
+
+        // Convertir canvas a imagen
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        
+        // Crear PDF con jsPDF
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+
+        // Calcular dimensiones para que quepa en A4
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // en mm
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // en mm
+        const margin = 10; // margen en mm
+        
+        // Convertir píxeles a mm (asumiendo 96 DPI: 1 pulgada = 25.4mm, 96px = 25.4mm)
+        const pxToMm = 25.4 / 96;
+        const imgWidthMm = (canvas.width * pxToMm) / 2; // dividir por 2 porque scale es 2
+        const imgHeightMm = (canvas.height * pxToMm) / 2;
+        
+        // Calcular ratio para que quepa en la página
+        const availableWidth = pdfWidth - (margin * 2);
+        const availableHeight = pdfHeight - (margin * 2);
+        const ratio = Math.min(availableWidth / imgWidthMm, availableHeight / imgHeightMm);
+        
+        const imgWidthFinal = imgWidthMm * ratio;
+        const imgHeightFinal = imgHeightMm * ratio;
+
+        // Agregar imagen al PDF centrada
+        const xOffset = (pdfWidth - imgWidthFinal) / 2;
+        const yOffset = margin;
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidthFinal, imgHeightFinal);
+
+        // Descargar PDF
+        pdf.save(`Cotizacion_${numeroCotizacion}.pdf`);
+
+        // Limpiar elemento temporal
+        document.body.removeChild(tempDiv);
+      } catch (error) {
+        console.error('Error al generar PDF:', error);
+        alert('Error al generar el PDF. Por favor, intente nuevamente.');
+      }
+    };
+
+    // Función para generar el HTML de la cotización (solo el contenido, sin scripts)
+    const generarHTMLCotizacion = (numeroCotizacion) => {
+      return `
     <style>
         /* Botón de descarga */
         .download-button-container {
@@ -755,6 +851,9 @@ export default function CotizacionesPage() {
         }
         /* Configuración General */
         /* Configuración General */
+        * {
+            color: #000000 !important;
+        }
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
@@ -763,6 +862,7 @@ export default function CotizacionesPage() {
             display: flex;
             justify-content: center;
             min-width: 960px; /* Ancho mínimo para centrar correctamente */
+            color: #000000;
         }
         .page-container {
             background-color: white;
@@ -772,6 +872,7 @@ export default function CotizacionesPage() {
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
+            color: #000000;
         }
         /* --- Header --- */
         header {
@@ -794,12 +895,14 @@ export default function CotizacionesPage() {
             font-size: 11px;
             line-height: 1.4;
             padding-top: 5px;
+            color: #000000;
         }
         .company-name {
             font-weight: bold;
             font-size: 15px;
             margin-bottom: 5px;
             display: block;
+            color: #000000;
         }
         .ruc-box {
             width: 25%;
@@ -831,12 +934,15 @@ export default function CotizacionesPage() {
             font-weight: bold;
             margin-bottom: 15px;
             line-height: 1.8;
+            color: #000000;
         }
         .client-left {
             width: 60%;
+            color: #000000;
         }
         .client-right {
             width: 35%;
+            color: #000000;
         }
         /* --- Tablas Generales --- */
         table {
@@ -849,15 +955,18 @@ export default function CotizacionesPage() {
             border: 1px solid #000; /* Bordes negros sólidos */
             padding: 4px 5px;
             text-align: center;
+            color: #000000;
         }
         /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
         .meta-table th {
             background-color: #5b9bd5;
             font-weight: bold;
             text-transform: uppercase;
+            color: #ffffff;
         }
         .meta-table td {
             height: 20px; /* Altura vacía */
+            color: #000000;
         }
         /* Espaciador */
         .spacer {
@@ -867,9 +976,13 @@ export default function CotizacionesPage() {
         .product-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
+            color: #ffffff;
         }
         .product-table tr {
             height: 22px; /* Altura de filas vacías */
+        }
+        .product-table td {
+            color: #000000;
         }
         /* Column widths para imitar la imagen */
         .col-cant { width: 8%; }
@@ -896,22 +1009,26 @@ export default function CotizacionesPage() {
             font-size: 12px;
             border-right: 1px solid #000;
             flex-grow: 1;
+            color: #000000;
         }
         .total-value {
             width: 95px;
             padding: 5px;
+            color: #000000;
         }
         /* --- Tabla de Bancos --- */
         .bank-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
             font-size: 10px;
+            color: #ffffff;
         }
         .bank-table td {
             font-size: 9px;
             border: none; /* La imagen parece tener bordes internos sutiles o solo filas, pero pondré bordes estándar para mantener estructura */
             border-bottom: 1px solid #ccc;
             padding: 3px;
+            color: #000000;
         }
         .bank-table {
             border: 1px solid #000;
@@ -1097,107 +1214,11 @@ export default function CotizacionesPage() {
             </div>
         </footer>
     </div>
-    <!-- Botón de descarga -->
-    <div class="download-button-container">
-        <button class="download-button" id="downloadBtn" onclick="descargarPDF()">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Descargar PDF
-        </button>
-    </div>
-    <script>
-        function descargarPDF() {
-            const btn = document.getElementById('downloadBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...';
-            
-            // Esperar a que las imágenes carguen
-            const images = document.querySelectorAll('img');
-            const imagePromises = Array.from(images).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise((resolve) => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
-            });
-            
-            Promise.all(imagePromises).then(() => {
-                setTimeout(() => {
-                    const pageContainer = document.querySelector('.page-container');
-                    if (!pageContainer) {
-                        alert('Error: No se pudo encontrar el contenido del PDF.');
-                        btn.disabled = false;
-                        btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                        return;
-                    }
-                    
-                    const numeroCotizacion = '${numeroCotizacion}';
-                    // Ocultar el botón de descarga antes de generar el PDF
-                    const downloadBtn = document.getElementById('downloadBtn');
-                    downloadBtn.style.display = 'none';
-                    
-                    const opt = {
-                        margin: [10, 10, 10, 10], // Márgenes iguales
-                        filename: 'Cotizacion_' + numeroCotizacion + '.pdf',
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { 
-                            scale: 2,
-                            useCORS: true,
-                            logging: false,
-                            backgroundColor: '#ffffff',
-                            letterRendering: true,
-                            allowTaint: false,
-                            scrollX: 0,
-                            scrollY: 0
-                        },
-                        jsPDF: { 
-                            unit: 'mm', 
-                            format: 'a4', 
-                            orientation: 'portrait',
-                            compress: true
-                        },
-                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                    };
-                    
-                    html2pdf()
-                        .set(opt)
-                        .from(pageContainer)
-                        .save()
-                        .then(() => {
-                            // Mostrar el botón de nuevo
-                            downloadBtn.style.display = 'flex';
-                            btn.disabled = false;
-                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ¡Descargado!';
-                            setTimeout(() => {
-                                btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                            }, 2000);
-                        })
-                        .catch((error) => {
-                            console.error('Error al guardar PDF:', error);
-                            // Mostrar el botón de nuevo en caso de error
-                            downloadBtn.style.display = 'flex';
-                            alert('Error al generar el PDF. Por favor, intente nuevamente.');
-                            btn.disabled = false;
-                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                        });
-                }, 500);
-            });
-        }
-    </script>
-</body>
-</html>
-    `;
+      `;
+    };
 
-
-    // Abrir una nueva ventana con el HTML de la cotización
-    const nuevaVentana = window.open('', '_blank');
-    if (nuevaVentana) {
-      nuevaVentana.document.write(pdfHTML);
-      nuevaVentana.document.close();
-    } else {
-      alert('Por favor, permite las ventanas emergentes para ver la cotización.');
-    }
+    // Generar y descargar el PDF directamente
+    await generarPDFDesdeImagen(numeroCotizacion);
   };
 
   if (loading) {

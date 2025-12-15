@@ -16,11 +16,23 @@ export async function POST(request) {
       );
     }
 
+    // Extraer el token de autenticación del header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Token no proporcionado' },
+        { status: 401 }
+      );
+    }
+
     // Llamar al backend de Google Cloud
     const response = await fetch(`${API_BASE_URL}/cotizacion`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         nombre_cliente,
