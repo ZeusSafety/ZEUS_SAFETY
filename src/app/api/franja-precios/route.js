@@ -8,8 +8,8 @@ async function fetchFromAPI(method, request, tablaId) {
     const token = authHeader ? authHeader.replace("Bearer ", "") : null;
     
     // Construir la URL con los parámetros correctos
-    // Usar CONFIGURACION_FRANJA_PRECIOS para obtener los datos reales
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=CONFIGURACION_FRANJA_PRECIOS&id=${encodeURIComponent(tablaId)}`;
+    // Usar franja_precios para obtener los datos con precios dinámicos
+    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=franja_precios&id=${encodeURIComponent(tablaId)}`;
     
     // Preparar headers para la petición a la API externa
     const headers = {
