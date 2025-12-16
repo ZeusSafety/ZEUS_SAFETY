@@ -61,60 +61,6 @@ export default function ListadoPreciosPage() {
     return mapping[tablaId] || tablaId;
   };
 
-  // Función para obtener fichas técnicas de productos por código
-  const fetchFichasTecnicas = useCallback(async (codigos) => {
-    try {
-      if (!codigos || codigos.length === 0) return {};
-      
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
-      if (!token) return {};
-      
-      // Obtener todos los productos de la API
-      const apiUrl = `/api/productos`;
-      const headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": `Bearer ${token}`,
-      };
-      
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: headers,
-      });
-      
-      if (!response.ok) {
-        console.warn("No se pudieron obtener las fichas técnicas de productos");
-        return {};
-      }
-      
-      const data = await response.json();
-      const productosArray = Array.isArray(data) ? data : 
-                            (data?.data && Array.isArray(data.data) ? data.data : []);
-      
-      // Crear un mapa de código -> ficha técnica
-      const fichasMap = {};
-      productosArray.forEach(producto => {
-        const codigo = producto.CODIGO || producto.codigo || producto.CÓDIGO;
-        const ficha = producto.FICHA_TECNICA_ENLACE || producto.ficha_tecnica_enlace || 
-                     producto.FICHA_TECNICA || producto.ficha_tecnica ||
-                     producto.fichaTecnica || producto.fichaTecnicaEnlace;
-        
-        if (codigo && ficha) {
-          fichasMap[codigo] = ficha;
-        }
-      });
-      
-      console.log(`✅ Fichas técnicas obtenidas: ${Object.keys(fichasMap).length} productos con ficha`);
-      return fichasMap;
-    } catch (err) {
-      console.warn("Error al obtener fichas técnicas:", err.message);
-      return {};
-    }
-  }, [user]);
-
   // Función para obtener precios de una tabla específica
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
@@ -167,30 +113,46 @@ export default function ListadoPreciosPage() {
       // Parsear respuesta JSON directamente
       const data = await response.json();
       
-      // La API devuelve un array directamente
+      // 🔍 LOG: Datos recibidos de la API
+      console.log("🔍 [FRONTEND] ===== DATOS RECIBIDOS DE LA API =====");
+      console.log("🔍 [FRONTEND] Tipo de data:", typeof data);
+      console.log("🔍 [FRONTEND] Es array?", Array.isArray(data));
+      console.log("🔍 [FRONTEND] Data completa:", data);
+      
+      // La API devuelve un array directamente con todos los campos incluidos
+      // La nueva API (franja_precios) ya incluye: CODIGO, NOMBRE, CANTIDAD_CAJA, 
+      // FICHA_TECNICA_ENLACE, TEXTO_COPIAR, y campos dinámicos de precio (CAJA 1, DOCENA 1, etc.)
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
       
-      // Obtener fichas técnicas de productos
-      const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
-      const fichasMap = await fetchFichasTecnicas(codigos);
+      console.log("🔍 [FRONTEND] PreciosArray procesado - Total:", preciosArray.length);
       
-      // Combinar fichas técnicas con los datos de precios
-      const preciosConFichas = preciosArray.map(precio => {
-        const codigo = precio.CODIGO || precio.codigo;
-        const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
-                     precio.FICHA_TECNICA || precio.ficha_tecnica;
+      if (preciosArray.length > 0) {
+        console.log("🔍 [FRONTEND] Primer registro completo:", preciosArray[0]);
+        console.log("🔍 [FRONTEND] Claves del primer registro:", Object.keys(preciosArray[0]));
         
-        return {
-          ...precio,
-          FICHA_TECNICA_ENLACE: ficha,
-          ficha_tecnica_enlace: ficha,
-          FICHA_TECNICA: ficha,
-          ficha_tecnica: ficha
-        };
-      });
+        // Mostrar solo campos de precio
+        const primerRegistro = preciosArray[0];
+        const camposPrecio = Object.keys(primerRegistro).filter(key => {
+          const keyUpper = key.toUpperCase();
+          return !['ID', 'CODIGO', 'NOMBRE', 'PRODUCTO', 'CANTIDAD_CAJA', 'CANTIDAD_EN_CAJA', 
+                   'FICHA_TECNICA_ENLACE', 'TEXTO_COPIAR', 'MEDIDA', 'PRECIO'].includes(keyUpper) &&
+                 (keyUpper.includes('CAJA') || keyUpper.includes('DOCENA') || 
+                  keyUpper.includes('PAR') || keyUpper.includes('UNIDAD'));
+        });
+        
+        console.log("🔍 [FRONTEND] Campos de precio encontrados:", camposPrecio);
+        console.log("🔍 [FRONTEND] Valores de precios en primer registro:");
+        camposPrecio.forEach(campo => {
+          console.log(`  - ${campo}: ${primerRegistro[campo]} (tipo: ${typeof primerRegistro[campo]})`);
+        });
+      } else {
+        console.warn("⚠️ [FRONTEND] No hay registros en preciosArray");
+      }
       
-      return preciosConFichas;
+      console.log("🔍 [FRONTEND] ===== FIN DATOS API =====");
+      
+      return preciosArray;
     } catch (err) {
       // Solo mostrar error si no es un error esperado de tabla sin datos
       const errorMessage = err.message || "";
@@ -205,7 +167,7 @@ export default function ListadoPreciosPage() {
       
       return [];
     }
-  }, [user, router, fetchFichasTecnicas]);
+  }, [user, router]);
 
   // Cargar todos los datos al entrar a la página
   useEffect(() => {
@@ -304,7 +266,13 @@ export default function ListadoPreciosPage() {
 
   // Obtener columnas de precio dinámicamente basadas en los datos reales de la API
   const getPriceColumns = useMemo(() => {
-    if (precios.length === 0) return [];
+    console.log("🔍 [FRONTEND-LISTADO] ===== DETECTANDO COLUMNAS DE PRECIO =====");
+    console.log("🔍 [FRONTEND-LISTADO] Total de precios:", precios.length);
+    
+    if (precios.length === 0) {
+      console.warn("⚠️ [FRONTEND-LISTADO] No hay precios, retornando array vacío");
+      return [];
+    }
     
     // Campos que NO son columnas de precio según la estructura real de la BD
     const excludedFields = [
@@ -312,6 +280,7 @@ export default function ListadoPreciosPage() {
       'CANTIDAD_UNIDAD_MEDIDA_VENTA', 'cantidad_unidad_medida_venta',
       'UNIDAD_MEDIDA_VENTA', 'unidad_medida_venta',
       'UNIDAD_MEDIDA_CAJA', 'unidad_medida_caja',
+      'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
       'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
       'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
     ];
@@ -320,8 +289,12 @@ export default function ListadoPreciosPage() {
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
     
-    // Filtrar solo las columnas de precio (que son numéricas y no están excluidas)
-    // Los datos reales de la API tendrán campos como PRECIO_UNIDAD_MEDIDA_VENTA
+    console.log("🔍 [FRONTEND-LISTADO] Primer registro:", firstRecord);
+    console.log("🔍 [FRONTEND-LISTADO] Todas las claves disponibles:", allKeys);
+    
+    // Filtrar solo las columnas de precio
+    // La nueva API devuelve campos dinámicos como "CAJA 1", "DOCENA 1", "PAR 1", "UNIDAD 1"
+    // que son numéricos y no están en la lista de excluidos
     const priceColumns = allKeys
       .filter(key => {
         const keyUpper = key.toUpperCase();
@@ -329,12 +302,27 @@ export default function ListadoPreciosPage() {
         if (excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()))) {
           return false;
         }
-        // Incluir campos que contengan PRECIO y sean numéricos
-        if (keyUpper.includes('PRECIO')) {
-          const value = firstRecord[key];
-          return typeof value === 'number' || 
-                 (!isNaN(parseFloat(value)) && value !== null && value !== '');
+        
+        const value = firstRecord[key];
+        // Incluir campos que sean numéricos (precios dinámicos)
+        // O campos que contengan PRECIO y sean numéricos
+        const isNumeric = typeof value === 'number' || 
+                         (!isNaN(parseFloat(value)) && value !== null && value !== '');
+        
+        // Incluir si es numérico o contiene palabras clave de precio
+        if (isNumeric) {
+          // Verificar que no sea un ID u otro campo numérico que no sea precio
+          if (keyUpper.includes('ID') || keyUpper.includes('CANTIDAD')) {
+            return false;
+          }
+          return true;
         }
+        
+        // También incluir campos que contengan PRECIO
+        if (keyUpper.includes('PRECIO')) {
+          return isNumeric;
+        }
+        
         return false;
       })
       .sort((a, b) => {
@@ -360,6 +348,13 @@ export default function ListadoPreciosPage() {
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
+    
+    console.log("🔍 [FRONTEND-LISTADO] Columnas de precio detectadas:", priceColumns);
+    console.log("🔍 [FRONTEND-LISTADO] Valores de precios en primer registro:");
+    priceColumns.forEach(col => {
+      console.log(`  - ${col}: ${firstRecord[col]} (tipo: ${typeof firstRecord[col]})`);
+    });
+    console.log("🔍 [FRONTEND-LISTADO] ===== FIN DETECCIÓN COLUMNAS =====");
     
     return priceColumns;
   }, [precios]);
@@ -664,24 +659,14 @@ export default function ListadoPreciosPage() {
                             return { text: `S/.${num.toFixed(2)}`, isZero: num === 0 };
                           };
 
-                          // Mapeo de campos según la estructura real de la API (datos reales de CONFIGURACION_FRANJA_PRECIOS)
+                          // Mapeo de campos según la estructura de la nueva API (franja_precios)
                           const codigo = getField(["CODIGO", "codigo"]);
                           const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
                           
-                          // Campos según la estructura real de la BD:
-                          // UNIDAD_MEDIDA_VENTA, CANTIDAD_UNIDAD_MEDIDA_VENTA, PRECIO_UNIDAD_MEDIDA_VENTA, UNIDAD_MEDIDA_CAJA
-                          const unidadMedidaVenta = getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]);
-                          const cantidadUnidadMedidaVenta = getField(["CANTIDAD_UNIDAD_MEDIDA_VENTA", "cantidad_unidad_medida_venta"]);
-                          const unidadMedidaCaja = getField(["UNIDAD_MEDIDA_CAJA", "unidad_medida_caja"]);
+                          // CANTIDAD_CAJA viene directamente de la API como "UNIDAD 10", "CAJA 1", etc.
+                          const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]) || "-";
                           
-                          // Formatear cantidad en caja según los datos reales
-                          const cantidadCaja = cantidadUnidadMedidaVenta && unidadMedidaVenta 
-                            ? `${unidadMedidaVenta} ${cantidadUnidadMedidaVenta}`
-                            : getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]) || "-";
-                          
-                          // Ficha técnica viene del LEFT JOIN con gestión de productos
-                          // IMPORTANTE: El procedimiento CONFIGURACION_FRANJA_PRECIOS no incluye P.FICHA_TECNICA_ENLACE en el SELECT
-                          // pero hace LEFT JOIN con productos, así que debemos buscar en TODOS los campos posibles
+                          // Ficha técnica viene directamente de la API (franja_precios)
                           // Buscar primero con getField, luego buscar manualmente en todas las keys del objeto
                           let fichaTecnica = getField([
                             "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", 

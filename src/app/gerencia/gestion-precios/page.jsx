@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -16,7 +16,7 @@ export default function GestionPreciosPage() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("create"); // "create" o "update"
   const [selectedPrecio, setSelectedPrecio] = useState(null);
@@ -25,6 +25,8 @@ export default function GestionPreciosPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [precioToDelete, setPrecioToDelete] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [tablasDisponibles, setTablasDisponibles] = useState([
     { value: "MALVINAS", label: "Malvinas", disponible: true },
     { value: "PROVINCIA", label: "Provincia", disponible: true },
@@ -33,6 +35,16 @@ export default function GestionPreciosPage() {
     { value: "FERRETERIA", label: "Ferretería", disponible: true },
     { value: "CLIENTES_FINALES", label: "Clientes Finales", disponible: true },
   ]);
+
+  // Estados para autocompletado de productos
+  const [productoBusqueda, setProductoBusqueda] = useState("");
+  const [sugerenciasProductos, setSugerenciasProductos] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [todosLosProductos, setTodosLosProductos] = useState([]);
+  const [productosCargados, setProductosCargados] = useState(false);
+  const [buscandoProductos, setBuscandoProductos] = useState(false);
+  const productoInputRef = useRef(null);
+  const sugerenciasRef = useRef(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -131,7 +143,8 @@ export default function GestionPreciosPage() {
       }
       
       const apiId = getApiId(tablaId);
-      const apiUrl = `/api/franja-precios?id=${encodeURIComponent(apiId)}`;
+      // Usar listar_franjas en lugar de franja_precios para obtener IDs más confiables (sin pivot)
+      const apiUrl = `/api/franja-precios?method=listar_franjas&id=${encodeURIComponent(apiId)}`;
       
       const headers = {
         "Content-Type": "application/json",
@@ -172,24 +185,54 @@ export default function GestionPreciosPage() {
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
       
+      console.log("🔍 [FRONTEND-GESTION] PreciosArray procesado - Total:", preciosArray.length);
+      
+      if (preciosArray.length > 0) {
+        console.log("🔍 [FRONTEND-GESTION] Primer registro completo:", preciosArray[0]);
+        console.log("🔍 [FRONTEND-GESTION] Claves del primer registro:", Object.keys(preciosArray[0]));
+        
+        // Mostrar todos los valores del primer registro
+        const primerRegistro = preciosArray[0];
+        console.log("🔍 [FRONTEND-GESTION] Todos los valores del primer registro:");
+        Object.keys(primerRegistro).forEach(key => {
+          console.log(`  - ${key}: ${primerRegistro[key]} (tipo: ${typeof primerRegistro[key]})`);
+        });
+      } else {
+        console.warn("⚠️ [FRONTEND-GESTION] No hay registros en preciosArray");
+      }
+      
       // Obtener fichas técnicas de productos (aunque no las mostremos, las obtenemos para mantener consistencia con la API)
       const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
       const fichasMap = await fetchFichasTecnicas(codigos);
       
       // Combinar fichas técnicas con los datos de precios (aunque no las mostremos)
+      // IMPORTANTE: Preservar el ID aunque no se muestre en la tabla
       const preciosConFichas = preciosArray.map(precio => {
         const codigo = precio.CODIGO || precio.codigo;
         const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
                      precio.FICHA_TECNICA || precio.ficha_tecnica;
         
+        // Asegurar que el ID esté presente en ambos formatos (mayúsculas y minúsculas)
+        const idValue = precio.ID || precio.id || precio.Id || precio._id;
+        
         return {
           ...precio,
+          // Preservar el ID en todos los formatos posibles
+          ID: idValue ? (typeof idValue === 'number' ? idValue : parseInt(idValue, 10)) : precio.ID,
+          id: idValue ? (typeof idValue === 'number' ? idValue : parseInt(idValue, 10)) : precio.id,
           FICHA_TECNICA_ENLACE: ficha,
           ficha_tecnica_enlace: ficha,
           FICHA_TECNICA: ficha,
           ficha_tecnica: ficha
         };
       });
+      
+      console.log("🔍 [FRONTEND-GESTION] Precios con fichas - Total:", preciosConFichas.length);
+      if (preciosConFichas.length > 0) {
+        console.log("🔍 [FRONTEND-GESTION] Primer registro final:", preciosConFichas[0]);
+      }
+      console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
+      console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
       
       return preciosConFichas;
     } catch (err) {
@@ -347,18 +390,37 @@ export default function GestionPreciosPage() {
       'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
       'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
       'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
-      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
+      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar', 'MEDIDA', 'medida', 'PRECIO', 'precio'
     ];
     
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
     
+    // Debug: mostrar qué campos hay disponibles
+    console.log("=== CAMPOS DISPONIBLES EN PRECIOS ===");
+    console.log("Primer registro:", firstRecord);
+    console.log("Todas las claves:", allKeys);
+    
     const priceColumns = allKeys
       .filter(key => {
         const keyUpper = key.toUpperCase();
-        return !excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase())) &&
-               (typeof firstRecord[key] === 'number' || 
-                (!isNaN(parseFloat(firstRecord[key])) && firstRecord[key] !== null && firstRecord[key] !== ''));
+        const isExcluded = excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()));
+        
+        // Incluir campos que contengan CAJA, DOCENA, PAR o UNIDAD seguido de un número
+        const isPriceField = /(CAJA|DOCENA|PAR|UNIDAD)\s*\d+/i.test(keyUpper);
+        
+        const value = firstRecord[key];
+        const isNumeric = typeof value === 'number' || 
+                         (!isNaN(parseFloat(value)) && value !== null && value !== '' && value !== undefined);
+        
+        // Si es un campo de precio (CAJA 1, DOCENA 1, etc.) o es numérico y no está excluido
+        const shouldInclude = !isExcluded && (isPriceField || isNumeric);
+        
+        if (shouldInclude) {
+          console.log(`✅ Incluyendo columna: ${key} = ${value} (tipo: ${typeof value})`);
+        }
+        
+        return shouldInclude;
       })
       .sort((a, b) => {
         const aUpper = a.toUpperCase();
@@ -381,6 +443,8 @@ export default function GestionPreciosPage() {
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
+    
+    console.log("Columnas de precio detectadas:", priceColumns);
     
     return priceColumns;
   }, [precios]);
@@ -418,6 +482,144 @@ export default function GestionPreciosPage() {
     setCurrentPage(1);
   }, [searchTerm, activeTab]);
 
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sugerenciasRef.current &&
+        !sugerenciasRef.current.contains(event.target) &&
+        productoInputRef.current &&
+        !productoInputRef.current.contains(event.target)
+      ) {
+        setMostrarSugerencias(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Función para obtener el token de autenticación
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token") || 
+             (user?.token || user?.accessToken || user?.access_token) || 
+             sessionStorage.getItem("token") || "";
+    }
+    return "";
+  };
+
+  // Función para cargar todos los productos desde la API
+  const cargarTodosLosProductos = async () => {
+    if (productosCargados) {
+      return; // Ya están cargados, no volver a cargar
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      return;
+    }
+
+    setBuscandoProductos(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Error 401: Token de autenticación inválido o expirado");
+        } else {
+          console.error(`Error ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(`Error al cargar productos: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Asegurarse de que data sea un array
+      const productos = Array.isArray(data) ? data : (data.data || []);
+      
+      setTodosLosProductos(productos);
+      setProductosCargados(true);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+    } finally {
+      setBuscandoProductos(false);
+    }
+  };
+
+  // Función para filtrar productos localmente
+  const buscarProductos = (termino) => {
+    if (!termino || termino.trim().length < 2) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    // Si no hay productos cargados, cargarlos primero
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos().then(() => {
+        // Después de cargar, filtrar con el término
+        filtrarProductos(termino);
+      });
+      return;
+    }
+
+    filtrarProductos(termino);
+  };
+
+  // Función para filtrar productos localmente
+  const filtrarProductos = (termino) => {
+    if (todosLosProductos.length === 0) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    const terminoLower = termino.toLowerCase().trim();
+    const productosFiltrados = todosLosProductos.filter(prod => {
+      const nombre = (prod.NOMBRE || prod.nombre || "").toLowerCase();
+      const codigo = (prod.CODIGO || prod.codigo || "").toLowerCase();
+      return nombre.includes(terminoLower) || codigo.includes(terminoLower);
+    });
+    
+    setSugerenciasProductos(productosFiltrados);
+    setMostrarSugerencias(productosFiltrados.length > 0);
+  };
+
+  // Manejar cuando el usuario enfoca el campo de producto
+  const handleProductoFocus = () => {
+    // Cargar productos si no están cargados
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos();
+    }
+    
+    // Si hay texto y sugerencias previas, mostrarlas
+    if (productoBusqueda && sugerenciasProductos.length > 0) {
+      setMostrarSugerencias(true);
+    }
+  };
+
+  // Seleccionar producto de las sugerencias
+  const seleccionarProducto = (productoItem) => {
+    const nombre = productoItem.NOMBRE || productoItem.nombre || "";
+    const codigo = productoItem.CODIGO || productoItem.codigo || "";
+    
+    setProductoBusqueda(nombre);
+    setFormData({ ...formData, NOMBRE: nombre, CODIGO: codigo });
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+  };
+
   const handleAgregar = () => {
     setModalType("create");
     setSelectedPrecio(null);
@@ -434,6 +636,9 @@ export default function GestionPreciosPage() {
       TEXTO_COPIAR: ""
     };
     setFormData(defaultFormData);
+    setProductoBusqueda("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
     setShowModal(true);
   };
 
@@ -451,25 +656,66 @@ export default function GestionPreciosPage() {
       return "";
     };
 
+    // Función para validar que un valor sea un ID numérico válido
+    const isValidId = (value) => {
+      if (value === null || value === undefined || value === "") return false;
+      // Convertir a número y verificar que sea un entero positivo
+      const num = typeof value === 'number' ? value : parseFloat(value);
+      return !isNaN(num) && num > 0 && Number.isInteger(num) && (typeof value !== 'string' || /^\d+$/.test(value.trim()));
+    };
+
     // Buscar ID en todas las variaciones posibles
     let idValue = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
     
+    // Validar que el ID encontrado sea numérico
+    if (idValue && !isValidId(idValue)) {
+      idValue = null; // Resetear si no es válido
+    }
+    
     // Si no se encuentra, buscar manualmente en todas las keys
-    if (!idValue || idValue === "") {
+    if (!idValue || !isValidId(idValue)) {
       const allKeys = Object.keys(precio);
+      console.log("=== BUSCANDO ID PARA ACTUALIZAR ===");
+      console.log("Precio completo:", JSON.stringify(precio, null, 2));
+      console.log("Todas las claves:", allKeys);
+      console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
+      
+      // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
       for (const key of allKeys) {
         const keyUpper = key.toUpperCase();
-        if ((keyUpper.includes("ID") || keyUpper === "ID") && 
+        if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
             !keyUpper.includes("CODIGO") && 
             !keyUpper.includes("CLASIFICACION")) {
           const value = precio[key];
-          if (value !== null && value !== undefined && value !== "") {
+          console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
+          if (isValidId(value)) {
             idValue = value;
             console.log(`✅ ID encontrado en campo: ${key} = ${idValue}`);
             break;
           }
         }
       }
+      
+      // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
+      if (!idValue || !isValidId(idValue)) {
+        for (const key of allKeys) {
+          const value = precio[key];
+          // Buscar valores numéricos que sean enteros positivos
+          if (typeof value === 'number' && value > 0 && Number.isInteger(value)) {
+            // Verificar que no sea un precio (no debe tener decimales grandes o ser muy grande)
+            if (value < 1000000) { // IDs normalmente no son tan grandes
+              idValue = value;
+              console.log(`✅ ID encontrado como número en campo: ${key} = ${idValue}`);
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Convertir a número si es string numérico
+    if (idValue && typeof idValue === 'string' && /^\d+$/.test(idValue.trim())) {
+      idValue = parseInt(idValue.trim(), 10);
     }
 
     console.log("=== DATOS DEL PRECIO PARA ACTUALIZAR ===");
@@ -477,13 +723,25 @@ export default function GestionPreciosPage() {
     console.log("ID encontrado:", idValue);
     console.log("Todos los campos:", Object.keys(precio));
 
+    // Validar que el ID esté presente antes de continuar
+    if (!idValue || !isValidId(idValue)) {
+      console.error("❌ ERROR: No se pudo obtener un ID válido del producto");
+      console.error("Precio recibido:", JSON.stringify(precio, null, 2));
+      setErrorMessage("Error: No se pudo obtener el ID del producto. Por favor, intente nuevamente.");
+      setShowErrorModal(true);
+      return;
+    }
+
     // Obtener el nombre - el backend devuelve el nombre en PRODUCTO
     // Priorizar PRODUCTO ya que es el campo que devuelve el backend
     const nombreValue = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
     
+    // Asegurar que el ID sea un número entero
+    const finalId = typeof idValue === 'number' ? idValue : parseInt(idValue, 10);
+    
     const formDataToSet = {
-      ID: idValue,
-      id: idValue, // También enviar como 'id' por si la API lo requiere
+      ID: finalId,
+      id: finalId, // También enviar como 'id' por si la API lo requiere
       CODIGO: getField(["CODIGO", "codigo"]),
       NOMBRE: nombreValue || "", // Si no hay nombre, usar string vacío
       UNIDAD_MEDIDA_VENTA: getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]) || "UNIDAD",
@@ -495,9 +753,13 @@ export default function GestionPreciosPage() {
       TEXTO_COPIAR: getField(["TEXTO_COPIAR", "texto_copiar", "textoCopiar"]) || ""
     };
     
-    console.log("FormData a enviar:", formDataToSet);
+    console.log("✅ FormData a enviar (con ID válido):", formDataToSet);
     
     setFormData(formDataToSet);
+    // Sincronizar el campo de búsqueda con el nombre del producto
+    setProductoBusqueda(nombreValue || "");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
     setShowModal(true);
   };
 
@@ -530,10 +792,73 @@ export default function GestionPreciosPage() {
         return null;
       };
 
-      const id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
+      // Función para validar que un valor sea un ID numérico válido
+      const isValidId = (value) => {
+        if (value === null || value === undefined || value === "") return false;
+        // Convertir a número y verificar que sea un entero positivo
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        return !isNaN(num) && num > 0 && Number.isInteger(num) && typeof value !== 'string' || (typeof value === 'string' && /^\d+$/.test(value.trim()));
+      };
+
+      // Buscar ID en todas las variaciones posibles
+      let id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
       
-      if (!id) {
-        alert("Error: No se pudo obtener el ID del producto para eliminar.");
+      // Validar que el ID encontrado sea numérico
+      if (id && !isValidId(id)) {
+        console.warn(`⚠️ ID encontrado pero no es válido: ${id} (tipo: ${typeof id})`);
+        id = null; // Resetear si no es válido
+      }
+      
+      // Si no se encuentra, buscar manualmente en todas las keys
+      if (!id || !isValidId(id)) {
+        const allKeys = Object.keys(precio);
+        console.log("=== BUSCANDO ID PARA ELIMINAR ===");
+        console.log("Precio completo:", JSON.stringify(precio, null, 2));
+        console.log("Todas las claves:", allKeys);
+        console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
+        
+        // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
+        for (const key of allKeys) {
+          const keyUpper = key.toUpperCase();
+          if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
+              !keyUpper.includes("CODIGO") && 
+              !keyUpper.includes("CLASIFICACION")) {
+            const value = precio[key];
+            console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
+            if (isValidId(value)) {
+              id = value;
+              console.log(`✅ ID encontrado en campo: ${key} = ${id}`);
+              break;
+            }
+          }
+        }
+        
+        // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
+        if (!id || !isValidId(id)) {
+          for (const key of allKeys) {
+            const value = precio[key];
+            if (typeof value === 'number' && value > 0 && Number.isInteger(value)) {
+              // Verificar que no sea un precio (valores muy grandes o decimales)
+              if (value < 1000000) { // IDs normalmente son menores a 1 millón
+                id = value;
+                console.log(`✅ ID encontrado como número en campo: ${key} = ${id}`);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Convertir a número si es string numérico
+      if (id && typeof id === 'string' && /^\d+$/.test(id.trim())) {
+        id = parseInt(id.trim(), 10);
+      }
+      
+      if (!id || !isValidId(id)) {
+        console.error("❌ No se pudo encontrar el ID en ningún campo");
+        console.error("Objeto completo:", precio);
+        setErrorMessage("Error: No se pudo obtener el ID del producto para eliminar. Por favor, verifique que el producto tenga un ID válido.");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
@@ -584,7 +909,8 @@ export default function GestionPreciosPage() {
       setPrecioToDelete(null);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      alert(`Error al eliminar el producto: ${error.message}`);
+      setErrorMessage(`Error al eliminar el producto: ${error.message}`);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -605,26 +931,31 @@ export default function GestionPreciosPage() {
       // Validar que los campos requeridos estén presentes
       // Para crear, NOMBRE es requerido; para actualizar, no es necesario porque está deshabilitado
       if (!formData.CODIGO) {
-        alert("Por favor complete todos los campos requeridos");
+        setErrorMessage("Por favor complete todos los campos requeridos");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
       
       if (modalType === "create" && !formData.NOMBRE) {
-        alert("Por favor complete todos los campos requeridos");
+        setErrorMessage("Por favor complete todos los campos requeridos");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
 
       // Para actualizar, asegurarse de que el ID esté presente
       if (modalType === "update" && !formData.ID && !formData.id) {
-        alert("Error: No se pudo obtener el ID del producto. Por favor, intente nuevamente.");
+        setErrorMessage("Error: No se pudo obtener el ID del producto. Por favor, intente nuevamente.");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
 
-      const apiUrl = `/api/franja-precios`;
+      // Construir la URL con el método correcto
       const method = modalType === "create" ? "POST" : "PUT";
+      const apiMethod = modalType === "create" ? "CREAR_FRANJA_PRECIO" : "ACTUALIZAR_FRANJA_PRECIO";
+      const apiUrl = `/api/franja-precios?method=${apiMethod}&id=${encodeURIComponent(activeTab)}`;
       
       // Preparar el body con todos los datos necesarios
       const textoCopiarValue = formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "";
@@ -658,14 +989,16 @@ export default function GestionPreciosPage() {
 
       // Validar campos críticos
       if (!requestBody.CODIGO || requestBody.CODIGO === "") {
-        alert("Error: El campo Código es requerido");
+        setErrorMessage("Error: El campo Código es requerido");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
 
       // Solo validar NOMBRE si es creación; en actualización puede estar vacío si el producto no existe en la tabla productos
       if (modalType === "create" && (!requestBody.NOMBRE || requestBody.NOMBRE === "")) {
-        alert("Error: El campo Nombre es requerido");
+        setErrorMessage("Error: El campo Nombre es requerido");
+        setShowErrorModal(true);
         setSaving(false);
         return;
       }
@@ -686,8 +1019,45 @@ export default function GestionPreciosPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `Error ${response.status}` }));
-        throw new Error(errorData.error || `Error al ${modalType === "create" ? "crear" : "actualizar"} el producto`);
+        let errorMessage = `Error al ${modalType === "create" ? "crear" : "actualizar"} el producto`;
+        try {
+          const errorText = await response.text();
+          // Intentar parsear como JSON
+          try {
+            const errorData = JSON.parse(errorText);
+            // El backend puede devolver el error en diferentes formatos
+            let extractedError = errorData.error || 
+                                errorData.message || 
+                                errorData.details;
+            
+            // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+            if (typeof extractedError === 'number') {
+              if (extractedError === 0) {
+                extractedError = "Error desconocido. Verifique que todos los campos estén completos.";
+              } else {
+                extractedError = `Error ${extractedError}`;
+              }
+            }
+            
+            // Si el error es un string vacío o solo espacios, usar el mensaje por defecto
+            if (extractedError && typeof extractedError === 'string' && extractedError.trim()) {
+              errorMessage = extractedError;
+            } else if (!extractedError) {
+              errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+            }
+          } catch (jsonError) {
+            // Si no es JSON, usar el texto directamente si tiene contenido
+            if (errorText && errorText.trim()) {
+              errorMessage = errorText;
+            } else {
+              errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+            }
+          }
+        } catch (parseError) {
+          // Si no se puede leer la respuesta, usar el mensaje por defecto
+          errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+        }
+        throw new Error(errorMessage);
       }
 
       // Recargar los datos de la tabla activa
@@ -721,6 +1091,9 @@ export default function GestionPreciosPage() {
       }
       
       setShowModal(false);
+      setProductoBusqueda("");
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
       
       // Mostrar notificación de éxito
       setNotification({ 
@@ -733,7 +1106,8 @@ export default function GestionPreciosPage() {
       }, 2000);
     } catch (error) {
       console.error(`Error al ${modalType === "create" ? "crear" : "actualizar"}:`, error);
-      alert(`Error al ${modalType === "create" ? "crear" : "actualizar"} el producto: ${error.message}`);
+      setErrorMessage(`Error al ${modalType === "create" ? "crear" : "actualizar"} el producto: ${error.message}`);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -837,49 +1211,60 @@ export default function GestionPreciosPage() {
               ) : (
                 <>
                   <div className="mb-4">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Buscar por código o nombre de producto..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
-                      />
-                      <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          placeholder="Buscar por código o nombre de producto..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                         />
-                      </svg>
-                      {searchTerm && (
-                        <button
-                          onClick={() => setSearchTerm("")}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        <svg
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      )}
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleAgregar}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Agregar Producto
+                      </button>
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                       {searchTerm && (
                         <p className="text-xs text-gray-500">
                           Mostrando {preciosFiltrados.length} de {precios.length} productos
@@ -894,15 +1279,15 @@ export default function GestionPreciosPage() {
                               setItemsPerPage(Number(e.target.value));
                               setCurrentPage(1);
                             }}
-                            className="px-4 py-2 border-2 border-gray-300 rounded-lg text-xs font-semibold text-gray-900 bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md appearance-none pr-8 min-w-[80px]"
+                            className="px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md appearance-none pr-10 min-w-[100px] bg-gradient-to-br from-white to-gray-50"
                           >
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                            <option value={200}>200</option>
+                            <option value={25} className="bg-white text-gray-900 py-2 font-medium">25</option>
+                            <option value={50} className="bg-white text-gray-900 py-2 font-medium">50</option>
+                            <option value={100} className="bg-white text-gray-900 py-2 font-medium">100</option>
+                            <option value={200} className="bg-white text-gray-900 py-2 font-medium">200</option>
                           </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
@@ -1027,16 +1412,7 @@ export default function GestionPreciosPage() {
                         </table>
                       </div>
                       
-                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                        <button
-                          onClick={handleAgregar}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                          </svg>
-                          Agregar
-                        </button>
+                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-end border-t-2 border-slate-300">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setCurrentPage(1)}
@@ -1084,7 +1460,12 @@ export default function GestionPreciosPage() {
       {showModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowModal(false)}
+          onClick={() => {
+            setShowModal(false);
+            setProductoBusqueda("");
+            setSugerenciasProductos([]);
+            setMostrarSugerencias(false);
+          }}
         >
           <div
             className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
@@ -1107,7 +1488,12 @@ export default function GestionPreciosPage() {
                 </h2>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setProductoBusqueda("");
+                  setSugerenciasProductos([]);
+                  setMostrarSugerencias(false);
+                }}
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1120,65 +1506,108 @@ export default function GestionPreciosPage() {
             <div className="flex-1 overflow-y-auto px-6 py-4">
 
               <div className="space-y-4">
+                {/* Nombre del Producto - ARRIBA */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Código <span className="text-red-500">*</span>
+                    Nombre del Producto
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={productoInputRef}
+                      type="text"
+                      value={productoBusqueda || formData.NOMBRE || ""}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setProductoBusqueda(valor);
+                        setFormData({ ...formData, NOMBRE: valor });
+                        buscarProductos(valor);
+                      }}
+                      onFocus={handleProductoFocus}
+                      disabled={modalType === "update"}
+                      readOnly={modalType === "update"}
+                      className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
+                        modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
+                      }`}
+                      required={modalType === "create"}
+                      placeholder={modalType === "update" ? "El nombre no se puede editar" : "Escribe el nombre del producto..."}
+                    />
+                    {buscandoProductos && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <svg className="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                    {mostrarSugerencias && sugerenciasProductos.length > 0 && modalType === "create" && (
+                      <div
+                        ref={sugerenciasRef}
+                        className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {sugerenciasProductos.map((prod, index) => (
+                          <button
+                            key={prod.ID || prod.id || index}
+                            type="button"
+                            onClick={() => seleccionarProducto(prod)}
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="text-sm font-medium text-gray-900">
+                              {prod.NOMBRE || prod.nombre}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Código: {prod.CODIGO || prod.codigo}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Código - ABAJO (siempre bloqueado, solo lectura) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Código
                   </label>
                   <input
                     type="text"
                     value={formData.CODIGO || ""}
-                    onChange={(e) => setFormData({ ...formData, CODIGO: e.target.value })}
-                    readOnly={modalType === "update"}
-                    className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
-                      modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
-                    }`}
+                    readOnly={true}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
                     required
                   />
                   {/* Input hidden para asegurar que el CODIGO se envíe incluso si está readonly */}
-                  {modalType === "update" && (
-                    <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nombre del Producto {modalType === "create" && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.NOMBRE || ""}
-                    onChange={(e) => setFormData({ ...formData, NOMBRE: e.target.value })}
-                    disabled={modalType === "update"}
-                    readOnly={modalType === "update"}
-                    className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
-                      modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
-                    }`}
-                    required={modalType === "create"}
-                    placeholder={modalType === "update" ? "El nombre no se puede editar" : ""}
-                  />
+                  <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Unidad de Medida Venta <span className="text-red-500">*</span>
+                      Unidad de Medida Venta
                     </label>
-                    <select
-                      value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
-                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
-                      required
-                    >
-                      <option value="UNIDAD">UNIDAD</option>
-                      <option value="DOCENA">DOCENA</option>
-                      <option value="CAJA">CAJA</option>
-                      <option value="PAR">PAR</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Cantidad Unidad Medida Venta <span className="text-red-500">*</span>
+                      Cantidad Unidad Medida Venta
                     </label>
                     <input
                       type="number"
@@ -1201,7 +1630,7 @@ export default function GestionPreciosPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Precio Unidad Medida Venta <span className="text-red-500">*</span>
+                    Precio Unidad Medida Venta
                   </label>
                   <input
                     type="number"
@@ -1225,19 +1654,26 @@ export default function GestionPreciosPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Unidad de Medida Caja <span className="text-red-500">*</span>
+                      Unidad de Medida Caja
                     </label>
-                    <select
-                      value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
-                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
-                      required
-                    >
-                      <option value="UNIDAD">UNIDAD</option>
-                      <option value="DOCENA">DOCENA</option>
-                      <option value="CAJA">CAJA</option>
-                      <option value="PAR">PAR</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -1261,13 +1697,32 @@ export default function GestionPreciosPage() {
                     />
                   </div>
                 </div>
+
+                {/* Texto a copiar */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Texto a copiar
+                  </label>
+                  <textarea
+                    value={formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || ""}
+                    onChange={(e) => setFormData({ ...formData, TEXTO_COPIAR: e.target.value, texto_copiar: e.target.value, textoCopiar: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300 resize-y"
+                    placeholder="Escribe el texto que se copiará para este producto..."
+                  />
+                </div>
               </div>
             </div>
 
             {/* Footer con botones */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200/60 bg-gray-50/50">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setProductoBusqueda("");
+                  setSugerenciasProductos([]);
+                  setMostrarSugerencias(false);
+                }}
                 className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm shadow-sm"
                 disabled={saving}
               >
@@ -1395,6 +1850,61 @@ export default function GestionPreciosPage() {
                     Eliminar
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Error */}
+      {showErrorModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowErrorModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-xl border border-gray-200/60 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-red-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Error
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="px-6 py-5">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                {errorMessage}
+              </p>
+            </div>
+
+            {/* Footer con botón */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200/60 bg-gray-50/50">
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="px-6 py-2.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold transition-all duration-200 text-sm shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Aceptar
               </button>
             </div>
           </div>

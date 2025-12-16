@@ -7,6 +7,8 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 // Componente de Select personalizado con dropdown compacto
 const CompactSelect = ({ value, onChange, options, placeholder, disabled = false }) => {
@@ -58,13 +60,19 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between"
+        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between transition-all ${
+          isOpen 
+            ? 'border-blue-500 shadow-md' 
+            : 'border-gray-300 hover:border-blue-300'
+        } ${disabled ? 'border-gray-200' : ''}`}
       >
-        <span className={`${selectedOption ? "text-gray-900" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis`}>
+        <span className={`${selectedOption ? "text-gray-900 font-medium" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis uppercase`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${
+            isOpen ? 'transform rotate-180' : ''
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -74,24 +82,28 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
       </button>
       {isOpen && (
         <div
-          className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden ${
+          className={`absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl overflow-hidden ${
             openUpward ? 'bottom-full mb-1' : 'top-full'
           }`}
-          style={{ maxHeight: '180px', overflowY: 'auto' }}
+          style={{ maxHeight: '200px', overflowY: 'auto' }}
         >
-          {options.map((option) => (
+          {options.map((option, index) => (
             <button
-              key={option.value}
+              key={option.value || index}
               type="button"
               onClick={() => handleSelect(option.value)}
-              className={`w-full px-3 py-1.5 text-xs text-left hover:bg-blue-50 transition-colors ${
+              className={`w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${
                 value === option.value
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'text-gray-900'
-              }`}
-              style={{ lineHeight: '1.3' }}
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'text-gray-900 hover:bg-blue-50'
+              } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              style={{ 
+                lineHeight: '1.4'
+              }}
             >
-              {option.label}
+              <span className={value === option.value ? 'uppercase' : ''}>
+                {option.label}
+              </span>
             </button>
           ))}
         </div>
@@ -182,6 +194,7 @@ export default function CotizacionesPage() {
       setCargandoRegiones(true);
       try {
         const response = await fetch("/api/regiones");
+        await handleApiResponse(response);
         if (!response.ok) {
           throw new Error("Error al cargar regiones");
         }
@@ -191,6 +204,9 @@ export default function CotizacionesPage() {
         }
       } catch (error) {
         console.error("Error al cargar regiones:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
       } finally {
         setCargandoRegiones(false);
       }
@@ -211,6 +227,7 @@ export default function CotizacionesPage() {
       setCargandoDistritos(true);
       try {
         const response = await fetch(`/api/distritos?id_region=${encodeURIComponent(region)}`);
+        await handleApiResponse(response);
         if (!response.ok) {
           throw new Error("Error al cargar distritos");
         }
@@ -224,6 +241,9 @@ export default function CotizacionesPage() {
         setDistrito("");
       } catch (error) {
         console.error("Error al cargar distritos:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
         setDistritos([]);
       } finally {
         setCargandoDistritos(false);
@@ -282,6 +302,18 @@ export default function CotizacionesPage() {
     return "";
   };
 
+  // Función helper para manejar respuestas de API y redirigir al login si el token expiró
+  const handleApiResponse = async (response) => {
+    // Si el token expiró (401), redirigir al login
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      router.push("/login");
+      throw new Error("Token expirado. Por favor, inicie sesión nuevamente.");
+    }
+    return response;
+  };
+
   // Función para cargar todos los productos desde la API
   const cargarTodosLosProductos = async () => {
     if (productosCargados) {
@@ -306,14 +338,11 @@ export default function CotizacionesPage() {
         }
       });
       
+      await handleApiResponse(response);
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          console.error("Error 401: Token de autenticación inválido o expirado");
-          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
-        } else {
-          console.error(`Error ${response.status}: ${response.statusText}`);
-          alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
-        }
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
         throw new Error(`Error al cargar productos: ${response.status}`);
       }
 
@@ -430,14 +459,11 @@ export default function CotizacionesPage() {
         }
       });
       
+      await handleApiResponse(response);
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          console.error("Error 401: Token de autenticación inválido o expirado");
-          alert("Error de autenticación: El token ha expirado o es inválido. Por favor, verifique el token de autenticación.");
-        } else {
-          console.error(`Error ${response.status}: ${response.statusText}`);
-          alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
-        }
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
         throw new Error(`Error al obtener precios: ${response.status}`);
       }
 
@@ -467,10 +493,16 @@ export default function CotizacionesPage() {
 
   // Seleccionar precio del modal
   const seleccionarPrecio = (precioItem) => {
-    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || 0;
-    setPrecioVenta(precio.toString());
+    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || precioItem.PRECIO || 0;
+    const precioNum = parseFloat(precio) || 0;
+    console.log("Precio seleccionado:", precioNum, "de item:", precioItem); // Debug
+    setPrecioVenta(precioNum.toString());
     setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
     setModalPreciosAbierto(false);
+    
+    // Recalcular total inmediatamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    setTotal(cantidadNum * precioNum);
   };
 
   // Función para buscar RUC
@@ -498,6 +530,8 @@ export default function CotizacionesPage() {
         },
         body: JSON.stringify({ ruc: rucTrimmed }),
       });
+
+      await handleApiResponse(response);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
@@ -631,17 +665,28 @@ export default function CotizacionesPage() {
       return;
     }
 
+    // Asegurarse de que el precio sea un número válido
+    const precioNum = parseFloat(precioVenta) || 0;
+    if (precioNum <= 0) {
+      alert("El precio debe ser mayor a 0");
+      return;
+    }
+
+    // Calcular subtotal correctamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    const subtotalCalculado = cantidadNum * precioNum;
+
     const nuevoProducto = {
       id: Date.now(),
-      cantidad: cantidad,
+      cantidad: cantidadNum,
       unidad: unidadMedida || "UN",
       codigo: codigo,
       producto: producto,
-      precioUnit: parseFloat(precioVenta),
-      subtotal: total
+      precioUnit: precioNum,
+      subtotal: subtotalCalculado
     };
 
-    
+    console.log("Agregando producto:", nuevoProducto); // Debug
 
     setProductosLista([...productosLista, nuevoProducto]);
     
@@ -674,10 +719,18 @@ export default function CotizacionesPage() {
     // Primero guardar la cotización en la base de datos para obtener el código
     let numeroCotizacion = '';
     try {
+      // Obtener el token de autenticación
+      const token = getAuthToken();
+      if (!token) {
+        alert('Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.');
+        return;
+      }
+
       const response = await fetch('/api/cotizaciones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           nombre_cliente: cliente || '',
@@ -688,6 +741,8 @@ export default function CotizacionesPage() {
           atendido_por: atendidoPor || ''
         }),
       });
+
+      await handleApiResponse(response);
 
       const data = await response.json();
       
@@ -710,15 +765,102 @@ export default function CotizacionesPage() {
       return;
     }
 
-    // Generar el HTML del PDF - Exactamente como el código original con botón de descarga
-    const pdfHTML = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotización Zeus Safety</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    // Función para generar PDF desde imagen
+    const generarPDFDesdeImagen = async (numeroCotizacion) => {
+      try {
+        // Crear un elemento temporal para renderizar la cotización
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '900px'; // Ancho aumentado para que se vea más ancho
+        tempDiv.style.maxWidth = 'none';
+        tempDiv.style.padding = '15px 20px';
+        tempDiv.style.backgroundColor = 'white';
+        tempDiv.style.fontFamily = 'Arial, Helvetica, sans-serif';
+        tempDiv.className = 'page-container';
+        
+        // Generar el HTML de la cotización
+        const cotizacionHTML = generarHTMLCotizacion(numeroCotizacion);
+        tempDiv.innerHTML = cotizacionHTML;
+        document.body.appendChild(tempDiv);
+
+        // Esperar a que las imágenes carguen
+        const images = tempDiv.querySelectorAll('img');
+        const imagePromises = Array.from(images).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        });
+        
+        await Promise.all(imagePromises);
+        
+        // Esperar un poco más para que se renderice completamente
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Generar imagen con html2canvas
+        const canvas = await html2canvas(tempDiv, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          letterRendering: true,
+          allowTaint: false,
+          scrollX: 0,
+          scrollY: 0,
+          width: tempDiv.scrollWidth,
+          height: tempDiv.scrollHeight
+        });
+
+        // Convertir canvas a imagen
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        
+        // Crear PDF con jsPDF
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+
+        // Calcular dimensiones para que quepa en A4
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // en mm
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // en mm
+        const margin = 10; // margen en mm
+        
+        // Convertir píxeles a mm (asumiendo 96 DPI: 1 pulgada = 25.4mm, 96px = 25.4mm)
+        const pxToMm = 25.4 / 96;
+        const imgWidthMm = (canvas.width * pxToMm) / 2; // dividir por 2 porque scale es 2
+        const imgHeightMm = (canvas.height * pxToMm) / 2;
+        
+        // Calcular ratio para que quepa en la página
+        const availableWidth = pdfWidth - (margin * 2);
+        const availableHeight = pdfHeight - (margin * 2);
+        const ratio = Math.min(availableWidth / imgWidthMm, availableHeight / imgHeightMm);
+        
+        const imgWidthFinal = imgWidthMm * ratio;
+        const imgHeightFinal = imgHeightMm * ratio;
+
+        // Agregar imagen al PDF centrada
+        const xOffset = (pdfWidth - imgWidthFinal) / 2;
+        const yOffset = margin;
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidthFinal, imgHeightFinal);
+
+        // Descargar PDF
+        pdf.save(`Cotizacion_${numeroCotizacion}.pdf`);
+
+        // Limpiar elemento temporal
+        document.body.removeChild(tempDiv);
+      } catch (error) {
+        console.error('Error al generar PDF:', error);
+        alert('Error al generar el PDF. Por favor, intente nuevamente.');
+      }
+    };
+
+    // Función para generar el HTML de la cotización (solo el contenido, sin scripts)
+    const generarHTMLCotizacion = (numeroCotizacion) => {
+      return `
     <style>
         /* Botón de descarga */
         .download-button-container {
@@ -755,23 +897,31 @@ export default function CotizacionesPage() {
         }
         /* Configuración General */
         /* Configuración General */
+        * {
+            color: #000000 !important;
+        }
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 5px;
             background-color: #f0f0f0;
             display: flex;
             justify-content: center;
-            min-width: 960px; /* Ancho mínimo para centrar correctamente */
+            min-width: 100%;
+            width: 100%;
+            max-width: none;
+            color: #000000;
         }
         .page-container {
             background-color: white;
-            width: 700px; /* Ancho reducido para que quepa mejor en A4 */
+            width: 900px; /* Ancho aumentado para que se vea más ancho */
+            max-width: none;
             margin: 0 auto;
-            padding: 30px;
+            padding: 15px 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
+            color: #000000;
         }
         /* --- Header --- */
         header {
@@ -794,12 +944,14 @@ export default function CotizacionesPage() {
             font-size: 11px;
             line-height: 1.4;
             padding-top: 5px;
+            color: #000000;
         }
         .company-name {
             font-weight: bold;
             font-size: 15px;
             margin-bottom: 5px;
             display: block;
+            color: #000000;
         }
         .ruc-box {
             width: 25%;
@@ -831,12 +983,15 @@ export default function CotizacionesPage() {
             font-weight: bold;
             margin-bottom: 15px;
             line-height: 1.8;
+            color: #000000;
         }
         .client-left {
             width: 60%;
+            color: #000000;
         }
         .client-right {
             width: 35%;
+            color: #000000;
         }
         /* --- Tablas Generales --- */
         table {
@@ -849,15 +1004,18 @@ export default function CotizacionesPage() {
             border: 1px solid #000; /* Bordes negros sólidos */
             padding: 4px 5px;
             text-align: center;
+            color: #000000;
         }
         /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
         .meta-table th {
             background-color: #5b9bd5;
             font-weight: bold;
             text-transform: uppercase;
+            color: #ffffff;
         }
         .meta-table td {
             height: 20px; /* Altura vacía */
+            color: #000000;
         }
         /* Espaciador */
         .spacer {
@@ -867,9 +1025,13 @@ export default function CotizacionesPage() {
         .product-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
+            color: #ffffff;
         }
         .product-table tr {
             height: 22px; /* Altura de filas vacías */
+        }
+        .product-table td {
+            color: #000000;
         }
         /* Column widths para imitar la imagen */
         .col-cant { width: 8%; }
@@ -896,22 +1058,26 @@ export default function CotizacionesPage() {
             font-size: 12px;
             border-right: 1px solid #000;
             flex-grow: 1;
+            color: #000000;
         }
         .total-value {
             width: 95px;
             padding: 5px;
+            color: #000000;
         }
         /* --- Tabla de Bancos --- */
         .bank-table th {
             background-color: #5b9bd5;
             text-transform: uppercase;
             font-size: 10px;
+            color: #ffffff;
         }
         .bank-table td {
             font-size: 9px;
             border: none; /* La imagen parece tener bordes internos sutiles o solo filas, pero pondré bordes estándar para mantener estructura */
             border-bottom: 1px solid #ccc;
             padding: 3px;
+            color: #000000;
         }
         .bank-table {
             border: 1px solid #000;
@@ -1097,107 +1263,11 @@ export default function CotizacionesPage() {
             </div>
         </footer>
     </div>
-    <!-- Botón de descarga -->
-    <div class="download-button-container">
-        <button class="download-button" id="downloadBtn" onclick="descargarPDF()">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Descargar PDF
-        </button>
-    </div>
-    <script>
-        function descargarPDF() {
-            const btn = document.getElementById('downloadBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...';
-            
-            // Esperar a que las imágenes carguen
-            const images = document.querySelectorAll('img');
-            const imagePromises = Array.from(images).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise((resolve) => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
-            });
-            
-            Promise.all(imagePromises).then(() => {
-                setTimeout(() => {
-                    const pageContainer = document.querySelector('.page-container');
-                    if (!pageContainer) {
-                        alert('Error: No se pudo encontrar el contenido del PDF.');
-                        btn.disabled = false;
-                        btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                        return;
-                    }
-                    
-                    const numeroCotizacion = '${numeroCotizacion}';
-                    // Ocultar el botón de descarga antes de generar el PDF
-                    const downloadBtn = document.getElementById('downloadBtn');
-                    downloadBtn.style.display = 'none';
-                    
-                    const opt = {
-                        margin: [10, 10, 10, 10], // Márgenes iguales
-                        filename: 'Cotizacion_' + numeroCotizacion + '.pdf',
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { 
-                            scale: 2,
-                            useCORS: true,
-                            logging: false,
-                            backgroundColor: '#ffffff',
-                            letterRendering: true,
-                            allowTaint: false,
-                            scrollX: 0,
-                            scrollY: 0
-                        },
-                        jsPDF: { 
-                            unit: 'mm', 
-                            format: 'a4', 
-                            orientation: 'portrait',
-                            compress: true
-                        },
-                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                    };
-                    
-                    html2pdf()
-                        .set(opt)
-                        .from(pageContainer)
-                        .save()
-                        .then(() => {
-                            // Mostrar el botón de nuevo
-                            downloadBtn.style.display = 'flex';
-                            btn.disabled = false;
-                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ¡Descargado!';
-                            setTimeout(() => {
-                                btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                            }, 2000);
-                        })
-                        .catch((error) => {
-                            console.error('Error al guardar PDF:', error);
-                            // Mostrar el botón de nuevo en caso de error
-                            downloadBtn.style.display = 'flex';
-                            alert('Error al generar el PDF. Por favor, intente nuevamente.');
-                            btn.disabled = false;
-                            btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF';
-                        });
-                }, 500);
-            });
-        }
-    </script>
-</body>
-</html>
-    `;
+      `;
+    };
 
-
-    // Abrir una nueva ventana con el HTML de la cotización
-    const nuevaVentana = window.open('', '_blank');
-    if (nuevaVentana) {
-      nuevaVentana.document.write(pdfHTML);
-      nuevaVentana.document.close();
-    } else {
-      alert('Por favor, permite las ventanas emergentes para ver la cotización.');
-    }
+    // Generar y descargar el PDF directamente
+    await generarPDFDesdeImagen(numeroCotizacion);
   };
 
   if (loading) {
@@ -1377,7 +1447,7 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">FORMA DE PAGO</label>
-                  <select
+                  <CompactSelect
                     value={formaPago}
                     onChange={(e) => setFormaPago(e.target.value)}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
@@ -1434,7 +1504,7 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">MONEDA</label>
-                  <select
+                  <CompactSelect
                     value={moneda}
                     onChange={(e) => setMoneda(e.target.value)}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
@@ -1446,18 +1516,19 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">ATENDIDO POR</label>
-                  <select
+                  <CompactSelect
                     value={atendidoPor}
                     onChange={(e) => setAtendidoPor(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione un asesor</option>
-                    <option value="HERVIN-9447673667" className="text-gray-900">HERVIN-9447673667</option>
-                    <option value="KIMBERLY-987560590" className="text-gray-900">KIMBERLY-987560590</option>
-                    <option value="ALVARO-935447178" className="text-gray-900">ÁLVARO-935447178</option>
-                    <option value="KRISTEL-916532849" className="text-gray-900">CRISTEL-916532849</option>
-                    <option value="ZEUS-908917879" className="text-gray-900">ZEUS-908917879</option>
-                  </select>
+                    placeholder="Seleccione un asesor"
+                    options={[
+                      { value: "", label: "Seleccione un asesor" },
+                      { value: "HERVIN-9447673667", label: "HERVIN-9447673667" },
+                      { value: "KIMBERLY-987560590", label: "KIMBERLY-987560590" },
+                      { value: "ALVARO-935447178", label: "ÁLVARO-935447178" },
+                      { value: "KRISTEL-916532849", label: "CRISTEL-916532849" },
+                      { value: "ZEUS-908917879", label: "ZEUS-908917879" }
+                    ]}
+                  />
                 </div>
               </div>
               </div>
@@ -1524,17 +1595,18 @@ export default function CotizacionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">CLASIFICACIÓN:</label>
-                  <select
+                  <CompactSelect
                     value={clasificacion}
                     onChange={handleClasificacionChange}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  >
-                    <option value="" className="text-gray-500">Seleccione clasificación</option>
-                    <option value="MALVINAS" className="text-gray-900">MALVINAS</option>
-                    <option value="FERRETERIA" className="text-gray-900">FERRETERIA</option>
-                    <option value="PROVINCIA" className="text-gray-900">PROVINCIA</option>
-                    <option value="CLIENTES FINALES" className="text-gray-900">CLIENTES FINALES</option>
-                  </select>
+                    placeholder="Seleccione clasificación"
+                    options={[
+                      { value: "", label: "Seleccione clasificación" },
+                      { value: "MALVINAS", label: "MALVINAS" },
+                      { value: "FERRETERIA", label: "FERRETERIA" },
+                      { value: "PROVINCIA", label: "PROVINCIA" },
+                      { value: "CLIENTES FINALES", label: "CLIENTES FINALES" }
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad:</label>
@@ -1639,31 +1711,31 @@ export default function CotizacionesPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO UNIT.</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">SUBTOTAL</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO UNIT.</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">SUBTOTAL</th>
+                          <th className="px-3 py-2.5 text-center text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {productosLista.map((prod) => (
                           <tr key={prod.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{prod.cantidad}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{prod.unidad}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{prod.codigo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{prod.producto}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {prod.precioUnit.toFixed(2)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-semibold">S/ {prod.subtotal.toFixed(2)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.cantidad}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.unidad}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.codigo}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.producto}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">S/ {(prod.precioUnit || 0).toFixed(2)}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700 font-semibold">S/ {(prod.subtotal || 0).toFixed(2)}</td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center">
                                 <button
                                   onClick={() => handleEliminarProducto(prod.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[11px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                   <span>Eliminar</span>
@@ -1675,9 +1747,9 @@ export default function CotizacionesPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-slate-200 px-3 py-2.5 flex items-center justify-between border-t-2 border-slate-300">
                     <div></div>
-                    <p className="text-[10px] font-medium text-gray-700">
+                    <p className="text-[11px] font-bold text-gray-900">
                       TOTAL: S/ {totalGeneral.toFixed(2)}
                     </p>
                   </div>

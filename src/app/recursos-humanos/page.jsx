@@ -32,41 +32,90 @@ function RecursosHumanosContent() {
   const [datosEditables, setDatosEditables] = useState([]);
   const [savingDatos, setSavingDatos] = useState(false);
   const [errorSavingDatos, setErrorSavingDatos] = useState(null);
+  const [loadingMedios, setLoadingMedios] = useState(false);
+  const [mediosComunicacion, setMediosComunicacion] = useState([]); // Array con IDs de la BD
 
-  // Inicializar datosEditables cuando se abre el modal
+  // Función para obtener el ID del colaborador
+  const getColaboradorId = (colaborador) => {
+    const getValue = (obj, keys) => {
+      for (const key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+          return obj[key];
+        }
+      }
+      return null;
+    };
+    return getValue(colaborador, ["id", "ID", "Id", "_id", "ID_PERSONA", "id_persona", "ID_COLABORADOR", "id_colaborador"]);
+  };
+
+  // Función para cargar medios de comunicación desde la API
+  const fetchMediosComunicacion = useCallback(async (colaboradorId) => {
+    try {
+      setLoadingMedios(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      const response = await fetch(`/api/medios-comunicacion?id_colaborador=${colaboradorId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const mediosArray = Array.isArray(data) ? data : [];
+      
+      // Guardar medios con IDs de la BD
+      setMediosComunicacion(mediosArray);
+      
+      // Mapear a formato para datosEditables
+      const datosMapeados = mediosArray.map(medio => ({
+        ID: medio.ID || medio.id,
+        id: medio.ID || medio.id,
+        NOMBRE: medio.NOMBRE || medio.nombre || "",
+        nombre: medio.NOMBRE || medio.nombre || "",
+        MEDIO: medio.MEDIO || medio.medio || "CORREO",
+        medio: medio.MEDIO || medio.medio || "CORREO",
+        TIPO: medio.TIPO || medio.tipo || "",
+        tipo: medio.TIPO || medio.tipo || "",
+        CONTENIDO: medio.CONTENIDO || medio.contenido || "",
+        contenido: medio.CONTENIDO || medio.contenido || "",
+      }));
+      
+      setDatosEditables(datosMapeados);
+    } catch (error) {
+      console.error("Error al cargar medios de comunicación:", error);
+      setMediosComunicacion([]);
+      setDatosEditables([]);
+    } finally {
+      setLoadingMedios(false);
+    }
+  }, []);
+
+  // Cargar medios de comunicación cuando se abre el modal
   useEffect(() => {
     if (isVerDetallesModalOpen && selectedColaboradorCompleto) {
-      const getValue = (obj, keys) => {
-        for (const key of keys) {
-          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-            return obj[key];
-          }
-        }
-        return null;
-      };
-      
-      const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
-      let datosArray = null;
-      
-      if (typeof datosField === "string") {
-        try {
-          datosArray = JSON.parse(datosField);
-        } catch (e) {
-          console.error("Error al parsear DATOS:", e);
-        }
-      } else if (Array.isArray(datosField)) {
-        datosArray = datosField;
-      }
-      
-      if (datosArray && Array.isArray(datosArray)) {
-        setDatosEditables(datosArray);
+      const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
+      if (colaboradorId) {
+        fetchMediosComunicacion(colaboradorId);
       } else {
         setDatosEditables([]);
+        setMediosComunicacion([]);
       }
     } else {
       setDatosEditables([]);
+      setMediosComunicacion([]);
     }
-  }, [isVerDetallesModalOpen, selectedColaboradorCompleto]);
+  }, [isVerDetallesModalOpen, selectedColaboradorCompleto, fetchMediosComunicacion]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -506,8 +555,8 @@ function RecursosHumanosContent() {
     }
   }, [loading, user, activeSection, fetchColaboradores]);
 
-  // Función para guardar los datos de medios de comunicación
-  const handleGuardarDatos = async () => {
+  // Función para agregar un medio de comunicación
+  const handleAgregarMedio = async (nuevoMedio) => {
     if (!selectedColaboradorCompleto) return;
 
     try {
@@ -519,32 +568,76 @@ function RecursosHumanosContent() {
         throw new Error("No se encontró el token de autenticación");
       }
 
-      // Obtener el ID del colaborador
-      const getValue = (obj, keys) => {
-        for (const key of keys) {
-          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-            return obj[key];
-          }
-        }
-        return null;
-      };
-
-      const colaboradorId = getValue(selectedColaboradorCompleto, ["id", "ID", "Id", "_id", "ID_COLABORADOR", "id_colaborador"]);
-
+      const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
       if (!colaboradorId) {
         throw new Error("No se pudo obtener el ID del colaborador");
       }
 
-      // Preparar los datos actualizados
-      const datosActualizados = {
-        ...selectedColaboradorCompleto,
-        DATOS: datosEditables,
-        datos: datosEditables,
-        Datos: datosEditables
-      };
+      // Validar campos requeridos
+      if (!nuevoMedio.nombre || !nuevoMedio.medio || !nuevoMedio.tipo || !nuevoMedio.contenido) {
+        throw new Error("Todos los campos son requeridos");
+      }
 
-      // Llamar a la API para actualizar
-      const response = await fetch("/api/colaboradores", {
+      const response = await fetch("/api/medios-comunicacion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id_colaborador: colaboradorId,
+          nombre: nuevoMedio.nombre || nuevoMedio.NOMBRE,
+          medio: nuevoMedio.medio || nuevoMedio.MEDIO,
+          tipo: nuevoMedio.tipo || nuevoMedio.TIPO,
+          contenido: nuevoMedio.contenido || nuevoMedio.CONTENIDO
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Recargar medios de comunicación
+      await fetchMediosComunicacion(colaboradorId);
+      
+      return result;
+    } catch (error) {
+      console.error("Error al agregar medio:", error);
+      setErrorSavingDatos(error.message || "Error al agregar el medio de comunicación");
+      throw error;
+    } finally {
+      setSavingDatos(false);
+    }
+  };
+
+  // Función para actualizar un medio de comunicación
+  const handleActualizarMedio = async (medioId, datosActualizados) => {
+    if (!selectedColaboradorCompleto) return;
+
+    try {
+      setSavingDatos(true);
+      setErrorSavingDatos(null);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
+      if (!colaboradorId) {
+        throw new Error("No se pudo obtener el ID del colaborador");
+      }
+
+      // Validar campos requeridos
+      if (!datosActualizados.nombre || !datosActualizados.medio || !datosActualizados.tipo || !datosActualizados.contenido) {
+        throw new Error("Todos los campos son requeridos");
+      }
+
+      const response = await fetch(`/api/medios-comunicacion?action=update&id=${medioId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -552,35 +645,67 @@ function RecursosHumanosContent() {
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          id: colaboradorId,
-          datos: datosEditables
+          nombre: datosActualizados.nombre || datosActualizados.NOMBRE,
+          medio: datosActualizados.medio || datosActualizados.MEDIO,
+          tipo: datosActualizados.tipo || datosActualizados.TIPO,
+          contenido: datosActualizados.contenido || datosActualizados.CONTENIDO
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
-      // Actualizar el colaborador completo en el estado
-      setSelectedColaboradorCompleto(datosActualizados);
-
-      // Actualizar también en la lista de colaboradores completos
-      setColaboradoresCompletos(prev => 
-        prev.map(colab => {
-          const colabId = getValue(colab, ["id", "ID", "Id", "_id", "ID_COLABORADOR", "id_colaborador"]);
-          if (colabId === colaboradorId) {
-            return datosActualizados;
-          }
-          return colab;
-        })
-      );
-
-      alert("Datos guardados correctamente");
+      // Recargar medios de comunicación
+      await fetchMediosComunicacion(colaboradorId);
     } catch (error) {
-      console.error("Error al guardar datos:", error);
-      setErrorSavingDatos(error.message || "Error al guardar los datos");
-      alert(`Error al guardar: ${error.message}`);
+      console.error("Error al actualizar medio:", error);
+      setErrorSavingDatos(error.message || "Error al actualizar el medio de comunicación");
+      throw error;
+    } finally {
+      setSavingDatos(false);
+    }
+  };
+
+  // Función para eliminar un medio de comunicación
+  const handleEliminarMedio = async (medioId) => {
+    if (!selectedColaboradorCompleto) return;
+
+    try {
+      setSavingDatos(true);
+      setErrorSavingDatos(null);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
+      if (!colaboradorId) {
+        throw new Error("No se pudo obtener el ID del colaborador");
+      }
+
+      const response = await fetch(`/api/medios-comunicacion?action=delete&id=${medioId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      // Recargar medios de comunicación
+      await fetchMediosComunicacion(colaboradorId);
+    } catch (error) {
+      console.error("Error al eliminar medio:", error);
+      setErrorSavingDatos(error.message || "Error al eliminar el medio de comunicación");
+      throw error;
     } finally {
       setSavingDatos(false);
     }
@@ -2144,7 +2269,9 @@ function RecursosHumanosContent() {
                           contenido,
                           medio,
                           index: idx,
-                          originalItem: item
+                          originalItem: item,
+                          ID: getValue(item, ["ID", "id", "Id"]),
+                          id: getValue(item, ["ID", "id", "Id"])
                         });
                       }
                     });
@@ -2160,28 +2287,15 @@ function RecursosHumanosContent() {
                         <div className="border-t border-gray-200 pt-4 mt-4">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
-                            <button
-                              onClick={handleGuardarDatos}
-                              disabled={savingDatos}
-                              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-                            >
-                              {savingDatos ? (
-                                <>
-                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  <span>Guardando...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                  <span>Guardar Cambios</span>
-                                </>
-                              )}
-                            </button>
+                            {loadingMedios && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Cargando...</span>
+                              </div>
+                            )}
                           </div>
                           {errorSavingDatos && (
                             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -2196,17 +2310,23 @@ function RecursosHumanosContent() {
                                 </h4>
                                 <button
                                   onClick={() => {
+                                    // Solo agregar un formulario vacío a la UI (no guardar todavía)
                                     const nuevoItem = {
                                       TIPO: "",
+                                      tipo: "",
                                       MEDIO: medio,
                                       medio: medio,
                                       NOMBRE: "",
-                                      CONTENIDO: ""
+                                      nombre: "",
+                                      CONTENIDO: "",
+                                      contenido: ""
                                     };
                                     const nuevosDatos = [...datosParaMostrar, nuevoItem];
                                     setDatosEditables(nuevosDatos);
+                                    setErrorSavingDatos(null);
                                   }}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                  disabled={savingDatos || loadingMedios}
+                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
                                 >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -2217,20 +2337,97 @@ function RecursosHumanosContent() {
                               <div className="space-y-3">
                                 {agrupados[medio].map((item, itemIndex) => (
                                   <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
-                                    <button
-                                      onClick={() => {
-                                        const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
-                                        setDatosEditables(nuevosDatos);
-                                      }}
-                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm z-10"
-                                      title="Eliminar"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                      <span>Eliminar</span>
-                                    </button>
-                                    <div className="space-y-3 pr-24">
+                                    <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+                                      {/* Botón Guardar/Actualizar */}
+                                      {(() => {
+                                        const medioId = item.ID || item.id || item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
+                                        const itemActual = datosParaMostrar[item.index] || {};
+                                        const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.medio || itemActual.MEDIO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
+                                        
+                                        if (medioId) {
+                                          // Si tiene ID, mostrar botón "Actualizar"
+                                          return (
+                                            <button
+                                              onClick={async () => {
+                                                if (!tieneTodosLosCampos) {
+                                                  setErrorSavingDatos("Todos los campos son requeridos");
+                                                  return;
+                                                }
+                                                try {
+                                                  await handleActualizarMedio(medioId, itemActual);
+                                                  setErrorSavingDatos(null);
+                                                } catch (error) {
+                                                  // Error ya se muestra en errorSavingDatos
+                                                }
+                                              }}
+                                              disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
+                                              className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              title="Actualizar"
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                              <span>Actualizar</span>
+                                            </button>
+                                          );
+                                        } else {
+                                          // Si no tiene ID, mostrar botón "Guardar"
+                                          return (
+                                            <button
+                                              onClick={async () => {
+                                                if (!tieneTodosLosCampos) {
+                                                  setErrorSavingDatos("Todos los campos son requeridos");
+                                                  return;
+                                                }
+                                                try {
+                                                  await handleAgregarMedio(itemActual);
+                                                  setErrorSavingDatos(null);
+                                                } catch (error) {
+                                                  // Error ya se muestra en errorSavingDatos
+                                                }
+                                              }}
+                                              disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
+                                              className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              title="Guardar"
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                              <span>Guardar</span>
+                                            </button>
+                                          );
+                                        }
+                                      })()}
+                                      
+                                      {/* Botón Eliminar */}
+                                      <button
+                                        onClick={async () => {
+                                          const medioId = item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
+                                          if (medioId) {
+                                            // Si tiene ID, eliminar de la BD
+                                            try {
+                                              await handleEliminarMedio(medioId);
+                                              setErrorSavingDatos(null);
+                                            } catch (error) {
+                                              // Error ya se muestra en errorSavingDatos
+                                            }
+                                          } else {
+                                            // Si no tiene ID, solo eliminar de la UI (medio nuevo no guardado)
+                                            const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
+                                            setDatosEditables(nuevosDatos);
+                                          }
+                                        }}
+                                        disabled={savingDatos || loadingMedios}
+                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                        title="Eliminar"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        <span>Eliminar</span>
+                                      </button>
+                                    </div>
+                                    <div className="space-y-3 pr-32">
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
                                         <div className="flex-1 flex items-center space-x-4">
@@ -2247,10 +2444,11 @@ function RecursosHumanosContent() {
                                                   ...itemActual,
                                                   TIPO: nuevoTipo,
                                                   tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null); // Limpiar error al cambiar
                                               }}
                                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                                             />
@@ -2269,10 +2467,11 @@ function RecursosHumanosContent() {
                                                   ...itemActual,
                                                   TIPO: nuevoTipo,
                                                   tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null); // Limpiar error al cambiar
                                               }}
                                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                                             />
@@ -2280,6 +2479,74 @@ function RecursosHumanosContent() {
                                           </label>
                                         </div>
                                       </div>
+                                      
+                                      {/* Medio */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
+                                        <div className="flex-1 flex items-center space-x-3">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "TELEFONO",
+                                                  medio: "TELEFONO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "CORREO",
+                                                  medio: "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORREO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "TELEFONO_EMERGENCIA",
+                                                  medio: "TELEFONO_EMERGENCIA"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
+                                          </label>
+                                        </div>
+                                      </div>
+                                      
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
                                         <input
@@ -2296,6 +2563,7 @@ function RecursosHumanosContent() {
                                               medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
                                             };
                                             setDatosEditables(nuevosDatos);
+                                            setErrorSavingDatos(null); // Limpiar error al cambiar
                                           }}
                                           placeholder="Ej: CORREO PERSONAL 1"
                                           className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -2313,12 +2581,19 @@ function RecursosHumanosContent() {
                                               ...itemActual,
                                               CONTENIDO: e.target.value,
                                               contenido: e.target.value,
-                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                             };
                                             setDatosEditables(nuevosDatos);
+                                            setErrorSavingDatos(null); // Limpiar error al cambiar
                                           }}
-                                          placeholder="Ej: correo@ejemplo.com"
+                                          placeholder={
+                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
+                                              ? "Ej: correo@ejemplo.com" 
+                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
+                                              ? "Ej: 987654321"
+                                              : "Ej: 956224010"
+                                          }
                                           className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
                                         />
                                       </div>
@@ -2333,37 +2608,24 @@ function RecursosHumanosContent() {
                     }
                     // Si no hay datos, mostrar la sección vacía con opción de agregar
                     return (
-                      <div className="border-t border-gray-200 pt-4 mt-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
-                          <button
-                            onClick={handleGuardarDatos}
-                            disabled={savingDatos}
-                            className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-                          >
-                            {savingDatos ? (
-                              <>
+                        <div className="border-t border-gray-200 pt-4 mt-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
+                            {loadingMedios && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
                                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>Guardando...</span>
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar Cambios</span>
-                              </>
+                                <span>Cargando...</span>
+                              </div>
                             )}
-                          </button>
-                        </div>
-                        {errorSavingDatos && (
-                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-600">{errorSavingDatos}</p>
                           </div>
-                        )}
+                          {errorSavingDatos && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-sm text-red-600">{errorSavingDatos}</p>
+                            </div>
+                          )}
                         <div className="mb-5">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
@@ -2371,16 +2633,22 @@ function RecursosHumanosContent() {
                             </h4>
                             <button
                               onClick={() => {
+                                // Solo agregar un formulario vacío a la UI (no guardar todavía)
                                 const nuevoItem = {
                                   TIPO: "",
-                                  MEDIO: "CORREO",
-                                  medio: "CORREO",
+                                  tipo: "",
+                                  MEDIO: "TELEFONO",
+                                  medio: "TELEFONO",
                                   NOMBRE: "",
-                                  CONTENIDO: ""
+                                  nombre: "",
+                                  CONTENIDO: "",
+                                  contenido: ""
                                 };
                                 setDatosEditables([nuevoItem]);
+                                setErrorSavingDatos(null);
                               }}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                              disabled={savingDatos || loadingMedios}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -2388,7 +2656,231 @@ function RecursosHumanosContent() {
                               <span>Agregar</span>
                             </button>
                           </div>
-                          <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
+                          
+                          {/* Mostrar formulario si hay datos editables (aunque estén vacíos) */}
+                          {datosEditables.length > 0 ? (
+                            <div className="space-y-3">
+                              {datosEditables.map((item, idx) => {
+                                const medioId = item?.ID || item?.id;
+                                const tieneTodosLosCampos = item?.tipo && item?.medio && item?.nombre && item?.contenido;
+                                
+                                return (
+                                  <div key={idx} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
+                                    <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+                                      {/* Botón Guardar (solo para nuevos) */}
+                                      {!medioId && (
+                                        <button
+                                          onClick={async () => {
+                                            if (!tieneTodosLosCampos) {
+                                              setErrorSavingDatos("Todos los campos son requeridos");
+                                              return;
+                                            }
+                                            try {
+                                              await handleAgregarMedio(item);
+                                              setErrorSavingDatos(null);
+                                            } catch (error) {
+                                              // Error ya se muestra en errorSavingDatos
+                                            }
+                                          }}
+                                          disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
+                                          className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                          title="Guardar"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                          </svg>
+                                          <span>Guardar</span>
+                                        </button>
+                                      )}
+                                      
+                                      {/* Botón Eliminar */}
+                                      <button
+                                        onClick={() => {
+                                          if (medioId) {
+                                            handleEliminarMedio(medioId).catch(() => {});
+                                          } else {
+                                            const nuevosDatos = datosEditables.filter((_, i) => i !== idx);
+                                            setDatosEditables(nuevosDatos);
+                                          }
+                                        }}
+                                        disabled={savingDatos || loadingMedios}
+                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                        title="Eliminar"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        <span>Eliminar</span>
+                                      </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3 pr-32">
+                                      {/* Tipo */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
+                                        <div className="flex-1 flex items-center space-x-4">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "CORPORATIVO" || item.TIPO === "CORPORATIVO"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  TIPO: e.target.checked ? "CORPORATIVO" : "",
+                                                  tipo: e.target.checked ? "CORPORATIVO" : "",
+                                                  MEDIO: item.MEDIO || item.medio || "CORREO",
+                                                  medio: item.medio || item.MEDIO || "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORPORATIVO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.tipo === "PERSONAL" || item.TIPO === "PERSONAL"}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  TIPO: e.target.checked ? "PERSONAL" : "",
+                                                  tipo: e.target.checked ? "PERSONAL" : "",
+                                                  MEDIO: item.MEDIO || item.medio || "CORREO",
+                                                  medio: item.medio || item.MEDIO || "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">PERSONAL</span>
+                                          </label>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Medio */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
+                                        <div className="flex-1 flex items-center space-x-3">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "TELEFONO",
+                                                  medio: "TELEFONO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "CORREO",
+                                                  medio: "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORREO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "TELEFONO_EMERGENCIA",
+                                                  medio: "TELEFONO_EMERGENCIA"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
+                                          </label>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Nombre */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
+                                        <input
+                                          type="text"
+                                          value={item.nombre || item.NOMBRE || ""}
+                                          onChange={(e) => {
+                                            const nuevosDatos = [...datosEditables];
+                                            nuevosDatos[idx] = {
+                                              ...item,
+                                              NOMBRE: e.target.value,
+                                              nombre: e.target.value
+                                            };
+                                            setDatosEditables(nuevosDatos);
+                                            setErrorSavingDatos(null);
+                                          }}
+                                          placeholder="Ej: CORREO PERSONAL 1"
+                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                      </div>
+                                      
+                                      {/* Contenido */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Contenido:</label>
+                                        <input
+                                          type="text"
+                                          value={item.contenido || item.CONTENIDO || ""}
+                                          onChange={(e) => {
+                                            const nuevosDatos = [...datosEditables];
+                                            nuevosDatos[idx] = {
+                                              ...item,
+                                              CONTENIDO: e.target.value,
+                                              contenido: e.target.value
+                                            };
+                                            setDatosEditables(nuevosDatos);
+                                            setErrorSavingDatos(null);
+                                          }}
+                                          placeholder={
+                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
+                                              ? "Ej: correo@ejemplo.com" 
+                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
+                                              ? "Ej: 987654321"
+                                              : "Ej: 956224010"
+                                          }
+                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
+                          )}
                         </div>
                       </div>
                     );

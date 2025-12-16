@@ -8,8 +8,8 @@ async function fetchFromAPI(method, request, tablaId) {
     const token = authHeader ? authHeader.replace("Bearer ", "") : null;
     
     // Construir la URL con los parámetros correctos
-    // Usar CONFIGURACION_FRANJA_PRECIOS para obtener los datos reales
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=CONFIGURACION_FRANJA_PRECIOS&id=${encodeURIComponent(tablaId)}`;
+    // Usar franja_precios para obtener los datos con precios dinámicos
+    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=franja_precios&id=${encodeURIComponent(tablaId)}`;
     
     // Preparar headers para la petición a la API externa
     const headers = {
@@ -50,7 +50,16 @@ async function fetchFromAPI(method, request, tablaId) {
         // No es JSON, usar texto directamente
       }
       
-      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status} en la operación`;
+      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status} en la operación`;
+      
+      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+      if (typeof errorMessage === 'number') {
+        if (errorMessage === 0) {
+          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
+        } else {
+          errorMessage = `Error ${errorMessage}`;
+        }
+      }
       
       return NextResponse.json(
         { 
@@ -121,7 +130,17 @@ export async function POST(request) {
         errorJson = JSON.parse(errorText);
       } catch (e) {}
       
-      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      
+      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+      if (typeof errorMessage === 'number') {
+        if (errorMessage === 0) {
+          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
+        } else {
+          errorMessage = `Error ${errorMessage}`;
+        }
+      }
+      
       return NextResponse.json({ error: errorMessage }, { status: response.status });
     }
     
@@ -167,7 +186,17 @@ export async function PUT(request) {
         errorJson = JSON.parse(errorText);
       } catch (e) {}
       
-      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      
+      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+      if (typeof errorMessage === 'number') {
+        if (errorMessage === 0) {
+          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
+        } else {
+          errorMessage = `Error ${errorMessage}`;
+        }
+      }
+      
       return NextResponse.json({ error: errorMessage }, { status: response.status });
     }
     
@@ -231,7 +260,17 @@ export async function DELETE(request) {
         errorJson = JSON.parse(errorText);
       } catch (e) {}
       
-      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+      
+      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+      if (typeof errorMessage === 'number') {
+        if (errorMessage === 0) {
+          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
+        } else {
+          errorMessage = `Error ${errorMessage}`;
+        }
+      }
+      
       return NextResponse.json({ error: errorMessage }, { status: response.status });
     }
     
