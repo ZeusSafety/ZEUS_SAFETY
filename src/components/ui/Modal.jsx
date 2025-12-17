@@ -2,7 +2,18 @@
 
 import { useEffect } from "react";
 
-export default function Modal({ isOpen, onClose, title, children, size = "md" }) {
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = "md",
+  primaryButtonText,
+  secondaryButtonText,
+  onPrimaryButtonClick,
+  onSecondaryButtonClick,
+  hideFooter = false,
+}) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -23,6 +34,8 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" })
     xl: "max-w-4xl",
     full: "max-w-6xl",
   };
+
+  const showFooter = !hideFooter && (primaryButtonText || secondaryButtonText);
 
   return (
     <div
@@ -48,8 +61,31 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" })
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+
+        {/* Footer opcional con botones de acción */}
+        {showFooter && (
+          <div className="px-6 py-3 border-t border-gray-200/60 bg-gray-50 flex items-center justify-end space-x-3">
+            {secondaryButtonText && (
+              <button
+                type="button"
+                onClick={onSecondaryButtonClick || onClose}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                {secondaryButtonText}
+              </button>
+            )}
+            {primaryButtonText && (
+              <button
+                type="button"
+                onClick={onPrimaryButtonClick}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                {primaryButtonText}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

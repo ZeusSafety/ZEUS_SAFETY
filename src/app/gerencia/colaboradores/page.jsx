@@ -70,6 +70,65 @@ export default function ColaboradoresPage() {
   const [loadingColaboradores, setLoadingColaboradores] = useState(true);
   const [errorColaboradores, setErrorColaboradores] = useState(null);
 
+  // Estados para el modal de permisos (diseño tipo tablero)
+  const [modulosPermisos, setModulosPermisos] = useState([
+    { id: "MARKETING", nombre: "MARKETING", permitido: true },
+    { id: "IMPORTACION", nombre: "IMPORTACION", permitido: true },
+    { id: "SISTEMAS", nombre: "SISTEMAS", permitido: true },
+    { id: "FACTURACION", nombre: "FACTURACION", permitido: true },
+    { id: "LOGISTICA", nombre: "LOGISTICA", permitido: true },
+    { id: "GERENCIA", nombre: "GERENCIA", permitido: true },
+    { id: "ADMINISTRACION", nombre: "ADMINISTRACION", permitido: true },
+    { id: "VENTAS", nombre: "VENTAS", permitido: true },
+    { id: "RRHH", nombre: "RECURSOS HUMANOS", permitido: true },
+    { id: "PERMISOS", nombre: "PERMISOS / SOLICITUDES E INCIDENCIAS", permitido: true },
+    { id: "SEGUIMIENTO_MONITOREO", nombre: "SEGUIMIENTO Y MONITOREO", permitido: false },
+  ]);
+
+  const [subVistasPermitidas, setSubVistasPermitidas] = useState([
+    { id: "IMPORTACIONES_REGISTRO", nombre: "IMPORTACIONES_REGISTRO", url: "/importacion/registro", area: "IMPORTACION" },
+    { id: "LISTADO_IMPORTACIONES_IMPORT", nombre: "LISTADO_IMPORTACIONES_IMPORT", url: "/importacion/listado", area: "IMPORTACION" },
+    { id: "INCIDENCIAS_PROFORMAS", nombre: "INCIDENCIAS_PROFORMAS", url: "/facturacion/incidencias/proformas", area: "FACTURACION" },
+    { id: "LISTADO_IMPORTACIONES_LOGISTICA", nombre: "LISTADO_IMPORTACIONES_LOGISTICA", url: "/logistica/importaciones", area: "LOGISTICA" },
+  ]);
+
+  const [subVistasDisponibles, setSubVistasDisponibles] = useState([
+    { id: "GESTION_CLIENTES_MARKETING", nombre: "GESTION DE CLIENTES - MARKETING", url: "/marketing/gestion-clientes", area: "MARKETING" },
+    { id: "LISTADO_VENTAS_MARKETING", nombre: "LISTADO DE VENTAS - MARKETING", url: "/marketing/listado-ventas", area: "MARKETING" },
+    { id: "GESTION_USUARIOS", nombre: "GESTION DE USUARIOS", url: "/gerencia/gestion-usuarios", area: "GERENCIA" },
+    { id: "GESTION_PRODUCTOS", nombre: "GESTION DE PRODUCTOS", url: "/gerencia/gestion-productos", area: "GERENCIA" },
+    { id: "RRHH_MEDIOS_COMUNICACION", nombre: "MEDIOS DE COMUNICACION - RRHH", url: "/recursos-humanos", area: "RECURSOS HUMANOS" },
+  ]);
+
+  const [filtroAreaSubVista, setFiltroAreaSubVista] = useState("TODAS");
+  const [busquedaSubVista, setBusquedaSubVista] = useState("");
+
+  const togglePermisoModulo = (id) => {
+    setModulosPermisos((prev) =>
+      prev.map((mod) =>
+        mod.id === id ? { ...mod, permitido: !mod.permitido } : mod
+      )
+    );
+  };
+
+  const handleAgregarSubVista = (id) => {
+    setSubVistasDisponibles((prevDisponibles) => {
+      const vista = prevDisponibles.find((v) => v.id === id);
+      if (!vista) return prevDisponibles;
+      setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
+      return prevDisponibles.filter((v) => v.id !== id);
+    });
+  };
+
+  const handleEliminarSubVista = (id) => {
+    setSubVistasPermitidas((prevPermitidas) => {
+      const vista = prevPermitidas.find((v) => v.id === id);
+      if (!vista) return prevPermitidas;
+      setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, vista]);
+      return prevPermitidas.filter((v) => v.id !== id);
+    });
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -93,6 +152,239 @@ export default function ColaboradoresPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Obtener datos de perfil (usuario / contraseña / avatar) desde la API de perfil
+  const fetchPerfilColaborador = useCallback(
+    async (colaboradorBasico, colaboradorCompleto) => {
+      try {
+        setLoadingPerfilColaborador(true);
+        setErrorPerfilColaborador(null);
+        setPerfilColaborador(null);
+
+        if (typeof window === "undefined") {
+          throw new Error("La carga de perfil solo se ejecuta en el cliente");
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token || token.trim() === "") {
+          throw new Error("No se encontró el token de autenticación");
+        }
+
+        const baseObj = colaboradorCompleto || colaboradorBasico || {};
+
+        const getValue = (obj, keys) => {
+          if (!obj) return "";
+          for (const key of keys) {
+            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+              return obj[key];
+            }
+            const upperKey = key.toUpperCase();
+            if (
+              obj[upperKey] !== undefined &&
+              obj[upperKey] !== null &&
+              obj[upperKey] !== ""
+            ) {
+              return obj[upperKey];
+            }
+          }
+          return "";
+        };
+
+        const correoBase = getValue(baseObj, [
+          "correo",
+          "CORREO",
+          "email",
+          "EMAIL",
+          "correo_electronico",
+          "CORREO_ELECTRONICO",
+        ]);
+        const usuarioBase = getValue(baseObj, [
+          "usuario",
+          "USUARIO",
+          "username",
+          "USERNAME",
+          "login",
+          "LOGIN",
+        ]);
+
+        let userParam = "";
+        if (correoBase && String(correoBase).includes("@")) {
+          userParam = String(correoBase).trim();
+        } else if (usuarioBase) {
+          userParam = String(usuarioBase).trim();
+        } else if (baseObj.id || baseObj.ID) {
+          userParam = String(baseObj.id || baseObj.ID);
+        } else if (baseObj.nombre || baseObj.NOMBRE) {
+          userParam = String(baseObj.nombre || baseObj.NOMBRE);
+        }
+
+        console.log("🔍 [PERFIL COLABORADOR] Obteniendo perfil para:", {
+          colaboradorBasico,
+          colaboradorCompleto,
+          correoBase,
+          usuarioBase,
+          userParam,
+        });
+
+        if (!userParam) {
+          throw new Error(
+            "No se pudo determinar un identificador de usuario para consultar el perfil"
+          );
+        }
+
+        const apiUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(
+          userParam
+        )}`;
+
+        console.log("🌐 [PERFIL COLABORADOR] URL:", apiUrl);
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("🌐 [PERFIL COLABORADOR] Status:", response.status);
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error("Token inválido o expirado al consultar el perfil");
+          }
+          const errorText = await response.text().catch(() => "");
+          throw new Error(
+            `Error ${response.status} al obtener perfil: ${
+              errorText || "Respuesta no válida"
+            }`
+          );
+        }
+
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const textData = await response.text();
+          try {
+            data = JSON.parse(textData);
+          } catch {
+            throw new Error("La respuesta de perfil no es un JSON válido");
+          }
+        }
+
+        console.log(
+          "📦 [PERFIL COLABORADOR] Datos crudos:",
+          JSON.stringify(data, null, 2)
+        );
+
+        let perfilUsuario = null;
+        if (data && typeof data === "object") {
+          if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
+            perfilUsuario = data.data;
+          } else if (data.perfil && typeof data.perfil === "object") {
+            perfilUsuario = data.perfil;
+          } else if (
+            data.perfil_usuario &&
+            typeof data.perfil_usuario === "object"
+          ) {
+            perfilUsuario = data.perfil_usuario;
+          } else if (data.usuario && typeof data.usuario === "object") {
+            perfilUsuario = data.usuario;
+          } else if (data.user && typeof data.user === "object") {
+            perfilUsuario = data.user;
+          } else if (Array.isArray(data) && data.length > 0) {
+            perfilUsuario = data[0];
+          } else if (!Array.isArray(data)) {
+            perfilUsuario = data;
+          }
+        }
+
+        console.log(
+          "✅ [PERFIL COLABORADOR] Perfil extraído:",
+          JSON.stringify(perfilUsuario, null, 2)
+        );
+
+        if (!perfilUsuario) {
+          throw new Error("La API de perfil no devolvió información del usuario");
+        }
+
+        const getValPerfil = (keys) => getValue(perfilUsuario, keys);
+
+        const usuarioPerfil =
+          getValPerfil([
+            "usuario",
+            "USUARIO",
+            "username",
+            "USERNAME",
+            "login",
+            "LOGIN",
+          ]) ||
+          getValPerfil(["correo", "CORREO", "email", "EMAIL"]) ||
+          userParam;
+
+        const correoPerfil = getValPerfil([
+          "correo",
+          "CORREO",
+          "email",
+          "EMAIL",
+          "correo_electronico",
+          "CORREO_ELECTRONICO",
+        ]);
+
+        const passwordPerfil = getValPerfil([
+          "password",
+          "PASSWORD",
+          "contrasena",
+          "CONTRASENA",
+          "clave",
+          "CLAVE",
+        ]);
+
+        const imgUrlPerfil = getValPerfil([
+          "IMG_URL",
+          "img_url",
+          "IMGURL",
+          "imgUrl",
+          "IMAGEN",
+          "imagen",
+          "IMAGEN_URL",
+          "imagen_url",
+          "FOTO",
+          "foto",
+          "FOTO_URL",
+          "foto_url",
+          "AVATAR",
+          "avatar",
+          "AVATAR_URL",
+          "avatar_url",
+        ]);
+
+        const perfilNormalizado = {
+          usuario: usuarioPerfil || "",
+          correo: correoPerfil || "",
+          password: passwordPerfil || "",
+          imgUrl: imgUrlPerfil || "",
+        };
+
+        console.log(
+          "🎯 [PERFIL COLABORADOR] Perfil normalizado:",
+          perfilNormalizado
+        );
+
+        setPerfilColaborador(perfilNormalizado);
+      } catch (error) {
+        console.error("[PERFIL COLABORADOR] Error:", error);
+        setErrorPerfilColaborador(
+          error.message || "Error al obtener el perfil del colaborador"
+        );
+      } finally {
+        setLoadingPerfilColaborador(false);
+      }
+    },
+    []
+  );
 
   // Función para obtener colaboradores de la API
   const fetchColaboradores = useCallback(async () => {
@@ -198,7 +490,6 @@ export default function ColaboradoresPage() {
           activo: isActivo,
         };
       }) : [];
-
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
       setColaboradores(colaboradoresMapeados);
     } catch (error) {
@@ -224,6 +515,81 @@ export default function ColaboradoresPage() {
 
   const paginatedActivos = activos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const paginatedInactivos = inactivos.slice((currentPageInactivos - 1) * itemsPerPage, currentPageInactivos * itemsPerPage);
+
+  // Desactivar / activar colaboradores solo a nivel de frontend (sin API)
+  const handleDesactivarColaborador = () => {
+    if (!selectedColaborador) return;
+    const idSeleccionado = selectedColaborador.id;
+    setColaboradores((prev) =>
+      prev.map((c) =>
+        c.id === idSeleccionado ? { ...c, activo: false } : c
+      )
+    );
+    setIsDesactivarModalOpen(false);
+    setSelectedColaborador(null);
+  };
+
+  const handleActivarColaborador = (colaborador) => {
+    if (!colaborador) return;
+    const idSeleccionado = colaborador.id;
+    setColaboradores((prev) =>
+      prev.map((c) =>
+        c.id === idSeleccionado ? { ...c, activo: true } : c
+      )
+    );
+  };
+
+  // Derivados para el modal de permisos (usuario / contraseña / avatar)
+  const colaboradorInfo = selectedColaboradorCompleto || selectedColaborador || null;
+
+  const getValorColab = (obj, keys) => {
+    if (!obj) return "";
+
+    // Buscar en el nivel actual
+    for (const key of keys) {
+      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+        return obj[key];
+      }
+    }
+
+    // Buscar de forma recursiva en objetos anidados
+    for (const prop in obj) {
+      if (
+        Object.prototype.hasOwnProperty.call(obj, prop) &&
+        obj[prop] &&
+        typeof obj[prop] === "object" &&
+        !Array.isArray(obj[prop])
+      ) {
+        const nested = getValorColab(obj[prop], keys);
+        if (nested !== "") {
+          return nested;
+        }
+      }
+    }
+
+    return "";
+  };
+
+  // Valor fijo de ejemplo solicitado por el usuario
+  const usuarioValue = "Hervin Zeus";
+
+  const maskedPassword = "********";
+
+  const avatarUrl = getValorColab(colaboradorInfo, [
+    "foto",
+    "FOTO",
+    "imagen",
+    "IMAGEN",
+    "avatar",
+    "AVATAR",
+    "foto_url",
+    "FOTO_URL",
+  ]);
+
+  const inicialesAvatar =
+    `${(selectedColaborador?.nombre || "").charAt(0)}${(
+      selectedColaborador?.apellido || ""
+    ).charAt(0)}`.trim() || "US";
 
   if (loading) {
     return (
@@ -353,7 +719,6 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA CUMPLEAÑOS</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
@@ -401,20 +766,8 @@ export default function ColaboradoresPage() {
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
                                       onClick={() => {
-                                        setSelectedColaboradorCompleto(colaboradorCompleto);
-                                        setIsVerDetallesModalOpen(true);
-                                      }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                      </svg>
-                                      <span>Ver Detalles</span>
-                                    </button>
-                                    <button
-                                      onClick={() => {
                                         setSelectedColaborador(colaborador);
+                                        setSelectedColaboradorCompleto(colaboradorCompleto);
                                         setIsPermisosModalOpen(true);
                                       }}
                                       className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
@@ -587,24 +940,22 @@ export default function ColaboradoresPage() {
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
                                       onClick={() => {
+                                        setSelectedColaborador(colaborador);
                                         setSelectedColaboradorCompleto(colaboradorCompleto);
-                                        setIsVerDetallesModalOpen(true);
+                                        setIsPermisosModalOpen(true);
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                      </svg>
-                                      <span>Ver Detalles</span>
-                                    </button>
-                                    <button className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                       </svg>
                                       <span>Permisos</span>
                                     </button>
-                                    <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                    <button
+                                      onClick={() => handleActivarColaborador(colaborador)}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      onClick={() => handleActivarColaborador(colaborador)}
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                       </svg>
@@ -661,35 +1012,273 @@ export default function ColaboradoresPage() {
           </main>
         </div>
       </div>
+      {/* Modal de Permisos - Tablero completo */}
       <Modal
         isOpen={isPermisosModalOpen}
         onClose={() => {
           setIsPermisosModalOpen(false);
           setSelectedColaborador(null);
         }}
-        title="Gestionar Permisos"
-        size="lg"
-        primaryButtonText="Guardar"
-        onPrimaryButtonClick={() => {
-          // Aquí iría la lógica para guardar los permisos
-          setIsPermisosModalOpen(false);
-          setSelectedColaborador(null);
-        }}
-        secondaryButtonText="Cancelar"
-        onSecondaryButtonClick={() => {
-          setIsPermisosModalOpen(false);
-          setSelectedColaborador(null);
-        }}
+        title="Accesibilidad y Credenciales"
+        size="xl"
       >
         {selectedColaborador && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">
-                Gestionando permisos para: <strong>{selectedColaborador.nombre} {selectedColaborador.apellido}</strong>
-              </p>
-              <p className="text-xs text-gray-500">
-                Aquí se mostrarían los permisos y opciones de configuración.
-              </p>
+          <div className="space-y-5">
+            {/* Información de Usuario */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Avatar usuario"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{inicialesAvatar}</span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900">Información de Usuario</h3>
+                    <p className="text-xs text-gray-500">
+                      Usuario: {selectedColaborador.nombre} {selectedColaborador.apellido}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-600 mb-1">Usuario</span>
+                    <div className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900">
+                      {usuarioValue}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-gray-600 mb-1">Contraseña</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm tracking-[0.25em] text-gray-900">
+                        {maskedPassword}
+                      </div>
+                      <button className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm">
+                        Editar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Permisos por Módulo */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex itemsCenter justify-between">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6a4 4 0 118 0v2a2 2 0 012 2v4a2 2 0 01-2 2h-1m-4 4H6a2 2 0 01-2-2v-5a2 2 0 012-2h2" />
+                  </svg>
+                  <h3 className="text-sm font-bold text-gray-900">Permisos por Módulo</h3>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MÓDULO</th>
+                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PERMISO</th>
+                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {modulosPermisos.map((mod) => (
+                      <tr key={mod.id} className="hover:bg-slate-200 transition-colors">
+                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                          {mod.nombre}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => togglePermisoModulo(mod.id)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
+                              mod.permitido ? "bg-emerald-500" : "bg-gray-300"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                                mod.permitido ? "translate-x-4" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-center">
+                          {mod.permitido ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500 border-2 border-emerald-600 text-white">
+                              Concedido
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-red-500 border-2 border-red-600 text-white">
+                              Denegado
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Permisos por Sub Vistas */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  <h3 className="text-sm font-bold text-gray-900">Permisos por Sub Vistas</h3>
+                </div>
+                <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-emerald-700">Sub Vistas Permitidas</span>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">URL</th>
+                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {subVistasPermitidas.map((vista) => (
+                      <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                          {vista.nombre}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-[10px]">
+                          {vista.url ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
+                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              PDF
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-400">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleEliminarSubVista(vista.id)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span>Eliminar</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Agregar Nueva Sub Vista */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <h3 className="text-sm font-bold text-gray-900">Agregar Nueva Sub Vista</h3>
+                </div>
+              </div>
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Filtrar por Área
+                  </label>
+                  <select
+                    value={filtroAreaSubVista}
+                    onChange={(e) => setFiltroAreaSubVista(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-xs text-gray-900"
+                  >
+                    <option value="TODAS">Todas las Áreas</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="IMPORTACION">IMPORTACION</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="GERENCIA">GERENCIA</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Buscar Sub Vista
+                  </label>
+                  <input
+                    type="text"
+                    value={busquedaSubVista}
+                    onChange={(e) => setBusquedaSubVista(e.target.value)}
+                    placeholder="Buscar por nombre..."
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-xs text-gray-900 placeholder:text-gray-600"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {subVistasDisponibles
+                        .filter((vista) =>
+                          filtroAreaSubVista === "TODAS" ? true : vista.area === filtroAreaSubVista
+                        )
+                        .filter((vista) =>
+                          busquedaSubVista
+                            ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
+                            : true
+                        )
+                        .map((vista) => (
+                          <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              {vista.nombre}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              {vista.area}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <button
+                                onClick={() => handleAgregarSubVista(vista.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 border-2 border-emerald-700 hover:bg-emerald-700 hover:border-emerald-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Agregar</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -702,13 +1291,9 @@ export default function ColaboradoresPage() {
         }}
         title="Desactivar Colaborador"
         size="md"
-        primaryButtonText="Desactivar"
-        onPrimaryButtonClick={() => {
-          // Aquí iría la lógica para desactivar el colaborador
-          setIsDesactivarModalOpen(false);
-          setSelectedColaborador(null);
-        }}
-        secondaryButtonText="Cancelar"
+        primaryButtonText="Sí"
+        onPrimaryButtonClick={handleDesactivarColaborador}
+        secondaryButtonText="No"
         onSecondaryButtonClick={() => {
           setIsDesactivarModalOpen(false);
           setSelectedColaborador(null);
@@ -753,7 +1338,7 @@ export default function ColaboradoresPage() {
                 value={newColaboradorForm.nombre}
                 onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, nombre: e.target.value })}
                 placeholder="Nombre"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
               />
             </div>
             <div>
@@ -765,7 +1350,7 @@ export default function ColaboradoresPage() {
                 value={newColaboradorForm.apellido}
                 onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, apellido: e.target.value })}
                 placeholder="Apellido"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
               />
             </div>
           </div>
@@ -778,7 +1363,7 @@ export default function ColaboradoresPage() {
               value={newColaboradorForm.area}
               onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
               placeholder="Ej: Administracion, Ventas, Logistica"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
             />
           </div>
           <div>
@@ -790,7 +1375,7 @@ export default function ColaboradoresPage() {
               value={newColaboradorForm.correo}
               onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, correo: e.target.value })}
               placeholder="correo@ejemplo.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
             />
           </div>
           <div>
@@ -802,7 +1387,7 @@ export default function ColaboradoresPage() {
               value={newColaboradorForm.fechaCumpleanos}
               onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, fechaCumpleanos: e.target.value })}
               placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
             />
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
