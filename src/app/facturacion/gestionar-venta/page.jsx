@@ -7,6 +7,38 @@ import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
 
+// Datos de prueba para los productos mostrados en los modales
+const PRODUCTOS_MOCK = [
+  {
+    codigo: "GZ-L201-8",
+    producto: "Guantes Econoflex Rojo 8",
+    cantidad: 50,
+    precio: 18.64,
+    total: 1099.76,
+  },
+  {
+    codigo: "TZ-T001",
+    producto: "Tapón Auditivo en bolsa",
+    cantidad: 10,
+    precio: 40.68,
+    total: 480.02,
+  },
+  {
+    codigo: "GZ-N311-8",
+    producto: "Guantes Impermeable Naranja 8",
+    cantidad: 10,
+    precio: 27.97,
+    total: 330.05,
+  },
+  {
+    codigo: "LZ-AF201-C",
+    producto: "Lentes Sport Vision AF - Claro",
+    cantidad: 25,
+    precio: 22.88,
+    total: 674.96,
+  },
+];
+
 export default function GestionarVentaPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -26,6 +58,18 @@ export default function GestionarVentaPage() {
   const [modalVerOpen, setModalVerOpen] = useState(false);
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
   const [modalEliminarOpen, setModalEliminarOpen] = useState(false);
+
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("es-PE", {
+      style: "currency",
+      currency: "PEN",
+      minimumFractionDigits: 2,
+    }).format(value || 0);
+
+  const totalProductos = PRODUCTOS_MOCK.reduce(
+    (acc, item) => acc + (item.total || 0),
+    0
+  );
 
   // Datos de prueba (ampliados para simular muchas ventas)
   const [ventas, setVentas] = useState([
@@ -613,115 +657,580 @@ export default function GestionarVentaPage() {
           setVentaSeleccionada(null);
         }}
         title="Detalles de la Venta"
-        size="lg"
+        size="full"
       >
         {ventaSeleccionada && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Cliente</p>
-                <p className="text-sm font-bold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                  {ventaSeleccionada.cliente}
-                </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Columna izquierda: Datos de la Venta */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 6h16M4 10h16M4 14h10"
+                      />
+                    </svg>
+                    <span className="text-sm font-semibold">
+                      Datos de la Venta
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold">
+                    ID VENTA {3900 + ventaSeleccionada.id}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Cliente
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        {ventaSeleccionada.cliente}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Fecha
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        {ventaSeleccionada.fecha}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Asesor
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        {ventaSeleccionada.asesor}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        N° Comprobante
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        {ventaSeleccionada.comprobante}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Clasificación
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        MALVINAS
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Región
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        LIMA
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Distrito
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        CERCADO DE LIMA
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Lugar
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        N/A
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Salida de pedido
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        MALVINAS
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Estado
+                      </p>
+                      <div className="mt-1">
+                        <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                          {ventaSeleccionada.estado}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                        Cancelado
+                      </p>
+                      <div className="mt-1">
+                        <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                          {ventaSeleccionada.cancelado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-200">
+                    <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide mb-1">
+                      Observaciones
+                    </p>
+                    <p className="text-[11px] text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                      N/A
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Fecha</p>
-                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                  {ventaSeleccionada.fecha}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Asesor</p>
-                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                  {ventaSeleccionada.asesor}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Comprobante</p>
-                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                  {ventaSeleccionada.comprobante}
-                </p>
+
+              {/* Columna derecha: Productos Comprados */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 7h14M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z"
+                      />
+                    </svg>
+                    <span className="text-sm font-semibold">
+                      Productos Comprados
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="bg-slate-100 border-b border-gray-200">
+                          <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                            Código
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                            Producto
+                          </th>
+                          <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                            Cantidad
+                          </th>
+                          <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                            Precio
+                          </th>
+                          <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {PRODUCTOS_MOCK.map((item) => (
+                          <tr key={item.codigo} className="bg-white">
+                            <td className="px-3 py-2 whitespace-nowrap text-gray-800">
+                              {item.codigo}
+                            </td>
+                            <td className="px-3 py-2 text-gray-800">
+                              {item.producto}
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-800">
+                              {item.cantidad}
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-800">
+                              {formatCurrency(item.precio)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                              {formatCurrency(item.total)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-100 border border-slate-200 rounded-lg px-4 py-2">
+                    <span className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
+                      Total General:
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {formatCurrency(totalProductos)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end pt-2">
+
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => console.log("Editar venta:", ventaSeleccionada)}
+                className="inline-flex items-center px-4 py-2 text-xs font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 shadow-sm hover:shadow-md transition-all"
+              >
+                <svg
+                  className="w-4 h-4 mr-1.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M11 5h2m-1 0v2m0 4v6m-9 2h18"
+                  />
+                </svg>
+                Editar
+              </button>
               <button
                 onClick={() => {
                   setModalVerOpen(false);
                   setVentaSeleccionada(null);
                 }}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm"
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
               >
-                Cerrar
+                Cerrar Modal
               </button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Modal Pago */}
+      {/* Modal Pago / Estado de Pago */}
       <Modal
         isOpen={modalPagoOpen && !!ventaSeleccionada}
         onClose={() => {
           setModalPagoOpen(false);
           setVentaSeleccionada(null);
         }}
-        title="Registrar Pago"
-        size="md"
+        title="Estado de Pago"
+        size="full"
       >
         {ventaSeleccionada && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700">
-              Registrar pago para el comprobante{" "}
-              <span className="font-semibold text-gray-900">
-                {ventaSeleccionada.comprobante}
-              </span>{" "}
-              del cliente{" "}
-              <span className="font-semibold text-gray-900">
-                {ventaSeleccionada.cliente}
-              </span>
-              .
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Fecha de Pago
-                </label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-sm text-gray-900 placeholder:text-gray-600"
-                />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Columna izquierda */}
+              <div className="space-y-4">
+                {/* Información de Pago */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-semibold">
+                        Información de Pago
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          ID Pago
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                          {3900 + ventaSeleccionada.id}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          N° Comprobante
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                          {ventaSeleccionada.comprobante}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Tipo Comprobante
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                          N/A
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Forma de Pago
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                          N/A
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Fecha de Pago
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                          N/A
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Regularizado
+                        </p>
+                        <div className="mt-1">
+                          <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                            NO
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Cancelado
+                        </p>
+                        <div className="mt-1">
+                          <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                            NO
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                          Estado
+                        </p>
+                        <div className="mt-1">
+                          <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                            COMPLETADO
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Montos Pagados */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-semibold">
+                        Montos Pagados
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6 flex flex-col items-center justify-center text-gray-400 space-y-3">
+                    <svg
+                      className="w-10 h-10"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 15a4 4 0 014-4h10a4 4 0 010 8H7a4 4 0 01-4-4z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 11V9a5 5 0 0110 0v2"
+                      />
+                    </svg>
+                    <p className="text-xs font-medium">
+                      No hay pagos registrados aún
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Monto
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-sm text-gray-900 placeholder:text-gray-600"
-                  placeholder="0.00"
-                />
+
+              {/* Columna derecha */}
+              <div className="space-y-4">
+                {/* Productos Comprados */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 7h14M10 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-semibold">
+                        Productos Comprados
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-gray-200">
+                            <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                              Código
+                            </th>
+                            <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                              Producto
+                            </th>
+                            <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                              Cantidad
+                            </th>
+                            <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                              Precio
+                            </th>
+                            <th className="px-3 py-2 text-right font-semibold text-gray-700">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {PRODUCTOS_MOCK.map((item) => (
+                            <tr key={item.codigo} className="bg-white">
+                              <td className="px-3 py-2 whitespace-nowrap text-gray-800">
+                                {item.codigo}
+                              </td>
+                              <td className="px-3 py-2 text-gray-800">
+                                {item.producto}
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-800">
+                                {item.cantidad}
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-800">
+                                {formatCurrency(item.precio)}
+                              </td>
+                              <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                                {formatCurrency(item.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex items-center justify-between bg-slate-100 border border-slate-200 rounded-lg px-4 py-2">
+                      <span className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
+                        Total General:
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">
+                        {formatCurrency(totalProductos)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Análisis de Pago */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center px-4 py-3 border-b border-gray-200 bg-white">
+                    <svg
+                      className="w-5 h-5 text-blue-700 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11 11V7a4 4 0 118 0v4M5 13h4m-2-2v6"
+                      />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900">
+                      Análisis de Pago
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                          Total Productos
+                        </p>
+                        <p className="mt-1 text-base font-bold text-gray-900">
+                          {formatCurrency(totalProductos)}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                          Total Pagado
+                        </p>
+                        <p className="mt-1 text-base font-bold text-gray-900">
+                          {formatCurrency(0)}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                          Saldo Pendiente
+                        </p>
+                        <p className="mt-1 text-base font-bold text-red-600">
+                          {formatCurrency(totalProductos)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border border-amber-300 bg-amber-50 text-amber-800 rounded-lg px-4 py-3 text-[11px] flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M5 13a7 7 0 1114 0 7 7 0 01-14 0z"
+                          />
+                        </svg>
+                        <span className="font-semibold">
+                          COMPROBANTE AÚN POR CANCELAR (0.0% pagado)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end space-x-2 pt-2">
+
+            <div className="flex items-center justify-end pt-2 border-t border-gray-100">
               <button
                 onClick={() => {
                   setModalPagoOpen(false);
                   setVentaSeleccionada(null);
                 }}
-                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  console.log("Registrar pago para venta:", ventaSeleccionada);
-                  setModalPagoOpen(false);
-                  setVentaSeleccionada(null);
-                }}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Guardar Pago
+                Cerrar Modal
               </button>
             </div>
           </div>

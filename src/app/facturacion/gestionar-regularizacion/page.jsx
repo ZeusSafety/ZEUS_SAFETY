@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
+import * as XLSX from "xlsx";
 
 export default function GestionarRegularizacionPage() {
   const router = useRouter();
@@ -12,47 +14,47 @@ export default function GestionarRegularizacionPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiConectada, setApiConectada] = useState(true);
   const [busquedaComprobante, setBusquedaComprobante] = useState("");
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [loadingBusqueda, setLoadingBusqueda] = useState(false);
+  const [hasBuscado, setHasBuscado] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState(null);
   const [mesesSeleccionados, setMesesSeleccionados] = useState([]);
   const [ano, setAno] = useState("2025");
 
-  // Datos de prueba
-  const [regularizaciones, setRegularizaciones] = useState([
-    {
-      id: 1,
-      titulo: "29 DE NOVIEMBRE / MAÑANA",
-      fecha: "29/11/2025",
-      efectivoIndicado: "2308.5",
-      cantidad: 30,
-    },
-    {
-      id: 2,
-      titulo: "25 DE NOVIEMBRE / TARDE",
-      fecha: "25/11/2025",
-      efectivoIndicado: "5125",
-      cantidad: 23,
-    },
-    {
-      id: 3,
-      titulo: "24 DE NOVIEMBRE / MAÑANA",
-      fecha: "24/11/2025",
-      efectivoIndicado: "1665",
-      cantidad: 13,
-    },
-    {
-      id: 4,
-      titulo: "23 DE NOVIEMBRE / TARDE",
-      fecha: "23/11/2025",
-      efectivoIndicado: "3525",
-      cantidad: 5,
-    },
-    {
-      id: 5,
-      titulo: "22 DE NOVIEMBRE / MAÑANA",
-      fecha: "22/11/2025",
-      efectivoIndicado: "9687.5",
-      cantidad: 42,
-    },
-  ]);
+  // Datos de la API de regularización
+  const [regularizaciones, setRegularizaciones] = useState([]);
+  const [regularizacionSeleccionada, setRegularizacionSeleccionada] = useState(null);
+  const [detallesRegularizacion, setDetallesRegularizacion] = useState(null);
+  const [modalDetallesOpen, setModalDetallesOpen] = useState(false);
+  const [loadingDetalles, setLoadingDetalles] = useState(false);
+  const [cantidadesRegularizaciones, setCantidadesRegularizaciones] = useState({});
+  const [modalActualizarOpen, setModalActualizarOpen] = useState(false);
+  const [regularizacionAEditar, setRegularizacionAEditar] = useState(null);
+  const [formularioActualizar, setFormularioActualizar] = useState({});
+  
+  // Datos de asesores y medios de pago
+  const asesores = [
+    { id: 9, nombre: "HERVIN" },
+    { id: 10, nombre: "KIMBERLY" },
+    { id: 15, nombre: "IMPORT ZEUS" },
+    { id: 31, nombre: "LIZETH" },
+    { id: 32, nombre: "EVELYN" },
+    { id: 33, nombre: "JOSEPH" },
+    { id: 34, nombre: "SANDRA" },
+    { id: 35, nombre: "ALVARO" },
+    { id: 36, nombre: "JOSE" },
+  ];
+
+  const mediosPago = [
+    { id: 1, nombre: "CREDITO" },
+    { id: 2, nombre: "BCP" },
+    { id: 6, nombre: "YAPE" },
+    { id: 8, nombre: "BCP K" },
+    { id: 9, nombre: "EFECTIVO" },
+    { id: 10, nombre: "TRANSFERENCIA" },
+    { id: 11, nombre: "TARJETA" },
+    { id: 12, nombre: "PLIN" },
+  ];
 
   const meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -79,14 +81,772 @@ export default function GestionarRegularizacionPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleBuscarComprobante = () => {
-    // Lógica de búsqueda
-    console.log("Buscando comprobante:", busquedaComprobante);
+  // Función para obtener el ID de la regularización
+  const obtenerIdRegularizacion = (regularizacion) => {
+    if (!regularizacion) {
+      console.error("Regularización es null o undefined");
+      return null;
+    }
+
+    // Intentar obtener el ID de múltiples formas
+    let id = 
+      regularizacion.ID_REGULARIZACION ||
+      regularizacion.id_regularizacion ||
+      regularizacion.ID_REGULARIZACION_ID ||
+      regularizacion.REGULARIZACION_ID ||
+      regularizacion.id ||
+      regularizacion.ID ||
+      regularizacion._id ||
+      regularizacion.regularizacion_id ||
+      regularizacion.ID_DETALLE || // Para items de búsqueda
+      regularizacion.id_detalle ||
+      null;
+
+    // Si aún no se encontró, buscar en todos los campos que contengan "id" o "ID"
+    if (!id) {
+      for (const key in regularizacion) {
+        const lowerKey = key.toLowerCase();
+        if ((lowerKey.includes('id') || lowerKey.includes('_id')) && regularizacion[key]) {
+          const value = regularizacion[key];
+          // Si el valor parece un ID (string no vacío o número)
+          if (value && (typeof value === 'string' || typeof value === 'number')) {
+            id = String(value);
+            break;
+          }
+        }
+      }
+    }
+
+    // Si no se encontró el ID, loggear el objeto completo para debug
+    if (!id) {
+      console.error("No se pudo obtener el ID de la regularización. Objeto completo:", regularizacion);
+      console.error("Claves disponibles:", Object.keys(regularizacion));
+      // Mostrar todos los valores para ayudar a identificar el ID
+      console.error("Valores del objeto:", Object.entries(regularizacion).map(([k, v]) => `${k}: ${v}`).join(", "));
+    }
+
+    return id;
   };
 
-  const handleExportarExcel = (id) => {
-    // Lógica para exportar a Excel
-    console.log("Exportando a Excel:", id);
+  // Función para cargar las cantidades de todas las regularizaciones
+  const cargarCantidadesRegularizaciones = async (regularizaciones, token) => {
+    try {
+      const cantidadesPromesas = regularizaciones.map(async (regularizacion) => {
+        const id = obtenerIdRegularizacion(regularizacion);
+        if (!id) return null;
+
+        try {
+          const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&id=${encodeURIComponent(id)}`;
+          
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const contentType = response.headers.get("content-type");
+          let data;
+          if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            try {
+              data = JSON.parse(text);
+            } catch {
+              return null;
+            }
+          }
+
+          const items = Array.isArray(data) ? data : data?.detalles || data?.data || [data];
+          const cantidad = items.length;
+
+          return { id, cantidad };
+        } catch (error) {
+          console.error(`Error cargando cantidad para ${id}:`, error);
+          return null;
+        }
+      });
+
+      const resultados = await Promise.all(cantidadesPromesas);
+      const nuevasCantidades = {};
+      
+      resultados.forEach((resultado) => {
+        if (resultado) {
+          nuevasCantidades[resultado.id] = resultado.cantidad;
+        }
+      });
+
+      setCantidadesRegularizaciones((prev) => ({
+        ...prev,
+        ...nuevasCantidades,
+      }));
+    } catch (error) {
+      console.error("Error cargando cantidades:", error);
+    }
+  };
+
+  // Cargar listado de regularizaciones desde la API externa protegida con token
+  useEffect(() => {
+    const fetchRegularizaciones = async () => {
+      try {
+        // Solo en cliente
+        if (typeof window === "undefined") return;
+
+        const token = localStorage.getItem("token");
+        if (!token || token.trim() === "") {
+          console.warn("No se encontró token para regularizaciones");
+          setApiConectada(false);
+          return;
+        }
+
+        const apiUrl =
+          "https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion";
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("Regularizacion API status:", response.status);
+
+        if (!response.ok) {
+          // Si el token es inválido/redirigimos al login igual que en otros módulos
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            router.push("/login");
+            return;
+          }
+
+          const errorText = await response.text();
+          console.error(
+            "Error HTTP al obtener las regularizaciones:",
+            response.status,
+            errorText || response.statusText
+          );
+          setRegularizaciones([]);
+          setApiConectada(false);
+          return;
+        }
+
+        const contentType = response.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.error("La respuesta de regularizaciones no es JSON válido");
+            setRegularizaciones([]);
+            setApiConectada(false);
+            return;
+          }
+        }
+
+        const items = Array.isArray(data)
+          ? data
+          : data?.regularizaciones || data?.data || [];
+
+        setRegularizaciones(items);
+        setApiConectada(true);
+        
+        // Cargar cantidades para todas las regularizaciones
+        if (items.length > 0) {
+          cargarCantidadesRegularizaciones(items, token);
+        }
+      } catch (error) {
+        console.error("Error cargando regularizaciones:", error);
+        setRegularizaciones([]);
+        setApiConectada(false);
+      }
+    };
+
+    fetchRegularizaciones();
+  }, [router]);
+
+  const handleBuscarComprobante = async () => {
+    try {
+      if (!busquedaComprobante || busquedaComprobante.trim() === "") {
+        setResultadosBusqueda([]);
+        setHasBuscado(false);
+        setErrorBusqueda(null);
+        return;
+      }
+
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        console.warn("No se encontró token para búsqueda de regularización");
+        return;
+      }
+
+      setLoadingBusqueda(true);
+      setHasBuscado(true);
+      setErrorBusqueda(null);
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=busqueda&id=${encodeURIComponent(
+        busquedaComprobante.trim()
+      )}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Regularizacion BUSQUEDA status:", response.status);
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error en búsqueda:", response.status, errorText);
+        setResultadosBusqueda([]);
+        setErrorBusqueda(
+          "Error al buscar en la API de regularización. Revisa el backend."
+        );
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("La respuesta de búsqueda no es JSON válido");
+          setResultadosBusqueda([]);
+          return;
+        }
+      }
+
+      // Manejar diferentes formatos de respuesta
+      let items = [];
+      if (Array.isArray(data)) {
+        items = data;
+      } else if (data?.regularizaciones) {
+        items = Array.isArray(data.regularizaciones) ? data.regularizaciones : [data.regularizaciones];
+      } else if (data?.data) {
+        items = Array.isArray(data.data) ? data.data : [data.data];
+      } else if (data && typeof data === 'object') {
+        // Si es un objeto único, convertirlo a array
+        items = [data];
+      }
+
+      console.log("Resultados de búsqueda:", items);
+      setResultadosBusqueda(items);
+    } catch (error) {
+      console.error("Error buscando comprobante:", error);
+      setResultadosBusqueda([]);
+      setErrorBusqueda(
+        "Ocurrió un error al buscar el comprobante. Revisa la consola."
+      );
+    } finally {
+      setLoadingBusqueda(false);
+    }
+  };
+
+  // Función para cargar detalles de una regularización
+  const cargarDetallesRegularizacion = async (regularizacion) => {
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      console.error("No se pudo obtener el ID de la regularización");
+      return;
+    }
+
+    try {
+      setLoadingDetalles(true);
+      setRegularizacionSeleccionada(regularizacion);
+
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        console.warn("No se encontró token para detalles de regularización");
+        return;
+      }
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&id=${encodeURIComponent(id)}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al obtener detalles:", response.status, errorText);
+        alert("No se pudieron cargar los detalles de la regularización.");
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("La respuesta de detalles no es JSON válido");
+          alert("La respuesta no es válida.");
+          return;
+        }
+      }
+
+      setDetallesRegularizacion(data);
+      
+      // Contar la cantidad de items en los detalles
+      const items = Array.isArray(data) ? data : data?.detalles || data?.data || [data];
+      const cantidadItems = items.length;
+      
+      // Actualizar la cantidad para esta regularización
+      setCantidadesRegularizaciones((prev) => ({
+        ...prev,
+        [id]: cantidadItems,
+      }));
+      
+      setModalDetallesOpen(true);
+    } catch (error) {
+      console.error("Error cargando detalles:", error);
+      alert("Ocurrió un error al cargar los detalles.");
+    } finally {
+      setLoadingDetalles(false);
+    }
+  };
+
+  // Función para exportar a Excel usando el segundo GET API
+  const handleExportarExcel = async (regularizacion) => {
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      console.error("No se pudo obtener el ID de la regularización");
+      alert("No se pudo obtener el ID de la regularización para exportar.");
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        console.warn("No se encontró token para exportar Excel");
+        alert("No se encontró token de autenticación.");
+        return;
+      }
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&id=${encodeURIComponent(id)}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al exportar Excel:", response.status, errorText);
+        alert("No se pudo generar el archivo Excel.");
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("La respuesta no es JSON válido");
+          alert("La respuesta no es válida.");
+          return;
+        }
+      }
+
+      // Convertir los datos a Excel
+      const items = Array.isArray(data) ? data : data?.detalles || data?.data || [data];
+
+      if (!items.length) {
+        alert("No hay datos para exportar.");
+        return;
+      }
+
+      // Generar archivo Excel (.xlsx) usando la librería xlsx
+      const worksheet = XLSX.utils.json_to_sheet(items);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Detalles");
+
+      // Generar el archivo Excel
+      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `regularizacion_${id}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exportando Excel:", error);
+      alert("Ocurrió un error al exportar el archivo.");
+    }
+  };
+
+  // Función para eliminar una regularización
+  const handleEliminarRegularizacion = async (regularizacion) => {
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      alert("No se pudo obtener el ID de la regularización para eliminar.");
+      return;
+    }
+
+    if (!confirm(`¿Está seguro que desea eliminar la regularización "${regularizacion.NOMBRE || regularizacion.nombre || regularizacion.TITULO || regularizacion.titulo || id}"?`)) {
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        alert("No se encontró token de autenticación.");
+        return;
+      }
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&forma=eliminar`;
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: id }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al eliminar:", response.status, errorText);
+        alert("No se pudo eliminar la regularización.");
+        return;
+      }
+
+      // Recargar la lista de regularizaciones
+      const refreshResponse = await fetch(
+        "https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (refreshResponse.ok) {
+        const contentType = refreshResponse.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+          data = await refreshResponse.json();
+        } else {
+          const text = await refreshResponse.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.error("Error parseando respuesta");
+          }
+        }
+
+        const items = Array.isArray(data) ? data : data?.regularizaciones || data?.data || [];
+        setRegularizaciones(items);
+        
+        if (items.length > 0) {
+          cargarCantidadesRegularizaciones(items, token);
+        }
+      }
+
+      alert("Regularización eliminada exitosamente.");
+    } catch (error) {
+      console.error("Error eliminando regularización:", error);
+      alert("Ocurrió un error al eliminar la regularización.");
+    }
+  };
+
+  // Función para abrir modal de actualización
+  const handleAbrirActualizar = async (regularizacion) => {
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      alert("No se pudo obtener el ID de la regularización.");
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        alert("No se encontró token de autenticación.");
+        return;
+      }
+
+      // Cargar los detalles de la regularización para obtener todos los datos
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&id=${encodeURIComponent(id)}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        alert("No se pudieron cargar los datos de la regularización.");
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          alert("Error al procesar los datos.");
+          return;
+        }
+      }
+
+      // Obtener el primer detalle para prellenar el formulario
+      const items = Array.isArray(data) ? data : data?.detalles || data?.data || [data];
+      const primerDetalle = items.length > 0 ? items[0] : regularizacion;
+
+      // Formatear fecha de YYYY-MM-DD a DD/MM/YYYY si es necesario
+      const fechaReg = primerDetalle.FECHA_REGULARIZACION || 
+                      primerDetalle.fecha_regularizacion || 
+                      primerDetalle.FECHA || 
+                      primerDetalle.fecha || 
+                      "";
+      
+      let fechaFormateada = "";
+      if (fechaReg) {
+        // Si viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+        if (fechaReg.includes("-")) {
+          const [year, month, day] = fechaReg.split("-");
+          fechaFormateada = `${day}/${month}/${year}`;
+        } else {
+          fechaFormateada = fechaReg;
+        }
+      }
+
+      setRegularizacionAEditar(regularizacion);
+      setFormularioActualizar({
+        comprobantes: primerDetalle.COMPROBANTES || 
+                     primerDetalle.comprobantes || 
+                     primerDetalle.COMPROBANTE || 
+                     primerDetalle.comprobante || 
+                     "",
+        fecha_regularizacion: fechaFormateada,
+        monto: primerDetalle.MONTO || 
+               primerDetalle.monto || 
+               primerDetalle.EFECTIVO_INDICADO || 
+               primerDetalle.efectivo_indicado || 
+               "",
+        asesor: primerDetalle.ASESOR || 
+                primerDetalle.asesor || 
+                "",
+        medio_pago: primerDetalle.MEDIO_DE_PAGO || 
+                   primerDetalle.medio_de_pago || 
+                   primerDetalle.MEDIO_PAGO || 
+                   primerDetalle.medio_pago || 
+                   primerDetalle.FORMA_PAGO || 
+                   primerDetalle.forma_pago || 
+                   "",
+        observaciones: primerDetalle.OBSERVACION || 
+                      primerDetalle.observacion || 
+                      primerDetalle.OBSERVACIONES || 
+                      primerDetalle.observaciones || 
+                      "",
+      });
+      setModalActualizarOpen(true);
+    } catch (error) {
+      console.error("Error cargando datos para actualizar:", error);
+      alert("Ocurrió un error al cargar los datos.");
+    }
+  };
+
+  // Función para actualizar una regularización
+  const handleActualizarRegularizacion = async () => {
+    // Validar campos requeridos
+    if (!formularioActualizar.comprobantes || !formularioActualizar.fecha_regularizacion || 
+        !formularioActualizar.monto || !formularioActualizar.asesor || !formularioActualizar.medio_pago) {
+      alert("Por favor complete todos los campos requeridos (*).");
+      return;
+    }
+
+    const id = obtenerIdRegularizacion(regularizacionAEditar);
+    if (!id) {
+      alert("No se pudo obtener el ID de la regularización para actualizar.");
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        alert("No se encontró token de autenticación.");
+        return;
+      }
+
+      // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD si es necesario
+      let fechaFormateada = formularioActualizar.fecha_regularizacion;
+      if (fechaFormateada.includes("/")) {
+        const [day, month, year] = fechaFormateada.split("/");
+        fechaFormateada = `${year}-${month}-${day}`;
+      }
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&forma=actualizar`;
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: id,
+          comprobantes: formularioActualizar.comprobantes,
+          fecha_regularizacion: fechaFormateada,
+          monto: formularioActualizar.monto,
+          asesor: formularioActualizar.asesor,
+          medio_pago: formularioActualizar.medio_pago,
+          observaciones: formularioActualizar.observaciones || "",
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al actualizar:", response.status, errorText);
+        alert("No se pudo actualizar la regularización.");
+        return;
+      }
+
+      // Recargar la lista de regularizaciones
+      const refreshResponse = await fetch(
+        "https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (refreshResponse.ok) {
+        const contentType = refreshResponse.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+          data = await refreshResponse.json();
+        } else {
+          const text = await refreshResponse.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.error("Error parseando respuesta");
+          }
+        }
+
+        const items = Array.isArray(data) ? data : data?.regularizaciones || data?.data || [];
+        setRegularizaciones(items);
+        
+        if (items.length > 0) {
+          cargarCantidadesRegularizaciones(items, token);
+        }
+      }
+
+      setModalActualizarOpen(false);
+      setRegularizacionAEditar(null);
+      setFormularioActualizar({});
+      alert("Regularización actualizada exitosamente.");
+    } catch (error) {
+      console.error("Error actualizando regularización:", error);
+      alert("Ocurrió un error al actualizar la regularización.");
+    }
   };
 
   const toggleMes = (mes) => {
@@ -98,8 +858,118 @@ export default function GestionarRegularizacionPage() {
   };
 
   const handleExportarExcelPorMes = () => {
-    // Lógica para exportar por mes
-    console.log("Exportando por mes:", mesesSeleccionados, ano);
+    // Exportar reporte por mes usando el área= "reporte"
+    (async () => {
+      try {
+        if (mesesSeleccionados.length === 0) {
+          alert("Selecciona al menos un mes para generar el reporte.");
+          return;
+        }
+
+        if (typeof window === "undefined") return;
+
+        const token = localStorage.getItem("token");
+        if (!token || token.trim() === "") {
+          console.warn("No se encontró token para reporte por mes");
+          return;
+        }
+
+        // Convertir nombres de meses a números (1-12)
+        const mesesNumeros = mesesSeleccionados
+          .map((mes) => meses.indexOf(mes) + 1)
+          .filter((n) => n > 0)
+          .sort((a, b) => a - b);
+
+        if (mesesNumeros.length === 0) {
+          alert("No se pudieron interpretar los meses seleccionados.");
+          return;
+        }
+
+        // Si solo hay un mes seleccionado, ese mes es tanto mínimo como máximo
+        // Si hay múltiples meses, el mínimo es el menor y el máximo es el mayor
+        const minMes = mesesNumeros[0];
+        const maxMes = mesesNumeros.length === 1 
+          ? mesesNumeros[0]  // Si solo hay un mes, min y max son el mismo
+          : mesesNumeros[mesesNumeros.length - 1];  // Si hay múltiples, max es el mayor
+
+        // Construir URL con los parámetros: area=reporte&min=X&max=Y&year=Z
+        const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=reporte&min=${minMes}&max=${maxMes}&year=${ano}`;
+        
+        console.log("Generando reporte con parámetros:", { area: "reporte", min: minMes, max: maxMes, year: ano });
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("Regularizacion REPORTE status:", response.status);
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            router.push("/login");
+            return;
+          }
+
+          const errorText = await response.text();
+          console.error("Error en reporte:", response.status, errorText);
+          alert("No se pudo generar el reporte. Revisa la consola.");
+          return;
+        }
+
+        const contentType = response.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.error("La respuesta de reporte no es JSON válido");
+            alert("La respuesta del reporte no es un JSON válido.");
+            return;
+          }
+        }
+
+        const items = Array.isArray(data)
+          ? data
+          : data?.regularizaciones || data?.data || [];
+
+        if (!items.length) {
+          alert("El reporte no devolvió datos para los meses seleccionados.");
+          return;
+        }
+
+        // Generar archivo Excel (.xlsx) usando la librería xlsx
+        const worksheet = XLSX.utils.json_to_sheet(items);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Regularizaciones");
+
+        // Generar el archivo Excel
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `reporte_regularizacion_${ano}_${minMes}-${maxMes}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error exportando reporte por mes:", error);
+        alert("Ocurrió un error al generar el archivo. Revisa la consola.");
+      }
+    })();
   };
 
   if (loading) {
@@ -179,33 +1049,172 @@ export default function GestionarRegularizacionPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {regularizaciones.map((regularizacion) => (
-                          <tr key={regularizacion.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{regularizacion.titulo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{regularizacion.fecha}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {parseFloat(regularizacion.efectivoIndicado) > 0 ? (
-                                <span className="px-2 py-1 bg-yellow-100 text-gray-900 rounded font-semibold text-[10px]">
-                                  {regularizacion.efectivoIndicado}
-                                </span>
-                              ) : (
-                                <span>{regularizacion.efectivoIndicado}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{regularizacion.cantidad}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <button
-                                onClick={() => handleExportarExcel(regularizacion.id)}
-                                className="px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1 mx-auto"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Excel</span>
-                              </button>
+                        {regularizaciones.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="px-4 py-6 text-center text-[10px] text-gray-500 font-medium"
+                            >
+                              No hay regularizaciones registradas.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          regularizaciones.map((regularizacion, index) => {
+                            // Intentar usar un ID estable de la API, con fallback al índice
+                            const rowKey =
+                              regularizacion.ID_DETALLE ||
+                              regularizacion.ID_REGULARIZACION ||
+                              regularizacion.id ||
+                              `${regularizacion.id_regularizacion || "row"}-${index}`;
+
+                            // Título / nombre de la regularización
+                            const titulo =
+                              regularizacion.NOMBRE ||
+                              regularizacion.nombre ||
+                              regularizacion.TITULO ||
+                              regularizacion.titulo ||
+                              regularizacion.descripcion ||
+                              `Regularización ${index + 1}`;
+
+                            // Fecha principal
+                            const fecha =
+                              regularizacion.FECHA ||
+                              regularizacion.fecha ||
+                              regularizacion.FECHA_REGULARIZACION ||
+                              regularizacion.fecha_regularizacion ||
+                              "";
+
+                            // Efectivo indicado o monto principal
+                            const efectivoIndicadoRaw =
+                              regularizacion.EFECTIVO_INDICADO ||
+                              regularizacion.efectivo_indicado ||
+                              regularizacion.MONTO ||
+                              regularizacion.monto ||
+                              "0";
+
+                            const efectivoNum = parseFloat(
+                              typeof efectivoIndicadoRaw === "string"
+                                ? efectivoIndicadoRaw.replace(",", ".")
+                                : efectivoIndicadoRaw || "0"
+                            );
+                            
+                            // Mostrar "0" si no hay valor o si el valor es 0
+                            const efectivoMostrar = efectivoIndicadoRaw === "" || efectivoNum === 0 ? "0" : efectivoIndicadoRaw;
+                            
+                            // Siempre mostrar con fondo amarillo (incluso cuando es 0)
+                            const mostrarResaltado = !Number.isNaN(efectivoNum);
+
+                            // Obtener el ID de la regularización para buscar su cantidad
+                            const idRegularizacion = obtenerIdRegularizacion(regularizacion);
+                            
+                            // Obtener la cantidad desde el estado (si ya se cargaron los detalles)
+                            // Si no está en el estado, usar el valor de la API o "0"
+                            const cantidadDesdeEstado = idRegularizacion 
+                              ? cantidadesRegularizaciones[idRegularizacion] 
+                              : null;
+                            
+                            const cantidadRaw =
+                              cantidadDesdeEstado !== null && cantidadDesdeEstado !== undefined
+                                ? String(cantidadDesdeEstado)
+                                : regularizacion.CANTIDAD ||
+                              regularizacion.cantidad ||
+                              regularizacion.TOTAL ||
+                              regularizacion.total ||
+                              regularizacion.cantidad_registros ||
+                                  "0";
+                            
+                            // Mostrar "0" si no hay cantidad
+                            const cantidad = cantidadRaw === "" ? "0" : cantidadRaw;
+
+                            return (
+                              <tr
+                                key={rowKey}
+                                className="hover:bg-slate-200 transition-colors cursor-pointer"
+                                onClick={() => cargarDetallesRegularizacion(regularizacion)}
+                              >
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                                  {titulo}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {fecha}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {mostrarResaltado ? (
+                                    <span className="px-2 py-1 bg-yellow-100 text-gray-900 rounded font-semibold text-[10px]">
+                                      {efectivoMostrar}
+                                    </span>
+                                  ) : (
+                                    <span>{efectivoMostrar}</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {cantidad}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-center gap-2">
+                                  <button
+                                      onClick={() => handleAbrirActualizar(regularizacion)}
+                                      className="px-2.5 py-1 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
+                                    >
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="2"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                      </svg>
+                                      <span>Actualizar</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleEliminarRegularizacion(regularizacion)}
+                                      className="px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
+                                    >
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="2"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                      <span>Eliminar</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleExportarExcel(regularizacion)}
+                                      className="px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
+                                  >
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth="2"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      />
+                                    </svg>
+                                    <span>Excel</span>
+                                  </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -230,7 +1239,7 @@ export default function GestionarRegularizacionPage() {
                       value={busquedaComprobante}
                       onChange={(e) => setBusquedaComprobante(e.target.value)}
                       placeholder="Ingrese el número de comprobante..."
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
                   <button
@@ -259,16 +1268,173 @@ export default function GestionarRegularizacionPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        <tr>
-                          <td colSpan={7} className="px-4 py-12 text-center">
-                            <div className="flex flex-col items-center justify-center">
-                              <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              <p className="text-gray-500 font-medium text-[10px]">Ingrese un comprobante para buscar</p>
-                            </div>
-                          </td>
-                        </tr>
+                        {loadingBusqueda ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-[10px] text-gray-500">
+                              Buscando comprobante...
+                            </td>
+                          </tr>
+                        ) : !hasBuscado ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-12 text-center">
+                              <div className="flex flex-col items-center justify-center">
+                                <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <p className="text-gray-500 font-medium text-[10px]">
+                                  Ingrese un comprobante para buscar
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : errorBusqueda ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-[10px] text-red-500 font-medium text-[10px]">
+                              {errorBusqueda}
+                            </td>
+                          </tr>
+                        ) : resultadosBusqueda.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-[10px] text-gray-500">
+                              No se encontraron resultados para ese comprobante.
+                            </td>
+                          </tr>
+                        ) : (
+                          resultadosBusqueda.map((item, index) => {
+                            const rowKey =
+                              item.ID_DETALLE ||
+                              item.ID_REGULARIZACION ||
+                              item.id ||
+                              `detalle-${index}`;
+
+                            const titulo =
+                              item.NOMBRE ||
+                              item.nombre ||
+                              item.TITULO ||
+                              item.titulo ||
+                              item.DESCRIPCION ||
+                              item.descripcion ||
+                              item.NOMBRE_REGULARIZACION ||
+                              item.nombre_regularizacion ||
+                              `Regularización ${index + 1}`;
+
+                            const comprobantes =
+                              item.COMPROBANTES ||
+                              item.comprobantes ||
+                              item.COMPROBANTE ||
+                              item.comprobante ||
+                              item.NUMERO_COMPROBANTE ||
+                              item.numero_comprobante ||
+                              "";
+
+                            const fechaReg =
+                              item.FECHA_REGULARIZACION ||
+                              item.fecha_regularizacion ||
+                              item.FECHA_REG ||
+                              item.fecha_reg ||
+                              item.FECHA ||
+                              item.fecha ||
+                              item.FECHA_CREACION ||
+                              item.fecha_creacion ||
+                              "";
+
+                            const monto =
+                              item.MONTO ||
+                              item.monto ||
+                              item.MONTO_TOTAL ||
+                              item.monto_total ||
+                              item.TOTAL ||
+                              item.total ||
+                              item.EFECTIVO_INDICADO ||
+                              item.efectivo_indicado ||
+                              "";
+
+                            const asesor =
+                              item.ASESOR ||
+                              item.asesor ||
+                              item.ASESOR_NOMBRE ||
+                              item.asesor_nombre ||
+                              item.VENDEDOR ||
+                              item.vendedor ||
+                              "";
+
+                            const medioPago =
+                              item.MEDIO_DE_PAGO ||
+                              item.medio_de_pago ||
+                              item.MEDIO_PAGO ||
+                              item.medio_pago ||
+                              item.FORMA_PAGO ||
+                              item.forma_pago ||
+                              item.METODO_PAGO ||
+                              item.metodo_pago ||
+                              "";
+
+                            return (
+                              <tr key={rowKey} className="hover:bg-slate-200 transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                                  {titulo}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {comprobantes}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {fechaReg}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {monto}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {asesor}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  {medioPago}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={() => handleAbrirActualizar(item)}
+                                      className="px-2.5 py-1 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
+                                    >
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="2"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                      </svg>
+                                      <span>Actualizar</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleEliminarRegularizacion(item)}
+                                      className="px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
+                                    >
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="2"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                      <span>Eliminar</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -305,15 +1471,22 @@ export default function GestionarRegularizacionPage() {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Año:
                       </label>
+                      <div className="relative">
                       <select
                         value={ano}
                         onChange={(e) => setAno(e.target.value)}
-                        className="px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
-                      >
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
+                          className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 bg-white hover:border-gray-400 cursor-pointer appearance-none font-medium"
+                        >
+                          <option value="2023" className="text-gray-900 bg-white py-2">2023</option>
+                          <option value="2024" className="text-gray-900 bg-white py-2">2024</option>
+                          <option value="2025" className="text-gray-900 bg-white py-2">2025</option>
                       </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                     <button
                       onClick={handleExportarExcelPorMes}
@@ -331,6 +1504,339 @@ export default function GestionarRegularizacionPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Detalles de Regularización */}
+      <Modal
+        isOpen={modalDetallesOpen}
+        onClose={() => {
+          setModalDetallesOpen(false);
+          setDetallesRegularizacion(null);
+          setRegularizacionSeleccionada(null);
+        }}
+        title="Detalles de Regularización"
+        size="full"
+        hideFooter={true}
+      >
+        {loadingDetalles ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+          </div>
+        ) : detallesRegularizacion ? (
+          <div className="space-y-4">
+            {/* Información general */}
+            {regularizacionSeleccionada && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Información General</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Título</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {regularizacionSeleccionada.NOMBRE ||
+                        regularizacionSeleccionada.nombre ||
+                        regularizacionSeleccionada.TITULO ||
+                        regularizacionSeleccionada.titulo ||
+                        "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Fecha</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {regularizacionSeleccionada.FECHA ||
+                        regularizacionSeleccionada.fecha ||
+                        "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Efectivo Indicado</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {regularizacionSeleccionada.EFECTIVO_INDICADO ||
+                        regularizacionSeleccionada.efectivo_indicado ||
+                        regularizacionSeleccionada.MONTO ||
+                        regularizacionSeleccionada.monto ||
+                        "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Cantidad</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {regularizacionSeleccionada.CANTIDAD ||
+                        regularizacionSeleccionada.cantidad ||
+                        "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tabla de detalles */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      {detallesRegularizacion && Array.isArray(detallesRegularizacion) && detallesRegularizacion.length > 0
+                        ? Object.keys(detallesRegularizacion[0]).map((key) => (
+                            <th
+                              key={key}
+                              className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                            >
+                              {key}
+                            </th>
+                          ))
+                        : detallesRegularizacion && !Array.isArray(detallesRegularizacion)
+                        ? Object.keys(detallesRegularizacion).map((key) => (
+                            <th
+                              key={key}
+                              className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                            >
+                              {key}
+                            </th>
+                          ))
+                        : null}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {Array.isArray(detallesRegularizacion) ? (
+                      detallesRegularizacion.length > 0 ? (
+                        detallesRegularizacion.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-200 transition-colors">
+                            {Object.values(item).map((value, valIdx) => (
+                              <td
+                                key={valIdx}
+                                className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700"
+                              >
+                                {value !== null && value !== undefined ? String(value) : ""}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={Object.keys(detallesRegularizacion[0] || {}).length || 1}
+                            className="px-4 py-6 text-center text-[10px] text-gray-500"
+                          >
+                            No hay detalles disponibles.
+                          </td>
+                        </tr>
+                      )
+                    ) : (
+                      <tr>
+                        {Object.values(detallesRegularizacion).map((value, idx) => (
+                          <td
+                            key={idx}
+                            className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700"
+                          >
+                            {value !== null && value !== undefined ? String(value) : ""}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Botón cerrar */}
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={() => {
+                  setModalDetallesOpen(false);
+                  setDetallesRegularizacion(null);
+                  setRegularizacionSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <p>No se pudieron cargar los detalles.</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Actualizar Regularización */}
+      <Modal
+        isOpen={modalActualizarOpen}
+        onClose={() => {
+          setModalActualizarOpen(false);
+          setRegularizacionAEditar(null);
+          setFormularioActualizar({});
+        }}
+        title="Actualizar Regularización"
+        size="lg"
+        hideFooter={true}
+      >
+        {regularizacionAEditar && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Comprobantes <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formularioActualizar.comprobantes || ""}
+                  onChange={(e) =>
+                    setFormularioActualizar({
+                      ...formularioActualizar,
+                      comprobantes: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                  placeholder="Ingrese el número de comprobante"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Fecha de Regularización <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formularioActualizar.fecha_regularizacion || ""}
+                    onChange={(e) =>
+                      setFormularioActualizar({
+                        ...formularioActualizar,
+                        fecha_regularizacion: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                    placeholder="dd/mm/aaaa"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Monto <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formularioActualizar.monto || ""}
+                  onChange={(e) =>
+                    setFormularioActualizar({
+                      ...formularioActualizar,
+                      monto: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Asesor <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={formularioActualizar.asesor || ""}
+                    onChange={(e) =>
+                      setFormularioActualizar({
+                        ...formularioActualizar,
+                        asesor: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 bg-white hover:border-gray-400 cursor-pointer appearance-none font-medium"
+                    required
+                  >
+                    <option value="">Seleccione un asesor</option>
+                    {asesores.map((asesor) => (
+                      <option key={asesor.id} value={asesor.nombre} className="text-gray-900 bg-white py-2">
+                        {asesor.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Medio de Pago <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={formularioActualizar.medio_pago || ""}
+                    onChange={(e) =>
+                      setFormularioActualizar({
+                        ...formularioActualizar,
+                        medio_pago: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 bg-white hover:border-gray-400 cursor-pointer appearance-none font-medium"
+                    required
+                  >
+                    <option value="">Seleccione un medio de pago</option>
+                    {mediosPago.map((medio) => (
+                      <option key={medio.id} value={medio.nombre} className="text-gray-900 bg-white py-2">
+                        {medio.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Observaciones
+                </label>
+                <textarea
+                  value={formularioActualizar.observaciones || ""}
+                  onChange={(e) =>
+                    setFormularioActualizar({
+                      ...formularioActualizar,
+                      observaciones: e.target.value,
+                    })
+                  }
+                  rows={4}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 resize-y"
+                  placeholder="Ingrese observaciones (opcional)"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <button
+                onClick={() => {
+                  setModalActualizarOpen(false);
+                  setRegularizacionAEditar(null);
+                  setFormularioActualizar({});
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleActualizarRegularizacion}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
