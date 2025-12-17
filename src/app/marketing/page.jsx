@@ -385,6 +385,8 @@ export default function MarketingPage() {
                                     console.log("Recencia de Clientes - Ruta pendiente");
                                   } else if (card.id === "cotizaciones") {
                                     router.push("/marketing/cotizaciones");
+                                  } else if (card.id === "historial-cotizaciones") {
+                                    router.push("/marketing/historial-cotizaciones");
                                   } else if (card.id === "stock-precios-mayor") {
                                     // TODO: Agregar ruta cuando esté disponible
                                     console.log("Stock y Precios por Mayor - Ruta pendiente");
