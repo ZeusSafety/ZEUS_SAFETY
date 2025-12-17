@@ -2342,7 +2342,7 @@ function RecursosHumanosContent() {
                                       {(() => {
                                         const medioId = item.ID || item.id || item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
                                         const itemActual = datosParaMostrar[item.index] || {};
-                                        const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
+                                        const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.medio || itemActual.MEDIO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
                                         
                                         if (medioId) {
                                           // Si tiene ID, mostrar botón "Actualizar"
@@ -2444,8 +2444,8 @@ function RecursosHumanosContent() {
                                                   ...itemActual,
                                                   TIPO: nuevoTipo,
                                                   tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
                                                 setErrorSavingDatos(null); // Limpiar error al cambiar
@@ -2467,8 +2467,8 @@ function RecursosHumanosContent() {
                                                   ...itemActual,
                                                   TIPO: nuevoTipo,
                                                   tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
                                                 setErrorSavingDatos(null); // Limpiar error al cambiar
@@ -2479,6 +2479,74 @@ function RecursosHumanosContent() {
                                           </label>
                                         </div>
                                       </div>
+                                      
+                                      {/* Medio */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
+                                        <div className="flex-1 flex items-center space-x-3">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "TELEFONO",
+                                                  medio: "TELEFONO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "CORREO",
+                                                  medio: "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORREO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${item.index}`}
+                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosParaMostrar];
+                                                const itemActual = nuevosDatos[item.index] || {};
+                                                nuevosDatos[item.index] = {
+                                                  ...itemActual,
+                                                  MEDIO: "TELEFONO_EMERGENCIA",
+                                                  medio: "TELEFONO_EMERGENCIA"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
+                                          </label>
+                                        </div>
+                                      </div>
+                                      
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
                                         <input
@@ -2513,13 +2581,19 @@ function RecursosHumanosContent() {
                                               ...itemActual,
                                               CONTENIDO: e.target.value,
                                               contenido: e.target.value,
-                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                             };
                                             setDatosEditables(nuevosDatos);
                                             setErrorSavingDatos(null); // Limpiar error al cambiar
                                           }}
-                                          placeholder="Ej: correo@ejemplo.com"
+                                          placeholder={
+                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
+                                              ? "Ej: correo@ejemplo.com" 
+                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
+                                              ? "Ej: 987654321"
+                                              : "Ej: 956224010"
+                                          }
                                           className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
                                         />
                                       </div>
@@ -2563,8 +2637,8 @@ function RecursosHumanosContent() {
                                 const nuevoItem = {
                                   TIPO: "",
                                   tipo: "",
-                                  MEDIO: "CORREO",
-                                  medio: "CORREO",
+                                  MEDIO: "TELEFONO",
+                                  medio: "TELEFONO",
                                   NOMBRE: "",
                                   nombre: "",
                                   CONTENIDO: "",
@@ -2588,7 +2662,7 @@ function RecursosHumanosContent() {
                             <div className="space-y-3">
                               {datosEditables.map((item, idx) => {
                                 const medioId = item?.ID || item?.id;
-                                const tieneTodosLosCampos = item?.tipo && item?.nombre && item?.contenido;
+                                const tieneTodosLosCampos = item?.tipo && item?.medio && item?.nombre && item?.contenido;
                                 
                                 return (
                                   <div key={idx} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
@@ -2688,6 +2762,70 @@ function RecursosHumanosContent() {
                                         </div>
                                       </div>
                                       
+                                      {/* Medio */}
+                                      <div className="flex items-start">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
+                                        <div className="flex-1 flex items-center space-x-3">
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "TELEFONO",
+                                                  medio: "TELEFONO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "CORREO",
+                                                  medio: "CORREO"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">CORREO</span>
+                                          </label>
+                                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`medio-${idx}`}
+                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
+                                              onChange={(e) => {
+                                                const nuevosDatos = [...datosEditables];
+                                                nuevosDatos[idx] = {
+                                                  ...item,
+                                                  MEDIO: "TELEFONO_EMERGENCIA",
+                                                  medio: "TELEFONO_EMERGENCIA"
+                                                };
+                                                setDatosEditables(nuevosDatos);
+                                                setErrorSavingDatos(null);
+                                              }}
+                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
+                                          </label>
+                                        </div>
+                                      </div>
+                                      
                                       {/* Nombre */}
                                       <div className="flex items-start">
                                         <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
@@ -2725,7 +2863,13 @@ function RecursosHumanosContent() {
                                             setDatosEditables(nuevosDatos);
                                             setErrorSavingDatos(null);
                                           }}
-                                          placeholder="Ej: correo@ejemplo.com"
+                                          placeholder={
+                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
+                                              ? "Ej: correo@ejemplo.com" 
+                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
+                                              ? "Ej: 987654321"
+                                              : "Ej: 956224010"
+                                          }
                                           className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
                                         />
                                       </div>

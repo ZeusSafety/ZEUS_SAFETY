@@ -143,7 +143,8 @@ export default function GestionPreciosPage() {
       }
       
       const apiId = getApiId(tablaId);
-      const apiUrl = `/api/franja-precios?id=${encodeURIComponent(apiId)}`;
+      // Usar listar_franjas en lugar de franja_precios para obtener IDs más confiables (sin pivot)
+      const apiUrl = `/api/franja-precios?method=listar_franjas&id=${encodeURIComponent(apiId)}`;
       
       const headers = {
         "Content-Type": "application/json",
@@ -184,24 +185,54 @@ export default function GestionPreciosPage() {
       const preciosArray = Array.isArray(data) ? data : 
                           (data?.data && Array.isArray(data.data) ? data.data : []);
       
+      console.log("🔍 [FRONTEND-GESTION] PreciosArray procesado - Total:", preciosArray.length);
+      
+      if (preciosArray.length > 0) {
+        console.log("🔍 [FRONTEND-GESTION] Primer registro completo:", preciosArray[0]);
+        console.log("🔍 [FRONTEND-GESTION] Claves del primer registro:", Object.keys(preciosArray[0]));
+        
+        // Mostrar todos los valores del primer registro
+        const primerRegistro = preciosArray[0];
+        console.log("🔍 [FRONTEND-GESTION] Todos los valores del primer registro:");
+        Object.keys(primerRegistro).forEach(key => {
+          console.log(`  - ${key}: ${primerRegistro[key]} (tipo: ${typeof primerRegistro[key]})`);
+        });
+      } else {
+        console.warn("⚠️ [FRONTEND-GESTION] No hay registros en preciosArray");
+      }
+      
       // Obtener fichas técnicas de productos (aunque no las mostremos, las obtenemos para mantener consistencia con la API)
       const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
       const fichasMap = await fetchFichasTecnicas(codigos);
       
       // Combinar fichas técnicas con los datos de precios (aunque no las mostremos)
+      // IMPORTANTE: Preservar el ID aunque no se muestre en la tabla
       const preciosConFichas = preciosArray.map(precio => {
         const codigo = precio.CODIGO || precio.codigo;
         const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
                      precio.FICHA_TECNICA || precio.ficha_tecnica;
         
+        // Asegurar que el ID esté presente en ambos formatos (mayúsculas y minúsculas)
+        const idValue = precio.ID || precio.id || precio.Id || precio._id;
+        
         return {
           ...precio,
+          // Preservar el ID en todos los formatos posibles
+          ID: idValue ? (typeof idValue === 'number' ? idValue : parseInt(idValue, 10)) : precio.ID,
+          id: idValue ? (typeof idValue === 'number' ? idValue : parseInt(idValue, 10)) : precio.id,
           FICHA_TECNICA_ENLACE: ficha,
           ficha_tecnica_enlace: ficha,
           FICHA_TECNICA: ficha,
           ficha_tecnica: ficha
         };
       });
+      
+      console.log("🔍 [FRONTEND-GESTION] Precios con fichas - Total:", preciosConFichas.length);
+      if (preciosConFichas.length > 0) {
+        console.log("🔍 [FRONTEND-GESTION] Primer registro final:", preciosConFichas[0]);
+      }
+      console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
+      console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
       
       return preciosConFichas;
     } catch (err) {
@@ -359,18 +390,37 @@ export default function GestionPreciosPage() {
       'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
       'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
       'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
-      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
+      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar', 'MEDIDA', 'medida', 'PRECIO', 'precio'
     ];
     
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
     
+    // Debug: mostrar qué campos hay disponibles
+    console.log("=== CAMPOS DISPONIBLES EN PRECIOS ===");
+    console.log("Primer registro:", firstRecord);
+    console.log("Todas las claves:", allKeys);
+    
     const priceColumns = allKeys
       .filter(key => {
         const keyUpper = key.toUpperCase();
-        return !excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase())) &&
-               (typeof firstRecord[key] === 'number' || 
-                (!isNaN(parseFloat(firstRecord[key])) && firstRecord[key] !== null && firstRecord[key] !== ''));
+        const isExcluded = excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()));
+        
+        // Incluir campos que contengan CAJA, DOCENA, PAR o UNIDAD seguido de un número
+        const isPriceField = /(CAJA|DOCENA|PAR|UNIDAD)\s*\d+/i.test(keyUpper);
+        
+        const value = firstRecord[key];
+        const isNumeric = typeof value === 'number' || 
+                         (!isNaN(parseFloat(value)) && value !== null && value !== '' && value !== undefined);
+        
+        // Si es un campo de precio (CAJA 1, DOCENA 1, etc.) o es numérico y no está excluido
+        const shouldInclude = !isExcluded && (isPriceField || isNumeric);
+        
+        if (shouldInclude) {
+          console.log(`✅ Incluyendo columna: ${key} = ${value} (tipo: ${typeof value})`);
+        }
+        
+        return shouldInclude;
       })
       .sort((a, b) => {
         const aUpper = a.toUpperCase();
@@ -393,6 +443,8 @@ export default function GestionPreciosPage() {
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
+    
+    console.log("Columnas de precio detectadas:", priceColumns);
     
     return priceColumns;
   }, [precios]);
@@ -604,25 +656,66 @@ export default function GestionPreciosPage() {
       return "";
     };
 
+    // Función para validar que un valor sea un ID numérico válido
+    const isValidId = (value) => {
+      if (value === null || value === undefined || value === "") return false;
+      // Convertir a número y verificar que sea un entero positivo
+      const num = typeof value === 'number' ? value : parseFloat(value);
+      return !isNaN(num) && num > 0 && Number.isInteger(num) && (typeof value !== 'string' || /^\d+$/.test(value.trim()));
+    };
+
     // Buscar ID en todas las variaciones posibles
     let idValue = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
     
+    // Validar que el ID encontrado sea numérico
+    if (idValue && !isValidId(idValue)) {
+      idValue = null; // Resetear si no es válido
+    }
+    
     // Si no se encuentra, buscar manualmente en todas las keys
-    if (!idValue || idValue === "") {
+    if (!idValue || !isValidId(idValue)) {
       const allKeys = Object.keys(precio);
+      console.log("=== BUSCANDO ID PARA ACTUALIZAR ===");
+      console.log("Precio completo:", JSON.stringify(precio, null, 2));
+      console.log("Todas las claves:", allKeys);
+      console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
+      
+      // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
       for (const key of allKeys) {
         const keyUpper = key.toUpperCase();
-        if ((keyUpper.includes("ID") || keyUpper === "ID") && 
+        if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
             !keyUpper.includes("CODIGO") && 
             !keyUpper.includes("CLASIFICACION")) {
           const value = precio[key];
-          if (value !== null && value !== undefined && value !== "") {
+          console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
+          if (isValidId(value)) {
             idValue = value;
             console.log(`✅ ID encontrado en campo: ${key} = ${idValue}`);
             break;
           }
         }
       }
+      
+      // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
+      if (!idValue || !isValidId(idValue)) {
+        for (const key of allKeys) {
+          const value = precio[key];
+          // Buscar valores numéricos que sean enteros positivos
+          if (typeof value === 'number' && value > 0 && Number.isInteger(value)) {
+            // Verificar que no sea un precio (no debe tener decimales grandes o ser muy grande)
+            if (value < 1000000) { // IDs normalmente no son tan grandes
+              idValue = value;
+              console.log(`✅ ID encontrado como número en campo: ${key} = ${idValue}`);
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Convertir a número si es string numérico
+    if (idValue && typeof idValue === 'string' && /^\d+$/.test(idValue.trim())) {
+      idValue = parseInt(idValue.trim(), 10);
     }
 
     console.log("=== DATOS DEL PRECIO PARA ACTUALIZAR ===");
@@ -630,13 +723,25 @@ export default function GestionPreciosPage() {
     console.log("ID encontrado:", idValue);
     console.log("Todos los campos:", Object.keys(precio));
 
+    // Validar que el ID esté presente antes de continuar
+    if (!idValue || !isValidId(idValue)) {
+      console.error("❌ ERROR: No se pudo obtener un ID válido del producto");
+      console.error("Precio recibido:", JSON.stringify(precio, null, 2));
+      setErrorMessage("Error: No se pudo obtener el ID del producto. Por favor, intente nuevamente.");
+      setShowErrorModal(true);
+      return;
+    }
+
     // Obtener el nombre - el backend devuelve el nombre en PRODUCTO
     // Priorizar PRODUCTO ya que es el campo que devuelve el backend
     const nombreValue = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
     
+    // Asegurar que el ID sea un número entero
+    const finalId = typeof idValue === 'number' ? idValue : parseInt(idValue, 10);
+    
     const formDataToSet = {
-      ID: idValue,
-      id: idValue, // También enviar como 'id' por si la API lo requiere
+      ID: finalId,
+      id: finalId, // También enviar como 'id' por si la API lo requiere
       CODIGO: getField(["CODIGO", "codigo"]),
       NOMBRE: nombreValue || "", // Si no hay nombre, usar string vacío
       UNIDAD_MEDIDA_VENTA: getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]) || "UNIDAD",
@@ -648,7 +753,7 @@ export default function GestionPreciosPage() {
       TEXTO_COPIAR: getField(["TEXTO_COPIAR", "texto_copiar", "textoCopiar"]) || ""
     };
     
-    console.log("FormData a enviar:", formDataToSet);
+    console.log("✅ FormData a enviar (con ID válido):", formDataToSet);
     
     setFormData(formDataToSet);
     // Sincronizar el campo de búsqueda con el nombre del producto
@@ -687,10 +792,72 @@ export default function GestionPreciosPage() {
         return null;
       };
 
-      const id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
+      // Función para validar que un valor sea un ID numérico válido
+      const isValidId = (value) => {
+        if (value === null || value === undefined || value === "") return false;
+        // Convertir a número y verificar que sea un entero positivo
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        return !isNaN(num) && num > 0 && Number.isInteger(num) && typeof value !== 'string' || (typeof value === 'string' && /^\d+$/.test(value.trim()));
+      };
+
+      // Buscar ID en todas las variaciones posibles
+      let id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
       
-      if (!id) {
-        setErrorMessage("Error: No se pudo obtener el ID del producto para eliminar.");
+      // Validar que el ID encontrado sea numérico
+      if (id && !isValidId(id)) {
+        console.warn(`⚠️ ID encontrado pero no es válido: ${id} (tipo: ${typeof id})`);
+        id = null; // Resetear si no es válido
+      }
+      
+      // Si no se encuentra, buscar manualmente en todas las keys
+      if (!id || !isValidId(id)) {
+        const allKeys = Object.keys(precio);
+        console.log("=== BUSCANDO ID PARA ELIMINAR ===");
+        console.log("Precio completo:", JSON.stringify(precio, null, 2));
+        console.log("Todas las claves:", allKeys);
+        console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
+        
+        // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
+        for (const key of allKeys) {
+          const keyUpper = key.toUpperCase();
+          if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
+              !keyUpper.includes("CODIGO") && 
+              !keyUpper.includes("CLASIFICACION")) {
+            const value = precio[key];
+            console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
+            if (isValidId(value)) {
+              id = value;
+              console.log(`✅ ID encontrado en campo: ${key} = ${id}`);
+              break;
+            }
+          }
+        }
+        
+        // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
+        if (!id || !isValidId(id)) {
+          for (const key of allKeys) {
+            const value = precio[key];
+            if (typeof value === 'number' && value > 0 && Number.isInteger(value)) {
+              // Verificar que no sea un precio (valores muy grandes o decimales)
+              if (value < 1000000) { // IDs normalmente son menores a 1 millón
+                id = value;
+                console.log(`✅ ID encontrado como número en campo: ${key} = ${id}`);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Convertir a número si es string numérico
+      if (id && typeof id === 'string' && /^\d+$/.test(id.trim())) {
+        id = parseInt(id.trim(), 10);
+      }
+      
+      if (!id || !isValidId(id)) {
+        console.error("❌ No se pudo encontrar el ID en ningún campo");
+        console.error("Objeto completo:", precio);
+        setErrorMessage("Error: No se pudo obtener el ID del producto para eliminar. Por favor, verifique que el producto tenga un ID válido.");
         setShowErrorModal(true);
         setSaving(false);
         return;
@@ -785,8 +952,10 @@ export default function GestionPreciosPage() {
         return;
       }
 
-      const apiUrl = `/api/franja-precios`;
+      // Construir la URL con el método correcto
       const method = modalType === "create" ? "POST" : "PUT";
+      const apiMethod = modalType === "create" ? "CREAR_FRANJA_PRECIO" : "ACTUALIZAR_FRANJA_PRECIO";
+      const apiUrl = `/api/franja-precios?method=${apiMethod}&id=${encodeURIComponent(activeTab)}`;
       
       // Preparar el body con todos los datos necesarios
       const textoCopiarValue = formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "";
@@ -857,10 +1026,25 @@ export default function GestionPreciosPage() {
           try {
             const errorData = JSON.parse(errorText);
             // El backend puede devolver el error en diferentes formatos
-            errorMessage = errorData.error || 
-                          errorData.message || 
-                          errorData.details || 
-                          errorMessage;
+            let extractedError = errorData.error || 
+                                errorData.message || 
+                                errorData.details;
+            
+            // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
+            if (typeof extractedError === 'number') {
+              if (extractedError === 0) {
+                extractedError = "Error desconocido. Verifique que todos los campos estén completos.";
+              } else {
+                extractedError = `Error ${extractedError}`;
+              }
+            }
+            
+            // Si el error es un string vacío o solo espacios, usar el mensaje por defecto
+            if (extractedError && typeof extractedError === 'string' && extractedError.trim()) {
+              errorMessage = extractedError;
+            } else if (!extractedError) {
+              errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+            }
           } catch (jsonError) {
             // Si no es JSON, usar el texto directamente si tiene contenido
             if (errorText && errorText.trim()) {
@@ -1322,29 +1506,10 @@ export default function GestionPreciosPage() {
             <div className="flex-1 overflow-y-auto px-6 py-4">
 
               <div className="space-y-4">
+                {/* Nombre del Producto - ARRIBA */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Código <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.CODIGO || ""}
-                    onChange={(e) => setFormData({ ...formData, CODIGO: e.target.value })}
-                    readOnly={modalType === "update"}
-                    className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
-                      modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
-                    }`}
-                    required
-                  />
-                  {/* Input hidden para asegurar que el CODIGO se envíe incluso si está readonly */}
-                  {modalType === "update" && (
-                    <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nombre del Producto {modalType === "create" && <span className="text-red-500">*</span>}
+                    Nombre del Producto
                   </label>
                   <div className="relative">
                     <input
@@ -1399,27 +1564,50 @@ export default function GestionPreciosPage() {
                   </div>
                 </div>
 
+                {/* Código - ABAJO (siempre bloqueado, solo lectura) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Código
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.CODIGO || ""}
+                    readOnly={true}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                    required
+                  />
+                  {/* Input hidden para asegurar que el CODIGO se envíe incluso si está readonly */}
+                  <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Unidad de Medida Venta <span className="text-red-500">*</span>
+                      Unidad de Medida Venta
                     </label>
-                    <select
-                      value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
-                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
-                      required
-                    >
-                      <option value="UNIDAD">UNIDAD</option>
-                      <option value="DOCENA">DOCENA</option>
-                      <option value="CAJA">CAJA</option>
-                      <option value="PAR">PAR</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Cantidad Unidad Medida Venta <span className="text-red-500">*</span>
+                      Cantidad Unidad Medida Venta
                     </label>
                     <input
                       type="number"
@@ -1442,7 +1630,7 @@ export default function GestionPreciosPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Precio Unidad Medida Venta <span className="text-red-500">*</span>
+                    Precio Unidad Medida Venta
                   </label>
                   <input
                     type="number"
@@ -1466,19 +1654,26 @@ export default function GestionPreciosPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Unidad de Medida Caja <span className="text-red-500">*</span>
+                      Unidad de Medida Caja
                     </label>
-                    <select
-                      value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
-                      onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
-                      required
-                    >
-                      <option value="UNIDAD">UNIDAD</option>
-                      <option value="DOCENA">DOCENA</option>
-                      <option value="CAJA">CAJA</option>
-                      <option value="PAR">PAR</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -1501,6 +1696,20 @@ export default function GestionPreciosPage() {
                       className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
                     />
                   </div>
+                </div>
+
+                {/* Texto a copiar */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Texto a copiar
+                  </label>
+                  <textarea
+                    value={formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || ""}
+                    onChange={(e) => setFormData({ ...formData, TEXTO_COPIAR: e.target.value, texto_copiar: e.target.value, textoCopiar: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300 resize-y"
+                    placeholder="Escribe el texto que se copiará para este producto..."
+                  />
                 </div>
               </div>
             </div>

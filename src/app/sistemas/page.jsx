@@ -186,32 +186,50 @@ export default function SistemasPage() {
 
                   {/* Cards de la Sección */}
                   {expandedSections[section.id] && (
-                    <div className="p-4 bg-slate-200">
-                      <div className={`grid gap-3 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
+                      <div className={`grid gap-2.5 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
                         {section.cards.map((card) => (
                           <div
                             key={card.id}
-                            className="bg-[#FFFFFF] rounded-[14px] p-4 border-2 border-gray-300 hover:border-blue-700 hover:shadow-xl transition-all duration-200 shadow-sm"
-                            style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
+                            className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                            style={{ 
+                              boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                              transform: 'translateY(0)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                            }}
                           >
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                                {card.icon}
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                            
+                            <div className="relative z-10">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                  {card.icon}
+                                </div>
                               </div>
+                              <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">{card.title}</h3>
+                              <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">{card.description}</p>
+                              <button 
+                                onClick={() => {
+                                  if (card.id === "listado-solicitudes") {
+                                    router.push("/sistemas/solicitudes-incidencias");
+                                  }
+                                }}
+                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
+                              >
+                                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                <span className="relative z-10 flex items-center space-x-1.5">
+                                  {card.buttonIcon}
+                                  <span>{card.buttonText}</span>
+                                </span>
+                              </button>
                             </div>
-                            <h3 className="text-base font-bold text-gray-900 mb-1.5">{card.title}</h3>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">{card.description}</p>
-                            <button 
-                              onClick={() => {
-                                if (card.id === "listado-solicitudes") {
-                                  router.push("/sistemas/solicitudes-incidencias");
-                                }
-                              }}
-                              className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
-                            >
-                              {card.buttonIcon}
-                              <span>{card.buttonText}</span>
-                            </button>
                           </div>
                         ))}
                       </div>
