@@ -6,7 +6,6 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
-import * as XLSX from "xlsx";
 
 export default function GestionarRegularizacionPage() {
   const router = useRouter();
@@ -519,7 +518,8 @@ export default function GestionarRegularizacionPage() {
         return;
       }
 
-      // Generar archivo Excel (.xlsx) usando la librería xlsx
+      // Generar archivo Excel (.xlsx) usando la librería xlsx (importación dinámica)
+      const XLSX = await import("xlsx");
       const worksheet = XLSX.utils.json_to_sheet(items);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Detalles");
@@ -946,7 +946,8 @@ export default function GestionarRegularizacionPage() {
           return;
         }
 
-        // Generar archivo Excel (.xlsx) usando la librería xlsx
+        // Generar archivo Excel (.xlsx) usando la librería xlsx (importación dinámica)
+        const XLSX = await import("xlsx");
         const worksheet = XLSX.utils.json_to_sheet(items);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Regularizaciones");
