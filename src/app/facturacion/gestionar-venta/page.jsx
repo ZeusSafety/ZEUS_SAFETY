@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function GestionarVentaPage() {
   const router = useRouter();
@@ -21,8 +22,12 @@ export default function GestionarVentaPage() {
   });
   const [mesesSeleccionados, setMesesSeleccionados] = useState([]);
   const [ano, setAno] = useState("2025");
+  const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
+  const [modalVerOpen, setModalVerOpen] = useState(false);
+  const [modalPagoOpen, setModalPagoOpen] = useState(false);
+  const [modalEliminarOpen, setModalEliminarOpen] = useState(false);
 
-  // Datos de prueba
+  // Datos de prueba (ampliados para simular muchas ventas)
   const [ventas, setVentas] = useState([
     {
       id: 1,
@@ -66,6 +71,141 @@ export default function GestionarVentaPage() {
       fecha: "26/11/2025",
       asesor: "LIZETH",
       comprobante: "B 871",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 6,
+      cliente: "CLIENTE EJEMPLO 6",
+      fecha: "25/11/2025",
+      asesor: "HERVIN",
+      comprobante: "F 10090",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 7,
+      cliente: "CLIENTE EJEMPLO 7",
+      fecha: "24/11/2025",
+      asesor: "KIMBERLY",
+      comprobante: "B 865",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 8,
+      cliente: "CLIENTE EJEMPLO 8",
+      fecha: "23/11/2025",
+      asesor: "EVELYN",
+      comprobante: "F 10075",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 9,
+      cliente: "CLIENTE EJEMPLO 9",
+      fecha: "22/11/2025",
+      asesor: "LIZETH",
+      comprobante: "P 2100",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 10,
+      cliente: "CLIENTE EJEMPLO 10",
+      fecha: "21/11/2025",
+      asesor: "IMPORT ZEUS",
+      comprobante: "F 10010",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 11,
+      cliente: "CLIENTE EJEMPLO 11",
+      fecha: "20/11/2025",
+      asesor: "HERVIN",
+      comprobante: "B 860",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 12,
+      cliente: "CLIENTE EJEMPLO 12",
+      fecha: "19/11/2025",
+      asesor: "KIMBERLY",
+      comprobante: "F 9999",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 13,
+      cliente: "CLIENTE EJEMPLO 13",
+      fecha: "18/11/2025",
+      asesor: "EVELYN",
+      comprobante: "F 9990",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 14,
+      cliente: "CLIENTE EJEMPLO 14",
+      fecha: "17/11/2025",
+      asesor: "LIZETH",
+      comprobante: "B 850",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 15,
+      cliente: "CLIENTE EJEMPLO 15",
+      fecha: "16/11/2025",
+      asesor: "HERVIN",
+      comprobante: "P 2050",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 16,
+      cliente: "CLIENTE EJEMPLO 16",
+      fecha: "15/11/2025",
+      asesor: "KIMBERLY",
+      comprobante: "F 9950",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 17,
+      cliente: "CLIENTE EJEMPLO 17",
+      fecha: "14/11/2025",
+      asesor: "EVELYN",
+      comprobante: "B 840",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 18,
+      cliente: "CLIENTE EJEMPLO 18",
+      fecha: "13/11/2025",
+      asesor: "IMPORT ZEUS",
+      comprobante: "F 9900",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 19,
+      cliente: "CLIENTE EJEMPLO 19",
+      fecha: "12/11/2025",
+      asesor: "LIZETH",
+      comprobante: "P 2005",
+      estado: "COMPLETADO",
+      cancelado: "NO",
+    },
+    {
+      id: 20,
+      cliente: "CLIENTE EJEMPLO 20",
+      fecha: "11/11/2025",
+      asesor: "HERVIN",
+      comprobante: "F 9850",
       estado: "COMPLETADO",
       cancelado: "NO",
     },
@@ -197,7 +337,7 @@ export default function GestionarVentaPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Buscar por cliente, comprobante o asesor..."
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-600"
                       />
                     </div>
                     <button
@@ -242,20 +382,38 @@ export default function GestionarVentaPage() {
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.cancelado}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button
+                                  onClick={() => {
+                                    setVentaSeleccionada(venta);
+                                    setModalVerOpen(true);
+                                  }}
+                                  className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
                                   <span>Ver</span>
                                 </button>
-                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button
+                                  onClick={() => {
+                                    setVentaSeleccionada(venta);
+                                    setModalPagoOpen(true);
+                                  }}
+                                  className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
                                   <span>Pago</span>
                                 </button>
-                                <button className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                                <button
+                                  onClick={() => {
+                                    setVentaSeleccionada(venta);
+                                    setModalEliminarOpen(true);
+                                  }}
+                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
@@ -268,27 +426,41 @@ export default function GestionarVentaPage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
 
-                {/* Paginación */}
-                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    &lt;
-                  </button>
-                  <span className="text-[10px] text-gray-700 font-medium">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    &gt;
-                  </button>
+                  {/* Paginación (diseño estándar dentro del cuadro) */}
+                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      «
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      &lt;
+                    </button>
+                    <span className="text-[10px] text-gray-700 font-medium">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      &gt;
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      »
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -433,6 +605,176 @@ export default function GestionarVentaPage() {
           </div>
         </main>
       </div>
+      {/* Modal Ver Venta */}
+      <Modal
+        isOpen={modalVerOpen && !!ventaSeleccionada}
+        onClose={() => {
+          setModalVerOpen(false);
+          setVentaSeleccionada(null);
+        }}
+        title="Detalles de la Venta"
+        size="lg"
+      >
+        {ventaSeleccionada && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">Cliente</p>
+                <p className="text-sm font-bold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {ventaSeleccionada.cliente}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">Fecha</p>
+                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {ventaSeleccionada.fecha}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">Asesor</p>
+                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {ventaSeleccionada.asesor}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">Comprobante</p>
+                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  {ventaSeleccionada.comprobante}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => {
+                  setModalVerOpen(false);
+                  setVentaSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Pago */}
+      <Modal
+        isOpen={modalPagoOpen && !!ventaSeleccionada}
+        onClose={() => {
+          setModalPagoOpen(false);
+          setVentaSeleccionada(null);
+        }}
+        title="Registrar Pago"
+        size="md"
+      >
+        {ventaSeleccionada && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              Registrar pago para el comprobante{" "}
+              <span className="font-semibold text-gray-900">
+                {ventaSeleccionada.comprobante}
+              </span>{" "}
+              del cliente{" "}
+              <span className="font-semibold text-gray-900">
+                {ventaSeleccionada.cliente}
+              </span>
+              .
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Fecha de Pago
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-sm text-gray-900 placeholder:text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Monto
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-sm text-gray-900 placeholder:text-gray-600"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 pt-2">
+              <button
+                onClick={() => {
+                  setModalPagoOpen(false);
+                  setVentaSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  console.log("Registrar pago para venta:", ventaSeleccionada);
+                  setModalPagoOpen(false);
+                  setVentaSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Guardar Pago
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Eliminar */}
+      <Modal
+        isOpen={modalEliminarOpen && !!ventaSeleccionada}
+        onClose={() => {
+          setModalEliminarOpen(false);
+          setVentaSeleccionada(null);
+        }}
+        title="Eliminar Venta"
+        size="sm"
+      >
+        {ventaSeleccionada && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              ¿Está seguro que desea eliminar la venta del cliente{" "}
+              <span className="font-semibold text-gray-900">
+                {ventaSeleccionada.cliente}
+              </span>{" "}
+              con comprobante{" "}
+              <span className="font-semibold text-gray-900">
+                {ventaSeleccionada.comprobante}
+              </span>
+              ?
+            </p>
+            <div className="flex justify-end space-x-2 pt-2">
+              <button
+                onClick={() => {
+                  setModalEliminarOpen(false);
+                  setVentaSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  console.log("Eliminar venta:", ventaSeleccionada);
+                  setModalEliminarOpen(false);
+                  setVentaSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

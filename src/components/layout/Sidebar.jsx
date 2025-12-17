@@ -369,6 +369,26 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: false,
     },
     {
+      id: "ventas-facturacion",
+      name: "Ventas",
+      icon: "list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "crear-venta-fact", name: "Registrar Venta", icon: "plus-circle" },
+        { id: "gestionar-venta-fact", name: "Gestionar Venta", icon: "document-list" },
+      ],
+    },
+    {
+      id: "regularizacion-facturacion",
+      name: "Regularización",
+      icon: "document-list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "crear-regularizacion-fact", name: "Registrar Regularización", icon: "plus-circle" },
+        { id: "gestionar-regularizacion-fact", name: "Gestionar Regularización", icon: "document-list" },
+      ],
+    },
+    {
       id: "listados-facturacion",
       name: "Listados",
       icon: "list",
@@ -379,12 +399,12 @@ export function Sidebar({ isOpen, onClose }) {
       ],
     },
     {
-      id: "solicitudes-facturacion",
-      name: "Solicitudes",
-      icon: "document-list",
+      id: "configuracion-facturacion",
+      name: "Configuración",
+      icon: "gears",
       hasSubmenu: true,
       subItems: [
-        { id: "listado-solicitudes-facturacion", name: "Listado de Solicitudes", icon: "list" },
+        { id: "configuracion-general-fact", name: "Gestión Configuración", icon: "gears" },
       ],
     },
     {
@@ -703,6 +723,37 @@ export function Sidebar({ isOpen, onClose }) {
     // Navegación para Facturación
     if (itemId === "listado-importaciones-fact") {
       router.push("/facturacion/listado-importaciones");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Ventas y Regularización en Facturación
+    if (itemId === "crear-venta-fact") {
+      router.push("/facturacion/crear-venta");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "gestionar-venta-fact") {
+      router.push("/facturacion/gestionar-venta");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "crear-regularizacion-fact") {
+      router.push("/facturacion/crear-regularizacion");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "gestionar-regularizacion-fact") {
+      router.push("/facturacion/gestionar-regularizacion");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "configuracion-general-fact") {
+      router.push("/facturacion/configuracion");
       setSelectedItem(itemId);
       return;
     }
