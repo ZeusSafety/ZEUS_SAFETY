@@ -30,6 +30,11 @@ export default function GestionarRegularizacionPage() {
   const [modalActualizarOpen, setModalActualizarOpen] = useState(false);
   const [regularizacionAEditar, setRegularizacionAEditar] = useState(null);
   const [formularioActualizar, setFormularioActualizar] = useState({});
+  const [modalMensaje, setModalMensaje] = useState({ open: false, tipo: "success", mensaje: "" });
+  const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState({ open: false, regularizacion: null, mensaje: "" });
+  const [modalActualizarPrincipalOpen, setModalActualizarPrincipalOpen] = useState(false);
+  const [formularioActualizarPrincipal, setFormularioActualizarPrincipal] = useState({});
+  const [esRegularizacionPrincipal, setEsRegularizacionPrincipal] = useState(false);
   
   // Datos de asesores y medios de pago
   const asesores = [
@@ -544,15 +549,38 @@ export default function GestionarRegularizacionPage() {
     }
   };
 
-  // Función para eliminar una regularización
-  const handleEliminarRegularizacion = async (regularizacion) => {
+  // Función para eliminar una regularización (primera tabla - regularización completa)
+  const handleEliminarRegularizacion = (regularizacion) => {
     const id = obtenerIdRegularizacion(regularizacion);
     if (!id) {
-      alert("No se pudo obtener el ID de la regularización para eliminar.");
+      setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo obtener el ID de la regularización para eliminar." });
       return;
     }
 
-    if (!confirm(`¿Está seguro que desea eliminar la regularización "${regularizacion.NOMBRE || regularizacion.nombre || regularizacion.TITULO || regularizacion.titulo || id}"?`)) {
+    const nombreRegularizacion = regularizacion.NOMBRE || 
+                                 regularizacion.nombre || 
+                                 regularizacion.TITULO || 
+                                 regularizacion.titulo || 
+                                 id;
+    
+    setModalConfirmarEliminar({
+      open: true,
+      regularizacion: regularizacion,
+      mensaje: `¿Está seguro que desea eliminar la regularización "${nombreRegularizacion}"?`
+    });
+  };
+
+  const confirmarEliminarRegularizacion = async () => {
+    const regularizacion = modalConfirmarEliminar.regularizacion;
+    if (!regularizacion) {
+      setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
+      return;
+    }
+
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo obtener el ID de la regularización para eliminar." });
+      setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
       return;
     }
 
@@ -561,11 +589,23 @@ export default function GestionarRegularizacionPage() {
 
       const token = localStorage.getItem("token");
       if (!token || token.trim() === "") {
-        alert("No se encontró token de autenticación.");
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró token de autenticación. Por favor, inicia sesión nuevamente." });
+        setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
+        setTimeout(() => router.push("/login"), 2000);
         return;
       }
 
       const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&forma=eliminar`;
+
+      // Determinar si es una regularización principal o un detalle
+      // Si tiene ID_REGULARIZACION pero no ID_DETALLE, es principal
+      const esPrincipal = regularizacion.ID_REGULARIZACION || regularizacion.id_regularizacion;
+      const esDetalle = regularizacion.ID_DETALLE || regularizacion.id_detalle || regularizacion.id;
+      
+      // Si es una regularización de la tabla principal (no tiene ID_DETALLE), usar id_regularizacion
+      const requestBody = (esPrincipal && !esDetalle) 
+        ? { id_regularizacion: id }
+        : { id: id };
 
       const response = await fetch(apiUrl, {
         method: "PUT",
@@ -574,7 +614,7 @@ export default function GestionarRegularizacionPage() {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id: id }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -587,7 +627,8 @@ export default function GestionarRegularizacionPage() {
 
         const errorText = await response.text();
         console.error("Error al eliminar:", response.status, errorText);
-        alert("No se pudo eliminar la regularización.");
+        setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo eliminar la regularización." });
         return;
       }
 
@@ -626,14 +667,49 @@ export default function GestionarRegularizacionPage() {
         }
       }
 
-      alert("Regularización eliminada exitosamente.");
+      setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
+      setModalMensaje({ open: true, tipo: "success", mensaje: "Regularización eliminada exitosamente." });
     } catch (error) {
       console.error("Error eliminando regularización:", error);
-      alert("Ocurrió un error al eliminar la regularización.");
+      setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" });
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Ocurrió un error al eliminar la regularización." });
     }
   };
 
-  // Función para abrir modal de actualización
+  // Función para abrir modal de actualización de regularización principal
+  const handleAbrirActualizarPrincipal = (regularizacion) => {
+    const id = obtenerIdRegularizacion(regularizacion);
+    if (!id) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo obtener el ID de la regularización." });
+      return;
+    }
+
+    // Formatear fecha de YYYY-MM-DD a DD/MM/YYYY si es necesario
+    const fechaReg = regularizacion.FECHA || regularizacion.fecha || "";
+    let fechaFormateada = "";
+    if (fechaReg) {
+      if (fechaReg.includes("-")) {
+        const [year, month, day] = fechaReg.split("-");
+        fechaFormateada = `${day}/${month}/${year}`;
+      } else {
+        fechaFormateada = fechaReg;
+      }
+    }
+
+    setRegularizacionAEditar(regularizacion);
+    setFormularioActualizarPrincipal({
+      nombre: regularizacion.NOMBRE || regularizacion.nombre || "",
+      fecha: fechaFormateada,
+      observaciones: regularizacion.OBSERVACIONES || regularizacion.observaciones || "",
+      efectivo_indicado: regularizacion.EFECTIVO_INDICADO || regularizacion.efectivo_indicado || 0,
+      confirmacion: regularizacion.CONFIRMACION || regularizacion.confirmacion || "SI",
+      regularizacion_porcentaje: regularizacion.REGULARIZACION_PORCENTAJE || regularizacion.regularizacion_porcentaje || 100,
+    });
+    setEsRegularizacionPrincipal(true);
+    setModalActualizarPrincipalOpen(true);
+  };
+
+  // Función para abrir modal de actualización de detalle
   const handleAbrirActualizar = async (regularizacion) => {
     const id = obtenerIdRegularizacion(regularizacion);
     if (!id) {
@@ -703,34 +779,54 @@ export default function GestionarRegularizacionPage() {
         }
       }
 
+      // Obtener valores del detalle
+      const comprobantesValue = primerDetalle.COMPROBANTES || 
+                                primerDetalle.comprobantes || 
+                                primerDetalle.COMPROBANTE || 
+                                primerDetalle.comprobante || 
+                                "";
+      
+      const montoValue = primerDetalle.MONTO || 
+                        primerDetalle.monto || 
+                        primerDetalle.EFECTIVO_INDICADO || 
+                        primerDetalle.efectivo_indicado || 
+                        "";
+      
+      const asesorValue = primerDetalle.ASESOR || 
+                         primerDetalle.asesor || 
+                         "";
+      
+      const medioPagoValue = primerDetalle.MEDIO_DE_PAGO || 
+                            primerDetalle.medio_de_pago || 
+                            primerDetalle.MEDIO_PAGO || 
+                            primerDetalle.medio_pago || 
+                            primerDetalle.FORMA_PAGO || 
+                            primerDetalle.forma_pago || 
+                            "";
+      
+      const observacionesValue = primerDetalle.OBSERVACION || 
+                                primerDetalle.observacion || 
+                                primerDetalle.OBSERVACIONES || 
+                                primerDetalle.observaciones || 
+                                "";
+
+      console.log("Datos cargados para actualizar:", {
+        comprobantes: comprobantesValue,
+        fecha: fechaFormateada,
+        monto: montoValue,
+        asesor: asesorValue,
+        medio_pago: medioPagoValue,
+        observaciones: observacionesValue
+      });
+
       setRegularizacionAEditar(regularizacion);
       setFormularioActualizar({
-        comprobantes: primerDetalle.COMPROBANTES || 
-                     primerDetalle.comprobantes || 
-                     primerDetalle.COMPROBANTE || 
-                     primerDetalle.comprobante || 
-                     "",
+        comprobantes: comprobantesValue,
         fecha_regularizacion: fechaFormateada,
-        monto: primerDetalle.MONTO || 
-               primerDetalle.monto || 
-               primerDetalle.EFECTIVO_INDICADO || 
-               primerDetalle.efectivo_indicado || 
-               "",
-        asesor: primerDetalle.ASESOR || 
-                primerDetalle.asesor || 
-                "",
-        medio_pago: primerDetalle.MEDIO_DE_PAGO || 
-                   primerDetalle.medio_de_pago || 
-                   primerDetalle.MEDIO_PAGO || 
-                   primerDetalle.medio_pago || 
-                   primerDetalle.FORMA_PAGO || 
-                   primerDetalle.forma_pago || 
-                   "",
-        observaciones: primerDetalle.OBSERVACION || 
-                      primerDetalle.observacion || 
-                      primerDetalle.OBSERVACIONES || 
-                      primerDetalle.observaciones || 
-                      "",
+        monto: montoValue,
+        asesor: asesorValue,
+        medio_pago: medioPagoValue,
+        observaciones: observacionesValue,
       });
       setModalActualizarOpen(true);
     } catch (error) {
@@ -740,17 +836,61 @@ export default function GestionarRegularizacionPage() {
   };
 
   // Función para actualizar una regularización
-  const handleActualizarRegularizacion = async () => {
+  // Función auxiliar para validar y convertir fecha
+  const convertirFechaActualizar = (fechaInput) => {
+    if (!fechaInput || fechaInput.trim() === "") {
+      return null;
+    }
+
+    if (fechaInput.includes("/")) {
+      const partes = fechaInput.split("/").map(p => p.trim());
+      if (partes.length === 3) {
+        const day = parseInt(partes[0], 10);
+        const month = parseInt(partes[1], 10);
+        let year = parseInt(partes[2], 10);
+
+        // Validar que sean números válidos
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+          return null;
+        }
+
+        // Validar rango del mes (1-12)
+        if (month < 1 || month > 12) {
+          return null;
+        }
+
+        // Validar rango del día (1-31)
+        if (day < 1 || day > 31) {
+          return null;
+        }
+
+        // Asegurar año de 4 dígitos
+        if (year < 100) {
+          year = 2000 + year;
+        }
+
+        // Formatear con padding
+        const dayStr = day.toString().padStart(2, '0');
+        const monthStr = month.toString().padStart(2, '0');
+        const yearStr = year.toString();
+
+        return `${yearStr}-${monthStr}-${dayStr}`;
+      }
+    }
+    return fechaInput; // Si ya está en formato YYYY-MM-DD, retornarlo tal cual
+  };
+
+  // Función para actualizar regularización principal
+  const handleActualizarRegularizacionPrincipal = async () => {
     // Validar campos requeridos
-    if (!formularioActualizar.comprobantes || !formularioActualizar.fecha_regularizacion || 
-        !formularioActualizar.monto || !formularioActualizar.asesor || !formularioActualizar.medio_pago) {
-      alert("Por favor complete todos los campos requeridos (*).");
+    if (!formularioActualizarPrincipal.nombre || !formularioActualizarPrincipal.fecha) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete todos los campos requeridos (*)." });
       return;
     }
 
     const id = obtenerIdRegularizacion(regularizacionAEditar);
     if (!id) {
-      alert("No se pudo obtener el ID de la regularización para actualizar.");
+      setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo obtener el ID de la regularización para actualizar." });
       return;
     }
 
@@ -759,18 +899,32 @@ export default function GestionarRegularizacionPage() {
 
       const token = localStorage.getItem("token");
       if (!token || token.trim() === "") {
-        alert("No se encontró token de autenticación.");
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró token de autenticación. Por favor, inicia sesión nuevamente." });
+        setTimeout(() => router.push("/login"), 2000);
         return;
       }
 
-      // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD si es necesario
-      let fechaFormateada = formularioActualizar.fecha_regularizacion;
-      if (fechaFormateada.includes("/")) {
-        const [day, month, year] = fechaFormateada.split("/");
-        fechaFormateada = `${year}-${month}-${day}`;
+      // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD con validación
+      let fechaFormateada = convertirFechaActualizar(formularioActualizarPrincipal.fecha);
+      if (!fechaFormateada) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "La fecha ingresada no es válida. Por favor ingrese una fecha en formato DD/MM/YYYY (ejemplo: 18/10/2025). El mes debe estar entre 1-12 y el día entre 1-31." });
+        return;
       }
 
       const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&forma=actualizar`;
+
+      // Preparar el body para actualizar regularización principal
+      const requestBody = {
+        id_regularizacion: id,
+        nombre: formularioActualizarPrincipal.nombre || "",
+        fecha: fechaFormateada,
+        observaciones: formularioActualizarPrincipal.observaciones || "",
+        efectivo_indicado: parseFloat(formularioActualizarPrincipal.efectivo_indicado) || 0,
+        confirmacion: formularioActualizarPrincipal.confirmacion || "SI",
+        regularizacion_porcentaje: parseInt(formularioActualizarPrincipal.regularizacion_porcentaje) || 100,
+      };
+
+      console.log("Datos a actualizar (principal):", requestBody);
 
       const response = await fetch(apiUrl, {
         method: "PUT",
@@ -779,15 +933,7 @@ export default function GestionarRegularizacionPage() {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          id: id,
-          comprobantes: formularioActualizar.comprobantes,
-          fecha_regularizacion: fechaFormateada,
-          monto: formularioActualizar.monto,
-          asesor: formularioActualizar.asesor,
-          medio_pago: formularioActualizar.medio_pago,
-          observaciones: formularioActualizar.observaciones || "",
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -800,7 +946,147 @@ export default function GestionarRegularizacionPage() {
 
         const errorText = await response.text();
         console.error("Error al actualizar:", response.status, errorText);
-        alert("No se pudo actualizar la regularización.");
+        
+        let errorMessage = "No se pudo actualizar la regularización.";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.Error || errorJson.error || errorMessage;
+        } catch {
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+        
+        setModalMensaje({ open: true, tipo: "error", mensaje: errorMessage });
+        return;
+      }
+
+      // Recargar la lista de regularizaciones
+      const refreshResponse = await fetch(
+        "https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (refreshResponse.ok) {
+        const contentType = refreshResponse.headers.get("content-type");
+        let data;
+        if (contentType && contentType.includes("application/json")) {
+          data = await refreshResponse.json();
+        } else {
+          const text = await refreshResponse.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.error("Error parseando respuesta");
+          }
+        }
+
+        const items = Array.isArray(data) ? data : data?.regularizaciones || data?.data || [];
+        setRegularizaciones(items);
+        
+        if (items.length > 0) {
+          cargarCantidadesRegularizaciones(items, token);
+        }
+      }
+
+      setModalActualizarPrincipalOpen(false);
+      setModalMensaje({ open: true, tipo: "success", mensaje: "Regularización actualizada exitosamente." });
+    } catch (error) {
+      console.error("Error actualizando regularización:", error);
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Ocurrió un error al actualizar la regularización." });
+    }
+  };
+
+  // Función para actualizar detalle de regularización
+  const handleActualizarRegularizacion = async () => {
+    // Validar campos requeridos
+    if (!formularioActualizar.comprobantes || !formularioActualizar.fecha_regularizacion || 
+        !formularioActualizar.monto || !formularioActualizar.asesor || !formularioActualizar.medio_pago) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete todos los campos requeridos (*)." });
+      return;
+    }
+
+    const id = obtenerIdRegularizacion(regularizacionAEditar);
+    if (!id) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "No se pudo obtener el ID de la regularización para actualizar." });
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró token de autenticación. Por favor, inicia sesión nuevamente." });
+        setTimeout(() => router.push("/login"), 2000);
+        return;
+      }
+
+      // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD con validación
+      let fechaFormateada = convertirFechaActualizar(formularioActualizar.fecha_regularizacion);
+      if (!fechaFormateada) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "La fecha ingresada no es válida. Por favor ingrese una fecha en formato DD/MM/YYYY (ejemplo: 18/10/2025). El mes debe estar entre 1-12 y el día entre 1-31." });
+        return;
+      }
+
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?area=regularizacion&forma=actualizar`;
+
+      // Preparar el body con los datos del formulario (detalle)
+      const requestBody = {
+        id: id,
+        comprobantes: formularioActualizar.comprobantes || "",
+        fecha_regularizacion: fechaFormateada,
+        monto: formularioActualizar.monto || 0,
+        asesor: formularioActualizar.asesor || "",
+        medio_de_pago: formularioActualizar.medio_pago || "",
+        observacion: formularioActualizar.observaciones || "",
+      };
+
+      console.log("Datos a actualizar:", requestBody);
+      console.log("Formulario completo:", formularioActualizar);
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al actualizar:", response.status, errorText);
+        
+        let errorMessage = "No se pudo actualizar la regularización.";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.Error || errorJson.error || errorMessage;
+        } catch {
+          // Si el error contiene información sobre fecha, extraerla
+          if (errorText.includes("date") || errorText.includes("fecha") || errorText.includes("Incorrect date")) {
+            errorMessage = "Error en el formato de fecha. Por favor verifique que la fecha esté en formato DD/MM/YYYY y que sea válida.";
+          } else if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+        
+        setModalMensaje({ open: true, tipo: "error", mensaje: errorMessage });
         return;
       }
 
@@ -842,10 +1128,14 @@ export default function GestionarRegularizacionPage() {
       setModalActualizarOpen(false);
       setRegularizacionAEditar(null);
       setFormularioActualizar({});
-      alert("Regularización actualizada exitosamente.");
+      setModalMensaje({ open: true, tipo: "success", mensaje: "Regularización actualizada exitosamente." });
     } catch (error) {
       console.error("Error actualizando regularización:", error);
-      alert("Ocurrió un error al actualizar la regularización.");
+      let mensajeError = "Ocurrió un error al actualizar la regularización.";
+      if (error.message) {
+        mensajeError = error.message;
+      }
+      setModalMensaje({ open: true, tipo: "error", mensaje: mensajeError });
     }
   };
 
@@ -1020,10 +1310,11 @@ export default function GestionarRegularizacionPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                       </svg>
                     </div>
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Listado de Regularizaciones</h1>
-                    </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Listado de Regularizaciones</h1>
                   </div>
+                </div>
+                <div className="flex items-center space-x-4">
                   {apiConectada && (
                     <div className="flex items-center space-x-2">
                       <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1032,6 +1323,7 @@ export default function GestionarRegularizacionPage() {
                       <span className="text-sm font-medium text-green-600">API Conectada</span>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
 
@@ -1154,7 +1446,7 @@ export default function GestionarRegularizacionPage() {
                                 <td className="px-3 py-2 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-2">
                                   <button
-                                      onClick={() => handleAbrirActualizar(regularizacion)}
+                                      onClick={() => handleAbrirActualizarPrincipal(regularizacion)}
                                       className="px-2.5 py-1 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] flex items-center space-x-1"
                                     >
                                       <svg
@@ -1774,7 +2066,7 @@ export default function GestionarRegularizacionPage() {
                       comprobantes: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                   placeholder="Ingrese el número de comprobante"
                   required
                 />
@@ -1784,7 +2076,7 @@ export default function GestionarRegularizacionPage() {
                   Fecha de Regularización <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <input
+                    <input
                     type="text"
                     value={formularioActualizar.fecha_regularizacion || ""}
                     onChange={(e) =>
@@ -1793,7 +2085,7 @@ export default function GestionarRegularizacionPage() {
                         fecha_regularizacion: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     placeholder="dd/mm/aaaa"
                     required
                   />
@@ -1818,7 +2110,7 @@ export default function GestionarRegularizacionPage() {
                       monto: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                   placeholder="0.00"
                   required
                 />
@@ -1896,7 +2188,7 @@ export default function GestionarRegularizacionPage() {
                     })
                   }
                   rows={4}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 resize-y"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500 resize-y"
                   placeholder="Ingrese observaciones (opcional)"
                 />
               </div>
@@ -1925,6 +2217,240 @@ export default function GestionarRegularizacionPage() {
           </div>
         )}
       </Modal>
+
+      {/* Modal de Actualizar Regularización Principal */}
+      <Modal
+        isOpen={modalActualizarPrincipalOpen}
+        onClose={() => {
+          setModalActualizarPrincipalOpen(false);
+          setRegularizacionAEditar(null);
+          setFormularioActualizarPrincipal({});
+        }}
+        title="Actualizar Regularización Principal"
+        size="lg"
+        hideFooter={true}
+      >
+        {regularizacionAEditar && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formularioActualizarPrincipal.nombre || ""}
+                  onChange={(e) =>
+                    setFormularioActualizarPrincipal({
+                      ...formularioActualizarPrincipal,
+                      nombre: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                  placeholder="Ingrese el nombre de la regularización"
+                  required
+                  maxLength={50}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Fecha <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formularioActualizarPrincipal.fecha || ""}
+                    onChange={(e) =>
+                      setFormularioActualizarPrincipal({
+                        ...formularioActualizarPrincipal,
+                        fecha: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                    placeholder="dd/mm/aaaa"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Efectivo Indicado
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formularioActualizarPrincipal.efectivo_indicado || ""}
+                  onChange={(e) =>
+                    setFormularioActualizarPrincipal({
+                      ...formularioActualizarPrincipal,
+                      efectivo_indicado: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Confirmación
+                </label>
+                <select
+                  value={formularioActualizarPrincipal.confirmacion || "SI"}
+                  onChange={(e) =>
+                    setFormularioActualizarPrincipal({
+                      ...formularioActualizarPrincipal,
+                      confirmacion: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 bg-white hover:border-gray-400 cursor-pointer appearance-none font-medium"
+                >
+                  <option value="SI">SI</option>
+                  <option value="NO">NO</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Porcentaje de Regularización
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formularioActualizarPrincipal.regularizacion_porcentaje || ""}
+                  onChange={(e) =>
+                    setFormularioActualizarPrincipal({
+                      ...formularioActualizarPrincipal,
+                      regularizacion_porcentaje: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                  placeholder="100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Observaciones
+                </label>
+                <textarea
+                  value={formularioActualizarPrincipal.observaciones || ""}
+                  onChange={(e) =>
+                    setFormularioActualizarPrincipal({
+                      ...formularioActualizarPrincipal,
+                      observaciones: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                  placeholder="Ingrese observaciones"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                onClick={() => {
+                  setModalActualizarPrincipalOpen(false);
+                  setRegularizacionAEditar(null);
+                  setFormularioActualizarPrincipal({});
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleActualizarRegularizacionPrincipal}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Confirmación de Eliminación */}
+      {modalConfirmarEliminar.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div className="p-6 rounded-t-2xl bg-gradient-to-r from-red-500 to-red-600">
+              <div className="flex items-center space-x-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 className="text-xl font-bold text-white">Confirmar Eliminación</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-800 text-base mb-6">{modalConfirmarEliminar.mensaje}</p>
+              <p className="text-gray-600 text-sm mb-6">Esta acción no se puede deshacer.</p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setModalConfirmarEliminar({ open: false, regularizacion: null, mensaje: "" })}
+                  className="px-6 py-2.5 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEliminarRegularizacion}
+                  className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Mensaje Personalizado */}
+      {modalMensaje.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div className={`p-6 rounded-t-2xl ${
+              modalMensaje.tipo === "success" 
+                ? "bg-gradient-to-r from-green-500 to-green-600" 
+                : "bg-gradient-to-r from-red-500 to-red-600"
+            }`}>
+              <div className="flex items-center space-x-3">
+                {modalMensaje.tipo === "success" ? (
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                <h3 className="text-xl font-bold text-white">
+                  {modalMensaje.tipo === "success" ? "Éxito" : "Error"}
+                </h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-800 text-base mb-6">{modalMensaje.mensaje}</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+                  className={`px-6 py-2.5 rounded-lg font-semibold text-white transition-all duration-200 shadow-sm hover:shadow-md ${
+                    modalMensaje.tipo === "success"
+                      ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                      : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                  }`}
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

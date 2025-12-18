@@ -70,7 +70,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
             }`
         }`}
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={value ? 'text-gray-900 font-medium' : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
@@ -127,6 +127,7 @@ export default function CrearRegularizacionPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modalMensaje, setModalMensaje] = useState({ open: false, tipo: "success", mensaje: "" });
 
   // Estado del formulario - Datos Principales
   const [formData, setFormData] = useState({
@@ -192,8 +193,69 @@ export default function CrearRegularizacionPage() {
     }, 0).toFixed(2);
   };
 
+  // Función auxiliar para validar fecha
+  const validarFecha = (fechaInput) => {
+    if (!fechaInput || fechaInput.trim() === "") {
+      return { valida: false, mensaje: "La fecha es requerida." };
+    }
+
+    if (fechaInput.includes("/")) {
+      const partes = fechaInput.split("/").map(p => p.trim());
+      if (partes.length === 3) {
+        const day = parseInt(partes[0], 10);
+        const month = parseInt(partes[1], 10);
+        let year = parseInt(partes[2], 10);
+
+        // Validar que sean números válidos
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+          return { valida: false, mensaje: "La fecha debe contener solo números en formato DD/MM/YYYY." };
+        }
+
+        // Validar rango del mes (1-12)
+        if (month < 1 || month > 12) {
+          return { valida: false, mensaje: `El mes ${month} no es válido. Debe estar entre 1 y 12.` };
+        }
+
+        // Validar rango del día (1-31)
+        if (day < 1 || day > 31) {
+          return { valida: false, mensaje: `El día ${day} no es válido. Debe estar entre 1 y 31.` };
+        }
+
+        // Validar año
+        if (year < 100) {
+          year = 2000 + year;
+        }
+        if (year < 2000 || year > 2100) {
+          return { valida: false, mensaje: "El año debe estar entre 2000 y 2100." };
+        }
+
+        return { valida: true };
+      }
+    }
+    return { valida: false, mensaje: "La fecha debe estar en formato DD/MM/YYYY (ejemplo: 18/10/2025)." };
+  };
+
   const agregarComprobante = () => {
     if (!nuevoComprobante.comprobante || !nuevoComprobante.monto) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete los campos requeridos (Comprobante y Monto)." });
+      return;
+    }
+
+    // Validar fecha antes de agregar
+    if (!nuevoComprobante.fechaRegularizacion) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor ingrese la fecha de regularización." });
+      return;
+    }
+
+    const validacionFecha = validarFecha(nuevoComprobante.fechaRegularizacion);
+    if (!validacionFecha.valida) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: validacionFecha.mensaje });
+      return;
+    }
+
+    // Validar otros campos requeridos
+    if (!nuevoComprobante.asesor || !nuevoComprobante.medioPago) {
+      setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete todos los campos requeridos (Asesor y Medio de Pago)." });
       return;
     }
 
@@ -240,10 +302,201 @@ export default function CrearRegularizacionPage() {
     });
   };
 
-  const guardarRegularizacion = () => {
-    // Aquí iría la lógica para guardar la regularización
-    console.log("Guardar regularización:", { formData, comprobantes });
-    // TODO: Implementar llamada a API
+  const guardarRegularizacion = async () => {
+    try {
+      if (typeof window === "undefined") return;
+
+      // Verificar autenticación usando el contexto
+      if (!user) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No estás autenticado. Por favor, inicia sesión nuevamente." });
+        setTimeout(() => router.push("/login"), 2000);
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token || token.trim() === "") {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró token de autenticación. Por favor, inicia sesión nuevamente." });
+        setTimeout(() => router.push("/login"), 2000);
+        return;
+      }
+
+      // Validar campos requeridos de la regularización
+      if (!formData.nombreRegularizacion || !formData.fecha) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete los campos requeridos (Nombre Regularización y Fecha)." });
+        return;
+      }
+
+      // Validar que haya comprobantes
+      if (comprobantes.length === 0) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor agregue al menos un comprobante antes de guardar." });
+        return;
+      }
+
+      // Validar que cada comprobante tenga los campos requeridos
+      for (const comp of comprobantes) {
+        if (!comp.comprobante || !comp.monto || !comp.asesor || !comp.medioPago || !comp.fechaRegularizacion) {
+          setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor complete todos los campos requeridos de los comprobantes (Comprobante, Monto, Asesor, Medio de Pago, Fecha)." });
+          return;
+        }
+      }
+
+      // Generar un ID único para la regularización con formato REG_NUMEROALEATORIO
+      // El número aleatorio es un timestamp + número aleatorio para garantizar unicidad
+      const numeroAleatorio = `${Date.now()}${Math.floor(Math.random() * 10000)}`;
+      const idRegularizacion = `REG_${numeroAleatorio}`;
+      
+      const apiUrl = `https://api-regularizazcion-zeus-2946605267.us-central1.run.app?id=${idRegularizacion}`;
+
+      // Función auxiliar para validar y convertir fecha
+      const convertirFecha = (fechaInput) => {
+        if (!fechaInput || fechaInput.trim() === "") {
+          return null;
+        }
+
+        if (fechaInput.includes("/")) {
+          const partes = fechaInput.split("/").map(p => p.trim());
+          if (partes.length === 3) {
+            let day = parseInt(partes[0], 10);
+            let month = parseInt(partes[1], 10);
+            let year = parseInt(partes[2], 10);
+
+            // Validar que sean números válidos
+            if (isNaN(day) || isNaN(month) || isNaN(year)) {
+              return null;
+            }
+
+            // Validar rango del mes (1-12)
+            if (month < 1 || month > 12) {
+              return null;
+            }
+
+            // Validar rango del día (1-31)
+            if (day < 1 || day > 31) {
+              return null;
+            }
+
+            // Asegurar año de 4 dígitos
+            if (year < 100) {
+              year = 2000 + year;
+            }
+
+            // Formatear con padding
+            const dayStr = day.toString().padStart(2, '0');
+            const monthStr = month.toString().padStart(2, '0');
+            const yearStr = year.toString();
+
+            return `${yearStr}-${monthStr}-${dayStr}`;
+          }
+        }
+        return fechaInput; // Si ya está en formato YYYY-MM-DD, retornarlo tal cual
+      };
+
+      // Convertir fecha principal de DD/MM/YYYY a YYYY-MM-DD
+      let fechaFormateada = convertirFecha(formData.fecha);
+      if (!fechaFormateada) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "La fecha ingresada no es válida. Por favor ingrese una fecha en formato DD/MM/YYYY (ejemplo: 18/10/2025)." });
+        return;
+      }
+
+      // Preparar el array de detalles (comprobantes)
+      const detalle = comprobantes.map((comp) => {
+        // Convertir fecha de comprobante de DD/MM/YYYY a YYYY-MM-DD
+        let fechaCompFormateada = convertirFecha(comp.fechaRegularizacion);
+        if (!fechaCompFormateada) {
+          const errorMsg = `La fecha del comprobante "${comp.comprobante}" no es válida. Por favor verifique que la fecha esté en formato DD/MM/YYYY y que el mes esté entre 1-12 y el día entre 1-31.`;
+          throw new Error(errorMsg);
+        }
+
+        return {
+          comprobantes: comp.comprobante,
+          monto: parseFloat(comp.monto) || 0,
+          medio_de_pago: comp.medioPago,
+          asesor: comp.asesor,
+          fecha_regularizacion: fechaCompFormateada,
+          observacion: comp.observacion || "",
+          validacion: comp.estado === "VALIDO" ? 1 : 0,
+        };
+      });
+
+      // Validar que todas las fechas se hayan convertido correctamente
+      if (detalle.some(comp => !comp.fecha_regularizacion)) {
+        setModalMensaje({ open: true, tipo: "error", mensaje: "Algunas fechas de comprobantes no son válidas. Por favor verifique que todas las fechas estén en formato DD/MM/YYYY." });
+        return;
+      }
+
+      // Preparar el body completo según el formato de la API
+      const requestBody = {
+        id_regularizacion: idRegularizacion,
+        nombre: formData.nombreRegularizacion,
+        fecha: fechaFormateada,
+        observaciones: formData.observaciones || "",
+        efectivo_indicado: parseFloat(formData.efectivo) || 0,
+        confirmacion: formData.confirmado || "SI",
+        regularizacion_porcentaje: parseFloat(formData.regularizado) || 0,
+        detalle: detalle,
+      };
+
+      console.log("Enviando request:", JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.push("/login");
+          return;
+        }
+
+        const errorText = await response.text();
+        console.error("Error al guardar:", response.status, errorText);
+        
+        let errorMessage = "No se pudo guardar la regularización.";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.Error || errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        setModalMensaje({ open: true, tipo: "error", mensaje: errorMessage });
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("Error parseando respuesta");
+        }
+      }
+
+      setModalMensaje({ open: true, tipo: "success", mensaje: "Regularización guardada exitosamente." });
+      limpiarFormulario();
+    } catch (error) {
+      console.error("Error guardando regularización:", error);
+      let mensajeError = "Ocurrió un error al guardar la regularización.";
+      
+      // Si el error tiene un mensaje específico, usarlo
+      if (error.message) {
+        mensajeError = error.message;
+      }
+      
+      setModalMensaje({ open: true, tipo: "error", mensaje: mensajeError });
+    }
   };
 
   const recargarConfiguracion = () => {
@@ -269,16 +522,39 @@ export default function CrearRegularizacionPage() {
     { value: "NO", label: "NO" },
   ];
 
-  const opcionesMedioPago = [
-    { value: "1", label: "Efectivo" },
-    { value: "2", label: "Tarjeta" },
-    { value: "3", label: "Transferencia" },
+  // Datos de asesores y medios de pago (iguales a gestionar-regularizacion)
+  const asesores = [
+    { id: 9, nombre: "HERVIN" },
+    { id: 10, nombre: "KIMBERLY" },
+    { id: 15, nombre: "IMPORT ZEUS" },
+    { id: 31, nombre: "LIZETH" },
+    { id: 32, nombre: "EVELYN" },
+    { id: 33, nombre: "JOSEPH" },
+    { id: 34, nombre: "SANDRA" },
+    { id: 35, nombre: "ALVARO" },
+    { id: 36, nombre: "JOSE" },
   ];
 
-  const opcionesAsesor = [
-    { value: "1", label: "Asesor 1" },
-    { value: "2", label: "Asesor 2" },
+  const mediosPago = [
+    { id: 1, nombre: "CREDITO" },
+    { id: 2, nombre: "BCP" },
+    { id: 6, nombre: "YAPE" },
+    { id: 8, nombre: "BCP K" },
+    { id: 9, nombre: "EFECTIVO" },
+    { id: 10, nombre: "TRANSFERENCIA" },
+    { id: 11, nombre: "TARJETA" },
+    { id: 12, nombre: "PLIN" },
   ];
+
+  const opcionesMedioPago = mediosPago.map((medio) => ({
+    value: medio.nombre,
+    label: medio.nombre,
+  }));
+
+  const opcionesAsesor = asesores.map((asesor) => ({
+    value: asesor.nombre,
+    label: asesor.nombre,
+  }));
 
   const opcionesEstado = [
     { value: "VALIDO", label: "VALIDO" },
@@ -359,7 +635,7 @@ export default function CrearRegularizacionPage() {
                       value={formData.nombreRegularizacion}
                       onChange={handleInputChange}
                       placeholder="Ingrese nombre"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -375,7 +651,7 @@ export default function CrearRegularizacionPage() {
                         value={formData.fecha}
                         onChange={handleInputChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -397,7 +673,7 @@ export default function CrearRegularizacionPage() {
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -426,7 +702,7 @@ export default function CrearRegularizacionPage() {
                       step="0.01"
                       min="0"
                       max="100"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -440,7 +716,7 @@ export default function CrearRegularizacionPage() {
                       value={formData.observaciones}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm resize-none"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm resize-none text-gray-900 placeholder:text-gray-500"
                       placeholder="Ingrese observaciones..."
                     />
                   </div>
@@ -472,7 +748,7 @@ export default function CrearRegularizacionPage() {
                       value={nuevoComprobante.comprobante}
                       onChange={handleComprobanteChange}
                       placeholder="Ingrese comprobante"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -488,7 +764,7 @@ export default function CrearRegularizacionPage() {
                       onChange={handleComprobanteChange}
                       step="0.01"
                       min="0"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -528,7 +804,7 @@ export default function CrearRegularizacionPage() {
                         value={nuevoComprobante.fechaRegularizacion}
                         onChange={handleComprobanteChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -549,7 +825,7 @@ export default function CrearRegularizacionPage() {
                       value={nuevoComprobante.observacion}
                       onChange={handleComprobanteChange}
                       placeholder="Ingrese observación"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -694,6 +970,49 @@ export default function CrearRegularizacionPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Mensaje Personalizado */}
+      {modalMensaje.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div className={`p-6 rounded-t-2xl ${
+              modalMensaje.tipo === "success" 
+                ? "bg-gradient-to-r from-green-500 to-green-600" 
+                : "bg-gradient-to-r from-red-500 to-red-600"
+            }`}>
+              <div className="flex items-center space-x-3">
+                {modalMensaje.tipo === "success" ? (
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                <h3 className="text-xl font-bold text-white">
+                  {modalMensaje.tipo === "success" ? "Éxito" : "Error"}
+                </h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-800 text-base mb-6">{modalMensaje.mensaje}</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+                  className={`px-6 py-2.5 rounded-lg font-semibold text-white transition-all duration-200 shadow-sm hover:shadow-md ${
+                    modalMensaje.tipo === "success"
+                      ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                      : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                  }`}
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
