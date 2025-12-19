@@ -288,6 +288,25 @@ export default function ProductosPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Función helper para mapear un producto individual (disponible en todo el componente)
+  const mapearProducto = (item) => {
+    return {
+      id: item.id || item.ID || item.id_producto || item.idProducto || null,
+      codigo: item.codigo || item.CODIGO || item.código || item.code || "",
+      nombre: item.nombre || item.NOMBRE || item.name || "",
+      categoria: item.categoria || item.CATEGORIA || item.categoría || item.category || "",
+      tipoProducto: item.tipoProducto || item.tipo_producto || item.TIPO_PRODUCTO || item.tipo || item.productType || "",
+      colorTipo: item.colorTipo || item.color_tipo || item.COLOR_TIPO || item.color || item.colorType || "",
+      tamano: item.tamano || item.tamaño || item.TAMAÑO || item.size || item.tamano || "",
+      paresPorCaja: item.paresPorCaja || item.pares_por_caja || item.PARES_POR_CAJA || item.pairsPerBox || item.paresPorCaja || 0,
+      fichaTecnica: item.fichaTecnica || item.ficha_tecnica || item.FICHA_TECNICA || item.FICHA_TECNICA_ENLACE || item.ficha || item.technicalSheet || item.pdf || item.fichaTecnicaEnlace || null,
+      imagen: item.imagen || item.IMAGEN || item.image || item.IMAGE || item.imagen_url || item.imagenUrl || item.IMAGEN_URL || item.IMG_URL || item.img_url || null,
+      precio: item.precio || item.PRECIO || item.price || 0,
+      stock: item.stock || item.STOCK || item.inventory || 0,
+      activo: item.activo !== undefined ? item.activo : (item.ACTIVO !== undefined ? item.ACTIVO : (item.active !== undefined ? item.active : true)),
+    };
+  };
+
   // Función para obtener productos de la API
   const fetchProductos = useCallback(async () => {
     try {
@@ -935,26 +954,32 @@ export default function ProductosPage() {
                                             : null;
                                           
                                           if (productoActualizado) {
-                                            // Mapear el producto actualizado con todas las variaciones de imagen
-                                            const productoConImagen = {
-                                              ...productoActualizado,
-                                              imagen: productoActualizado.imagen || productoActualizado.IMAGEN || productoActualizado.IMG_URL || productoActualizado.img_url || productoActualizado.imagen_url || productoActualizado.imagenUrl || productoActualizado.IMAGEN_URL || productoActualizado.image || productoActualizado.IMAGE || null
-                                            };
-                                            setSelectedProducto(productoConImagen);
+                                            // Usar la función de mapeo completa para obtener todos los campos correctamente
+                                            const productoMapeado = mapearProducto(productoActualizado);
+                                            console.log("🔍 Producto recargado desde API:", productoMapeado);
+                                            console.log("🔍 Imagen encontrada:", productoMapeado.imagen);
+                                            console.log("🔍 Todos los campos del producto:", Object.keys(productoMapeado));
+                                            console.log("🔍 Producto original de API (sin mapear):", productoActualizado);
+                                            setSelectedProducto(productoMapeado);
                                           } else {
+                                            console.warn("⚠️ No se encontró el producto actualizado en la respuesta");
+                                            console.warn("⚠️ Producto buscado (ID):", producto.id);
+                                            console.warn("⚠️ Productos disponibles:", productosActualizados?.slice(0, 3));
                                             setSelectedProducto(producto);
                                           }
                                         } else {
+                                          console.warn("⚠️ Error al recargar productos, usando datos del estado");
                                           setSelectedProducto(producto);
                                         }
                                       } catch (error) {
-                                        console.warn("No se pudo recargar el producto, usando datos del estado:", error);
+                                        console.warn("⚠️ No se pudo recargar el producto, usando datos del estado:", error);
                                         setSelectedProducto(producto);
                                       }
                                       setSelectedImageFile(null);
+                                      setImagePreview(null);
                                       setIsGestionarImagenModalOpen(true);
                                     }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Gestionar imagen del producto"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
@@ -1577,27 +1602,32 @@ export default function ProductosPage() {
         size="md"
       >
         {selectedProducto && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Imagen Actual */}
             {selectedProducto.imagen && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <h3 className="text-sm font-bold text-gray-900 mb-3">Imagen Actual:</h3>
-                <div className="flex items-center space-x-3">
-                  <img 
-                    src={selectedProducto.imagen} 
-                    alt="Imagen actual" 
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-blue-300"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+              <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                  <h3 className="text-base font-semibold text-gray-800 tracking-tight">Imagen Actual</h3>
+                </div>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative w-full max-w-lg bg-white rounded-xl p-4 shadow-inner border border-gray-100">
+                    <img 
+                      src={selectedProducto.imagen} 
+                      alt="Imagen actual" 
+                      className="w-full h-auto max-h-72 object-contain rounded-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
                   <a
                     href={selectedProducto.imagen}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                    className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 shadow-sm"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
@@ -1609,39 +1639,48 @@ export default function ProductosPage() {
 
             {/* Subir Nueva Imagen */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Subir Nueva Imagen:</h3>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-1 h-5 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                <h3 className="text-base font-semibold text-gray-800 tracking-tight">Subir Nueva Imagen</h3>
+              </div>
               {imagePreview ? (
-                <div className="space-y-3">
-                  <div className="relative w-full h-64 border-2 border-gray-300 rounded-xl overflow-hidden bg-gray-50">
-                    <img 
-                      src={imagePreview} 
-                      alt="Vista previa" 
-                      className="w-full h-full object-contain"
-                    />
-                    <button
-                      onClick={() => {
-                        setSelectedImageFile(null);
-                        setImagePreview(null);
-                        const input = document.getElementById('image-upload');
-                        if (input) input.value = '';
-                      }}
-                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                      title="Eliminar imagen seleccionada"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                <div className="space-y-4">
+                  <div className="relative w-full max-w-lg mx-auto bg-white rounded-xl p-4 shadow-inner border border-gray-200">
+                    <div className="relative h-56 rounded-lg overflow-hidden bg-gray-50">
+                      <img 
+                        src={imagePreview} 
+                        alt="Vista previa" 
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        onClick={() => {
+                          setSelectedImageFile(null);
+                          setImagePreview(null);
+                          const input = document.getElementById('image-upload');
+                          if (input) input.value = '';
+                        }}
+                        className="absolute top-3 right-3 p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 shadow-md"
+                        title="Eliminar imagen seleccionada"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 text-green-700">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-sm">Archivo seleccionado:</p>
-                        <p className="text-xs">{selectedImageFile?.name}</p>
-                        <p className="text-xs text-gray-600">Tamaño: {(selectedImageFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-800 mb-1">Archivo seleccionado</p>
+                        <p className="text-xs text-gray-600 truncate mb-1">{selectedImageFile?.name}</p>
+                        <p className="text-xs text-gray-500">Tamaño: {(selectedImageFile?.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                     </div>
                   </div>
@@ -1650,7 +1689,7 @@ export default function ProductosPage() {
                       const input = document.getElementById('image-upload');
                       if (input) input.click();
                     }}
-                    className="w-full px-4 py-2 text-sm font-semibold text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="w-full max-w-lg mx-auto px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                   >
                     Cambiar Imagen
                   </button>
@@ -1658,16 +1697,18 @@ export default function ProductosPage() {
               ) : (
                 <label
                   htmlFor="image-upload"
-                  className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-400 transition-all duration-200"
+                  className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 hover:border-blue-400"
                 >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg className="w-12 h-12 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Hacer clic para seleccionar archivo de imagen</span>
+                  <div className="flex flex-col items-center justify-center pt-4 pb-4">
+                    <div className="w-14 h-14 mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
+                    <p className="mb-1.5 text-sm text-gray-600 font-medium">
+                      Hacer clic para seleccionar archivo
                     </p>
-                    <p className="text-xs text-gray-500">JPG, PNG, WEBP (MAX. 10MB)</p>
+                    <p className="text-xs text-gray-400">JPG, PNG, WEBP (MAX. 10MB)</p>
                   </div>
                   <input
                     id="image-upload"
@@ -1703,7 +1744,7 @@ export default function ProductosPage() {
             </div>
 
             {/* Botones de acción */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
               <button
                 onClick={() => {
                   setIsGestionarImagenModalOpen(false);
@@ -1712,7 +1753,7 @@ export default function ProductosPage() {
                   setImagePreview(null);
                 }}
                 disabled={uploadingImage}
-                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
               >
                 Cancelar
               </button>
@@ -1952,7 +1993,7 @@ export default function ProductosPage() {
                   }
                 }}
                 disabled={!selectedImageFile || uploadingImage}
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="flex items-center space-x-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
               >
                 {uploadingImage ? (
                   <>
