@@ -151,7 +151,18 @@ export default function CotizacionesPage() {
   const [producto, setProducto] = useState("");
   const [codigo, setCodigo] = useState("");
   const [cantidad, setCantidad] = useState(1);
-  const [unidadMedida, setUnidadMedida] = useState("");
+  const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
+  
+  // Opciones de unidad de medida
+  const opcionesUnidadMedida = [
+    { value: "", label: "Seleccione Unidad de Medida" },
+    { value: "DOCENAS", label: "DOCENAS" },
+    { value: "UNIDADES", label: "UNIDADES" },
+    { value: "PARES", label: "PARES" },
+    { value: "PAQUETES", label: "PAQUETES" },
+    { value: "ROLLOS", label: "ROLLOS" },
+    { value: "METROS", label: "METROS" },
+  ];
   const [precioVenta, setPrecioVenta] = useState("");
   const [total, setTotal] = useState(0.00);
 
@@ -493,7 +504,8 @@ export default function CotizacionesPage() {
     const precioNum = parseFloat(precio) || 0;
     console.log("Precio seleccionado:", precioNum, "de item:", precioItem); // Debug
     setPrecioVenta(precioNum.toString());
-    setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
+    // NO sobrescribir unidadMedida - usar la seleccionada manualmente del combo box
+    // setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
     setModalPreciosAbierto(false);
 
     // Recalcular total inmediatamente
@@ -675,7 +687,7 @@ export default function CotizacionesPage() {
     const nuevoProducto = {
       id: Date.now(),
       cantidad: cantidadNum,
-      unidad: unidadMedida || "UN",
+      unidad: unidadMedida ? unidadMedida.toUpperCase() : "UNIDADES",
       codigo: codigo,
       producto: producto,
       precioUnit: precioNum,
@@ -691,7 +703,7 @@ export default function CotizacionesPage() {
     setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
-    setUnidadMedida("");
+    setUnidadMedida("Seleccione Unidad de Medida"); 
     setPrecioVenta("");
     setTotal(0.00);
     setProductoSeleccionado(null);
@@ -706,7 +718,7 @@ export default function CotizacionesPage() {
   const generarHTMLCotizacion = (numeroCotizacion) => {
     return `
     <style>
-       /* Botón de descarga */
+        /* Botón de descarga */
         .download-button-container {
             position: fixed;
             top: 20px;
@@ -797,7 +809,7 @@ export default function CotizacionesPage() {
         .company-info {
             width: 50%;
             text-align: center;
-            font-size: 11px;
+            font-size: 14px;
             line-height: 1.4;
             padding-top: 5px;
             color: #000000;
@@ -842,7 +854,7 @@ export default function CotizacionesPage() {
         .client-info {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             margin-bottom: 15px;
             line-height: 1.8;
@@ -1150,7 +1162,7 @@ export default function CotizacionesPage() {
                         <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
                         <td style="border: 1px solid #000; font-size: 12px;">BCP Soles</td>
                         <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 0px solid #000; font-size: 12px;">191-2233941-0-59</td>
+                        <td style="border: 1px solid #000; font-size: 12px;">191-2233941-0-59</td>
                         <td style="border: 1px solid #000; font-size: 12px;">00219100223394105953</td>
                     </tr>
                     <tr>
@@ -1197,7 +1209,7 @@ export default function CotizacionesPage() {
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px';
-      tempDiv.style.width = '900px';
+      tempDiv.style.width = '1000px';
       tempDiv.style.backgroundColor = 'white';
 
       // Usamos un código temporal para el diseño, el real lo asigna el backend
@@ -1292,7 +1304,7 @@ export default function CotizacionesPage() {
 
       if (response.ok && data.success) {
         const numeroFinal = data.codigo_cotizacion;
-        alert(`Cotización ${numeroFinal} registrada y guardada en la nube con éxito.`);
+        alert(`Cotización ${numeroFinal} registrada y guardada con éxito.`);
 
         // --- PASO D: Descargar para el usuario ---
         // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
@@ -1663,6 +1675,15 @@ export default function CotizacionesPage() {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">UNIDAD DE MEDIDA:</label>
+                    <CompactSelect
+                      value={unidadMedida}
+                      onChange={(e) => setUnidadMedida(e.target.value)}
+                      placeholder="Seleccione unidad de medida"
+                      options={opcionesUnidadMedida}
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Precio de Venta:</label>
                     <input
                       type="number"
@@ -1685,7 +1706,7 @@ export default function CotizacionesPage() {
                 </div>
                 <button
                   onClick={handleAgregarProducto}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm mt-4"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1768,7 +1789,7 @@ export default function CotizacionesPage() {
                           {productosLista.map((prod) => (
                             <tr key={prod.id} className="hover:bg-slate-200 transition-colors">
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.cantidad}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.unidad}</td>
+                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.unidad ? prod.unidad.toUpperCase() : "UNIDADES"}</td>
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{prod.codigo}</td>
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{prod.producto}</td>
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">S/ {(prod.precioUnit || 0).toFixed(2)}</td>

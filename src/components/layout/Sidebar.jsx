@@ -706,6 +706,19 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
+    // Navegación para Incidencias en Administración
+    if (itemId === "importaciones") {
+      router.push("/administracion/incidencias/importaciones");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "proformas-actas") {
+      router.push("/administracion/incidencias/proformas-actas");
+      setSelectedItem(itemId);
+      return;
+    }
+
     // Navegación para Importación
     if (itemId === "listado-import") {
       router.push("/importacion/listado");

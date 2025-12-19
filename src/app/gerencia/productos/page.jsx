@@ -225,8 +225,10 @@ export default function ProductosPage() {
   const [isActivarModalOpen, setIsActivarModalOpen] = useState(false);
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
   const [isGestionarPDFModalOpen, setIsGestionarPDFModalOpen] = useState(false);
+  const [isGestionarImagenModalOpen, setIsGestionarImagenModalOpen] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [productos, setProductos] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState(null);
@@ -395,6 +397,7 @@ export default function ProductosPage() {
         tamano: item.tamano || item.tamaño || item.TAMAÑO || item.size || item.tamano || "",
         paresPorCaja: item.paresPorCaja || item.pares_por_caja || item.PARES_POR_CAJA || item.pairsPerBox || item.paresPorCaja || 0,
         fichaTecnica: item.fichaTecnica || item.ficha_tecnica || item.FICHA_TECNICA || item.FICHA_TECNICA_ENLACE || item.ficha || item.technicalSheet || item.pdf || item.fichaTecnicaEnlace || null,
+        imagen: item.imagen || item.IMAGEN || item.image || item.IMAGE || item.imagen_url || item.imagenUrl || item.IMAGEN_URL || item.IMG_URL || item.img_url || null,
         precio: item.precio || item.PRECIO || item.price || 0,
         stock: item.stock || item.STOCK || item.inventory || 0,
         activo: item.activo !== undefined ? item.activo : (item.ACTIVO !== undefined ? item.ACTIVO : (item.active !== undefined ? item.active : true)),
@@ -855,13 +858,14 @@ export default function ProductosPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TAMAÑO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PARES POR CAJA</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FICHA TÉCNICA</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">IMAGEN</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {!loadingData && paginatedActivos.length === 0 ? (
                           <tr>
-                            <td colSpan="9" className="px-3 py-8 text-center text-sm text-gray-500">
+                            <td colSpan="10" className="px-3 py-8 text-center text-sm text-gray-500">
                               No hay productos activos disponibles
                             </td>
                           </tr>
@@ -879,16 +883,20 @@ export default function ProductosPage() {
                                 {producto.fichaTecnica ? (
                                   <div className="flex items-center justify-center">
                                     <button
-                                      onClick={() => window.open(producto.fichaTecnica, '_blank')}
-                                      className="flex items-center space-x-1.5 text-blue-700 hover:text-blue-800 rounded-lg transition-all duration-200 active:scale-[0.98]"
-                                      title="Ver ficha técnica en PDF"
+                                      onClick={() => {
+                                        setSelectedProducto(producto);
+                                        setSelectedFile(null);
+                                        setIsGestionarPDFModalOpen(true);
+                                      }}
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar PDF del producto"
                                     >
-                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
                                         <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
                                         <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                       </svg>
-                                      <span className="font-semibold text-[10px]">Ver Ficha</span>
+                                      <span style={{ pointerEvents: 'none' }}>PDF</span>
                                     </button>
                                   </div>
                                 ) : (
@@ -896,6 +904,43 @@ export default function ProductosPage() {
                                     <span className="text-gray-400 text-[10px]">-</span>
                                   </div>
                                 )}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                <div className="flex items-center justify-center">
+                                  {producto.imagen ? (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedProducto(producto);
+                                        setSelectedImageFile(null);
+                                        setIsGestionarImagenModalOpen(true);
+                                      }}
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar imagen del producto"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedProducto(producto);
+                                        setSelectedImageFile(null);
+                                        setIsGestionarImagenModalOpen(true);
+                                      }}
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar imagen del producto"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center space-x-2">
@@ -920,24 +965,6 @@ export default function ProductosPage() {
                                   </svg>
                                   <span>Editar</span>
                                 </button>
-                                {producto.fichaTecnica && (
-                                  <button
-                                      onClick={() => {
-                                        setSelectedProducto(producto);
-                                        setSelectedFile(null);
-                                        setIsGestionarPDFModalOpen(true);
-                                      }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar PDF del producto"
-                                  >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                    </svg>
-                                    <span style={{ pointerEvents: 'none' }}>PDF</span>
-                                  </button>
-                                )}
                                 <button
                                   onClick={() => {
                                     setSelectedProducto(producto);
@@ -1512,6 +1539,121 @@ export default function ProductosPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal Gestionar Imagen */}
+      <Modal
+        isOpen={isGestionarImagenModalOpen}
+        onClose={() => {
+          setIsGestionarImagenModalOpen(false);
+          setSelectedProducto(null);
+          setSelectedImageFile(null);
+        }}
+        title={`Gestionar Imagen del Producto - ${selectedProducto?.codigo || ""}`}
+        size="md"
+      >
+        {selectedProducto && (
+          <div className="space-y-6">
+            {/* Imagen Actual */}
+            {selectedProducto.imagen && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Imagen Actual:</h3>
+                <a
+                  href={selectedProducto.imagen}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>Ver Imagen Actual</span>
+                </a>
+              </div>
+            )}
+
+            {/* Subir Nueva Imagen */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Subir Nueva Imagen:</h3>
+              <label
+                htmlFor="image-upload"
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-400 transition-all duration-200"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Hacer clic para seleccionar archivo de imagen</span>
+                  </p>
+                  <p className="text-xs text-gray-500">JPG, PNG, WEBP (MAX. 10MB)</p>
+                </div>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert("El archivo es demasiado grande. El tamaño máximo es 10MB.");
+                        e.target.value = "";
+                        return;
+                      }
+                      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                      if (!validTypes.includes(file.type)) {
+                        alert("Por favor, selecciona un archivo de imagen válido (JPG, PNG, WEBP).");
+                        e.target.value = "";
+                        return;
+                      }
+                      setSelectedImageFile(file);
+                    }
+                  }}
+                />
+                {selectedImageFile && (
+                  <div className="mt-2 text-sm text-green-600 font-semibold">
+                    ✓ Archivo seleccionado: {selectedImageFile.name}
+                  </div>
+                )}
+              </label>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsGestionarImagenModalOpen(false);
+                  setSelectedProducto(null);
+                  setSelectedImageFile(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!selectedImageFile) {
+                    alert("Por favor, selecciona un archivo de imagen para subir.");
+                    return;
+                  }
+                  console.log("Guardar imagen para producto:", selectedProducto.id, selectedImageFile);
+                  alert("Funcionalidad de guardado de imagen pendiente de implementar");
+                  setIsGestionarImagenModalOpen(false);
+                  setSelectedProducto(null);
+                  setSelectedImageFile(null);
+                }}
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span>Guardar Imagen</span>
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Modal Gestionar PDF */}
