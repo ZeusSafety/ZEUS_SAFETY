@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import { color } from "framer-motion";
 
 // Componente Combobox personalizado con diseño de la imagen
 const CustomCombobox = ({ value, onChange, options, placeholder, disabled = false, label }) => {
@@ -62,21 +63,19 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-3 py-2 rounded-lg focus:outline-none text-sm text-left flex items-center justify-between transition-all border-2 ${
-          isOpen 
-            ? 'bg-blue-700 text-white border-blue-700' 
-            : selectedOption 
-              ? 'bg-blue-700 text-white border-blue-700' 
-              : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`w-full px-3 py-2 rounded-lg focus:outline-none text-sm text-left flex items-center justify-between transition-all border-2 ${isOpen
+          ? 'bg-blue-700 text-white border-blue-700'
+          : selectedOption
+            ? 'bg-blue-700 text-white border-blue-700'
+            : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className="whitespace-nowrap overflow-hidden text-ellipsis">
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-4 h-4 transition-transform flex-shrink-0 ml-2 ${
-            isOpen ? 'transform rotate-180' : ''
-          } ${isOpen || selectedOption ? 'text-white' : 'text-gray-400'}`}
+          className={`w-4 h-4 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'transform rotate-180' : ''
+            } ${isOpen || selectedOption ? 'text-white' : 'text-gray-400'}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -86,9 +85,8 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
       </button>
       {isOpen && (
         <div
-          className={`absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl overflow-hidden ${
-            openUpward ? 'bottom-full mb-1' : 'top-full'
-          }`}
+          className={`absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl overflow-hidden ${openUpward ? 'bottom-full mb-1' : 'top-full'
+            }`}
           style={{ maxHeight: '200px', overflowY: 'auto' }}
         >
           {options.map((option, index) => (
@@ -96,11 +94,10 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
               key={option.value || index}
               type="button"
               onClick={() => handleSelect(option.value)}
-              className={`w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${
-                value === option.value
-                  ? 'bg-blue-700 text-white font-semibold'
-                  : 'text-gray-900 hover:bg-blue-50'
-              } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              className={`w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${value === option.value
+                ? 'bg-blue-700 text-white font-semibold'
+                : 'text-gray-900 hover:bg-blue-50'
+                } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
             >
               {option.label}
             </button>
@@ -115,7 +112,7 @@ export default function RegistroImportacionesPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   // Estados para el formulario
   const [formData, setFormData] = useState({
     fechaRegistro: new Date().toISOString().split('T')[0],
@@ -126,7 +123,7 @@ export default function RegistroImportacionesPage() {
     estado: "",
     descripcionGeneral: "",
   });
-  
+
   // Estados para productos
   const [productoBusqueda, setProductoBusqueda] = useState("");
   const [codigoProducto, setCodigoProducto] = useState("");
@@ -137,7 +134,7 @@ export default function RegistroImportacionesPage() {
   const [productosCargados, setProductosCargados] = useState(false);
   const sugerenciasRef = useRef(null);
   const productoInputRef = useRef(null);
-  
+
   // Estados para detalle de producto
   const [detalleProducto, setDetalleProducto] = useState({
     unidadMedida: "",
@@ -145,7 +142,7 @@ export default function RegistroImportacionesPage() {
     cantidadCaja: "",
     imagen: null,
   });
-  
+
   // Lista de productos agregados
   const [listaProductos, setListaProductos] = useState([]);
 
@@ -200,7 +197,7 @@ export default function RegistroImportacionesPage() {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         console.error(`Error ${response.status}: ${response.statusText}`);
         setBuscandoProductos(false);
@@ -209,7 +206,7 @@ export default function RegistroImportacionesPage() {
 
       const data = await response.json();
       const productos = Array.isArray(data) ? data : (data.data || []);
-      
+
       console.log("Productos cargados:", productos.length);
       setTodosLosProductos(productos);
       setProductosCargados(true);
@@ -288,7 +285,7 @@ export default function RegistroImportacionesPage() {
     if (!productosCargados && todosLosProductos.length === 0) {
       cargarTodosLosProductos();
     }
-    
+
     // Si hay texto y sugerencias previas, mostrarlas
     if (productoBusqueda && sugerenciasProductos.length > 0) {
       setMostrarSugerencias(true);
@@ -318,7 +315,7 @@ export default function RegistroImportacionesPage() {
     };
 
     setListaProductos([...listaProductos, nuevoProducto]);
-    
+
     // Limpiar campos
     setProductoBusqueda("");
     setCodigoProducto("");
@@ -335,37 +332,83 @@ export default function RegistroImportacionesPage() {
     setListaProductos(listaProductos.filter(p => p.id !== id));
   };
 
-  // Manejar selección de imagen
-  const handleImagenChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setDetalleProducto({ ...detalleProducto, imagen: file });
-    }
-  };
-
-  // Registrar importación
-  const registrarImportacion = () => {
-    if (!formData.numeroDespacho || !formData.responsable || !formData.fechaLlegada || !formData.tipoCarga || !formData.estado) {
+  // Registrar importación unificada
+  const registrarImportacion = async () => {
+    // 1. Validaciones previas
+    if (
+      !formData.numeroDespacho ||
+      !formData.responsable ||
+      !formData.fechaLlegada ||
+      !formData.tipoCarga ||
+      !formData.estado ||
+      !formData.descripcionGeneral
+    ) {
       alert("Por favor, complete todos los campos requeridos");
       return;
     }
 
     if (listaProductos.length === 0) {
-      alert("Por favor, agregue al menos un producto");
+      alert("Por favor, agregue al menos un producto en el detalle");
       return;
     }
 
-    // Aquí iría la lógica para enviar los datos a la API
-    console.log("Datos de importación:", { formData, productos: listaProductos });
-    alert("Importación registrada correctamente");
-    router.push("/importacion");
+    const token = getAuthToken();
+    if (!token) {
+      alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
+      return;
+    }
+
+    // 2. Mapeo de datos al formato del Backend
+    const payload = {
+      numero_despacho: formData.numeroDespacho,
+      tipo_carga: formData.tipoCarga,
+      responsable: formData.responsable,
+      fecha_registro: formData.fechaRegistro + " 10:30:00", // Agregamos hora si el backend lo requiere como DATETIME
+      fecha_llegada_productos: formData.fechaLlegada,
+      estado_importacion: formData.estado,
+      productos: formData.descripcionGeneral, // Equivale a descripción general
+      archivo_pdf: "https://storage.googleapis.com/bucket/default.pdf", // Valor por defecto o dinámico
+      detalles: listaProductos.map((prod, index) => ({
+        item: index + 1,
+        producto: prod.producto,
+        codigo: prod.codigo,
+        unidad_medida: prod.unidadMedida,
+        cantidad: parseInt(prod.cantidad)
+      }))
+    };
+
+    try {
+      // 3. Petición a la API
+      const url = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.");
+        router.push("/importacion");
+      } else {
+        throw new Error(result.error || "Error desconocido en el servidor");
+      }
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      alert("❌ Error al registrar importación: " + error.message);
+    }
   };
 
   // Cerrar sugerencias al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (sugerenciasRef.current && !sugerenciasRef.current.contains(event.target) &&
-          productoInputRef.current && !productoInputRef.current.contains(event.target)) {
+        productoInputRef.current && !productoInputRef.current.contains(event.target)) {
         setMostrarSugerencias(false);
       }
     };
@@ -393,9 +436,8 @@ export default function RegistroImportacionesPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -411,7 +453,7 @@ export default function RegistroImportacionesPage() {
               </svg>
               <span>Volver</span>
             </button>
-            
+
             {/* Card contenedor blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
@@ -626,47 +668,28 @@ export default function RegistroImportacionesPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad en Caja:</label>
-                      <input
-                        type="number"
-                        value={detalleProducto.cantidadCaja}
-                        onChange={(e) => setDetalleProducto({ ...detalleProducto, cantidadCaja: e.target.value })}
-                        min="0"
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      />
-                    </div>
-                  </div>
-                  {/* Imagen y Agregar a la Lista en la misma línea */}
-                  <div className="mt-4 flex items-end gap-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Imagen:</label>
                       <div className="flex items-center gap-2">
-                        <label className="flex items-center space-x-1.5 px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm cursor-pointer">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span>Seleccionar imagen</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImagenChange}
-                            className="hidden"
-                          />
-                        </label>
-                        <span className="text-sm text-gray-500 flex-1">
-                          {detalleProducto.imagen ? detalleProducto.imagen.name : "Ningún archivo seleccionado"}
-                        </span>
+                        <input
+                          type="number"
+                          value={detalleProducto.cantidadCaja}
+                          onChange={(e) => setDetalleProducto({ ...detalleProducto, cantidadCaja: e.target.value })}
+                          min="0"
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        />
                       </div>
                     </div>
-                    <button
-                      onClick={agregarProductoALista}
-                      className="flex items-center space-x-1.5 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <span>Agregar a la Lista</span>
-                    </button>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ color: 'transparent' }}>.</label>
+                      <button
+                        onClick={agregarProductoALista}
+                        className="flex items-center space-x-1.5 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Agregar a la Lista</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -682,71 +705,13 @@ export default function RegistroImportacionesPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD DE MEDIDA</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD EN CAJA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">IMAGEN</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {listaProductos.length === 0 ? (
-                          // Datos de prueba
                           <>
-                            <tr className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">1</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">Guante Anticorte Nivel 5</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">GNT-005</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">UNIDAD</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">50</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">10</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">guante.jpg</td>
-                              <td className="px-3 py-2 whitespace-nowrap">
-                                <button
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">2</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">Gafa Panorámica Antiempañante</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">GFA-003</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">UNIDAD</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">30</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">6</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">gafa.jpg</td>
-                              <td className="px-3 py-2 whitespace-nowrap">
-                                <button
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">3</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">Respirador Reutilizable Serie 700</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">RSP-700</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">UNIDAD</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">20</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">4</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">respirador.jpg</td>
-                              <td className="px-3 py-2 whitespace-nowrap">
-                                <button
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </td>
-                            </tr>
+
                           </>
                         ) : (
                           listaProductos.map((producto, index) => (
@@ -757,9 +722,6 @@ export default function RegistroImportacionesPage() {
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.unidadMedida}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.cantidad}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.cantidadCaja || "-"}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                {producto.imagen ? producto.imagen.name : "-"}
-                              </td>
                               <td className="px-3 py-2 whitespace-nowrap">
                                 <button
                                   onClick={() => eliminarProducto(producto.id)}

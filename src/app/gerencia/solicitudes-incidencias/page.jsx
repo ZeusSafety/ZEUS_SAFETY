@@ -19,6 +19,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
   
   // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("");
+  const [areaEmision, setAreaEmision] = useState("");
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
@@ -144,6 +145,15 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       });
     }
 
+    // Filtrar por área de emisión (solo si hay un valor seleccionado)
+    if (areaEmision && areaEmision.trim() !== "") {
+      filtered = filtered.filter(s => {
+        // Buscar el área en múltiples campos posibles
+        const area = s.AREA_EMISION || s.area_emision || s.AREA || s.area || "";
+        return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
+      });
+    }
+
     // Filtrar por colaborador
     if (colaborador.trim()) {
       const term = colaborador.toLowerCase();
@@ -176,7 +186,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     }
 
     return filtered;
-  }, [solicitudes, areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [solicitudes, areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Calcular paginación
   const totalPages = Math.ceil(solicitudesFiltradas.length / itemsPerPage);
@@ -478,6 +488,27 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Área de Emisión
+                  </label>
+                  <select
+                    value={areaEmision}
+                    onChange={(e) => setAreaEmision(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  >
+                    <option value="">Todas las áreas</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="VENTAS">VENTAS</option>
+                    <option value="FACTURACION">FACTURACIÓN</option>
+                    <option value="IMPORTACION">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Colaborador
                   </label>
                   <input
@@ -536,22 +567,22 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
                         </tr>
                       </thead>
@@ -667,7 +698,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
                                 {tieneReprogramaciones ? (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 justify-center text-center">
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
                                       SI
                                     </span>
