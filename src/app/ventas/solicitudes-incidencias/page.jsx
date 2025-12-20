@@ -10,15 +10,15 @@ import Modal from "../../../components/ui/Modal";
 // Usar el proxy de Next.js para evitar problemas de CORS
 const API_URL = "/api/solicitudes-incidencias";
 
-export default function SolicitudesIncidenciasPage() {
+export default function SolicitudesIncidenciasVentasPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   
-  // Filtros - Iniciar con SISTEMAS seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("SISTEMAS");
+  // Filtros - Iniciar con VENTAS seleccionado por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("VENTAS");
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
@@ -32,20 +32,10 @@ export default function SolicitudesIncidenciasPage() {
   const [modalRespuestasOpen, setModalRespuestasOpen] = useState(false);
   const [modalReprogramacionesOpen, setModalReprogramacionesOpen] = useState(false);
   const [modalHistorialReqExtraOpen, setModalHistorialReqExtraOpen] = useState(false);
-  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [modalProcedimientosOpen, setModalProcedimientosOpen] = useState(false);
   const [textoModal, setTextoModal] = useState("");
   const [tituloModal, setTituloModal] = useState("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
-  
-  // Estados para el formulario de edición
-  const [formFechaRespuesta, setFormFechaRespuesta] = useState("");
-  const [formRespondidoPor, setFormRespondidoPor] = useState("");
-  const [formNombrePersona, setFormNombrePersona] = useState("");
-  const [formRespuesta, setFormRespuesta] = useState("");
-  const [formArchivoInforme, setFormArchivoInforme] = useState(null);
-  const [formArchivoNombre, setFormArchivoNombre] = useState("");
-  const [formEstado, setFormEstado] = useState("");
-  const [formReprogramacion, setFormReprogramacion] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -80,28 +70,48 @@ export default function SolicitudesIncidenciasPage() {
       setLoadingData(true);
       const token = localStorage.getItem("token");
       
-      // Usar el proxy de Next.js que maneja CORS y autenticación
-      // El parámetro listado se pasa como query param
-      const response = await fetch(`${API_URL}?listado=sistemas`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
+      // Obtener todas las solicitudes de todas las áreas
+      // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
+      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+      
+      // Hacer llamadas en paralelo para obtener todas las solicitudes
+      const promesas = areas.map(async (area) => {
+        try {
+          const response = await fetch(`${API_URL}?listado=${area}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data)) {
+              return data;
+            }
+          }
+          return [];
+        } catch (error) {
+          console.error(`Error al obtener solicitudes de ${area}:`, error);
+          return [];
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Datos recibidos de la API:', data);
       
-      if (Array.isArray(data)) {
-        setSolicitudes(data);
-      } else {
-        setSolicitudes([]);
-      }
+      const resultados = await Promise.all(promesas);
+      // Combinar todas las solicitudes y eliminar duplicados por ID
+      const solicitudesUnicas = new Map();
+      resultados.flat().forEach(solicitud => {
+        const id = solicitud.ID_SOLICITUD || solicitud.id || solicitud.ID || solicitud.NUMERO_SOLICITUD;
+        if (id && !solicitudesUnicas.has(id)) {
+          solicitudesUnicas.set(id, solicitud);
+        }
+      });
+      
+      const data = Array.from(solicitudesUnicas.values());
+      console.log('Datos recibidos de la API (todas las áreas):', data);
+      
+      setSolicitudes(data);
     } catch (error) {
       console.error("Error al obtener datos:", error);
       setSolicitudes([]);
@@ -114,11 +124,12 @@ export default function SolicitudesIncidenciasPage() {
   const solicitudesFiltradas = useMemo(() => {
     let filtered = [...solicitudes];
 
-    // Filtrar por área de recepción
-    if (areaRecepcion) {
+    // Filtrar por área de recepción (solo si hay un valor seleccionado)
+    if (areaRecepcion && areaRecepcion.trim() !== "") {
       filtered = filtered.filter(s => {
-        const area = s.AREA_RECEPCION || s.area_recepcion || "";
-        return area === areaRecepcion;
+        // Buscar el área en múltiples campos posibles
+        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
+        return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
       });
     }
 
@@ -188,85 +199,6 @@ export default function SolicitudesIncidenciasPage() {
     setModalHistorialReqExtraOpen(true);
   };
 
-  const abrirModalEditar = (solicitud) => {
-    setSolicitudSeleccionada(solicitud);
-    
-    // Formatear fecha para el input datetime-local
-    let fechaFormateada = "";
-    if (solicitud.FECHA_RESPUESTA) {
-      try {
-        const fecha = new Date(solicitud.FECHA_RESPUESTA);
-        if (!isNaN(fecha.getTime())) {
-          const year = fecha.getFullYear();
-          const month = String(fecha.getMonth() + 1).padStart(2, '0');
-          const day = String(fecha.getDate()).padStart(2, '0');
-          const hours = String(fecha.getHours()).padStart(2, '0');
-          const minutes = String(fecha.getMinutes()).padStart(2, '0');
-          const seconds = String(fecha.getSeconds()).padStart(2, '0');
-          fechaFormateada = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-        }
-      } catch (e) {
-        console.error("Error al formatear fecha:", e);
-      }
-    }
-    
-    setFormFechaRespuesta(fechaFormateada);
-    setFormRespondidoPor(solicitud.RESPONDIDO_POR || "");
-    setFormNombrePersona(solicitud.RESPONDIDO_POR || "");
-    setFormRespuesta(solicitud.RESPUESTA_R || solicitud.RESPUESTA || "");
-    setFormArchivoInforme(null);
-    setFormArchivoNombre(solicitud.INFORME_RESPUESTA ? "Archivo existente" : "");
-    setFormEstado(solicitud.ESTADO || "Pendiente");
-    setFormReprogramacion(
-      solicitud.REPROGRAMACIONES && Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0 ||
-      solicitud.FECHA_REPROGRAMACION || solicitud.RESPUESTA_REPROGRAMACION
-    );
-    setModalEditarOpen(true);
-  };
-
-  const handleGuardarEdicion = async () => {
-    if (!solicitudSeleccionada) return;
-    
-    try {
-      const token = localStorage.getItem("token");
-      
-      // Preparar datos para enviar
-      const formData = new FormData();
-      formData.append('id', solicitudSeleccionada.ID_SOLICITUD || solicitudSeleccionada.id || solicitudSeleccionada.ID);
-      formData.append('fecha_respuesta', formFechaRespuesta);
-      formData.append('respondido_por', formRespondidoPor);
-      formData.append('nombre_persona', formNombrePersona);
-      formData.append('respuesta', formRespuesta);
-      formData.append('estado', formEstado);
-      formData.append('reprogramacion', formReprogramacion ? '1' : '0');
-      
-      if (formArchivoInforme) {
-        formData.append('informe', formArchivoInforme);
-      }
-      
-      // Aquí harías la llamada a la API para actualizar
-      const response = await fetch(`${API_URL}`, {
-        method: 'PUT',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: formData
-      });
-      
-      if (response.ok) {
-        // Recargar solicitudes
-        await cargarSolicitudes();
-        setModalEditarOpen(false);
-        alert("Respuesta actualizada correctamente");
-      } else {
-        alert("Error al actualizar la respuesta");
-      }
-    } catch (error) {
-      console.error("Error al guardar:", error);
-      alert("Error al guardar los cambios");
-    }
-  };
-
   // Función para formatear fecha
   const formatFecha = (value) => {
     if (!value) return '-';
@@ -325,7 +257,7 @@ export default function SolicitudesIncidenciasPage() {
       
       // Título
       doc.setFontSize(14);
-      doc.text("Reporte de Solicitudes e Incidencias - SISTEMAS - Zeus Safety", 14, 15);
+      doc.text("Reporte de Solicitudes e Incidencias - VENTAS - Zeus Safety", 14, 15);
       
       // Preparar datos para exportar
       const dataExport = solicitudesFiltradas.map(solicitud => [
@@ -366,24 +298,11 @@ export default function SolicitudesIncidenciasPage() {
       });
       
       // Guardar PDF
-      doc.save("Reporte_Solicitudes_SISTEMAS.pdf");
+      doc.save("Reporte_Solicitudes_VENTAS.pdf");
     } catch (error) {
       console.error("Error al exportar PDF:", error);
       alert("Error al exportar PDF. Asegúrate de tener conexión a internet.");
     }
-  };
-
-  // Función para escapar HTML
-  const escapeHtml = (text) => {
-    if (text === null || text === undefined) return '';
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    };
-    return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
   };
 
   if (loading) {
@@ -410,7 +329,7 @@ export default function SolicitudesIncidenciasPage() {
             {/* Header con botones */}
             <div className="mb-6 flex items-center gap-3 flex-wrap">
               <button
-                onClick={() => router.push("/sistemas")}
+                onClick={() => router.push("/ventas")}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -419,7 +338,10 @@ export default function SolicitudesIncidenciasPage() {
                 Volver
               </button>
               
-              <button className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
+              <button 
+                onClick={() => setModalProcedimientosOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -675,10 +597,7 @@ export default function SolicitudesIncidenciasPage() {
                                 )}
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-center">
-                                <button 
-                                  onClick={() => abrirModalEditar(solicitud)}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                >
+                                <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                   </svg>
@@ -743,8 +662,10 @@ export default function SolicitudesIncidenciasPage() {
         title={tituloModal}
         size="md"
       >
-        <div className="p-4">
-          <p className="text-gray-700 whitespace-pre-wrap">{textoModal}</p>
+        <div className="p-6">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <p className="text-gray-900 whitespace-pre-wrap leading-relaxed text-sm font-normal">{textoModal}</p>
+          </div>
         </div>
       </Modal>
 
@@ -801,26 +722,86 @@ export default function SolicitudesIncidenciasPage() {
             }
             
             if (reprogramaciones.length === 0) {
-              return <div className="text-center py-4 text-gray-500">No hay reprogramaciones registradas.</div>;
+              return (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 font-medium">No hay reprogramaciones registradas.</p>
+                </div>
+              );
             }
             
             return reprogramaciones.map((reprog, idx) => (
-              <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h6 className="font-semibold text-blue-700 mb-3">
-                  {reprog.titulo || `Reprogramación ${idx + 1}`}
-                </h6>
-                <div className="space-y-2 text-sm">
-                  <p><strong>📅 Fecha:</strong> {formatFecha(reprog.FECHA_REPROGRAMACION || reprog.fecha)}</p>
-                  <p><strong>📝 Motivo:</strong> {reprog.RESPUESTA_REPROG || reprog.RESPUESTA || reprog.respuesta || 'No registrada'}</p>
-                  <p><strong>📄 Informe:</strong> {
-                    reprog.INFORME_REPROG || reprog.INFORME || reprog.informe ? (
-                      <a href={reprog.INFORME_REPROG || reprog.INFORME || reprog.informe} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        Ver archivo
-                      </a>
-                    ) : (
-                      <span className="text-gray-400">No disponible</span>
-                    )
-                  }</p>
+              <div key={idx} className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">{idx + 1}</span>
+                  </div>
+                  <h6 className="font-bold text-blue-800 text-base">
+                    {reprog.titulo || `Reprogramación ${idx + 1}`}
+                  </h6>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Fecha</p>
+                      <p className="text-sm font-medium text-gray-900">{formatFecha(reprog.FECHA_REPROGRAMACION || reprog.fecha)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Motivo</p>
+                      <p className="text-sm text-gray-900 leading-relaxed bg-white rounded-lg p-3 border border-gray-200">
+                        {reprog.RESPUESTA_REPROG || reprog.RESPUESTA || reprog.respuesta || 'No registrada'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Informe</p>
+                      {reprog.INFORME_REPROG || reprog.INFORME || reprog.informe ? (
+                        <a 
+                          href={reprog.INFORME_REPROG || reprog.INFORME || reprog.informe} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Ver archivo
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          No disponible
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ));
@@ -842,75 +823,138 @@ export default function SolicitudesIncidenciasPage() {
           {solicitudSeleccionada && (
             <>
               {(solicitudSeleccionada.REQUERIMIENTO_2 || solicitudSeleccionada.INFORME_2) && (
-                <div className="mb-4">
-                  <h6 className="font-bold text-blue-700 mb-2">Respuesta 2</h6>
-                  <textarea 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-sm" 
-                    rows="3" 
-                    readOnly
-                    value={solicitudSeleccionada.REQUERIMIENTO_2 || 'No registrado'}
-                  />
-                  {solicitudSeleccionada.FECHA_REQUERIMIENTO_2 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      🕒 Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_2)}
-                    </p>
-                  )}
-                  <p className="mt-2">
-                    <strong>Archivo:</strong> {
-                      solicitudSeleccionada.INFORME_2 ? (
-                        <a href={solicitudSeleccionada.INFORME_2} target="_blank" rel="noopener noreferrer" className="ml-2 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold">
+                <div className="mb-6 border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">2</span>
+                    </div>
+                    <h6 className="font-bold text-blue-800 text-base">Respuesta 2</h6>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Contenido</p>
+                      <textarea 
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500" 
+                        rows="4" 
+                        readOnly
+                        value={solicitudSeleccionada.REQUERIMIENTO_2 || 'No registrado'}
+                      />
+                    </div>
+                    {solicitudSeleccionada.FECHA_REQUERIMIENTO_2 && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_2)}</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Archivo</p>
+                      {solicitudSeleccionada.INFORME_2 ? (
+                        <a 
+                          href={solicitudSeleccionada.INFORME_2} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                           Ver archivo
                         </a>
                       ) : (
-                        <span className="ml-2 text-gray-400">No registrado</span>
-                      )
-                    }
-                  </p>
-                  {solicitudSeleccionada.FECHA_INFORME_2 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      🕒 Última actualización de archivo: {formatFecha(solicitudSeleccionada.FECHA_INFORME_2)}
-                    </p>
-                  )}
+                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          No registrado
+                        </span>
+                      )}
+                    </div>
+                    {solicitudSeleccionada.FECHA_INFORME_2 && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_INFORME_2)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
               {(solicitudSeleccionada.REQUERIMIENTO_3 || solicitudSeleccionada.INFORME_3) && (
-                <div className="mb-4">
-                  <h6 className="font-bold text-blue-700 mb-2">Respuesta 3</h6>
-                  <textarea 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-sm" 
-                    rows="3" 
-                    readOnly
-                    value={solicitudSeleccionada.REQUERIMIENTO_3 || 'No registrado'}
-                  />
-                  {solicitudSeleccionada.FECHA_REQUERIMIENTO_3 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      🕒 Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_3)}
-                    </p>
-                  )}
-                  <p className="mt-2">
-                    <strong>Archivo:</strong> {
-                      solicitudSeleccionada.INFORME_3 ? (
-                        <a href={solicitudSeleccionada.INFORME_3} target="_blank" rel="noopener noreferrer" className="ml-2 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold">
+                <div className="mb-6 border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">3</span>
+                    </div>
+                    <h6 className="font-bold text-blue-800 text-base">Respuesta 3</h6>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Contenido</p>
+                      <textarea 
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500" 
+                        rows="4" 
+                        readOnly
+                        value={solicitudSeleccionada.REQUERIMIENTO_3 || 'No registrado'}
+                      />
+                    </div>
+                    {solicitudSeleccionada.FECHA_REQUERIMIENTO_3 && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_3)}</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Archivo</p>
+                      {solicitudSeleccionada.INFORME_3 ? (
+                        <a 
+                          href={solicitudSeleccionada.INFORME_3} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                           Ver archivo
                         </a>
                       ) : (
-                        <span className="ml-2 text-gray-400">No registrado</span>
-                      )
-                    }
-                  </p>
-                  {solicitudSeleccionada.FECHA_INFORME_3 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      🕒 Última actualización de archivo: {formatFecha(solicitudSeleccionada.FECHA_INFORME_3)}
-                    </p>
-                  )}
+                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          No registrado
+                        </span>
+                      )}
+                    </div>
+                    {solicitudSeleccionada.FECHA_INFORME_3 && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-700 font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_INFORME_3)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
               {!solicitudSeleccionada.REQUERIMIENTO_2 && !solicitudSeleccionada.REQUERIMIENTO_3 && 
                !solicitudSeleccionada.INFORME_2 && !solicitudSeleccionada.INFORME_3 && (
-                <div className="text-center py-4 text-gray-500">
-                  No hay respuestas adicionales registradas.
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 font-medium">No hay respuestas adicionales registradas.</p>
                 </div>
               )}
             </>
@@ -918,177 +962,89 @@ export default function SolicitudesIncidenciasPage() {
         </div>
       </Modal>
 
-      {/* Modal de Editar Respuesta */}
+      {/* Modal de Procedimientos */}
       <Modal
-        isOpen={modalEditarOpen}
-        onClose={() => {
-          setModalEditarOpen(false);
-          setSolicitudSeleccionada(null);
-          setFormArchivoInforme(null);
-          setFormArchivoNombre("");
-        }}
-        title="Actualizar Respuesta"
+        isOpen={modalProcedimientosOpen}
+        onClose={() => setModalProcedimientosOpen(false)}
+        title="📖 Procedimiento de Uso"
         size="lg"
       >
         <div className="p-6 space-y-6">
-          {/* Datos de la respuesta */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-lg font-bold text-gray-900">Datos de la respuesta</h3>
+          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-600">
+            <p className="text-gray-900 font-medium leading-relaxed">Este sistema permite gestionar y dar seguimiento a las solicitudes de manera rápida y organizada. A continuación, se detalla su funcionamiento:</p>
+          </div>
+          
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+              </div>
+              <h6 className="font-bold text-gray-900 text-base">🔎 Filtros</h6>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Fecha y Hora Respuesta
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formFechaRespuesta}
-                  onChange={(e) => setFormFechaRespuesta(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Respondido Por
-                </label>
-                <select
-                  value={formRespondidoPor}
-                  onChange={(e) => {
-                    setFormRespondidoPor(e.target.value);
-                    if (e.target.value !== "OTROS") {
-                      setFormNombrePersona(e.target.value);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="JOSEPH">JOSEPH</option>
-                  <option value="JOSELYN">JOSELYN</option>
-                  <option value="OTROS">OTROS</option>
-                </select>
-              </div>
-            </div>
-            
-            {formRespondidoPor === "OTROS" && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nombre de la persona
-                </label>
-                <input
-                  type="text"
-                  value={formNombrePersona}
-                  onChange={(e) => setFormNombrePersona(e.target.value)}
-                  placeholder="Escribe el nombre..."
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-                />
-              </div>
-            )}
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
+              <li>Filtra las solicitudes por <strong className="text-gray-900">Área</strong>, <strong className="text-gray-900">Colaborador</strong>, <strong className="text-gray-900">Estado</strong> y <strong className="text-gray-900">Incidencia</strong>.</li>
+              <li>El filtro de <strong className="text-gray-900">Colaborador</strong> funciona en tiempo real mientras escribes.</li>
+              <li>Se permite hacer <strong className="text-gray-900">Filtros Combinados</strong> funciona en tiempo real.</li>
+            </ul>
           </div>
 
-          {/* Respuesta */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Respuesta
-            </label>
-            <textarea
-              value={formRespuesta}
-              onChange={(e) => setFormRespuesta(e.target.value)}
-              rows={4}
-              placeholder="Escribe la respuesta..."
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white resize-y"
-            />
-          </div>
-
-          {/* Informe */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Informe (Archivos PDF, rar, zip)
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="flex-shrink-0">
-                <input
-                  type="file"
-                  accept=".pdf,.rar,.zip"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setFormArchivoInforme(file);
-                      setFormArchivoNombre(file.name);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <span className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold cursor-pointer transition-colors shadow-sm hover:shadow-md">
-                  Seleccionar archivo
-                </span>
-              </label>
-              <span className="text-sm text-gray-600 flex-1">
-                {formArchivoNombre || "Ningún archivo seleccionado"}
-              </span>
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <h6 className="font-bold text-gray-900 text-base">✍️ Responder Solicitudes</h6>
+            </div>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
+              <li>En la columna <strong className="text-gray-900">Acciones</strong> podrás abrir el formulario de respuesta.</li>
+              <li>Completa los campos de <em className="text-gray-900">Respondido por</em>, <em className="text-gray-900">Respuesta</em> e <em className="text-gray-900">Informe (opcional)</em>.</li>
+              <li>Puedes adjuntar un archivo PDF y luego visualizarlo con el botón <strong className="text-gray-900">Ver archivo</strong>.</li>
+            </ul>
+            <div className="mt-3 bg-red-50 border-l-4 border-red-600 p-3 rounded">
+              <p className="text-sm text-red-800 font-semibold">🚨 IMPORTANTE: SOLO TIENEN MÁXIMO 48 HORAS PARA RESPONDER O ATENDER UNA SOLICITUD/INCIDENCIA</p>
             </div>
           </div>
 
-          {/* Estado */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Estado
-            </label>
-            <select
-              value={formEstado}
-              onChange={(e) => setFormEstado(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-            >
-              <option value="Pendiente">Pendiente</option>
-              <option value="En Revisión">En Revisión</option>
-              <option value="En Proceso">En Proceso</option>
-              <option value="Completado">Completado</option>
-              <option value="Requiere Info">Requiere Info</option>
-              <option value="Rechazada">Rechazada</option>
-            </select>
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <h6 className="font-bold text-gray-900 text-base">🔄 Reprogramaciones</h6>
+            </div>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
+              <li>Si es necesario reprogramar, activa el <strong className="text-gray-900">checkbox de Reprogramación</strong>.</li>
+              <li>Se permite máximo <strong className="text-gray-900">1 reprogramación</strong>.</li>
+              <li>Si se trata de un caso complicado, se permite un máximo de <strong className="text-gray-900">3 reprogramaciones</strong>.</li>
+              <li>Para agregar una nueva reprogramación, usa el <strong className="text-gray-900">botón verde ➕</strong> en la primera o segunda reprogramación.</li>
+              <li>En los campos de reprogramación se puede escribir el <em className="text-gray-900">motivo</em> y opcionalmente un <em className="text-gray-900">link a documentos</em>.</li>
+            </ul>
           </div>
 
-          {/* Reprogramación */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="reprogramacion"
-              checked={formReprogramacion}
-              onChange={(e) => setFormReprogramacion(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <label htmlFor="reprogramacion" className="text-sm font-semibold text-gray-700 cursor-pointer">
-              Reprogramación / Más Respuestas
-            </label>
-          </div>
-
-          {/* Botones */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setModalEditarOpen(false);
-                setSolicitudSeleccionada(null);
-                setFormArchivoInforme(null);
-                setFormArchivoNombre("");
-              }}
-              className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleGuardarEdicion}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md"
-            >
-              Guardar
-            </button>
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <h6 className="font-bold text-gray-900 text-base">📑 Visualización</h6>
+            </div>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
+              <li>Si una solicitud tiene reprogramaciones, en la columna <strong className="text-gray-900">Con reprogramación / Más Respuestas</strong> se mostrará <strong className="text-gray-900">SI</strong>.</li>
+              <li>Al lado aparecerá un botón para abrir el detalle de todas las reprogramaciones registradas.</li>
+            </ul>
           </div>
         </div>
       </Modal>
     </div>
   );
 }
+

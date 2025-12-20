@@ -15,6 +15,7 @@ export default function FacturacionPage() {
     "regularizacion": false,
     "listados": false,
     "configuracion": false,
+    "solicitudes-incidencias": false,
     "franja-precios": false,
   });
 
@@ -225,6 +226,34 @@ export default function FacturacionPage() {
       ],
     },
     {
+      id: "solicitudes-incidencias",
+      title: "Solicitudes/Incidencias",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "listado-solicitudes",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          ),
+          title: "Listado de Solicitudes/Incidencias",
+          description: "Ver y gestionar Solicitudes/Incidencias",
+          buttonText: "Ver Solicitudes/Incidencias",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
       id: "franja-precios",
       title: "Franja de precios",
       icon: (
@@ -321,12 +350,58 @@ export default function FacturacionPage() {
 
                   {/* Cards de la Sección */}
                   {expandedSections[section.id] && (
-                    <div className="p-4 bg-white">
-                      <div className={`grid gap-4 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}>
+                    <div className={section.id === "solicitudes-incidencias" ? "p-3 bg-gradient-to-br from-slate-50 to-slate-100" : "p-4 bg-white"}>
+                      <div className={`grid ${section.id === "solicitudes-incidencias" ? "gap-2.5 grid-cols-1" : `gap-4 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}`}>
                         {section.cards.map((card) => {
                           const isRegistrar = card.id.includes("registrar");
                           const isConfiguracion = card.id.includes("configuracion");
                           const iconShape = (isRegistrar || isConfiguracion) ? "rounded-full" : "rounded-lg";
+                          const isSolicitudesCard = card.id === "listado-solicitudes";
+                          
+                          if (isSolicitudesCard) {
+                            return (
+                              <div
+                                key={card.id}
+                                className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                                style={{ 
+                                  boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                  transform: 'translateY(0)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                                
+                                <div className="relative z-10">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                      {card.icon}
+                                    </div>
+                                  </div>
+                                  <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">{card.title}</h3>
+                                  <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">{card.description}</p>
+                                  <button 
+                                    onClick={() => {
+                                      router.push("/facturacion/solicitudes-incidencias");
+                                    }}
+                                    className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
+                                  >
+                                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                    <span className="relative z-10 flex items-center space-x-1.5">
+                                      {card.buttonIcon}
+                                      <span>{card.buttonText}</span>
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
                           
                           return (
                             <div
@@ -357,6 +432,8 @@ export default function FacturacionPage() {
                                     router.push("/facturacion/configuracion");
                                   } else if (card.id === "listado-precios") {
                                     router.push("/gerencia/listado-precios");
+                                  } else if (card.id === "listado-solicitudes") {
+                                    router.push("/facturacion/solicitudes-incidencias");
                                   }
                                   // Add more routes as needed
                                 }}
