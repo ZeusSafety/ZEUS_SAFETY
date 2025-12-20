@@ -273,7 +273,7 @@ export default function AdministracionPage() {
                                   } else if (card.id === "gestionar-productos") {
                                     // router.push("/administracion/configuracion/productos");
                                   } else if (card.id === "listado-solicitudes") {
-                                    // router.push("/administracion/solicitudes-incidencias/listado");
+                                    router.push("/administracion/solicitudes-incidencias");
                                   }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"

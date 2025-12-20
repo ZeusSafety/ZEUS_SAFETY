@@ -265,6 +265,8 @@ export default function VentasPage() {
                                     router.push("/ventas/listado-importaciones");
                                   } else if (card.id === "listado-precios") {
                                     router.push("/gerencia/listado-precios");
+                                  } else if (card.id === "listado-solicitudes") {
+                                    router.push("/ventas/solicitudes-incidencias");
                                   }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"

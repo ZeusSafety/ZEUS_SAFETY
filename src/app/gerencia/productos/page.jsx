@@ -811,7 +811,7 @@ export default function ProductosPage() {
                           setSearchTerm(e.target.value);
                           setCurrentPage(1);
                         }}
-                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-white outline-none"
                       />
                       <svg
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"

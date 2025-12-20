@@ -420,6 +420,8 @@ export default function GerenciaPage() {
                                     router.push("/gerencia/listado-precios");
                                   } else if (card.id === "gestion-precios") {
                                     router.push("/gerencia/gestion-precios");
+                                  } else if (card.id === "listado-solicitudes") {
+                                    router.push("/gerencia/solicitudes-incidencias");
                                   } else {
                                     router.push("/gerencia");
                                   }
