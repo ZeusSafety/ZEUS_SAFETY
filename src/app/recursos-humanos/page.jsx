@@ -12,7 +12,17 @@ function RecursosHumanosContent() {
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("gestion-colaboradores");
+  const [expandedSections, setExpandedSections] = useState({
+    "gestion-colaboradores": false,
+    "control-asistencia": false,
+    "gestion-permisos": false,
+    "gestion-vacaciones": false,
+    "control-documentos": false,
+    "gestion-remuneraciones": false,
+    "auto-servicio": false,
+    "calendario-cumpleanos": false,
+    "solicitudes-incidencias": false,
+  });
   const [cumpleanos, setCumpleanos] = useState([]);
   const [loadingCumpleanos, setLoadingCumpleanos] = useState(false);
   const [errorCumpleanos, setErrorCumpleanos] = useState(null);
@@ -157,10 +167,20 @@ function RecursosHumanosContent() {
         "calendario-cumpleanos",
       ];
       if (validSections.includes(section)) {
-        setActiveSection(section);
+        setExpandedSections((prev) => ({
+          ...prev,
+          [section]: true,
+        }));
       }
     }
   }, [searchParams]);
+
+  const toggleSection = (sectionId) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   // Función para obtener cumpleaños de la API
   const fetchCumpleanos = useCallback(async () => {
@@ -316,10 +336,10 @@ function RecursosHumanosContent() {
 
   // Cargar cumpleaños cuando se active la sección
   useEffect(() => {
-    if (activeSection === "calendario-cumpleanos" && user && !loading) {
+    if (expandedSections["calendario-cumpleanos"] && user && !loading) {
       fetchCumpleanos();
     }
-  }, [activeSection, user, loading, fetchCumpleanos]);
+  }, [expandedSections, user, loading, fetchCumpleanos]);
 
   // Función para obtener cumpleaños de un día específico
   const getCumpleanosDelDia = (day, month) => {
@@ -550,10 +570,10 @@ function RecursosHumanosContent() {
 
   // Cargar colaboradores al montar el componente
   useEffect(() => {
-    if (!loading && user && activeSection === "gestion-colaboradores") {
+    if (!loading && user && expandedSections["gestion-colaboradores"]) {
       fetchColaboradores();
     }
-  }, [loading, user, activeSection, fetchColaboradores]);
+  }, [loading, user, expandedSections, fetchColaboradores]);
 
   // Función para agregar un medio de comunicación
   const handleAgregarMedio = async (nuevoMedio) => {
@@ -784,6 +804,7 @@ function RecursosHumanosContent() {
     { id: "gestion-remuneraciones", name: "Gestión de Remuneraciones", icon: "money" },
     { id: "auto-servicio", name: "Auto-Servicio del Colaborador (ESS)", icon: "user" },
     { id: "calendario-cumpleanos", name: "Calendario de Cumpleaños", icon: "birthday" },
+    { id: "solicitudes-incidencias", name: "Solicitudes/Incidencias", icon: "solicitudes" },
   ];
 
   const getIcon = (iconName) => {
@@ -828,17 +849,21 @@ function RecursosHumanosContent() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
         </svg>
       ),
+      solicitudes: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      ),
     };
     return icons[iconName] || icons.users;
   };
 
-  const renderSectionContent = () => {
-    switch (activeSection) {
-      case "gestion-colaboradores":
-        return (
-          <>
-            {/* Listado de Colaboradores */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
+  const renderGestionColaboradoresContent = () => {
+    // Esta función renderiza solo el contenido de gestión de colaboradores
+    return (
+      <>
+        {/* Listado de Colaboradores */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
@@ -897,16 +922,16 @@ function RecursosHumanosContent() {
                 <span>+ Agregar Colaborador</span>
               </button>
 
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">APELLIDO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ÁREA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">CORREO</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -944,19 +969,19 @@ function RecursosHumanosContent() {
                           }) || colaboradoresCompletos[index] || null;
 
                           return (
-                            <tr key={colaborador.id || `colab-${index}`} className="hover:bg-gray-50 transition-colors">
+                            <tr key={colaborador.id || `colab-${index}`} className="hover:bg-slate-200 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo || ""}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
-                            <div className="flex items-center justify-center space-x-1.5">
+                            <div className="flex items-center justify-center space-x-2">
                                   <button
                                     onClick={() => {
                                       setSelectedColaboradorCompleto(colaboradorCompleto);
                                       setIsVerDetallesModalOpen(true);
                                     }}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600/20 backdrop-blur-sm border border-blue-600/40 hover:bg-blue-600/30 hover:border-blue-700/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-medium transition-all duration-200"
                                   >
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -964,13 +989,13 @@ function RecursosHumanosContent() {
                                     </svg>
                                     <span>Ver Detalles</span>
                                   </button>
-                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-medium transition-all duration-200">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 <span>Permisos</span>
                               </button>
-                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-orange-500/20 backdrop-blur-sm border border-orange-500/40 hover:bg-orange-500/30 hover:border-orange-600/60 text-orange-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-orange-700 rounded-lg text-[10px] font-medium transition-all duration-200">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -985,14 +1010,14 @@ function RecursosHumanosContent() {
                     </tbody>
                   </table>
                 </div>
-                <div className="bg-gray-50 px-3 py-2 flex items-center justify-between border-t border-gray-200">
-                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                     &lt; Anterior
                   </button>
                   <span className="text-[10px] text-gray-700 font-medium">
                     Página 1 de 3 (15 registros)
                   </span>
-                  <button className="px-2.5 py-1 text-[10px] font-medium bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg transition-all duration-200 shadow-sm">
+                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                     Siguiente &gt;
                   </button>
                 </div>
@@ -1045,12 +1070,12 @@ function RecursosHumanosContent() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">APELLIDO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ÁREA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">CORREO</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1088,19 +1113,19 @@ function RecursosHumanosContent() {
                           }) || colaboradoresCompletos[colaboradores.length + index] || null;
 
                           return (
-                            <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-gray-50 transition-colors">
+                            <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-slate-200 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo || ""}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
-                            <div className="flex items-center justify-center space-x-1.5">
+                            <div className="flex items-center justify-center space-x-2">
                                   <button
                                     onClick={() => {
                                       setSelectedColaboradorCompleto(colaboradorCompleto);
                                       setIsVerDetallesModalOpen(true);
                                     }}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600/20 backdrop-blur-sm border border-blue-600/40 hover:bg-blue-600/30 hover:border-blue-700/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-medium transition-all duration-200"
                                   >
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1108,13 +1133,13 @@ function RecursosHumanosContent() {
                                     </svg>
                                     <span>Ver Detalles</span>
                                   </button>
-                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-medium transition-all duration-200">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 <span>Permisos</span>
                               </button>
-                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600/20 backdrop-blur-sm border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
+                              <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 rounded-lg text-[10px] font-medium transition-all duration-200">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
@@ -1129,14 +1154,14 @@ function RecursosHumanosContent() {
                     </tbody>
                   </table>
                 </div>
-                <div className="bg-gray-50 px-3 py-2 flex items-center justify-between border-t border-gray-200">
-                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                     &lt; Anterior
                   </button>
                   <span className="text-[10px] text-gray-700 font-medium">
                     Página 1 de 1 (1 registros)
                   </span>
-                  <button className="px-2.5 py-1 text-[10px] font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                     Siguiente &gt;
                   </button>
                 </div>
@@ -1144,846 +1169,6 @@ function RecursosHumanosContent() {
             </div>
           </>
         );
-      case "control-asistencia":
-        return (
-          <>
-            {/* Registro de Asistencia */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    {getIcon("clock")}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Registro Diario de Entrada y Salida</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Control de asistencia del día</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ENTRADA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">SALIDA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ESTADO</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {registrosAsistencia.map((registro) => (
-                        <tr key={registro.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{registro.nombre}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{registro.fecha}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{registro.entrada}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{registro.salida}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              registro.estado === "Normal" ? "bg-green-100 text-green-800" :
-                              registro.estado === "Tardanza" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-red-100 text-red-800"
-                            }`}>
-                              {registro.estado}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-center">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] mx-auto">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span>Ver Detalle</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Formularios de Incidencias */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    {getIcon("clock")}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Formularios de Incidencias</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Faltas, tardanzas y justificaciones</p>
-                  </div>
-                </div>
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Registrar Incidencia</span>
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">TIPO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">JUSTIFICACIÓN</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ESTADO</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {incidenciasAsistencia.map((incidencia) => (
-                        <tr key={incidencia.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{incidencia.nombre}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{incidencia.tipo}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{incidencia.fecha}</td>
-                          <td className="px-3 py-2 text-[10px] text-gray-700">{incidencia.justificacion}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              incidencia.estado === "Aprobada" ? "bg-green-100 text-green-800" :
-                              incidencia.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-red-100 text-red-800"
-                            }`}>
-                              {incidencia.estado}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-center">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] mx-auto">
-                              <span>Revisar</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </>
-        );
-
-      case "gestion-permisos":
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    {getIcon("check")}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Solicitudes de Permisos</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Gestión de permisos médicos, personales y otras actividades</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Nueva Solicitud</span>
-                </button>
-                <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">TIPO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">DÍAS</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">MOTIVO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">JEFE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ESTADO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {solicitudesPermisos.map((solicitud) => (
-                      <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.nombre}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.tipo}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.fecha}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.dias}</td>
-                        <td className="px-3 py-2 text-[10px] text-gray-700">{solicitud.motivo}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.jefe}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            solicitud.estado === "Aprobada" ? "bg-green-100 text-green-800" :
-                            "bg-yellow-100 text-yellow-800"
-                          }`}>
-                            {solicitud.estado}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center space-x-1.5">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600/20 backdrop-blur-sm border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span>Aprobar</span>
-                            </button>
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-red-600/20 backdrop-blur-sm border border-red-600/40 hover:bg-red-600/30 hover:border-red-700/60 text-red-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              <span>Rechazar</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "gestion-vacaciones":
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                  {getIcon("calendar")}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Solicitudes de Vacaciones</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Calendario de vacaciones y solicitudes pendientes</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Nueva Solicitud</span>
-                </button>
-                <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">DÍAS ACUMULADOS</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">DÍAS SOLICITADOS</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA INICIO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA FIN</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ESTADO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {solicitudesVacaciones.map((solicitud) => (
-                      <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.nombre}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.diasAcumulados} días</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.diasSolicitados} días</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.fechaInicio}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.fechaFin}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            solicitud.estado === "Aprobada" ? "bg-green-100 text-green-800" :
-                            "bg-yellow-100 text-yellow-800"
-                          }`}>
-                            {solicitud.estado}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center space-x-1.5">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600/20 backdrop-blur-sm border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span>Aprobar</span>
-                            </button>
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span>Ver</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "control-documentos":
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                  {getIcon("document")}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Control de Documentos Laborales</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Alertas de vencimiento y repositorio de documentos</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs font-semibold text-green-700">API Conectada</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">TIPO DOCUMENTO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">FECHA VENCIMIENTO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">DÍAS RESTANTES</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">ESTADO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {documentosLaborales.map((documento) => (
-                      <tr key={documento.id} className={`hover:bg-gray-50 transition-colors ${documento.alerta ? "bg-red-50/30" : ""}`}>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{documento.nombre}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{documento.tipo}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{documento.fechaVencimiento}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{documento.diasRestantes} días</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            documento.estado === "Vigente" ? "bg-green-100 text-green-800" :
-                            "bg-red-100 text-red-800"
-                          }`}>
-                            {documento.estado}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center space-x-1.5">
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span>Ver</span>
-                            </button>
-                            <button className="flex items-center space-x-1 px-2.5 py-1 bg-green-600/20 backdrop-blur-sm border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                              <span>Descargar</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "gestion-remuneraciones":
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                  {getIcon("money")}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Gestión de Remuneraciones</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Registro de sueldos, bonos, CTS y gratificaciones</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-green-600/20 backdrop-blur-md border border-green-600/40 hover:bg-green-600/30 hover:border-green-700/60 text-green-700 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Exportar a Excel</span>
-                </button>
-                <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700/20 backdrop-blur-md border-b border-blue-700/40">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">MES</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">SUELDO BASE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">BONOS</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">CTS PROYECTADO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">GRATIFICACIONES</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-blue-800">TOTAL</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-blue-800">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {remuneraciones.map((remuneracion) => (
-                      <tr key={remuneracion.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{remuneracion.nombre}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{remuneracion.mes}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {remuneracion.sueldoBase.toLocaleString()}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {remuneracion.bonos.toLocaleString()}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {remuneracion.ctsProyectado.toLocaleString()}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {remuneracion.gratificaciones.toLocaleString()}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-blue-800">S/ {remuneracion.total.toLocaleString()}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <button className="flex items-center space-x-1 px-2.5 py-1 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] mx-auto">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            <span>Ver Detalle</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "auto-servicio":
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                  {getIcon("user")}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Portal del Colaborador</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Auto-servicio para colaboradores</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1">
-                <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs font-semibold text-green-700">API Conectada</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">Ver Datos Personales</h3>
-                <p className="text-xs text-gray-600 mb-3">Consulta y actualiza tu información personal</p>
-                <button className="w-full px-3 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
-                  Acceder
-                </button>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">Descargar Boletas</h3>
-                <p className="text-xs text-gray-600 mb-3">Descarga tus boletas de pago históricas</p>
-                <button className="w-full px-3 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
-                  Acceder
-                </button>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">Ver Vacaciones Acumuladas</h3>
-                <p className="text-xs text-gray-600 mb-3">Consulta tus días de vacaciones disponibles</p>
-                <button className="w-full px-3 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
-                  Acceder
-                </button>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">Solicitar Permisos</h3>
-                <p className="text-xs text-gray-600 mb-3">Envía solicitudes de permisos médicos o personales</p>
-                <button className="w-full px-3 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
-                  Acceder
-                </button>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-200/60 shadow-md hover:shadow-lg transition-all">
-                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">Solicitar Vacaciones</h3>
-                <p className="text-xs text-gray-600 mb-3">Solicita tus días de vacaciones</p>
-                <button className="w-full px-3 py-2 bg-blue-700/20 backdrop-blur-sm border border-blue-700/40 hover:bg-blue-700/30 hover:border-blue-600/60 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
-                  Acceder
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "calendario-cumpleanos":
-        const semanas = generarCalendario();
-        const hoy = new Date();
-        const esHoy = (day) => {
-          return day === hoy.getDate() && 
-                 currentMonth === hoy.getMonth() && 
-                 currentYear === hoy.getFullYear();
-        };
-        
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm">
-                  {getIcon("birthday")}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Calendario de Cumpleaños</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">Cumpleaños de colaboradores</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {/* Combobox para cambiar tipo de vista */}
-                <select
-                  value={vistaTipo}
-                  onChange={(e) => setVistaTipo(e.target.value)}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
-                >
-                  <option value="mes">Por Mes</option>
-                  <option value="año">Por Año</option>
-                </select>
-                <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
-                  loadingCumpleanos 
-                    ? 'bg-yellow-50 border border-yellow-200' 
-                    : errorCumpleanos 
-                      ? 'bg-red-50 border border-red-200' 
-                      : 'bg-green-50 border border-green-200'
-                }`}>
-                  {loadingCumpleanos ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                      <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
-                    </>
-                  ) : errorCumpleanos ? (
-                    <>
-                      <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-xs font-semibold text-red-700">Error</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {errorCumpleanos && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{errorCumpleanos}</p>
-              </div>
-            )}
-
-            {vistaTipo === "mes" ? (
-              <>
-                {/* Controles de navegación del calendario */}
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => cambiarMes("anterior")}
-                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {meses[currentMonth]} {currentYear}
-                  </h3>
-                  <button
-                    onClick={() => cambiarMes("siguiente")}
-                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Calendario */}
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  {/* Encabezados de días */}
-                  <div className="grid grid-cols-7 bg-blue-700/20 border-b border-blue-700/40">
-                    {diasSemana.map((dia) => (
-                      <div key={dia} className="px-2 py-2 text-center text-[10px] font-bold uppercase text-blue-800">
-                        {dia}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Días del calendario */}
-                  <div className="divide-y divide-gray-100">
-                    {semanas.map((semana, semanaIndex) => (
-                      <div key={semanaIndex} className="grid grid-cols-7 divide-x divide-gray-100">
-                        {semana.map((day, dayIndex) => {
-                          if (day === null) {
-                            return (
-                              <div key={dayIndex} className="min-h-[80px] bg-gray-50"></div>
-                            );
-                          }
-                          
-                          const cumpleanosDelDia = getCumpleanosDelDia(day, currentMonth);
-                          const esHoyDia = esHoy(day);
-                          
-                          return (
-                            <div
-                              key={dayIndex}
-                              className={`min-h-[80px] p-1.5 ${
-                                esHoyDia ? "bg-blue-100 border-2 border-blue-500" : "bg-white hover:bg-gray-50"
-                              } transition-colors`}
-                            >
-                              <div className={`text-xs font-semibold mb-1 ${
-                                esHoyDia ? "text-blue-700" : "text-gray-700"
-                              }`}>
-                                {day}
-                              </div>
-                              <div className="space-y-1">
-                                {cumpleanosDelDia.slice(0, 2).map((cumple, idx) => (
-                                  <div
-                                    key={cumple.uniqueId || `${cumple.id}-${day}-${idx}`}
-                                    onClick={() => abrirModalCumpleanos(cumple)}
-                                    className="text-[9px] px-1.5 py-0.5 bg-blue-100 border border-blue-300 rounded text-blue-800 font-medium truncate cursor-pointer hover:bg-blue-200 transition-colors"
-                                    title={`${cumple.nombre} ${cumple.apellido} - Click para ver detalles`}
-                                  >
-                                    🎂 {cumple.nombre}
-                                  </div>
-                                ))}
-                                {cumpleanosDelDia.length > 2 && (
-                                  <div className="text-[9px] px-1.5 py-0.5 bg-blue-200 border border-blue-400 rounded text-blue-900 font-medium">
-                                    +{cumpleanosDelDia.length - 2} más
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Lista de cumpleaños del mes */}
-                <div className="mt-6 bg-white rounded-xl shadow-lg border border-gray-200/60 p-4">
-                  <h3 className="text-base font-bold text-gray-900 mb-3">Cumpleaños de {meses[currentMonth]}</h3>
-                  {loadingCumpleanos ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {cumpleanos
-                        .filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth)
-                        .sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate())
-                        .map((cumple, idx) => (
-                          <div
-                            key={cumple.uniqueId || `${cumple.id}-list-${idx}`}
-                            onClick={() => abrirModalCumpleanos(cumple)}
-                            className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">🎂</span>
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {cumple.nombre} {cumple.apellido}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {cumple.area || "Sin área asignada"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-blue-700">
-                                {cumple.fechaNacimiento.getDate()} de {meses[cumple.fechaNacimiento.getMonth()]}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      {cumpleanos.filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth).length === 0 && (
-                        <p className="text-sm text-gray-500 text-center py-4">
-                          No hay cumpleaños registrados para este mes
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Vista por año - Todos los meses */}
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setCurrentYear(currentYear - 1)}
-                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    Cumpleaños del Año {currentYear}
-                  </h3>
-                  <button
-                    onClick={() => setCurrentYear(currentYear + 1)}
-                    className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {meses.map((mes, mesIndex) => {
-                    const cumpleanosDelMes = getCumpleanosPorMes(mesIndex);
-                    return (
-                      <div
-                        key={mesIndex}
-                        className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 hover:shadow-xl transition-all duration-200"
-                      >
-                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                          <h4 className="text-base font-bold text-gray-900">{mes}</h4>
-                          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                            {cumpleanosDelMes.length} {cumpleanosDelMes.length === 1 ? 'cumpleaños' : 'cumpleaños'}
-                          </span>
-                        </div>
-                        {loadingCumpleanos ? (
-                          <div className="text-center py-4">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto"></div>
-                          </div>
-                        ) : cumpleanosDelMes.length > 0 ? (
-                          <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {cumpleanosDelMes.map((cumple, idx) => (
-                              <div
-                                key={cumple.uniqueId || `${cumple.id}-${mesIndex}-${idx}`}
-                                onClick={() => abrirModalCumpleanos(cumple)}
-                                className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                              >
-                                <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                  <span className="text-sm">🎂</span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-gray-900 truncate">
-                                      {cumple.nombre} {cumple.apellido}
-                                    </p>
-                                    <p className="text-[10px] text-gray-600 truncate">
-                                      {cumple.area || "Sin área asignada"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right ml-2 flex-shrink-0">
-                                  <p className="text-xs font-bold text-blue-700">
-                                    {cumple.fechaNacimiento.getDate()}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-500 text-center py-4">
-                            No hay cumpleaños este mes
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        );
-
-      default:
-        return (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            <div className="text-center py-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 mx-auto mb-3">
-                {getIcon(sections.find(s => s.id === activeSection)?.icon || "users")}
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                {sections.find(s => s.id === activeSection)?.name}
-              </h3>
-              <p className="text-gray-600">Esta sección estará disponible próximamente</p>
-            </div>
-          </div>
-        );
-    }
   };
 
   return (
@@ -2010,10 +1195,13 @@ function RecursosHumanosContent() {
               <span>Volver al Menú</span>
             </button>
 
-            {/* Header Principal */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+            {/* Card contenedor blanco */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+
+            {/* Header */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
@@ -2023,28 +1211,370 @@ function RecursosHumanosContent() {
                   <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de personal y nómina</p>
                 </div>
               </div>
-
-              {/* Navegación de Secciones */}
-              <div className="flex flex-wrap gap-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                      activeSection === section.id
-                        ? "bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white shadow-sm hover:shadow-md hover:scale-105"
-                        : "bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    <span className={activeSection === section.id ? "text-white" : "text-blue-800"}>{getIcon(section.icon)}</span>
-                    <span>{section.name}</span>
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Contenido de la Sección Activa */}
-            {renderSectionContent()}
+            {/* Secciones */}
+            <div className="space-y-3">
+              {sections.map((section) => (
+                <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                  {/* Header de Sección */}
+                  <button
+                    onClick={() => toggleSection(section.id)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="text-white">{getIcon(section.icon)}</div>
+                      <h2 className="text-base font-bold text-white">{section.name}</h2>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Contenido de la Sección */}
+                  {expandedSections[section.id] && (
+                    <div className="p-4 bg-white">
+                      {section.id === "gestion-colaboradores" ? (
+                        <div className="space-y-4">
+                          {renderGestionColaboradoresContent()}
+                        </div>
+                      ) : section.id === "solicitudes-incidencias" ? (
+                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
+                          <div className="grid gap-2.5 grid-cols-1">
+                            <div
+                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                              style={{ 
+                                boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                transform: 'translateY(0)'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                              
+                              <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">Listado de Solicitudes/Incidencias</h3>
+                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">Ver y gestionar Solicitudes/Incidencias</p>
+                                <button 
+                                  onClick={() => router.push("/recursos-humanos/solicitudes-incidencias")}
+                                  className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
+                                >
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                  <span className="relative z-10 flex items-center space-x-1.5">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <span>Ver Solicitudes/Incidencias</span>
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : section.id === "calendario-cumpleanos" ? (
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+                          <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm">
+                                {getIcon("birthday")}
+                              </div>
+                              <div>
+                                <h2 className="text-xl font-bold text-gray-900">Calendario de Cumpleaños</h2>
+                                <p className="text-xs text-gray-600 mt-0.5">Cumpleaños de colaboradores</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <select
+                                value={vistaTipo}
+                                onChange={(e) => setVistaTipo(e.target.value)}
+                                className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                              >
+                                <option value="mes">Por Mes</option>
+                                <option value="año">Por Año</option>
+                              </select>
+                              <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
+                                loadingCumpleanos 
+                                  ? 'bg-yellow-50 border border-yellow-200' 
+                                  : errorCumpleanos 
+                                    ? 'bg-red-50 border border-red-200' 
+                                    : 'bg-green-50 border border-green-200'
+                              }`}>
+                                {loadingCumpleanos ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                                    <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                                  </>
+                                ) : errorCumpleanos ? (
+                                  <>
+                                    <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-xs font-semibold text-red-700">Error</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-xs font-semibold text-green-700">API Conectada</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {errorCumpleanos && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-sm text-red-600">{errorCumpleanos}</p>
+                            </div>
+                          )}
+
+                          {vistaTipo === "mes" ? (
+                            <>
+                              <div className="flex items-center justify-between mb-4">
+                                <button
+                                  onClick={() => cambiarMes("anterior")}
+                                  className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                  </svg>
+                                </button>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                  {meses[currentMonth]} {currentYear}
+                                </h3>
+                                <button
+                                  onClick={() => cambiarMes("siguiente")}
+                                  className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 overflow-hidden">
+                                <div className="grid grid-cols-7 bg-blue-700/20 border-b border-blue-700/40">
+                                  {diasSemana.map((dia) => (
+                                    <div key={dia} className="px-2 py-2 text-center text-[10px] font-bold uppercase text-blue-800">
+                                      {dia}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="divide-y divide-gray-100">
+                                  {generarCalendario().map((semana, semanaIndex) => (
+                                    <div key={semanaIndex} className="grid grid-cols-7 divide-x divide-gray-100">
+                                      {semana.map((day, dayIndex) => {
+                                        if (day === null) {
+                                          return (
+                                            <div key={dayIndex} className="min-h-[80px] bg-gray-50"></div>
+                                          );
+                                        }
+                                        
+                                        const cumpleanosDelDia = getCumpleanosDelDia(day, currentMonth);
+                                        const hoy = new Date();
+                                        const esHoy = day === hoy.getDate() && 
+                                                     currentMonth === hoy.getMonth() && 
+                                                     currentYear === hoy.getFullYear();
+                                        
+                                        return (
+                                          <div
+                                            key={dayIndex}
+                                            className={`min-h-[80px] p-1.5 ${
+                                              esHoy ? "bg-blue-100 border-2 border-blue-500" : "bg-white hover:bg-gray-50"
+                                            } transition-colors`}
+                                          >
+                                            <div className={`text-xs font-semibold mb-1 ${
+                                              esHoy ? "text-blue-700" : "text-gray-700"
+                                            }`}>
+                                              {day}
+                                            </div>
+                                            <div className="space-y-1">
+                                              {cumpleanosDelDia.slice(0, 2).map((cumple, idx) => (
+                                                <div
+                                                  key={cumple.uniqueId || `${cumple.id}-${day}-${idx}`}
+                                                  onClick={() => abrirModalCumpleanos(cumple)}
+                                                  className="text-[9px] px-1.5 py-0.5 bg-blue-100 border border-blue-300 rounded text-blue-800 font-medium truncate cursor-pointer hover:bg-blue-200 transition-colors"
+                                                  title={`${cumple.nombre} ${cumple.apellido} - Click para ver detalles`}
+                                                >
+                                                  🎂 {cumple.nombre}
+                                                </div>
+                                              ))}
+                                              {cumpleanosDelDia.length > 2 && (
+                                                <div className="text-[9px] px-1.5 py-0.5 bg-blue-200 border border-blue-400 rounded text-blue-900 font-medium">
+                                                  +{cumpleanosDelDia.length - 2} más
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="mt-6 bg-white rounded-xl shadow-lg border border-gray-200/60 p-4">
+                                <h3 className="text-base font-bold text-gray-900 mb-3">Cumpleaños de {meses[currentMonth]}</h3>
+                                {loadingCumpleanos ? (
+                                  <div className="text-center py-4">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {cumpleanos
+                                      .filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth)
+                                      .sort((a, b) => a.fechaNacimiento.getDate() - b.fechaNacimiento.getDate())
+                                      .map((cumple, idx) => (
+                                        <div
+                                          key={cumple.uniqueId || `${cumple.id}-list-${idx}`}
+                                          onClick={() => abrirModalCumpleanos(cumple)}
+                                          className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <span className="text-lg">🎂</span>
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-900">
+                                                {cumple.nombre} {cumple.apellido}
+                                              </p>
+                                              <p className="text-xs text-gray-600">
+                                                {cumple.area || "Sin área asignada"}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-sm font-bold text-blue-700">
+                                              {cumple.fechaNacimiento.getDate()} de {meses[cumple.fechaNacimiento.getMonth()]}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    {cumpleanos.filter(c => c.fechaNacimiento && c.fechaNacimiento.getMonth() === currentMonth).length === 0 && (
+                                      <p className="text-sm text-gray-500 text-center py-4">
+                                        No hay cumpleaños registrados para este mes
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between mb-4">
+                                <button
+                                  onClick={() => setCurrentYear(currentYear - 1)}
+                                  className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                  </svg>
+                                </button>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                  Cumpleaños del Año {currentYear}
+                                </h3>
+                                <button
+                                  onClick={() => setCurrentYear(currentYear + 1)}
+                                  className="px-3 py-2 bg-blue-700/20 border border-blue-700/40 hover:bg-blue-700/30 text-blue-800 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {meses.map((mes, mesIndex) => {
+                                  const cumpleanosDelMes = getCumpleanosPorMes(mesIndex);
+                                  return (
+                                    <div
+                                      key={mesIndex}
+                                      className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 hover:shadow-xl transition-all duration-200"
+                                    >
+                                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+                                        <h4 className="text-base font-bold text-gray-900">{mes}</h4>
+                                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                          {cumpleanosDelMes.length} {cumpleanosDelMes.length === 1 ? 'cumpleaños' : 'cumpleaños'}
+                                        </span>
+                                      </div>
+                                      {loadingCumpleanos ? (
+                                        <div className="text-center py-4">
+                                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto"></div>
+                                        </div>
+                                      ) : cumpleanosDelMes.length > 0 ? (
+                                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                          {cumpleanosDelMes.map((cumple, idx) => (
+                                            <div
+                                              key={cumple.uniqueId || `${cumple.id}-${mesIndex}-${idx}`}
+                                              onClick={() => abrirModalCumpleanos(cumple)}
+                                              className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                                            >
+                                              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                                <span className="text-sm">🎂</span>
+                                                <div className="flex-1 min-w-0">
+                                                  <p className="text-xs font-semibold text-gray-900 truncate">
+                                                    {cumple.nombre} {cumple.apellido}
+                                                  </p>
+                                                  <p className="text-[10px] text-gray-600 truncate">
+                                                    {cumple.area || "Sin área asignada"}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="text-right ml-2 flex-shrink-0">
+                                                <p className="text-xs font-bold text-blue-700">
+                                                  {cumple.fechaNacimiento.getDate()}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-gray-500 text-center py-4">
+                                          No hay cumpleaños este mes
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm mx-auto mb-3">
+                            {getIcon(section.icon)}
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">{section.name}</h3>
+                          <p className="text-gray-600">Esta sección estará disponible próximamente</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            </div>
           </div>
         </main>
       </div>

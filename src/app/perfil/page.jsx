@@ -107,8 +107,8 @@ export default function PerfilPage() {
     {
       id: "modulos",
       iconName: "modulos",
-      title: "Mis módulos habilitados",
-      route: "/modulos-habilitados",
+      title: "Mis módulos y vistas",
+      route: "/mis-modulos-vistas",
     },
     {
       id: "permisos",

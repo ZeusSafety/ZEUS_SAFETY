@@ -11,7 +11,20 @@ async function fetchFromAPI(method, request, body = null) {
     
     console.log("Token recibido:", token ? token.substring(0, 20) + "..." : "No hay token");
     
-    const apiUrl = "https://api-productos-zeus-2946605267.us-central1.run.app/productos";
+    // Obtener query parameters de la URL
+    const { searchParams } = new URL(request.url);
+    const methodParam = searchParams.get("method");
+    
+    // Si hay un parámetro "method", usar el backend de productos CRUD
+    let apiUrl;
+    if (methodParam) {
+      // Para actualizar imagen o ficha técnica, usar api-productos-zeus (URL correcta)
+      apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=${methodParam}`;
+      console.log("Usando backend api-productos-zeus con method:", methodParam);
+    } else {
+      // Para otras operaciones, usar el backend normal
+      apiUrl = "https://api-productos-zeus-2946605267.us-central1.run.app/productos";
+    }
     
     console.log("Llamando a API:", apiUrl);
     console.log("Método:", method);
@@ -39,6 +52,7 @@ async function fetchFromAPI(method, request, body = null) {
     // Agregar body solo para POST y PUT
     if ((method === "POST" || method === "PUT") && body) {
       fetchOptions.body = JSON.stringify(body);
+      console.log("📤 Body enviado al backend externo:", JSON.stringify(body, null, 2));
     }
     
     let response;
@@ -116,6 +130,10 @@ async function fetchFromAPI(method, request, body = null) {
         );
       }
     }
+    
+    // Log de la respuesta del backend para debugging
+    console.log("📥 Respuesta del backend externo:", JSON.stringify(data, null, 2));
+    console.log("📥 Status del backend:", response.status);
     
     console.log("Datos recibidos de la API:", Array.isArray(data) ? `${data.length} productos` : "Objeto único");
     

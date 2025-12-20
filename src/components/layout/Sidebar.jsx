@@ -623,7 +623,7 @@ export function Sidebar({ isOpen, onClose }) {
     
     // Si es Dashboard, redirigir a la página del módulo correspondiente
     if (itemId === "dashboard" || itemId === "dashboard-admin" || itemId === "dashboard-import" || itemId === "dashboard-importacion" || 
-        itemId === "dashboard-logistica" || itemId === "dashboard-ventas" || itemId === "dashboard-marketing" ||
+        itemId === "dashboard-log" || itemId === "dashboard-logistica" || itemId === "dashboard-ventas" || itemId === "dashboard-marketing" ||
         itemId === "dashboard-sistemas" || itemId === "dashboard-rh" || itemId === "dashboard-recursos-humanos" || itemId === "dashboard-facturacion" ||
         itemId === "dashboard-permisos") {
       
@@ -633,6 +633,7 @@ export function Sidebar({ isOpen, onClose }) {
         "dashboard-admin": "/administracion",
         "dashboard-import": "/importacion",
         "dashboard-importacion": "/importacion",
+        "dashboard-log": "/logistica",
         "dashboard-logistica": "/logistica",
         "dashboard-ventas": "/ventas",
         "dashboard-marketing": "/marketing",
@@ -732,6 +733,30 @@ export function Sidebar({ isOpen, onClose }) {
       setSelectedItem(itemId);
       return;
     }
+
+    if (itemId === "proformas") {
+      router.push("/logistica/proformas");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "incidencias-importaciones") {
+      router.push("/logistica/incidencias-importaciones");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "listado-solicitudes-logistica") {
+      router.push("/logistica/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "inventario-item") {
+      router.push("/logistica/inventario");
+      setSelectedItem(itemId);
+      return;
+    }
     
     // Navegación para Facturación
     if (itemId === "listado-importaciones-fact") {
@@ -777,6 +802,18 @@ export function Sidebar({ isOpen, onClose }) {
       setSelectedItem(itemId);
       return;
     }
+
+    if (itemId === "metricas-ventas") {
+      router.push("/ventas/metricas");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "listado-solicitudes-incidencias-ventas") {
+      router.push("/ventas/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
     
     // Navegación para Marketing
     if (itemId === "importaciones-marketing") {
@@ -799,6 +836,116 @@ export function Sidebar({ isOpen, onClose }) {
     
     if (itemId === "cotizaciones-marketing") {
       router.push("/marketing/cotizaciones");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "recencia-clientes") {
+      router.push("/marketing/recencia-clientes");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "stock-precios-mayor") {
+      router.push("/marketing/stock-precios-mayor");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "listado-solicitudes-incidencias-marketing") {
+      router.push("/marketing/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Sistemas
+    if (itemId === "gestion-pagos") {
+      router.push("/sistemas/gestion-pagos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "listado-solicitudes-sistemas") {
+      router.push("/sistemas/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Facturación
+    if (itemId === "incidencia-proformas") {
+      router.push("/facturacion/incidencia-proformas");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Gerencia - Reportes
+    if (itemId === "reporte-ventas") {
+      router.push("/gerencia/reportes/ventas");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "anomalias-sistema") {
+      router.push("/gerencia/reportes/anomalias");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-importaciones") {
+      router.push("/gerencia/reportes/importaciones");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-usuarios") {
+      router.push("/gerencia/reportes/usuarios");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-tiempos") {
+      router.push("/gerencia/reportes/tiempos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-base-datos") {
+      router.push("/gerencia/reportes/base-datos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    // Navegación para Administración
+    if (itemId === "gestionar-productos") {
+      router.push("/administracion/configuracion/gestionar-productos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "listado-solicitudes-admin") {
+      router.push("/administracion/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Importación
+    if (itemId === "registro") {
+      router.push("/importacion/registro");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    // Manejar "listado-solicitudes" según el módulo (Gerencia o Importación)
+    if (itemId === "listado-solicitudes") {
+      if (moduleId === "gerencia") {
+        router.push("/gerencia/solicitudes-incidencias");
+      } else if (moduleId === "importacion") {
+        router.push("/importacion/solicitudes-incidencias");
+      } else {
+        // Por defecto, si no hay moduleId, intentar determinar por contexto
+        // Si viene de un submenu de gerencia, ir a gerencia
+        router.push("/gerencia/solicitudes-incidencias");
+      }
       setSelectedItem(itemId);
       return;
     }
@@ -960,7 +1107,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1026,7 +1173,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1091,7 +1238,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1156,7 +1303,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1221,7 +1368,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1286,7 +1433,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1351,7 +1498,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1416,7 +1563,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1481,7 +1628,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1546,7 +1693,7 @@ export function Sidebar({ isOpen, onClose }) {
                                   {item.subItems.map((subItem) => (
                                     <button
                                       key={subItem.id}
-                                      onClick={() => handleSubmenuClick(subItem.id)}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
                                       className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
                                         selectedItem === subItem.id
                                           ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
@@ -1577,7 +1724,7 @@ export function Sidebar({ isOpen, onClose }) {
         <div className="p-2.5 border-t border-gray-200/80 bg-white space-y-1.5">
           <button
             onClick={() => router.push("/perfil")}
-            className="w-full flex items-center space-x-2 px-2.5 py-3.5 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            className="group w-full flex items-center space-x-2 px-2.5 py-3.5 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99]"
           >
             <div className="w-9 h-9 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>

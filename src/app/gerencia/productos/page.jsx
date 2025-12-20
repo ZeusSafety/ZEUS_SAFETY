@@ -229,6 +229,9 @@ export default function ProductosPage() {
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [modalMensaje, setModalMensaje] = useState({ open: false, tipo: "success", mensaje: "" });
   const [productos, setProductos] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState(null);
@@ -284,6 +287,25 @@ export default function ProductosPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Función helper para mapear un producto individual (disponible en todo el componente)
+  const mapearProducto = (item) => {
+    return {
+      id: item.id || item.ID || item.id_producto || item.idProducto || null,
+      codigo: item.codigo || item.CODIGO || item.código || item.code || "",
+      nombre: item.nombre || item.NOMBRE || item.name || "",
+      categoria: item.categoria || item.CATEGORIA || item.categoría || item.category || "",
+      tipoProducto: item.tipoProducto || item.tipo_producto || item.TIPO_PRODUCTO || item.tipo || item.productType || "",
+      colorTipo: item.colorTipo || item.color_tipo || item.COLOR_TIPO || item.color || item.colorType || "",
+      tamano: item.tamano || item.tamaño || item.TAMAÑO || item.size || item.tamano || "",
+      paresPorCaja: item.paresPorCaja || item.pares_por_caja || item.PARES_POR_CAJA || item.pairsPerBox || item.paresPorCaja || 0,
+      fichaTecnica: item.fichaTecnica || item.ficha_tecnica || item.FICHA_TECNICA || item.FICHA_TECNICA_ENLACE || item.ficha || item.technicalSheet || item.pdf || item.fichaTecnicaEnlace || null,
+      imagen: item.imagen || item.IMAGEN || item.image || item.IMAGE || item.imagen_url || item.imagenUrl || item.IMAGEN_URL || item.IMG_URL || item.img_url || null,
+      precio: item.precio || item.PRECIO || item.price || 0,
+      stock: item.stock || item.STOCK || item.inventory || 0,
+      activo: item.activo !== undefined ? item.activo : (item.ACTIVO !== undefined ? item.ACTIVO : (item.active !== undefined ? item.active : true)),
+    };
+  };
 
   // Función para obtener productos de la API
   const fetchProductos = useCallback(async () => {
@@ -789,7 +811,7 @@ export default function ProductosPage() {
                           setSearchTerm(e.target.value);
                           setCurrentPage(1);
                         }}
-                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-white outline-none"
                       />
                       <svg
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -907,14 +929,57 @@ export default function ProductosPage() {
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center justify-center">
-                                  {producto.imagen ? (
-                                    <button
-                                      onClick={() => {
+                                  <button
+                                    onClick={async () => {
+                                      // Recargar el producto antes de abrir el modal para obtener la imagen actualizada
+                                      try {
+                                        const token = localStorage.getItem("token");
+                                        const response = await fetch("/api/productos", {
+                                          method: "GET",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            "Authorization": `Bearer ${token}`
+                                          }
+                                        });
+                                        
+                                        if (response.ok) {
+                                          const productosActualizados = await response.json();
+                                          const productoActualizado = Array.isArray(productosActualizados) 
+                                            ? productosActualizados.find(p => {
+                                                const pId = p.id || p.ID || p.id_producto || p.idProducto;
+                                                const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
+                                                const productoIdNum = typeof producto.id === 'string' ? parseInt(producto.id) : producto.id;
+                                                return pIdNum === productoIdNum;
+                                              })
+                                            : null;
+                                          
+                                          if (productoActualizado) {
+                                            // Usar la función de mapeo completa para obtener todos los campos correctamente
+                                            const productoMapeado = mapearProducto(productoActualizado);
+                                            console.log("🔍 Producto recargado desde API:", productoMapeado);
+                                            console.log("🔍 Imagen encontrada:", productoMapeado.imagen);
+                                            console.log("🔍 Todos los campos del producto:", Object.keys(productoMapeado));
+                                            console.log("🔍 Producto original de API (sin mapear):", productoActualizado);
+                                            setSelectedProducto(productoMapeado);
+                                          } else {
+                                            console.warn("⚠️ No se encontró el producto actualizado en la respuesta");
+                                            console.warn("⚠️ Producto buscado (ID):", producto.id);
+                                            console.warn("⚠️ Productos disponibles:", productosActualizados?.slice(0, 3));
+                                            setSelectedProducto(producto);
+                                          }
+                                        } else {
+                                          console.warn("⚠️ Error al recargar productos, usando datos del estado");
+                                          setSelectedProducto(producto);
+                                        }
+                                      } catch (error) {
+                                        console.warn("⚠️ No se pudo recargar el producto, usando datos del estado:", error);
                                         setSelectedProducto(producto);
-                                        setSelectedImageFile(null);
-                                        setIsGestionarImagenModalOpen(true);
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      }
+                                      setSelectedImageFile(null);
+                                      setImagePreview(null);
+                                      setIsGestionarImagenModalOpen(true);
+                                    }}
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Gestionar imagen del producto"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
@@ -923,23 +988,6 @@ export default function ProductosPage() {
                                       </svg>
                                       <span style={{ pointerEvents: 'none' }}>Imagen</span>
                                     </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedProducto(producto);
-                                        setSelectedImageFile(null);
-                                        setIsGestionarImagenModalOpen(true);
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar imagen del producto"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Imagen</span>
-                                    </button>
-                                  )}
                                 </div>
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -1054,7 +1102,7 @@ export default function ProductosPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Precio</label>
-                <p className="text-sm text-gray-900">${selectedProducto.precio.toFixed(2)}</p>
+                <p className="text-sm text-gray-900">${selectedProducto.precio ? Number(selectedProducto.precio).toFixed(2) : '0.00'}</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Stock</label>
@@ -1548,108 +1596,421 @@ export default function ProductosPage() {
           setIsGestionarImagenModalOpen(false);
           setSelectedProducto(null);
           setSelectedImageFile(null);
+          setImagePreview(null);
         }}
         title={`Gestionar Imagen del Producto - ${selectedProducto?.codigo || ""}`}
         size="md"
       >
         {selectedProducto && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Imagen Actual */}
             {selectedProducto.imagen && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <h3 className="text-sm font-bold text-gray-900 mb-3">Imagen Actual:</h3>
-                <a
-                  href={selectedProducto.imagen}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>Ver Imagen Actual</span>
-                </a>
+              <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                  <h3 className="text-base font-semibold text-gray-800 tracking-tight">Imagen Actual</h3>
+                </div>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative w-full max-w-lg bg-white rounded-xl p-4 shadow-inner border border-gray-100">
+                    <img 
+                      src={selectedProducto.imagen} 
+                      alt="Imagen actual" 
+                      className="w-full h-auto max-h-72 object-contain rounded-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <a
+                    href={selectedProducto.imagen}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Ver Imagen Actual</span>
+                  </a>
+                </div>
               </div>
             )}
 
             {/* Subir Nueva Imagen */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Subir Nueva Imagen:</h3>
-              <label
-                htmlFor="image-upload"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-400 transition-all duration-200"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Hacer clic para seleccionar archivo de imagen</span>
-                  </p>
-                  <p className="text-xs text-gray-500">JPG, PNG, WEBP (MAX. 10MB)</p>
-                </div>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      if (file.size > 10 * 1024 * 1024) {
-                        alert("El archivo es demasiado grande. El tamaño máximo es 10MB.");
-                        e.target.value = "";
-                        return;
-                      }
-                      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-                      if (!validTypes.includes(file.type)) {
-                        alert("Por favor, selecciona un archivo de imagen válido (JPG, PNG, WEBP).");
-                        e.target.value = "";
-                        return;
-                      }
-                      setSelectedImageFile(file);
-                    }
-                  }}
-                />
-                {selectedImageFile && (
-                  <div className="mt-2 text-sm text-green-600 font-semibold">
-                    ✓ Archivo seleccionado: {selectedImageFile.name}
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-1 h-5 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                <h3 className="text-base font-semibold text-gray-800 tracking-tight">Subir Nueva Imagen</h3>
+              </div>
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <div className="relative w-full max-w-lg mx-auto bg-white rounded-xl p-4 shadow-inner border border-gray-200">
+                    <div className="relative h-56 rounded-lg overflow-hidden bg-gray-50">
+                      <img 
+                        src={imagePreview} 
+                        alt="Vista previa" 
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        onClick={() => {
+                          setSelectedImageFile(null);
+                          setImagePreview(null);
+                          const input = document.getElementById('image-upload');
+                          if (input) input.value = '';
+                        }}
+                        className="absolute top-3 right-3 p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 shadow-md"
+                        title="Eliminar imagen seleccionada"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                )}
-              </label>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-800 mb-1">Archivo seleccionado</p>
+                        <p className="text-xs text-gray-600 truncate mb-1">{selectedImageFile?.name}</p>
+                        <p className="text-xs text-gray-500">Tamaño: {(selectedImageFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('image-upload');
+                      if (input) input.click();
+                    }}
+                    className="w-full max-w-lg mx-auto px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  >
+                    Cambiar Imagen
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="image-upload"
+                  className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 hover:border-blue-400"
+                >
+                  <div className="flex flex-col items-center justify-center pt-4 pb-4">
+                    <div className="w-14 h-14 mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
+                    <p className="mb-1.5 text-sm text-gray-600 font-medium">
+                      Hacer clic para seleccionar archivo
+                    </p>
+                    <p className="text-xs text-gray-400">JPG, PNG, WEBP (MAX. 10MB)</p>
+                  </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert("El archivo es demasiado grande. El tamaño máximo es 10MB.");
+                          e.target.value = "";
+                          return;
+                        }
+                        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                        if (!validTypes.includes(file.type)) {
+                          alert("Por favor, selecciona un archivo de imagen válido (JPG, PNG, WEBP).");
+                          e.target.value = "";
+                          return;
+                        }
+                        setSelectedImageFile(file);
+                        // Crear vista previa
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImagePreview(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Botones de acción */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
               <button
                 onClick={() => {
                   setIsGestionarImagenModalOpen(false);
                   setSelectedProducto(null);
                   setSelectedImageFile(null);
+                  setImagePreview(null);
                 }}
-                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                disabled={uploadingImage}
+                className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!selectedImageFile) {
-                    alert("Por favor, selecciona un archivo de imagen para subir.");
+                    setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor, selecciona un archivo de imagen para subir." });
                     return;
                   }
-                  console.log("Guardar imagen para producto:", selectedProducto.id, selectedImageFile);
-                  alert("Funcionalidad de guardado de imagen pendiente de implementar");
-                  setIsGestionarImagenModalOpen(false);
-                  setSelectedProducto(null);
-                  setSelectedImageFile(null);
+
+                  try {
+                    setUploadingImage(true);
+                    
+                    // Crear FormData para enviar el archivo
+                    const formData = new FormData();
+                    formData.append('file', selectedImageFile);
+
+                    // Subir archivo a la API
+                    const uploadResponse = await fetch(
+                      `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_sistema&folder_bucket=productos&method=no_encriptar`,
+                      {
+                        method: 'POST',
+                        body: formData,
+                      }
+                    );
+
+                    if (!uploadResponse.ok) {
+                      throw new Error(`Error al subir la imagen: ${uploadResponse.status}`);
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    const imageUrl = uploadData.url;
+
+                    if (!imageUrl) {
+                      throw new Error("La API no devolvió la URL de la imagen");
+                    }
+
+                    // Actualizar la URL en la base de datos
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      throw new Error("No se encontró token de autenticación");
+                    }
+
+                    // Validar que el ID existe y convertirlo a número
+                    let productoId = selectedProducto.id || selectedProducto.ID;
+                    if (!productoId || productoId === 0) {
+                      console.error("❌ Producto sin ID válido:", selectedProducto);
+                      throw new Error("No se pudo obtener el ID del producto. Producto: " + JSON.stringify(selectedProducto));
+                    }
+                    
+                    // Asegurar que el ID sea un número
+                    if (typeof productoId === 'string') {
+                      productoId = parseInt(productoId);
+                      if (isNaN(productoId)) {
+                        throw new Error("El ID del producto no es un número válido: " + selectedProducto.id);
+                      }
+                    }
+                    
+                    // Asegurar que sea un número entero positivo
+                    productoId = Math.floor(Number(productoId));
+                    if (productoId <= 0) {
+                      throw new Error("El ID del producto debe ser un número positivo: " + productoId);
+                    }
+
+                    console.log("🔄 Actualizando imagen en BD para producto ID:", productoId);
+                    console.log("🔄 Tipo de ID:", typeof productoId);
+                    console.log("🔄 URL de imagen:", imageUrl);
+                    console.log("🔄 Producto completo:", selectedProducto);
+
+                    const requestBody = {
+                      id: productoId,
+                      ID: productoId,  // También enviar en mayúsculas por si acaso
+                      IMG_URL: imageUrl
+                    };
+
+                    console.log("🔄 Body a enviar:", JSON.stringify(requestBody, null, 2));
+
+                    try {
+                      const updateResponse = await fetch(
+                        `/api/productos?method=ACTUALIZAR_IMAGEN_PRODUCTO`,
+                        {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify(requestBody)
+                        }
+                      );
+
+                      console.log("🔄 Response status:", updateResponse.status);
+                      console.log("🔄 Response ok:", updateResponse.ok);
+
+                      // Leer la respuesta completa para debugging
+                      const responseText = await updateResponse.text();
+                      console.log("🔄 Response text completo:", responseText);
+
+                      if (!updateResponse.ok) {
+                        let errorData;
+                        try {
+                          errorData = JSON.parse(responseText);
+                        } catch (e) {
+                          errorData = { error: responseText || "Error desconocido" };
+                        }
+                        console.error("❌ Error en respuesta del backend:", errorData);
+                        throw new Error(errorData.error || errorData.details || `Error al actualizar en BD: ${updateResponse.status}`);
+                      }
+
+                      let updateData;
+                      try {
+                        updateData = JSON.parse(responseText);
+                      } catch (e) {
+                        updateData = { message: responseText };
+                      }
+                      console.log("✅ Imagen actualizada en BD:", updateData);
+                      console.log("✅ Tipo de respuesta:", typeof updateData);
+                      console.log("✅ Tiene 'success':", updateData.success);
+                      console.log("✅ Tiene 'Exito':", updateData.Exito);
+                      console.log("✅ Respuesta completa:", JSON.stringify(updateData, null, 2));
+                      
+                      // Verificar que la respuesta sea del backend nuevo
+                      if (updateData.success === true) {
+                        console.log("✅ Backend nuevo confirmado - success: true");
+                        // Todo bien, continuar
+                      } else if (updateData.Exito) {
+                        // Backend antiguo - pero verificaremos después si se guardó
+                        console.warn("⚠️ Backend respondió con formato antiguo (Exito), pero verificaremos si se guardó...");
+                      } else {
+                        // Respuesta inesperada - pero verificaremos después
+                        console.warn("⚠️ Respuesta inesperada del backend, pero verificaremos si se guardó...");
+                      }
+                    } catch (fetchError) {
+                      console.error("❌ Error al llamar al backend:", fetchError);
+                      // Si falla la actualización en BD, al menos la imagen ya está en storage
+                      // Podemos continuar pero avisar al usuario
+                      throw new Error(`Error al guardar en base de datos: ${fetchError.message}. La imagen se subió a storage pero no se guardó la URL en la BD.`);
+                    }
+
+                    // Recargar la lista de productos para obtener los datos actualizados de la BD
+                    await fetchProductos();
+                    
+                    // Esperar un momento y verificar que la imagen se guardó realmente
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Obtener el producto actualizado directamente de la API para verificar
+                    try {
+                      const verifyResponse = await fetch("/api/productos", {
+                        method: "GET",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${token}`
+                        }
+                      });
+                      
+                      if (verifyResponse.ok) {
+                        const productosVerificados = await verifyResponse.json();
+                        console.log("🔍 Productos verificados (primeros 3):", productosVerificados?.slice(0, 3));
+                        console.log("🔍 Buscando producto con ID:", productoId);
+                        
+                        // Buscar el producto con diferentes variaciones de ID
+                        const productoVerificado = Array.isArray(productosVerificados) 
+                          ? productosVerificados.find(p => {
+                              const pId = p.id || p.ID || p.id_producto || p.idProducto;
+                              const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
+                              const productoIdNum = typeof productoId === 'string' ? parseInt(productoId) : productoId;
+                              return pIdNum === productoIdNum;
+                            })
+                          : null;
+                        
+                        console.log("🔍 Producto encontrado:", productoVerificado);
+                        console.log("🔍 Campos del producto:", productoVerificado ? Object.keys(productoVerificado) : "No encontrado");
+                        
+                        // Buscar IMG_URL en todas las variaciones posibles
+                        const imagenGuardada = productoVerificado ? (
+                          productoVerificado.imagen || 
+                          productoVerificado.IMAGEN || 
+                          productoVerificado.IMG_URL || 
+                          productoVerificado.img_url ||
+                          productoVerificado.imagen_url ||
+                          productoVerificado.imagenUrl ||
+                          productoVerificado.IMAGEN_URL ||
+                          productoVerificado.image ||
+                          productoVerificado.IMAGE
+                        ) : null;
+                        
+                        console.log("🔍 Imagen guardada encontrada:", imagenGuardada);
+                        
+                        if (!imagenGuardada) {
+                          console.error("❌ La imagen NO se guardó en la BD.");
+                          console.error("❌ Producto verificado completo:", JSON.stringify(productoVerificado, null, 2));
+                          console.error("❌ URL que se intentó guardar:", imageUrl);
+                          console.error("❌ Respuesta del backend fue:", JSON.stringify(updateData, null, 2));
+                          
+                          // Si el backend respondió con "Exito", es código antiguo
+                          if (updateData.Exito && !updateData.success) {
+                            throw new Error("El backend desplegado NO tiene el código nuevo. Está respondiendo con 'Exito' en lugar de 'success'. Por favor, verifica que el código se desplegó correctamente. La imagen se subió a storage pero NO se guardó la URL en la base de datos.");
+                          } else {
+                            throw new Error("La imagen se subió a storage pero NO se guardó la URL en la base de datos. Verifica que el backend tenga el código actualizado y que la columna IMG_URL exista en la tabla productos.");
+                          }
+                        } else {
+                          console.log("✅ Imagen confirmada en BD:", imagenGuardada);
+                          console.log("✅ ¡Todo funcionó correctamente!");
+                        }
+                      }
+                    } catch (verifyError) {
+                      console.warn("⚠️ No se pudo verificar si la imagen se guardó:", verifyError);
+                      // No lanzar error aquí, solo advertir
+                    }
+                    
+                    // Verificar que la imagen se guardó realmente
+                    const productoActualizado = productos.find(p => p.id === productoId);
+                    if (!productoActualizado || !productoActualizado.imagen) {
+                      console.warn("⚠️ La imagen no aparece en la lista recargada. Puede que no se haya guardado en la BD.");
+                      // No lanzar error aquí, solo advertir en consola
+                    }
+
+                    // Cerrar modal y limpiar estados
+                    setIsGestionarImagenModalOpen(false);
+                    setSelectedProducto(null);
+                    setSelectedImageFile(null);
+                    setImagePreview(null);
+
+                    setModalMensaje({ 
+                      open: true, 
+                      tipo: "success", 
+                      mensaje: "Imagen subida y guardada exitosamente en la base de datos." 
+                    });
+                  } catch (error) {
+                    console.error("Error al subir imagen:", error);
+                    setModalMensaje({ 
+                      open: true, 
+                      tipo: "error", 
+                      mensaje: `Error al subir la imagen: ${error.message}` 
+                    });
+                  } finally {
+                    setUploadingImage(false);
+                  }
                 }}
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+                disabled={!selectedImageFile || uploadingImage}
+                className="flex items-center space-x-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
-                <span>Guardar Imagen</span>
+                {uploadingImage ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Subiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <span>Guardar Imagen</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1747,16 +2108,145 @@ export default function ProductosPage() {
                 Cancelar
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!selectedFile) {
-                    alert("Por favor, selecciona un archivo PDF para subir.");
+                    setModalMensaje({ open: true, tipo: "error", mensaje: "Por favor, selecciona un archivo PDF para subir." });
                     return;
                   }
-                  console.log("Guardar PDF para producto:", selectedProducto.id, selectedFile);
-                  alert("Funcionalidad de guardado de PDF pendiente de implementar");
-                  setIsGestionarPDFModalOpen(false);
-                  setSelectedProducto(null);
-                  setSelectedFile(null);
+
+                  try {
+                    // Crear FormData para enviar el archivo
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+
+                    // Subir archivo a la API
+                    const uploadResponse = await fetch(
+                      `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_sistema&folder_bucket=productos&method=no_encriptar`,
+                      {
+                        method: 'POST',
+                        body: formData,
+                      }
+                    );
+
+                    if (!uploadResponse.ok) {
+                      throw new Error(`Error al subir el PDF: ${uploadResponse.status}`);
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    const pdfUrl = uploadData.url;
+
+                    if (!pdfUrl) {
+                      throw new Error("La API no devolvió la URL del PDF");
+                    }
+
+                    // Actualizar la URL en la base de datos
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      throw new Error("No se encontró token de autenticación");
+                    }
+
+                    // Validar que el ID existe y convertirlo a número
+                    let productoId = selectedProducto.id || selectedProducto.ID;
+                    if (!productoId || productoId === 0) {
+                      console.error("❌ Producto sin ID válido:", selectedProducto);
+                      throw new Error("No se pudo obtener el ID del producto. Producto: " + JSON.stringify(selectedProducto));
+                    }
+                    
+                    // Asegurar que el ID sea un número
+                    if (typeof productoId === 'string') {
+                      productoId = parseInt(productoId);
+                      if (isNaN(productoId)) {
+                        throw new Error("El ID del producto no es un número válido: " + selectedProducto.id);
+                      }
+                    }
+                    
+                    // Asegurar que sea un número entero positivo
+                    productoId = Math.floor(Number(productoId));
+                    if (productoId <= 0) {
+                      throw new Error("El ID del producto debe ser un número positivo: " + productoId);
+                    }
+
+                    console.log("🔄 Actualizando ficha técnica en BD para producto ID:", productoId);
+                    console.log("🔄 Tipo de ID:", typeof productoId);
+                    console.log("🔄 URL del PDF:", pdfUrl);
+                    console.log("🔄 Producto completo:", selectedProducto);
+
+                    const requestBody = {
+                      id: productoId,
+                      ID: productoId,  // También enviar en mayúsculas por si acaso
+                      url_ficha_tecnica: pdfUrl
+                    };
+                    
+                    console.log("🔄 Body a enviar:", JSON.stringify(requestBody, null, 2));
+
+                    console.log("🔄 Body a enviar:", requestBody);
+
+                    try {
+                      const updateResponse = await fetch(
+                        `/api/productos?method=ACTUALIZAR_FICHA_TECNICA_PRODUCTO`,
+                        {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify(requestBody)
+                        }
+                      );
+
+                      console.log("🔄 Response status:", updateResponse.status);
+                      console.log("🔄 Response ok:", updateResponse.ok);
+
+                      // Leer la respuesta completa para debugging
+                      const responseText = await updateResponse.text();
+                      console.log("🔄 Response text completo:", responseText);
+
+                      if (!updateResponse.ok) {
+                        let errorData;
+                        try {
+                          errorData = JSON.parse(responseText);
+                        } catch (e) {
+                          errorData = { error: responseText || "Error desconocido" };
+                        }
+                        console.error("❌ Error en respuesta del backend:", errorData);
+                        throw new Error(errorData.error || errorData.details || `Error al actualizar en BD: ${updateResponse.status}`);
+                      }
+
+                      let updateData;
+                      try {
+                        updateData = JSON.parse(responseText);
+                      } catch (e) {
+                        updateData = { message: responseText };
+                      }
+                      console.log("✅ Ficha técnica actualizada en BD:", updateData);
+                    } catch (fetchError) {
+                      console.error("❌ Error al llamar al backend:", fetchError);
+                      // Si falla la actualización en BD, al menos el PDF ya está en storage
+                      // Podemos continuar pero avisar al usuario
+                      throw new Error(`Error al guardar en base de datos: ${fetchError.message}. El PDF se subió a storage pero no se guardó la URL en la BD.`);
+                    }
+
+                    // Recargar la lista de productos para obtener los datos actualizados de la BD
+                    await fetchProductos();
+
+                    // Cerrar modal y limpiar estados
+                    setIsGestionarPDFModalOpen(false);
+                    setSelectedProducto(null);
+                    setSelectedFile(null);
+
+                    setModalMensaje({ 
+                      open: true, 
+                      tipo: "success", 
+                      mensaje: "PDF subido y guardado exitosamente en la base de datos." 
+                    });
+                  } catch (error) {
+                    console.error("Error al subir PDF:", error);
+                    setModalMensaje({ 
+                      open: true, 
+                      tipo: "error", 
+                      mensaje: `Error al subir el PDF: ${error.message}` 
+                    });
+                  }
                 }}
                 className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
               >
@@ -1768,6 +2258,36 @@ export default function ProductosPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal Mensaje */}
+      <Modal
+        isOpen={modalMensaje.open}
+        onClose={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+        title={modalMensaje.tipo === "success" ? "Éxito" : modalMensaje.tipo === "error" ? "Error" : "Información"}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className={`text-sm ${
+            modalMensaje.tipo === "success" ? "text-green-700" :
+            modalMensaje.tipo === "error" ? "text-red-700" :
+            "text-blue-700"
+          }`}>
+            {modalMensaje.mensaje}
+          </p>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
+                modalMensaje.tipo === "success" ? "bg-green-600 hover:bg-green-700" :
+                modalMensaje.tipo === "error" ? "bg-red-600 hover:bg-red-700" :
+                "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
