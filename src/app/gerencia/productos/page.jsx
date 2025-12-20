@@ -294,6 +294,7 @@ export default function ProductosPage() {
       id: item.id || item.ID || item.id_producto || item.idProducto || null,
       codigo: item.codigo || item.CODIGO || item.código || item.code || "",
       nombre: item.nombre || item.NOMBRE || item.name || "",
+      descripcion: item.descripcion || item.DESCRIPCION || item.description || null,
       categoria: item.categoria || item.CATEGORIA || item.categoría || item.category || "",
       tipoProducto: item.tipoProducto || item.tipo_producto || item.TIPO_PRODUCTO || item.tipo || item.productType || "",
       colorTipo: item.colorTipo || item.color_tipo || item.COLOR_TIPO || item.color || item.colorType || "",
@@ -413,6 +414,7 @@ export default function ProductosPage() {
         id: item.id || item.ID || item.id_producto || item.idProducto || 0,
         codigo: item.codigo || item.CODIGO || item.código || item.code || "",
         nombre: item.nombre || item.NOMBRE || item.name || "",
+        descripcion: item.descripcion || item.DESCRIPCION || item.description || null,
         categoria: item.categoria || item.CATEGORIA || item.categoría || item.category || "",
         tipoProducto: item.tipoProducto || item.tipo_producto || item.TIPO_PRODUCTO || item.tipo || item.productType || "",
         colorTipo: item.colorTipo || item.color_tipo || item.COLOR_TIPO || item.color || item.colorType || "",
@@ -874,6 +876,7 @@ export default function ProductosPage() {
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">DESCRIPCIÓN</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CATEGORÍA</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TIPO DE PRODUCTO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">COLOR/TIPO</th>
@@ -887,7 +890,7 @@ export default function ProductosPage() {
                       <tbody className="divide-y divide-gray-100">
                         {!loadingData && paginatedActivos.length === 0 ? (
                           <tr>
-                            <td colSpan="10" className="px-3 py-8 text-center text-sm text-gray-500">
+                            <td colSpan="11" className="px-3 py-8 text-center text-sm text-gray-500">
                               No hay productos activos disponibles
                             </td>
                           </tr>
@@ -896,6 +899,11 @@ export default function ProductosPage() {
                           <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.codigo}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.nombre}</td>
+                            <td className="px-3 py-2 text-[10px] text-gray-700 max-w-xs">
+                              <div className="truncate" title={producto.descripcion || ""}>
+                                {producto.descripcion || "-"}
+                              </div>
+                            </td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.categoria}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tipoProducto || "-"}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.colorTipo || "-"}</td>
