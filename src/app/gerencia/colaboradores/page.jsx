@@ -71,34 +71,10 @@ export default function ColaboradoresPage() {
   const [errorColaboradores, setErrorColaboradores] = useState(null);
 
   // Estados para el modal de permisos (diseño tipo tablero)
-  const [modulosPermisos, setModulosPermisos] = useState([
-    { id: "MARKETING", nombre: "MARKETING", permitido: true },
-    { id: "IMPORTACION", nombre: "IMPORTACION", permitido: true },
-    { id: "SISTEMAS", nombre: "SISTEMAS", permitido: true },
-    { id: "FACTURACION", nombre: "FACTURACION", permitido: true },
-    { id: "LOGISTICA", nombre: "LOGISTICA", permitido: true },
-    { id: "GERENCIA", nombre: "GERENCIA", permitido: true },
-    { id: "ADMINISTRACION", nombre: "ADMINISTRACION", permitido: true },
-    { id: "VENTAS", nombre: "VENTAS", permitido: true },
-    { id: "RRHH", nombre: "RECURSOS HUMANOS", permitido: true },
-    { id: "PERMISOS", nombre: "PERMISOS / SOLICITUDES E INCIDENCIAS", permitido: true },
-    { id: "SEGUIMIENTO_MONITOREO", nombre: "SEGUIMIENTO Y MONITOREO", permitido: false },
-  ]);
-
-  const [subVistasPermitidas, setSubVistasPermitidas] = useState([
-    { id: "IMPORTACIONES_REGISTRO", nombre: "IMPORTACIONES_REGISTRO", url: "/importacion/registro", area: "IMPORTACION" },
-    { id: "LISTADO_IMPORTACIONES_IMPORT", nombre: "LISTADO_IMPORTACIONES_IMPORT", url: "/importacion/listado", area: "IMPORTACION" },
-    { id: "INCIDENCIAS_PROFORMAS", nombre: "INCIDENCIAS_PROFORMAS", url: "/facturacion/incidencias/proformas", area: "FACTURACION" },
-    { id: "LISTADO_IMPORTACIONES_LOGISTICA", nombre: "LISTADO_IMPORTACIONES_LOGISTICA", url: "/logistica/importaciones", area: "LOGISTICA" },
-  ]);
-
-  const [subVistasDisponibles, setSubVistasDisponibles] = useState([
-    { id: "GESTION_CLIENTES_MARKETING", nombre: "GESTION DE CLIENTES - MARKETING", url: "/marketing/gestion-clientes", area: "MARKETING" },
-    { id: "LISTADO_VENTAS_MARKETING", nombre: "LISTADO DE VENTAS - MARKETING", url: "/marketing/listado-ventas", area: "MARKETING" },
-    { id: "GESTION_USUARIOS", nombre: "GESTION DE USUARIOS", url: "/gerencia/gestion-usuarios", area: "GERENCIA" },
-    { id: "GESTION_PRODUCTOS", nombre: "GESTION DE PRODUCTOS", url: "/gerencia/gestion-productos", area: "GERENCIA" },
-    { id: "RRHH_MEDIOS_COMUNICACION", nombre: "MEDIOS DE COMUNICACION - RRHH", url: "/recursos-humanos", area: "RECURSOS HUMANOS" },
-  ]);
+  const [modulosPermisos, setModulosPermisos] = useState([]);
+  const [subVistasPermitidas, setSubVistasPermitidas] = useState([]);
+  const [subVistasDisponibles, setSubVistasDisponibles] = useState([]);
+  const [loadingPermisos, setLoadingPermisos] = useState(false);
 
   const [filtroAreaSubVista, setFiltroAreaSubVista] = useState("TODAS");
   const [busquedaSubVista, setBusquedaSubVista] = useState("");
@@ -397,7 +373,7 @@ export default function ColaboradoresPage() {
         throw new Error("No se encontró el token de autenticación");
       }
 
-      const response = await fetch("/api/colaboradores", {
+      const response = await fetch("https://colaboradores2026-2946605267.us-central1.run.app?method=colaboradores_gerencia_listado", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -481,13 +457,13 @@ export default function ColaboradoresPage() {
                         estadoValue !== "0";
 
         return {
-          id: getValue(colab, ["id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
-          nombre: getValue(colab, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]) || "",
-          apellido: getValue(colab, ["apellido", "APELLIDO", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
-          area: areaValue || "Sin área asignada",
-          correo: getValue(colab, ["correo", "CORREO", "Correo", "email", "EMAIL", "Email", "correo_electronico", "CORREO_ELECTRONICO"]) || "",
+          id: getValue(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
+          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
+          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
+          area: getValue(colab, ["AREA", "area", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]) || "Sin área asignada",
+          usuario: getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]) || "",
           fechaCumpleanos: fechaFormateada,
-          activo: isActivo,
+          activo: getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
         };
       }) : [];
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
@@ -497,6 +473,86 @@ export default function ColaboradoresPage() {
       setErrorColaboradores(error.message || "Error al obtener colaboradores");
     } finally {
       setLoadingColaboradores(false);
+    }
+  }, []);
+
+  // Lista completa de todas las sub_vistas posibles
+  const todasLasSubVistas = [
+    { id: 5, nombre: "IMPORTACIONES_REGISTRO", area: "IMPORTACION" },
+    { id: 6, nombre: "LISTADO_IMPORTACIONES_IMPORT", area: "IMPORTACION" },
+    { id: 7, nombre: "SOLICITUDES_LISTADO", area: "IMPORTACION" },
+    { id: 3, nombre: "LISTADO_INCIDENCIAS_IMPORTACION", area: "IMPORTACION" },
+    { id: 4, nombre: "LISTADO_IMPORTACIONES_LOGISTICA", area: "LOGISTICA" },
+    { id: 26, nombre: "INCIDENCIAS_PROFORMAS", area: "FACTURACION" },
+    { id: 1, nombre: "LISTADO_REGISTRO_INCIDENCIA_PROFORMAS", area: "FACTURACION" },
+    { id: 34, nombre: "LISTADO DE IMPORTACIONES", area: "IMPORTACION" },
+    { id: 38, nombre: "GESTION DE CLIENTES - MARKETING", area: "MARKETING" },
+    { id: 39, nombre: "LISTADO DE VENTAS - MARKETING", area: "MARKETING" },
+    { id: 40, nombre: "RECENCIA DE CLIENTES", area: "MARKETING" },
+    { id: 41, nombre: "SOLICITUDES ADMIN-MARKETING", area: "MARKETING" },
+    { id: 42, nombre: "STOCK MALVINAS POR MAYOR CAJAS", area: "LOGISTICA" },
+    { id: 21, nombre: "GESTION DE USUARIOS", area: "GERENCIA" },
+    { id: 22, nombre: "GESTION DE PRODUCTOS", area: "GERENCIA" },
+    { id: 48, nombre: "SOLICITUDES ADMIN-GERENCIA", area: "GERENCIA" },
+    { id: 51, nombre: "GESTION DESCUENTO DE CAJAS MALVINAS", area: "GERENCIA" },
+    { id: 52, nombre: "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS", area: "GERENCIA" },
+  ];
+
+  // Función para obtener permisos de la API
+  const fetchPermisos = useCallback(async (usuario) => {
+    try {
+      setLoadingPermisos(true);
+      const response = await fetch(`https://api-login-accesos-2946605267.us-central1.run.app?metodo=get_permissions&user=${encodeURIComponent(usuario)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Permisos recibidos de la API:", data);
+
+      // Mapear módulos
+      const modulos = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
+        id: mod.NOMBRE || mod.nombre || mod.Nombre,
+        nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
+        permitido: true, // Si está en la lista, está permitido
+      })) : [];
+
+      setModulosPermisos(modulos);
+
+      // Mapear sub_vistas permitidas
+      const subVistasPermitidasIds = Array.isArray(data.sub_vistas) 
+        ? data.sub_vistas.map((vista) => vista.ID_SUB_VISTAS || vista.id || vista.ID)
+        : [];
+      
+      const subVistas = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => ({
+        id: vista.ID_SUB_VISTAS || vista.id || vista.ID,
+        nombre: vista.NOMBRE || vista.nombre || vista.Nombre,
+        url: "",
+        area: "", // Se puede inferir del nombre si es necesario
+      })) : [];
+
+      setSubVistasPermitidas(subVistas);
+
+      // Calcular sub_vistas disponibles: todas las posibles menos las permitidas
+      const disponibles = todasLasSubVistas.filter(
+        (vista) => !subVistasPermitidasIds.includes(vista.id)
+      );
+      setSubVistasDisponibles(disponibles);
+    } catch (error) {
+      console.error("Error al obtener permisos:", error);
+      // En caso de error, mantener valores por defecto vacíos
+      setModulosPermisos([]);
+      setSubVistasPermitidas([]);
+      setSubVistasDisponibles(todasLasSubVistas); // Mostrar todas si hay error
+    } finally {
+      setLoadingPermisos(false);
     }
   }, []);
 
@@ -622,14 +678,16 @@ export default function ColaboradoresPage() {
               onClick={() => router.push("/gerencia")}
               className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver a Gerencia</span>
             </button>
 
-            {/* Sección: Listado de Colaboradores */}
+            {/* Contenedor principal con fondo */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
+              {/* Sección: Listado de Colaboradores */}
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
@@ -718,7 +776,7 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
@@ -761,33 +819,40 @@ export default function ColaboradoresPage() {
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedColaborador(colaborador);
                                         setSelectedColaboradorCompleto(colaboradorCompleto);
                                         setIsPermisosModalOpen(true);
+                                        // Obtener permisos cuando se abre el modal
+                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                        if (usuario) {
+                                          await fetchPermisos(usuario);
+                                        }
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar permisos del colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                       </svg>
-                                      <span>Permisos</span>
+                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
                                     </button>
                                     <button
                                       onClick={() => {
                                         setSelectedColaborador(colaborador);
                                         setIsDesactivarModalOpen(true);
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Desactivar colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                      <span>Desactivar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Desactivar</span>
                                     </button>
                                   </div>
                                 </td>
@@ -837,8 +902,8 @@ export default function ColaboradoresPage() {
               </div>
             </div>
 
-            {/* Sección: Colaboradores Inactivos */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+              {/* Sección: Colaboradores Inactivos */}
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
@@ -892,7 +957,7 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
@@ -935,30 +1000,37 @@ export default function ColaboradoresPage() {
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedColaborador(colaborador);
                                         setSelectedColaboradorCompleto(colaboradorCompleto);
                                         setIsPermisosModalOpen(true);
+                                        // Obtener permisos cuando se abre el modal
+                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                        if (usuario) {
+                                          await fetchPermisos(usuario);
+                                        }
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar permisos del colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                       </svg>
-                                      <span>Permisos</span>
+                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
                                     </button>
                                     <button
                                       onClick={() => handleActivarColaborador(colaborador)}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Activar colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                       </svg>
-                                      <span>Activar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Activar</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1006,6 +1078,7 @@ export default function ColaboradoresPage() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
           </main>
@@ -1046,32 +1119,11 @@ export default function ColaboradoresPage() {
                   </div>
                 </div>
               </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="block text-xs font-semibold text-gray-600 mb-1">Usuario</span>
-                    <div className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900">
-                      {usuarioValue}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="block text-xs font-semibold text-gray-600 mb-1">Contraseña</span>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm tracking-[0.25em] text-gray-900">
-                        {maskedPassword}
-                      </div>
-                      <button className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm">
-                        Editar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Permisos por Módulo */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex itemsCenter justify-between">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 6a4 4 0 118 0v2a2 2 0 012 2v4a2 2 0 01-2 2h-1m-4 4H6a2 2 0 01-2-2v-5a2 2 0 012-2h2" />
@@ -1080,16 +1132,22 @@ export default function ColaboradoresPage() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700 border-b-2 border-blue-800">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MÓDULO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PERMISO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {modulosPermisos.map((mod) => (
+                {loadingPermisos ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Cargando permisos...</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MÓDULO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PERMISO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {modulosPermisos.length > 0 ? modulosPermisos.map((mod) => (
                       <tr key={mod.id} className="hover:bg-slate-200 transition-colors">
                         <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
                           {mod.nombre}
@@ -1120,9 +1178,16 @@ export default function ColaboradoresPage() {
                           )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    )) : (
+                        <tr>
+                          <td colSpan={3} className="px-3 py-4 text-center text-sm text-gray-500">
+                            No hay módulos disponibles
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -1143,51 +1208,48 @@ export default function ColaboradoresPage() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700 border-b-2 border-blue-800">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">URL</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {subVistasPermitidas.map((vista) => (
-                      <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                          {vista.nombre}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px]">
-                          {vista.url ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
-                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              PDF
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-gray-400">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => handleEliminarSubVista(vista.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>Eliminar</span>
-                          </button>
-                        </td>
+                {loadingPermisos ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Cargando sub vistas...</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {subVistasPermitidas.length > 0 ? subVistasPermitidas.map((vista) => (
+                        <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            {vista.nombre}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => handleEliminarSubVista(vista.id)}
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              title="Eliminar sub vista"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              <span style={{ pointerEvents: 'none' }}>Eliminar</span>
+                            </button>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={2} className="px-3 py-4 text-center text-sm text-gray-500">
+                            No hay sub vistas disponibles
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -1244,36 +1306,48 @@ export default function ColaboradoresPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {subVistasDisponibles
-                        .filter((vista) =>
-                          filtroAreaSubVista === "TODAS" ? true : vista.area === filtroAreaSubVista
-                        )
-                        .filter((vista) =>
-                          busquedaSubVista
-                            ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
-                            : true
-                        )
-                        .map((vista) => (
-                          <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {vista.nombre}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {vista.area}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <button
-                                onClick={() => handleAgregarSubVista(vista.id)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 border-2 border-emerald-700 hover:bg-emerald-700 hover:border-emerald-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
-                                <span>Agregar</span>
-                              </button>
+                      {(() => {
+                        const vistasFiltradas = subVistasDisponibles
+                          .filter((vista) =>
+                            filtroAreaSubVista === "TODAS" ? true : vista.area === filtroAreaSubVista
+                          )
+                          .filter((vista) =>
+                            busquedaSubVista
+                              ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
+                              : true
+                          );
+                        
+                        return vistasFiltradas.length > 0 ? (
+                          vistasFiltradas.map((vista) => (
+                            <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                {vista.nombre}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                {vista.area}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <button
+                                  onClick={() => handleAgregarSubVista(vista.id)}
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Agregar sub vista"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>Agregar</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} className="px-3 py-4 text-center text-sm text-gray-500">
+                              No hay sub vistas disponibles para agregar
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -1607,12 +1681,13 @@ export default function ColaboradoresPage() {
                                     };
                                     setDatosEditables([...datosParaMostrar, nuevoItem]);
                                   }}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Agregar nuevo dato"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                   </svg>
-                                  <span>Agregar</span>
+                                  <span style={{ pointerEvents: 'none' }}>Agregar</span>
                                 </button>
                               </div>
                               <div className="space-y-3">
@@ -1623,13 +1698,13 @@ export default function ColaboradoresPage() {
                                         const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
                                         setDatosEditables(nuevosDatos);
                                       }}
-                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                                      className="absolute top-2 right-2 inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Eliminar"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                      <span>Eliminar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Eliminar</span>
                                     </button>
                                     <div className="space-y-2 pr-8">
                                       {item.tipo && (

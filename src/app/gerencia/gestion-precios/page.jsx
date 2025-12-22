@@ -16,7 +16,7 @@ export default function GestionPreciosPage() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const itemsPerPage = 20; // 20 elementos por página fijos
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("create"); // "create" o "update"
   const [selectedPrecio, setSelectedPrecio] = useState(null);
@@ -1126,27 +1126,42 @@ export default function GestionPreciosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Header />
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className={`flex-1 transition-all duration-300 overflow-y-auto h-full ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"}`}>
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+        <main className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="p-4 lg:p-8">
-            <div className="mb-6 flex items-center gap-3 flex-wrap">
-              <button
-                onClick={() => router.push("/gerencia")}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-                Volver
-              </button>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Precios</h1>
-            </div>
+            {/* Botón Volver */}
+            <button
+              onClick={() => router.push("/gerencia")}
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+            >
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Volver</span>
+            </button>
 
-            <div className="mb-6">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 p-2">
+            {/* Contenedor principal con fondo blanco */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
+              {/* Título con icono */}
+              <div className="mb-6 flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Precios</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    Administra y actualiza los precios de productos por clasificación.
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabs/Pestañas */}
+              <div className="mb-6">
                 <div className="flex flex-wrap gap-2">
                   {tablasDisponibles.map((tabla) => {
                     const isActive = activeTab === tabla.value;
@@ -1190,9 +1205,6 @@ export default function GestionPreciosPage() {
                   })}
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700">{error}</p>
@@ -1264,36 +1276,13 @@ export default function GestionPreciosPage() {
                         Agregar Producto
                       </button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      {searchTerm && (
+                    {searchTerm && (
+                      <div className="mb-4">
                         <p className="text-xs text-gray-500">
                           Mostrando {preciosFiltrados.length} de {precios.length} productos
                         </p>
-                      )}
-                      <div className="flex items-center gap-2 ml-auto">
-                        <label className="text-xs font-semibold text-gray-700">Elementos por página:</label>
-                        <div className="relative">
-                          <select
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                              setItemsPerPage(Number(e.target.value));
-                              setCurrentPage(1);
-                            }}
-                            className="px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md appearance-none pr-10 min-w-[100px] bg-gradient-to-br from-white to-gray-50"
-                          >
-                            <option value={25} className="bg-white text-gray-900 py-2 font-medium">25</option>
-                            <option value={50} className="bg-white text-gray-900 py-2 font-medium">50</option>
-                            <option value={100} className="bg-white text-gray-900 py-2 font-medium">100</option>
-                            <option value={200} className="bg-white text-gray-900 py-2 font-medium">200</option>
-                          </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {preciosFiltrados.length === 0 ? (
@@ -1385,23 +1374,23 @@ export default function GestionPreciosPage() {
                                           console.log("ID disponible:", precio.ID || precio.id || precio.Id || precio._id);
                                           handleActualizar(precio);
                                         }}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                        className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                         title="Actualizar"
                                       >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        Actualizar
+                                        <span style={{ pointerEvents: 'none' }}>Actualizar</span>
                                       </button>
                                       <button
                                         onClick={() => handleEliminar(precio)}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                        className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                         title="Eliminar"
                                       >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                        Eliminar
+                                        <span style={{ pointerEvents: 'none' }}>Eliminar</span>
                                       </button>
                                     </div>
                                   </td>

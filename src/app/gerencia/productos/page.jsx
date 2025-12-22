@@ -240,6 +240,7 @@ export default function ProductosPage() {
   const [editForm, setEditForm] = useState({
     codigo: "",
     nombre: "",
+    descripcion: "",
     categoria: "",
     tipoProducto: "",
     colorTipo: "",
@@ -254,6 +255,7 @@ export default function ProductosPage() {
   const [newProductForm, setNewProductForm] = useState({
     codigo: "",
     nombre: "",
+    descripcion: "",
     categoria: "",
     tipoProducto: "",
     colorTipo: "",
@@ -518,6 +520,7 @@ export default function ProductosPage() {
       const apiData = {
         codigo: productoData.codigo || "",
         nombre: productoData.nombre || "",
+        descripcion: productoData.descripcion || "",
         categoria: productoData.categoria || "",
         tipo_producto: productoData.tipoProducto || "",
         color_tipo: productoData.colorTipo || "",
@@ -599,6 +602,7 @@ export default function ProductosPage() {
         id: productoId,
         codigo: productoActual.codigo || "",
         nombre: productoActual.nombre || "",
+        descripcion: productoActual.descripcion || "",
         categoria: productoActual.categoria || "",
         tipo_producto: productoActual.tipoProducto || "",
         color_tipo: productoActual.colorTipo || "",
@@ -668,6 +672,7 @@ export default function ProductosPage() {
         id: productoId,
         codigo: productoData.codigo || "",
         nombre: productoData.nombre || "",
+        descripcion: productoData.descripcion || "",
         categoria: productoData.categoria || "",
         tipo_producto: productoData.tipoProducto || "",
         color_tipo: productoData.colorTipo || "",
@@ -748,7 +753,7 @@ export default function ProductosPage() {
               onClick={() => router.push("/gerencia")}
               className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver a Gerencia</span>
@@ -909,33 +914,31 @@ export default function ProductosPage() {
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.colorTipo || "-"}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tamano || "-"}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.paresPorCaja || "-"}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                {producto.fichaTecnica ? (
-                                  <div className="flex items-center justify-center">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedProducto(producto);
-                                        setSelectedFile(null);
-                                        setIsGestionarPDFModalOpen(true);
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar PDF del producto"
-                                    >
-                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>PDF</span>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center justify-center">
-                                    <span className="text-gray-400 text-[10px]">-</span>
-                                  </div>
-                                )}
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedProducto(producto);
+                                      setSelectedFile(null);
+                                      setIsGestionarPDFModalOpen(true);
+                                    }}
+                                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
+                                      producto.fichaTecnica
+                                        ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
+                                        : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+                                    }`}
+                                    title={producto.fichaTecnica ? "Gestionar PDF del producto (Tiene ficha técnica)" : "Agregar ficha técnica al producto"}
+                                  >
+                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                  </button>
+                                </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center">
                                   <button
                                     onClick={async () => {
@@ -987,15 +990,19 @@ export default function ProductosPage() {
                                       setImagePreview(null);
                                       setIsGestionarImagenModalOpen(true);
                                     }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar imagen del producto"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Imagen</span>
-                                    </button>
+                                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
+                                      producto.imagen
+                                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+                                        : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+                                    }`}
+                                    title={producto.imagen ? "Gestionar imagen del producto (Tiene imagen)" : "Agregar imagen al producto"}
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                  </button>
                                 </div>
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -1006,6 +1013,7 @@ export default function ProductosPage() {
                                       setEditForm({
                                         codigo: producto.codigo || "",
                                         nombre: producto.nombre || "",
+                                        descripcion: producto.descripcion || "",
                                         categoria: producto.categoria || "",
                                         tipoProducto: producto.tipoProducto || "",
                                         colorTipo: producto.colorTipo || "",
@@ -1014,27 +1022,29 @@ export default function ProductosPage() {
                                       });
                                       setIsEditarModalOpen(true);
                                     }}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  <span>Editar</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedProducto(producto);
-                                    setIsDesactivarModalOpen(true);
-                                  }}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </div>
-                            </td>
+                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    title="Editar producto"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>Editar</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedProducto(producto);
+                                      setIsDesactivarModalOpen(true);
+                                    }}
+                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    title="Eliminar producto"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>Eliminar</span>
+                                  </button>
+                                </div>
+                              </td>
                           </tr>
                           ))
                         )}
@@ -1241,6 +1251,20 @@ export default function ProductosPage() {
             </div>
           </div>
 
+          {/* Descripción - Última fila, ocupa todo el ancho */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Descripción
+            </label>
+            <textarea
+              value={editForm.descripcion}
+              onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white resize-none"
+              placeholder="Descripción del producto"
+            />
+          </div>
+
           <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
             <button
               onClick={() => {
@@ -1431,6 +1455,18 @@ export default function ProductosPage() {
             />
           </div>
           <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Descripción
+            </label>
+            <textarea
+              value={newProductForm.descripcion}
+              onChange={(e) => setNewProductForm({ ...newProductForm, descripcion: e.target.value })}
+              rows={3}
+              placeholder="Descripción del producto"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 resize-none"
+            />
+          </div>
+          <div>
             <CategoriaAccordion
               value={newProductForm.categoria}
               onChange={(e) => {
@@ -1544,6 +1580,7 @@ export default function ProductosPage() {
                 setNewProductForm({
                   codigo: "",
                   nombre: "",
+                  descripcion: "",
                   categoria: "",
                   tipoProducto: "",
                   colorTipo: "",
