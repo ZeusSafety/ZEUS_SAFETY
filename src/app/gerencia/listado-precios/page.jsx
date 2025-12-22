@@ -801,6 +801,7 @@ export default function ListadoPreciosPage() {
                           onClick={() => setCurrentPage(1)}
                           disabled={currentPage === 1 || totalPages === 0}
                           className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Primera página"
                         >
                           «
                         </button>
@@ -808,6 +809,7 @@ export default function ListadoPreciosPage() {
                           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                           disabled={currentPage === 1 || totalPages === 0}
                           className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Página anterior"
                         >
                           &lt;
                         </button>
@@ -818,6 +820,7 @@ export default function ListadoPreciosPage() {
                           onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                           disabled={currentPage === totalPages || totalPages === 0}
                           className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Página siguiente"
                         >
                           &gt;
                         </button>
@@ -825,6 +828,7 @@ export default function ListadoPreciosPage() {
                           onClick={() => setCurrentPage(totalPages)}
                           disabled={currentPage === totalPages || totalPages === 0}
                           className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Última página"
                         >
                           »
                         </button>
