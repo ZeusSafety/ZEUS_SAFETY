@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import * as XLSX from "xlsx";
 
 // Usar el proxy de Next.js para evitar problemas de CORS
 const API_URL = "/api/logs-sesion-general";
@@ -218,6 +219,94 @@ export default function RegistroActividadGeneralPage() {
   const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const nombresDias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
+  // Función para descargar logs en Excel
+  const descargarExcel = () => {
+    if (logs.length === 0) {
+      alert("No hay logs para descargar");
+      return;
+    }
+
+    try {
+      // Preparar los datos para Excel
+      const datosExcel = logs.map((log) => {
+        const fechaStr = log.FECHA_HORA || log.fecha_hora || log.FECHA || log.fecha || log.timestamp || log.TIMESTAMP || "";
+        
+        // Formatear fecha para Excel
+        let fechaFormateada = "";
+        let horaFormateada = "";
+        
+        if (fechaStr) {
+          try {
+            let date;
+            if (typeof fechaStr === 'string' && fechaStr.includes(' ')) {
+              const [datePart, timePart] = fechaStr.split(' ');
+              const [year, month, day] = datePart.split('-');
+              const [hours, minutes, seconds] = timePart.split(':');
+              date = new Date(year, month - 1, day, hours, minutes, seconds);
+            } else {
+              date = new Date(fechaStr);
+            }
+            
+            // Formato de fecha: DD/MM/YYYY
+            const dia = String(date.getDate()).padStart(2, "0");
+            const mes = String(date.getMonth() + 1).padStart(2, "0");
+            const año = date.getFullYear();
+            fechaFormateada = `${dia}/${mes}/${año}`;
+            
+            // Formato de hora: HH:MM:SS
+            const horas = String(date.getHours()).padStart(2, "0");
+            const minutos = String(date.getMinutes()).padStart(2, "0");
+            const segundos = String(date.getSeconds()).padStart(2, "0");
+            horaFormateada = `${horas}:${minutos}:${segundos}`;
+          } catch (e) {
+            fechaFormateada = fechaStr;
+            horaFormateada = "";
+          }
+        }
+
+        return {
+          "Nombre": log.NOMBRE || log.nombre || "N/A",
+          "Apellido": log.APELLIDO || log.apellido || "N/A",
+          "Fecha": fechaFormateada,
+          "Hora": horaFormateada,
+          "Fecha/Hora Completa": fechaStr || "N/A"
+        };
+      });
+
+      // Crear un nuevo libro de trabajo
+      const wb = XLSX.utils.book_new();
+      
+      // Crear una hoja de trabajo desde los datos
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      
+      // Ajustar el ancho de las columnas
+      const columnWidths = [
+        { wch: 15 }, // Nombre
+        { wch: 15 }, // Apellido
+        { wch: 12 }, // Fecha
+        { wch: 10 }, // Hora
+        { wch: 20 }  // Fecha/Hora Completa
+      ];
+      ws['!cols'] = columnWidths;
+      
+      // Agregar la hoja al libro
+      XLSX.utils.book_append_sheet(wb, ws, "Logs de Actividad");
+      
+      // Generar el nombre del archivo con la fecha actual
+      const fechaActual = new Date();
+      const dia = String(fechaActual.getDate()).padStart(2, "0");
+      const mes = String(fechaActual.getMonth() + 1).padStart(2, "0");
+      const año = fechaActual.getFullYear();
+      const nombreArchivo = `Logs_Actividad_General_${dia}-${mes}-${año}.xlsx`;
+      
+      // Descargar el archivo
+      XLSX.writeFile(wb, nombreArchivo);
+    } catch (error) {
+      console.error("Error al generar Excel:", error);
+      alert("Error al generar el archivo Excel. Por favor, intente nuevamente.");
+    }
+  };
+
   // Formatear fecha con diseño tipo calendario
   const formatearFecha = (fecha) => {
     if (!fecha) return <span className="text-gray-400">N/A</span>;
@@ -351,44 +440,56 @@ export default function RegistroActividadGeneralPage() {
                 )}
               </div>
 
-              {/* Selector de vista */}
-              <div className="mb-4 flex items-center justify-end gap-2">
+              {/* Selector de vista y botón de descarga */}
+              <div className="mb-4 flex items-center justify-between">
                 <button
-                  onClick={() => {
-                    setViewMode("calendar");
-                    setCurrentPageTable(1);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    viewMode === "calendar"
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  onClick={descargarExcel}
+                  disabled={loadingData || logs.length === 0}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-sm font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>Calendario</span>
-                  </div>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm">Descargar Excel</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setViewMode("table");
-                    setCurrentPageTable(1);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    viewMode === "table"
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>Tabla</span>
-                  </div>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setViewMode("calendar");
+                      setCurrentPageTable(1);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      viewMode === "calendar"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>Calendario</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setViewMode("table");
+                      setCurrentPageTable(1);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      viewMode === "table"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Tabla</span>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Contenido según modo de vista */}

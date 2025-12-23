@@ -226,6 +226,8 @@ export default function ProductosPage() {
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
   const [isGestionarPDFModalOpen, setIsGestionarPDFModalOpen] = useState(false);
   const [isGestionarImagenModalOpen, setIsGestionarImagenModalOpen] = useState(false);
+  const [isDescripcionModalOpen, setIsDescripcionModalOpen] = useState(false);
+  const [selectedDescripcion, setSelectedDescripcion] = useState("");
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
@@ -904,10 +906,20 @@ export default function ProductosPage() {
                           <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.codigo}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.nombre}</td>
-                            <td className="px-3 py-2 text-[10px] text-gray-700 max-w-xs">
-                              <div className="truncate" title={producto.descripcion || ""}>
-                                {producto.descripcion || "-"}
-                              </div>
+                            <td className="px-3 py-2 text-center">
+                              <button
+                                onClick={() => {
+                                  setSelectedDescripcion(producto.descripcion || "Sin descripción");
+                                  setIsDescripcionModalOpen(true);
+                                }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 hover:scale-110 active:scale-95"
+                                title="Ver descripción completa"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.categoria}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tipoProducto || "-"}</td>
@@ -2303,6 +2315,36 @@ export default function ProductosPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal Ver Descripción */}
+      <Modal
+        isOpen={isDescripcionModalOpen}
+        onClose={() => {
+          setIsDescripcionModalOpen(false);
+          setSelectedDescripcion("");
+        }}
+        title="Descripción del Producto"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+              {selectedDescripcion || "Sin descripción disponible"}
+            </p>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => {
+                setIsDescripcionModalOpen(false);
+                setSelectedDescripcion("");
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Modal Mensaje */}

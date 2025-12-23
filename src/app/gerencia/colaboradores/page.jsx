@@ -18,6 +18,8 @@ export default function ColaboradoresPage() {
   const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
   const [isVerDetallesModalOpen, setIsVerDetallesModalOpen] = useState(false);
+  const [isEliminarSubVistaModalOpen, setIsEliminarSubVistaModalOpen] = useState(false);
+  const [subVistaAEliminar, setSubVistaAEliminar] = useState(null);
   const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [selectedColaboradorCompleto, setSelectedColaboradorCompleto] = useState(null);
   const [datosEditables, setDatosEditables] = useState([]);
@@ -89,22 +91,189 @@ export default function ColaboradoresPage() {
     );
   };
 
-  const handleAgregarSubVista = (id) => {
-    setSubVistasDisponibles((prevDisponibles) => {
-      const vista = prevDisponibles.find((v) => v.id === id);
-      if (!vista) return prevDisponibles;
-      setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
-      return prevDisponibles.filter((v) => v.id !== id);
-    });
+  // Función para insertar una subvista
+  const insertarSubVista = async (userId, subVistaId) => {
+    try {
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'insertar_subvista');
+      url.searchParams.append('user', userId);
+
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          id_sub_vista: subVistaId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al insertar subvista:", error);
+      throw error;
+    }
   };
 
-  const handleEliminarSubVista = (id) => {
-    setSubVistasPermitidas((prevPermitidas) => {
-      const vista = prevPermitidas.find((v) => v.id === id);
-      if (!vista) return prevPermitidas;
-      setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, vista]);
-      return prevPermitidas.filter((v) => v.id !== id);
+  // Función para eliminar una subvista
+  const eliminarSubVista = async (userId, subVistaId) => {
+    try {
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'eliminar_subvista');
+      url.searchParams.append('user', userId);
+
+      const response = await fetch(url.toString(), {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          id_sub_vista: subVistaId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al eliminar subvista:", error);
+      throw error;
+    }
+  };
+
+  const handleAgregarSubVista = async (id) => {
+    if (!selectedColaborador || !selectedColaborador.usuario) {
+      console.error("❌ Error: No se pudo identificar el usuario del colaborador", selectedColaborador);
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el usuario del colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+      return;
+    }
+
+    const nombreUsuario = selectedColaborador.usuario;
+    const vista = subVistasDisponibles.find((v) => v.id === id);
+    if (!vista) {
+      console.error("❌ Error: No se encontró la vista con id", id);
+      return;
+    }
+
+    console.log("➕ Agregando subvista:", {
+      nombreUsuario,
+      subVistaId: id,
+      vistaNombre: vista.nombre
     });
+
+    try {
+      await insertarSubVista(nombreUsuario, id);
+      
+      // Actualizar estados localmente
+      setSubVistasDisponibles((prevDisponibles) => prevDisponibles.filter((v) => v.id !== id));
+      setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
+      
+      // Mostrar notificación de éxito
+      setNotification({
+        show: true,
+        message: "Subvista agregada exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+    } catch (error) {
+      console.error("Error al agregar subvista:", error);
+      setNotification({
+        show: true,
+        message: `Error al agregar subvista: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
+  };
+
+  const handleEliminarSubVistaClick = (id) => {
+    const vista = subVistasPermitidas.find((v) => v.id === id);
+    if (vista) {
+      setSubVistaAEliminar(vista);
+      setIsEliminarSubVistaModalOpen(true);
+    }
+  };
+
+  const handleConfirmarEliminarSubVista = async () => {
+    if (!subVistaAEliminar || !selectedColaborador || !selectedColaborador.usuario) {
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el usuario del colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+      return;
+    }
+
+    const nombreUsuario = selectedColaborador.usuario;
+    const id = subVistaAEliminar.id;
+
+    console.log("➖ Eliminando subvista:", {
+      nombreUsuario,
+      subVistaId: id,
+      vistaNombre: subVistaAEliminar.nombre
+    });
+
+    try {
+      await eliminarSubVista(nombreUsuario, id);
+      
+      // Actualizar estados localmente
+      setSubVistasPermitidas((prevPermitidas) => prevPermitidas.filter((v) => v.id !== id));
+      setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, subVistaAEliminar]);
+      
+      // Mostrar notificación de éxito
+      setNotification({
+        show: true,
+        message: "Subvista eliminada exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+      
+      // Cerrar modal y limpiar estado
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+    } catch (error) {
+      console.error("Error al eliminar subvista:", error);
+      setNotification({
+        show: true,
+        message: `Error al eliminar subvista: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+    }
   };
 
   useEffect(() => {
@@ -578,27 +747,40 @@ export default function ColaboradoresPage() {
     }
   }, []);
 
-  // Lista completa de todas las sub_vistas posibles
-  const todasLasSubVistas = [
-    { id: 5, nombre: "IMPORTACIONES_REGISTRO", area: "IMPORTACION" },
-    { id: 6, nombre: "LISTADO_IMPORTACIONES_IMPORT", area: "IMPORTACION" },
-    { id: 7, nombre: "SOLICITUDES_LISTADO", area: "IMPORTACION" },
-    { id: 3, nombre: "LISTADO_INCIDENCIAS_IMPORTACION", area: "IMPORTACION" },
-    { id: 4, nombre: "LISTADO_IMPORTACIONES_LOGISTICA", area: "LOGISTICA" },
-    { id: 26, nombre: "INCIDENCIAS_PROFORMAS", area: "FACTURACION" },
-    { id: 1, nombre: "LISTADO_REGISTRO_INCIDENCIA_PROFORMAS", area: "FACTURACION" },
-    { id: 34, nombre: "LISTADO DE IMPORTACIONES", area: "IMPORTACION" },
-    { id: 38, nombre: "GESTION DE CLIENTES - MARKETING", area: "MARKETING" },
-    { id: 39, nombre: "LISTADO DE VENTAS - MARKETING", area: "MARKETING" },
-    { id: 40, nombre: "RECENCIA DE CLIENTES", area: "MARKETING" },
-    { id: 41, nombre: "SOLICITUDES ADMIN-MARKETING", area: "MARKETING" },
-    { id: 42, nombre: "STOCK MALVINAS POR MAYOR CAJAS", area: "LOGISTICA" },
-    { id: 21, nombre: "GESTION DE USUARIOS", area: "GERENCIA" },
-    { id: 22, nombre: "GESTION DE PRODUCTOS", area: "GERENCIA" },
-    { id: 48, nombre: "SOLICITUDES ADMIN-GERENCIA", area: "GERENCIA" },
-    { id: 51, nombre: "GESTION DESCUENTO DE CAJAS MALVINAS", area: "GERENCIA" },
-    { id: 52, nombre: "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS", area: "GERENCIA" },
-  ];
+  // Función para obtener todas las subvistas disponibles desde la API
+  const fetchSubVistasDisponibles = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `https://api-login-accesos-2946605267.us-central1.run.app?metodo=listado_subvistas`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Subvistas disponibles recibidas de la API:", data);
+
+      // Mapear las subvistas al formato esperado
+      const subVistasMapeadas = Array.isArray(data) ? data.map((vista) => ({
+        id: vista.ID || vista.id,
+        nombre: vista.SUB_VISTA || vista.sub_vista || vista.nombre,
+        area: vista.AREA || vista.area || "",
+      })) : [];
+
+      return subVistasMapeadas;
+    } catch (error) {
+      console.error("Error al obtener subvistas disponibles:", error);
+      return [];
+    }
+  }, []);
 
   // Función para obtener permisos de la API
   const fetchPermisos = useCallback(async (usuario) => {
@@ -642,6 +824,9 @@ export default function ColaboradoresPage() {
 
       setSubVistasPermitidas(subVistas);
 
+      // Obtener todas las subvistas disponibles desde la API
+      const todasLasSubVistas = await fetchSubVistasDisponibles();
+      
       // Calcular sub_vistas disponibles: todas las posibles menos las permitidas
       const disponibles = todasLasSubVistas.filter(
         (vista) => !subVistasPermitidasIds.includes(vista.id)
@@ -652,11 +837,18 @@ export default function ColaboradoresPage() {
       // En caso de error, mantener valores por defecto vacíos
       setModulosPermisos([]);
       setSubVistasPermitidas([]);
-      setSubVistasDisponibles(todasLasSubVistas); // Mostrar todas si hay error
+      // Intentar cargar subvistas disponibles incluso si hay error en permisos
+      try {
+        const todasLasSubVistas = await fetchSubVistasDisponibles();
+        setSubVistasDisponibles(todasLasSubVistas);
+      } catch (subVistasError) {
+        console.error("Error al obtener subvistas disponibles:", subVistasError);
+        setSubVistasDisponibles([]);
+      }
     } finally {
       setLoadingPermisos(false);
     }
-  }, []);
+  }, [fetchSubVistasDisponibles]);
 
   // Cargar colaboradores al montar el componente
   useEffect(() => {
@@ -681,27 +873,319 @@ export default function ColaboradoresPage() {
   const paginatedActivos = activos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const paginatedInactivos = inactivos.slice((currentPageInactivos - 1) * itemsPerPage, currentPageInactivos * itemsPerPage);
 
-  // Desactivar / activar colaboradores solo a nivel de frontend (sin API)
-  const handleDesactivarColaborador = () => {
+  // Desactivar colaborador con API
+  const handleDesactivarColaborador = async () => {
     if (!selectedColaborador) return;
-    const idSeleccionado = selectedColaborador.id;
-    setColaboradores((prev) =>
-      prev.map((c) =>
-        c.id === idSeleccionado ? { ...c, activo: false } : c
-      )
-    );
-    setIsDesactivarModalOpen(false);
-    setSelectedColaborador(null);
+    
+    try {
+      // Buscar el colaborador completo para obtener el correo
+      const getValue = (obj, keys) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+            return obj[key];
+          }
+        }
+        return null;
+      };
+
+      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        return idOriginal && String(idOriginal) === String(selectedColaborador.id);
+      });
+
+      console.log("🔍 [DESACTIVAR] Buscando colaborador completo:", {
+        idBuscado: selectedColaborador.id,
+        colaboradorCompletoEncontrado: colaboradorCompleto ? "Sí" : "No",
+        totalColaboradoresCompletos: colaboradoresCompletos.length,
+        primerColaboradorEjemplo: colaboradoresCompletos[0] ? {
+          ID_PERSONA: colaboradoresCompletos[0].ID_PERSONA,
+          id: colaboradoresCompletos[0].id,
+          ID: colaboradoresCompletos[0].ID,
+          CORREO: colaboradoresCompletos[0].CORREO,
+          correo: colaboradoresCompletos[0].correo
+        } : "No hay colaboradores"
+      });
+
+      if (!colaboradorCompleto) {
+        console.error("❌ [DESACTIVAR] No se encontró el colaborador completo");
+        setNotification({
+          show: true,
+          message: "Error: No se encontró la información completa del colaborador",
+          type: "error"
+        });
+        setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+        setIsDesactivarModalOpen(false);
+        setSelectedColaborador(null);
+        return;
+      }
+
+      // Obtener correo del colaborador - verificar directamente en el objeto
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
+                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
+                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+      
+      // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
+      if (correo === null || correo === undefined || correo === "") {
+        try {
+          const token = localStorage.getItem("token");
+          const username = selectedColaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+          
+          if (username) {
+            const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
+            const perfilResponse = await fetch(perfilUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            });
+            
+            if (perfilResponse.ok) {
+              const perfilData = await perfilResponse.json();
+              const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
+              if (perfilCorreo && perfilCorreo !== "" && perfilCorreo !== "null" && perfilCorreo !== "undefined") {
+                correo = perfilCorreo;
+              }
+            }
+          }
+        } catch (perfilError) {
+          console.warn("⚠️ [DESACTIVAR] No se pudo obtener correo del perfil:", perfilError);
+        }
+      }
+      
+      // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
+      if (correo === "" || correo === "null" || correo === "undefined") {
+        correo = null;
+      }
+
+      console.log("📧 [DESACTIVAR] Correo obtenido:", {
+        correo: correo,
+        correoType: typeof correo,
+        correoIsNull: correo === null,
+        correoIsEmpty: correo === "",
+        objetoCompleto: colaboradorCompleto
+      });
+
+      const token = localStorage.getItem("token");
+      const url = `https://colaboradores2026-2946605267.us-central1.run.app?metodo=desactivar_activar_usuario&id=${selectedColaborador.id}`;
+
+      console.log("🔍 [DESACTIVAR] Enviando petición:", {
+        id: selectedColaborador.id,
+        estado: "0",
+        correo: correo || "(vacío/null)",
+        correoType: typeof correo,
+        url: url
+      });
+
+      // Si correo es null, enviarlo como null explícitamente en JSON
+      const requestBody = {
+        estado: "0", // 0 para desactivar
+      };
+      
+      // Solo incluir correo si no es null, o incluir null explícitamente
+      // El backend espera correo en el body, así que lo incluimos siempre
+      requestBody.correo = correo; // null se serializará correctamente en JSON
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const responseText = await response.text();
+      console.log("📥 [DESACTIVAR] Respuesta de la API:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          errorData = { error: responseText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Verificar la respuesta para asegurar que se actualizó
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("✅ [DESACTIVAR] Datos parseados:", responseData);
+      } catch {
+        console.warn("⚠️ [DESACTIVAR] No se pudo parsear la respuesta como JSON");
+      }
+
+      // Actualizar estado local después de éxito en la API
+      setColaboradores((prev) =>
+        prev.map((c) =>
+          c.id === selectedColaborador.id ? { ...c, activo: false } : c
+        )
+      );
+
+      // Recargar colaboradores para asegurar sincronización con el backend
+      await fetchColaboradores();
+
+      setNotification({
+        show: true,
+        message: "Colaborador desactivado exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+      setIsDesactivarModalOpen(false);
+      setSelectedColaborador(null);
+    } catch (error) {
+      console.error("Error al desactivar colaborador:", error);
+      setNotification({
+        show: true,
+        message: `Error al desactivar colaborador: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
   };
 
-  const handleActivarColaborador = (colaborador) => {
+  // Activar colaborador con API
+  const handleActivarColaborador = async (colaborador) => {
     if (!colaborador) return;
-    const idSeleccionado = colaborador.id;
-    setColaboradores((prev) =>
-      prev.map((c) =>
-        c.id === idSeleccionado ? { ...c, activo: true } : c
-      )
-    );
+
+    try {
+      // Buscar el colaborador completo para obtener el correo
+      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+        const getValue = (obj, keys) => {
+          for (const key of keys) {
+            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+              return obj[key];
+            }
+          }
+          return "";
+        };
+        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        return idOriginal && idOriginal === colaborador.id;
+      });
+
+      if (!colaboradorCompleto) {
+        setNotification({
+          show: true,
+          message: "Error: No se encontró la información completa del colaborador",
+          type: "error"
+        });
+        setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+        return;
+      }
+
+      // Obtener correo del colaborador - verificar directamente en el objeto
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
+                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
+                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+      
+      // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
+      if (correo === null || correo === undefined || correo === "") {
+        try {
+          const token = localStorage.getItem("token");
+          const username = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+          
+          if (username) {
+            const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
+            const perfilResponse = await fetch(perfilUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            });
+            
+            if (perfilResponse.ok) {
+              const perfilData = await perfilResponse.json();
+              const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
+              if (perfilCorreo && perfilCorreo !== "" && perfilCorreo !== "null" && perfilCorreo !== "undefined") {
+                correo = perfilCorreo;
+              }
+            }
+          }
+        } catch (perfilError) {
+          console.warn("⚠️ [ACTIVAR] No se pudo obtener correo del perfil:", perfilError);
+        }
+      }
+      
+      // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
+      if (correo === "" || correo === "null" || correo === "undefined") {
+        correo = null;
+      }
+
+      const token = localStorage.getItem("token");
+      const url = `https://colaboradores2026-2946605267.us-central1.run.app?metodo=desactivar_activar_usuario&id=${colaborador.id}`;
+
+      // Si correo es null, enviarlo como null explícitamente en JSON
+      const requestBody = {
+        estado: "1", // 1 para activar
+      };
+      
+      // Solo incluir correo si no es null, o incluir null explícitamente
+      // El backend espera correo en el body, así que lo incluimos siempre
+      requestBody.correo = correo; // null se serializará correctamente en JSON
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Actualizar estado local después de éxito en la API
+      setColaboradores((prev) =>
+        prev.map((c) =>
+          c.id === colaborador.id ? { ...c, activo: true } : c
+        )
+      );
+
+      // Recargar colaboradores para asegurar sincronización
+      await fetchColaboradores();
+
+      setNotification({
+        show: true,
+        message: "Colaborador activado exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+    } catch (error) {
+      console.error("Error al activar colaborador:", error);
+      setNotification({
+        show: true,
+        message: `Error al activar colaborador: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
   };
 
   // Derivados para el modal de permisos (usuario / contraseña / avatar)
@@ -1341,7 +1825,7 @@ export default function ColaboradoresPage() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
                             <button
-                              onClick={() => handleEliminarSubVista(vista.id)}
+                              onClick={() => handleEliminarSubVistaClick(vista.id)}
                               className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                               title="Eliminar sub vista"
                             >
@@ -1465,6 +1949,34 @@ export default function ColaboradoresPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </Modal>
+      {/* Modal de Confirmación para Eliminar SubVista */}
+      <Modal
+        isOpen={isEliminarSubVistaModalOpen}
+        onClose={() => {
+          setIsEliminarSubVistaModalOpen(false);
+          setSubVistaAEliminar(null);
+        }}
+        title="Eliminar Sub Vista"
+        size="md"
+        primaryButtonText="Sí, Eliminar"
+        onPrimaryButtonClick={handleConfirmarEliminarSubVista}
+        secondaryButtonText="Cancelar"
+        onSecondaryButtonClick={() => {
+          setIsEliminarSubVistaModalOpen(false);
+          setSubVistaAEliminar(null);
+        }}
+      >
+        {subVistaAEliminar && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              ¿Estás seguro de que deseas eliminar la sub vista <strong>{subVistaAEliminar.nombre}</strong>?
+            </p>
+            <p className="text-xs text-gray-500">
+              Esta acción eliminará el permiso de esta sub vista para el usuario.
+            </p>
           </div>
         )}
       </Modal>

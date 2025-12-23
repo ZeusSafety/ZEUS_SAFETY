@@ -96,7 +96,7 @@ export default function PerfilPage() {
       id: "contraseña",
       iconName: "contraseña",
       title: "Cambiar contraseña",
-      route: "/cambiar-contraseña",
+      route: "/cambiar-password",
     },
     {
       id: "registro",
