@@ -53,6 +53,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "accesibilidad-credenciales", name: "Accesibilidad y Credenciales", icon: "key" },
+        { id: "registro-actividad-general", name: "Registro de Actividad (Logs generales)", icon: "shield" },
       ],
     },
     {
@@ -676,6 +677,12 @@ export function Sidebar({ isOpen, onClose }) {
     // Navegación para otros items
     if (itemId === "accesibilidad-credenciales") {
       router.push("/gerencia/colaboradores");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    if (itemId === "registro-actividad-general") {
+      router.push("/gerencia/registro-actividad-general");
       setSelectedItem(itemId);
       return;
     }
