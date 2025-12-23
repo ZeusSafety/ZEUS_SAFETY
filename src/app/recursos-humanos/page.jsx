@@ -35,6 +35,14 @@ function RecursosHumanosContent() {
   const [errorSavingDatos, setErrorSavingDatos] = useState(null);
   const [loadingMedios, setLoadingMedios] = useState(false);
   const [mediosComunicacion, setMediosComunicacion] = useState([]); // Array con IDs de la BD
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" }); // success, error
+  const [isAgregarColaboradorModalOpen, setIsAgregarColaboradorModalOpen] = useState(false);
+  const [newColaboradorForm, setNewColaboradorForm] = useState({
+    nombre: "",
+    apellido: "",
+    areaPrincipal: "",
+  });
+  const [loadingAgregarColaborador, setLoadingAgregarColaborador] = useState(false);
 
   // Función para obtener el ID del colaborador
   const getColaboradorId = (colaborador) => {
@@ -632,7 +640,10 @@ function RecursosHumanosContent() {
                 </div>
               )}
 
-              <button className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group">
+              <button 
+                onClick={() => setIsAgregarColaboradorModalOpen(true)}
+                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group"
+              >
                 <span>+ Agregar Colaborador</span>
               </button>
 
@@ -644,14 +655,13 @@ function RecursosHumanosContent() {
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
                         <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {loadingColaboradores ? (
                         <tr>
-                          <td colSpan={5} className="px-3 py-8 text-center">
+                          <td colSpan={4} className="px-3 py-8 text-center">
                             <div className="flex items-center justify-center space-x-2">
                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
                               <span className="text-sm text-gray-600">Cargando colaboradores...</span>
@@ -660,7 +670,7 @@ function RecursosHumanosContent() {
                         </tr>
                       ) : activos.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                          <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
                             No hay colaboradores activos
                           </td>
                         </tr>
@@ -687,7 +697,6 @@ function RecursosHumanosContent() {
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo || ""}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">
                                   <button
@@ -783,14 +792,13 @@ function RecursosHumanosContent() {
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
                         <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {loadingColaboradores ? (
                         <tr>
-                          <td colSpan={5} className="px-3 py-8 text-center">
+                          <td colSpan={4} className="px-3 py-8 text-center">
                             <div className="flex items-center justify-center space-x-2">
                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
                               <span className="text-sm text-gray-600">Cargando colaboradores...</span>
@@ -799,7 +807,7 @@ function RecursosHumanosContent() {
                         </tr>
                       ) : inactivos.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                          <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
                             No hay colaboradores inactivos
                           </td>
                         </tr>
@@ -826,7 +834,6 @@ function RecursosHumanosContent() {
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo || ""}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">
                                   <button
@@ -1921,6 +1928,207 @@ function RecursosHumanosContent() {
           </div>
         )}
       </Modal>
+
+      {/* Modal Agregar Colaborador */}
+      <Modal
+        isOpen={isAgregarColaboradorModalOpen}
+        onClose={() => {
+          setIsAgregarColaboradorModalOpen(false);
+          setNewColaboradorForm({
+            nombre: "",
+            apellido: "",
+            areaPrincipal: "",
+          });
+        }}
+        title="Agregar Nuevo Colaborador"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Nombre <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newColaboradorForm.nombre}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, nombre: e.target.value })}
+              placeholder="Nombre"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Apellido <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newColaboradorForm.apellido}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, apellido: e.target.value })}
+              placeholder="Apellido"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Área Principal <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={newColaboradorForm.areaPrincipal}
+              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, areaPrincipal: e.target.value })}
+              placeholder="ID del Área (Ej: 1, 2, 3...)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+            />
+            <p className="mt-1 text-xs text-gray-500">Ingrese el ID numérico del área principal</p>
+          </div>
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsAgregarColaboradorModalOpen(false);
+                setNewColaboradorForm({
+                  nombre: "",
+                  apellido: "",
+                  areaPrincipal: "",
+                });
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={async () => {
+                // Validar campos requeridos
+                if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.areaPrincipal) {
+                  alert("Por favor, complete todos los campos requeridos");
+                  return;
+                }
+
+                try {
+                  setLoadingAgregarColaborador(true);
+                  const token = localStorage.getItem("token");
+                  if (!token) {
+                    throw new Error("No se encontró el token de autenticación");
+                  }
+
+                  const response = await fetch(
+                    `https://colaboradores2026-2946605267.us-central1.run.app?metodo=agregar_colaborador`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        nombre: newColaboradorForm.nombre,
+                        apellido: newColaboradorForm.apellido,
+                        area_principal: parseInt(newColaboradorForm.areaPrincipal),
+                      }),
+                    }
+                  );
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+                    throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+                  }
+
+                  const data = await response.json();
+                  console.log("Colaborador agregado exitosamente:", data);
+                  
+                  // Mostrar notificación de éxito
+                  setNotification({
+                    show: true,
+                    message: "Colaborador agregado exitosamente",
+                    type: "success"
+                  });
+                  
+                  // Cerrar modal y resetear formulario
+                  setIsAgregarColaboradorModalOpen(false);
+                  setNewColaboradorForm({
+                    nombre: "",
+                    apellido: "",
+                    areaPrincipal: "",
+                  });
+
+                  // Recargar la lista de colaboradores
+                  fetchColaboradores();
+                  
+                  // Ocultar notificación después de 3 segundos
+                  setTimeout(() => {
+                    setNotification({ show: false, message: "", type: "success" });
+                  }, 3000);
+                } catch (error) {
+                  console.error("Error al agregar colaborador:", error);
+                  // Mostrar notificación de error
+                  setNotification({
+                    show: true,
+                    message: `Error al agregar colaborador: ${error.message}`,
+                    type: "error"
+                  });
+                  // Ocultar notificación después de 4 segundos
+                  setTimeout(() => {
+                    setNotification({ show: false, message: "", type: "error" });
+                  }, 4000);
+                } finally {
+                  setLoadingAgregarColaborador(false);
+                }
+              }}
+              disabled={loadingAgregarColaborador}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingAgregarColaborador ? "Agregando..." : "Agregar Colaborador"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Notificación Toast */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${
+            notification.type === "success" 
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
+              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+          } min-w-[320px] max-w-md`}>
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+              notification.type === "success" 
+                ? "bg-green-500" 
+                : "bg-red-500"
+            }`}>
+              {notification.type === "success" ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${
+                notification.type === "success" 
+                  ? "text-green-800" 
+                  : "text-red-800"
+              }`}>
+                {notification.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setNotification({ show: false, message: "", type: notification.type })}
+              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${
+                notification.type === "success" 
+                  ? "hover:text-green-600" 
+                  : "hover:text-red-600"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

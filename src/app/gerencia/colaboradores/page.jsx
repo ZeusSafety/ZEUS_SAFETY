@@ -57,11 +57,12 @@ export default function ColaboradoresPage() {
     }
   }, [isVerDetallesModalOpen, selectedColaboradorCompleto]);
   const [newColaboradorForm, setNewColaboradorForm] = useState({
+    id_colaborador: null,
     nombre: "",
     apellido: "",
     area: "",
-    correo: "",
-    fechaCumpleanos: "",
+    usuario: "",
+    contraseña: "",
   });
   
   // Estados para datos de la API
@@ -78,6 +79,7 @@ export default function ColaboradoresPage() {
 
   const [filtroAreaSubVista, setFiltroAreaSubVista] = useState("TODAS");
   const [busquedaSubVista, setBusquedaSubVista] = useState("");
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" }); // success, error
 
   const togglePermisoModulo = (id) => {
     setModulosPermisos((prev) =>
@@ -389,13 +391,52 @@ export default function ColaboradoresPage() {
 
       const data = await response.json();
       console.log("Datos recibidos de la API:", data);
+      console.log("Primer colaborador de ejemplo:", data && Array.isArray(data) && data.length > 0 ? data[0] : "No hay datos");
+      
+      // Buscar colaboradores recién agregados (Jhan Pier Sambos y Pilsen Pier)
+      if (Array.isArray(data)) {
+        const colaboradoresRecientes = data.filter(c => {
+          const nombre = (c.NOMBRE || c.nombre || c.Nombre || c.name || c.NAME || "").toUpperCase();
+          const apellido = (c.APELLIDO || c.apellido || c.Apellido || c.apellidos || c.APELLIDOS || c.lastname || c.LASTNAME || "").toUpperCase();
+          return (nombre.includes("JHAN") && apellido.includes("SAMBOS")) ||
+                 (nombre.includes("PILSEN") && apellido.includes("PIER"));
+        });
+        
+        if (colaboradoresRecientes.length > 0) {
+          colaboradoresRecientes.forEach((colab, idx) => {
+            console.log(`🔍 Colaborador recién agregado ${idx + 1}:`, {
+              nombre: colab.NOMBRE || colab.nombre || colab.Nombre || colab.name || colab.NAME,
+              apellido: colab.APELLIDO || colab.apellido || colab.Apellido || colab.apellidos || colab.APELLIDOS || colab.lastname || colab.LASTNAME,
+              objetoCompleto: colab,
+              camposUsuario: Object.keys(colab).filter(k => 
+                k.toLowerCase().includes('usuario') || 
+                k.toLowerCase().includes('user') || 
+                k.toLowerCase().includes('login')
+              ).reduce((acc, key) => {
+                acc[key] = {
+                  valor: colab[key],
+                  tipo: typeof colab[key],
+                  esNull: colab[key] === null,
+                  esUndefined: colab[key] === undefined,
+                  esVacio: colab[key] === "",
+                  esStringVacio: typeof colab[key] === "string" && colab[key].trim() === ""
+                };
+                return acc;
+              }, {}),
+              todosLosCampos: Object.keys(colab)
+            });
+          });
+        } else {
+          console.log("⚠️ No se encontró Jhan Pier Sambos o Pilsen Pier en la respuesta de la API");
+        }
+      }
 
       // Guardar los datos originales completos
       setColaboradoresCompletos(Array.isArray(data) ? data : []);
 
       // Mapear los datos de la API al formato esperado
       // La API puede devolver diferentes estructuras, así que intentamos varias opciones
-      const colaboradoresMapeados = Array.isArray(data) ? data.map((colab) => {
+      const colaboradoresMapeados = Array.isArray(data) ? data.map((colab, index) => {
         // Intentar obtener los campos con diferentes nombres posibles
         const getValue = (obj, keys) => {
           for (const key of keys) {
@@ -427,8 +468,8 @@ export default function ColaboradoresPage() {
           }
         }
 
-        // Obtener área - puede estar en un objeto anidado
-        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
+        // Obtener área - puede estar en un objeto anidado o como AREA_PRINCIPAL (ID)
+        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT", "AREA_PRINCIPAL", "area_principal"]);
         if (!areaValue && colab.A && colab.A.NOMBRE) {
           areaValue = colab.A.NOMBRE;
         }
@@ -447,6 +488,8 @@ export default function ColaboradoresPage() {
             }
           }
         }
+        // Si areaValue es un número (ID de área), mantenerlo como está por ahora
+        // El backend debería devolver el nombre del área, pero si solo viene el ID, lo mostramos
 
         // Determinar si está activo
         const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
@@ -456,17 +499,76 @@ export default function ColaboradoresPage() {
                         estadoValue !== 0 &&
                         estadoValue !== "0";
 
+        // Obtener usuario - puede venir como null, undefined, o no existir
+        // IMPORTANTE: Si el colaborador no tiene credenciales, el campo puede venir como null, undefined, o string vacío
+        const usuarioRaw = getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]);
+        
+        // Verificar explícitamente si el valor es null, undefined, o string vacío
+        let usuarioFinal = "";
+        if (usuarioRaw !== null && usuarioRaw !== undefined && usuarioRaw !== "") {
+          const usuarioStr = String(usuarioRaw).trim();
+          if (usuarioStr !== "" && usuarioStr !== "null" && usuarioStr !== "undefined") {
+            usuarioFinal = usuarioStr;
+          }
+        }
+        
+        // Log para depuración de TODOS los colaboradores para encontrar los sin usuario
+        console.log(`🔍 Colaborador ${index} (${getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"])} ${getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"])}):`, {
+          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]),
+          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]),
+          usuarioRaw: usuarioRaw,
+          usuarioRawType: typeof usuarioRaw,
+          usuarioRawValue: JSON.stringify(usuarioRaw),
+          usuarioFinal: usuarioFinal,
+          usuarioFinalType: typeof usuarioFinal,
+          usuarioFinalLength: usuarioFinal.length,
+          tieneUsuario: usuarioFinal !== "",
+          // Mostrar todos los campos relacionados con usuario del objeto original
+          camposUsuario: Object.keys(colab).filter(k => 
+            k.toLowerCase().includes('usuario') || 
+            k.toLowerCase().includes('user') || 
+            k.toLowerCase().includes('login')
+          ).reduce((acc, key) => {
+            acc[key] = colab[key];
+            return acc;
+          }, {}),
+          objetoCompleto: colab
+        });
+
         return {
           id: getValue(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
           nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
           apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
           area: getValue(colab, ["AREA", "area", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]) || "Sin área asignada",
-          usuario: getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]) || "",
+          usuario: usuarioFinal,
           fechaCumpleanos: fechaFormateada,
           activo: getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
         };
       }) : [];
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
+      
+      // Log detallado de cada colaborador y su campo usuario
+      console.log("🔍 Análisis detallado de colaboradores:");
+      colaboradoresMapeados.forEach((c, idx) => {
+        console.log(`  ${idx + 1}. ${c.nombre} ${c.apellido}:`, {
+          usuario: c.usuario,
+          usuarioType: typeof c.usuario,
+          usuarioIsEmpty: c.usuario === "",
+          usuarioIsNull: c.usuario === null,
+          usuarioIsUndefined: c.usuario === undefined,
+          usuarioTrimmed: c.usuario ? String(c.usuario).trim() : "N/A",
+          usuarioTrimmedLength: c.usuario ? String(c.usuario).trim().length : 0,
+          tieneUsuario: c.usuario && String(c.usuario).trim() !== ""
+        });
+      });
+      
+      const sinUsuario = colaboradoresMapeados.filter(c => {
+        const tieneUsuario = c.usuario && String(c.usuario).trim() !== "";
+        return !tieneUsuario;
+      });
+      console.log("Colaboradores sin usuario:", sinUsuario);
+      console.log("Total colaboradores:", colaboradoresMapeados.length);
+      console.log("Colaboradores con usuario:", colaboradoresMapeados.length - sinUsuario.length);
       setColaboradores(colaboradoresMapeados);
     } catch (error) {
       console.error("Error al obtener colaboradores:", error);
@@ -562,6 +664,13 @@ export default function ColaboradoresPage() {
       fetchColaboradores();
     }
   }, [loading, user, fetchColaboradores]);
+
+  // Recargar colaboradores cuando se abre el modal de agregar
+  useEffect(() => {
+    if (isAgregarModalOpen) {
+      fetchColaboradores();
+    }
+  }, [isAgregarModalOpen, fetchColaboradores]);
 
   const activos = colaboradores.filter(c => c.activo !== false);
   const inactivos = colaboradores.filter(c => c.activo === false);
@@ -750,12 +859,15 @@ export default function ColaboradoresPage() {
                 {/* Botón Agregar */}
                 <button
                   onClick={() => {
+                    // Recargar colaboradores antes de abrir el modal para tener la lista actualizada
+                    fetchColaboradores();
                     setNewColaboradorForm({
+                      id_colaborador: null,
                       nombre: "",
                       apellido: "",
                       area: "",
-                      correo: "",
-                      fechaCumpleanos: "",
+                      usuario: "",
+                      contraseña: "",
                     });
                     setIsAgregarModalOpen(true);
                   }}
@@ -1390,21 +1502,26 @@ export default function ColaboradoresPage() {
         onClose={() => {
           setIsAgregarModalOpen(false);
           setNewColaboradorForm({
+            id_colaborador: null,
             nombre: "",
             apellido: "",
             area: "",
-            correo: "",
-            fechaCumpleanos: "",
+            usuario: "",
+            contraseña: "",
           });
         }}
         title="Agregar Nuevo Colaborador"
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
+          {/* Primera columna: Formulario */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Nombre <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Nombre
               </label>
               <input
                 type="text"
@@ -1415,8 +1532,11 @@ export default function ColaboradoresPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Apellido <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Apellido
               </label>
               <input
                 type="text"
@@ -1426,82 +1546,229 @@ export default function ColaboradoresPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Área
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.area}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
+                placeholder="Ej: Administracion, Ventas, Logistica"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Usuario
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.usuario}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, usuario: e.target.value })}
+                placeholder="Usuario"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={newColaboradorForm.contraseña}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, contraseña: e.target.value })}
+                placeholder="Contraseña"
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Área <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newColaboradorForm.area}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
-              placeholder="Ej: Administracion, Ventas, Logistica"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
+
+          {/* Segunda columna: Lista de colaboradores sin usuario/contraseña */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Colaboradores sin Usuario/Contraseña
+              </label>
+              <div className="border border-gray-300 rounded-lg max-h-[400px] overflow-y-auto custom-scrollbar">
+                {(() => {
+                  const colaboradoresSinUsuario = colaboradores.filter(colab => {
+                    const tieneUsuario = colab.usuario && String(colab.usuario).trim() !== "";
+                    return !tieneUsuario;
+                  });
+                  
+                  return colaboradoresSinUsuario.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      No hay colaboradores sin usuario/contraseña
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {colaboradoresSinUsuario
+                      .map((colab, index) => (
+                        <button
+                          key={colab.id || index}
+                          onClick={() => {
+                            setNewColaboradorForm({
+                              id_colaborador: colab.id || null,
+                              nombre: colab.nombre || "",
+                              apellido: colab.apellido || "",
+                              area: colab.area || "",
+                              usuario: "",
+                              contraseña: "",
+                            });
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-200 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {colab.nombre} {colab.apellido}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-0.5">{colab.area || "Sin área asignada"}</p>
+                            </div>
+                            <svg
+                              className="w-5 h-5 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Correo <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={newColaboradorForm.correo}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, correo: e.target.value })}
-              placeholder="correo@ejemplo.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Fecha de Cumpleaños <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newColaboradorForm.fechaCumpleanos}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, fechaCumpleanos: e.target.value })}
-              placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
-          </div>
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setIsAgregarModalOpen(false);
-                setNewColaboradorForm({
-                  nombre: "",
-                  apellido: "",
-                  area: "",
-                  correo: "",
-                  fechaCumpleanos: "",
-                });
-              }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={() => {
-                // Validar campos requeridos
-                if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.area || !newColaboradorForm.correo || !newColaboradorForm.fechaCumpleanos) {
-                  alert("Por favor, complete todos los campos requeridos");
-                  return;
+        </div>
+        
+        <div className="flex items-center justify-end space-x-3 pt-4 mt-6 border-t border-gray-200">
+          <button
+            onClick={() => {
+              setIsAgregarModalOpen(false);
+              setNewColaboradorForm({
+                id_colaborador: null,
+                nombre: "",
+                apellido: "",
+                area: "",
+                usuario: "",
+                contraseña: "",
+              });
+            }}
+            className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              // Validar campos requeridos
+              if (!newColaboradorForm.id_colaborador || !newColaboradorForm.usuario || !newColaboradorForm.contraseña) {
+                alert("Por favor, seleccione un colaborador y complete usuario y contraseña");
+                return;
+              }
+
+              try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                  throw new Error("No se encontró el token de autenticación");
                 }
-                console.log("Agregar colaborador:", newColaboradorForm);
-                alert("Funcionalidad de agregado pendiente de implementar");
+
+                const response = await fetch(
+                  `https://colaboradores2026-2946605267.us-central1.run.app?metodo=agregar_credenciales`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                      "Authorization": `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      id_colaborador: newColaboradorForm.id_colaborador,
+                      usuario: newColaboradorForm.usuario,
+                      contrasena: newColaboradorForm.contraseña,
+                    }),
+                  }
+                );
+
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+                  throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log("Credenciales agregadas exitosamente:", data);
+                
+                // Mostrar notificación de éxito
+                setNotification({
+                  show: true,
+                  message: "Credenciales agregadas exitosamente",
+                  type: "success"
+                });
+                
+                // Cerrar modal y resetear formulario
                 setIsAgregarModalOpen(false);
                 setNewColaboradorForm({
+                  id_colaborador: null,
                   nombre: "",
                   apellido: "",
                   area: "",
-                  correo: "",
-                  fechaCumpleanos: "",
+                  usuario: "",
+                  contraseña: "",
                 });
-              }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
-            >
-              Agregar Colaborador
-            </button>
-          </div>
+
+                // Recargar la lista de colaboradores
+                fetchColaboradores();
+                
+                // Ocultar notificación después de 3 segundos
+                setTimeout(() => {
+                  setNotification({ show: false, message: "", type: "success" });
+                }, 3000);
+              } catch (error) {
+                console.error("Error al agregar credenciales:", error);
+                // Mostrar notificación de error
+                setNotification({
+                  show: true,
+                  message: `Error al agregar credenciales: ${error.message}`,
+                  type: "error"
+                });
+                // Ocultar notificación después de 4 segundos
+                setTimeout(() => {
+                  setNotification({ show: false, message: "", type: "error" });
+                }, 4000);
+              }
+            }}
+            className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+          >
+            Agregar Colaborador
+          </button>
         </div>
       </Modal>
 
@@ -1789,6 +2056,54 @@ export default function ColaboradoresPage() {
           </div>
         )}
       </Modal>
+
+      {/* Notificación Toast */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${
+            notification.type === "success" 
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
+              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+          } min-w-[320px] max-w-md`}>
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+              notification.type === "success" 
+                ? "bg-green-500" 
+                : "bg-red-500"
+            }`}>
+              {notification.type === "success" ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${
+                notification.type === "success" 
+                  ? "text-green-800" 
+                  : "text-red-800"
+              }`}>
+                {notification.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setNotification({ show: false, message: "", type: notification.type })}
+              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${
+                notification.type === "success" 
+                  ? "hover:text-green-600" 
+                  : "hover:text-red-600"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
