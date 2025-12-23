@@ -59,8 +59,8 @@ export default function MisModulosVistasPage() {
         throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
       }
 
-      // Usar el endpoint get_permissions que solo requiere el usuario y el token
-      const apiUrl = `https://api-login-accesos-2946605267.us-central1.run.app?metodo=get_permissions&user=${encodeURIComponent(username)}`;
+      // Usar la ruta API de Next.js como proxy para evitar problemas de CORS
+      const apiUrl = `/api/get-permissions?user=${encodeURIComponent(username)}`;
 
       const response = await fetch(apiUrl, {
         method: "GET",
