@@ -36,6 +36,37 @@ function RecursosHumanosContent() {
   const [loadingMedios, setLoadingMedios] = useState(false);
   const [mediosComunicacion, setMediosComunicacion] = useState([]); // Array con IDs de la BD
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" }); // success, error
+  // Estados para tabs y edición
+  const [activeTab, setActiveTab] = useState("informacion-personal");
+  const [editingSections, setEditingSections] = useState({
+    "informacion-personal": false,
+    "informacion-familiar": false,
+    "ubicacion": false,
+    "informacion-laboral": false,
+    "seguros": false,
+    "datos": false,
+    "correo": false,
+  });
+  // Estados para datos editables de cada sección
+  const [editDataPersonal, setEditDataPersonal] = useState({});
+  const [editDataFamiliar, setEditDataFamiliar] = useState({});
+  const [editDataUbicacion, setEditDataUbicacion] = useState({});
+  const [editDataLaboral, setEditDataLaboral] = useState({});
+  const [editDataSeguros, setEditDataSeguros] = useState({});
+  // Estados para la sección DATOS
+  const [datosSecciones, setDatosSecciones] = useState({
+    "informacion-personal": [],
+    "informacion-familiar": [],
+    "ubicacion": [],
+    "informacion-laboral": [],
+    "seguros": [],
+  });
+  const [areasDisponibles, setAreasDisponibles] = useState([]);
+  const [rolesDisponibles, setRolesDisponibles] = useState([]);
+  const [tiposDocumento, setTiposDocumento] = useState(["DNI", "CE", "PASAPORTE", "RUC"]);
+  const [loadingAreas, setLoadingAreas] = useState(false);
+  const [savingDatosSeccion, setSavingDatosSeccion] = useState(false);
+  const [errorDatosSeccion, setErrorDatosSeccion] = useState(null);
   const [isAgregarColaboradorModalOpen, setIsAgregarColaboradorModalOpen] = useState(false);
   const [newColaboradorForm, setNewColaboradorForm] = useState({
     nombre: "",
@@ -55,6 +86,263 @@ function RecursosHumanosContent() {
       return null;
     };
     return getValue(colaborador, ["id", "ID", "Id", "_id", "ID_PERSONA", "id_persona", "ID_COLABORADOR", "id_colaborador"]);
+  };
+
+  // Función para convertir fecha DD/MM/YYYY a YYYY-MM-DD
+  const formatDateForAPI = (dateString) => {
+    if (!dateString || dateString === "" || dateString === "No disponible" || dateString === "-") {
+      return null;
+    }
+    // Si ya está en formato YYYY-MM-DD, retornarlo
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    // Si está en formato DD/MM/YYYY, convertirlo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      const [dia, mes, año] = dateString.split("/");
+      return `${año}-${mes}-${dia}`;
+    }
+    // Intentar parsear como Date
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const año = date.getFullYear();
+        const mes = String(date.getMonth() + 1).padStart(2, "0");
+        const dia = String(date.getDate()).padStart(2, "0");
+        return `${año}-${mes}-${dia}`;
+      }
+    } catch (e) {
+      console.error("Error al formatear fecha:", e);
+    }
+    return null;
+  };
+
+  // Función para obtener el ID del área desde el nombre
+  const getAreaId = (areaNombre) => {
+    if (!areaNombre) return null;
+    // Si areasDisponibles es un array de objetos con id y nombre
+    const area = areasDisponibles.find(a => {
+      if (typeof a === "object" && a !== null) {
+        return (a.nombre && a.nombre.toUpperCase() === areaNombre.toUpperCase()) ||
+               (a.NOMBRE && a.NOMBRE.toUpperCase() === areaNombre.toUpperCase());
+      }
+      // Si es un string, comparar directamente
+      if (typeof a === "string") {
+        return a.toUpperCase() === areaNombre.toUpperCase();
+      }
+      return false;
+    });
+    if (area) {
+      if (typeof area === "object" && area !== null) {
+        return area.id || area.ID;
+      }
+      // Si es un string, necesitamos buscar el ID desde la API
+      // Por ahora retornamos null y el backend debería manejarlo
+      return null;
+    }
+    return null;
+  };
+
+  // Función para actualizar Información Personal
+  const actualizarInformacionPersonal = async (colaboradorId, data) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {};
+    if (data.nombre !== undefined && data.nombre !== "") payload.nombre = data.nombre;
+    if (data.segundoNombre !== undefined && data.segundoNombre !== "") payload.segundo_nombre = data.segundoNombre;
+    if (data.apellido !== undefined && data.apellido !== "") payload.apellido = data.apellido;
+    if (data.segundoApellido !== undefined && data.segundoApellido !== "") payload.segundo_apellido = data.segundoApellido;
+    if (data.fechaNacimiento !== undefined && data.fechaNacimiento !== "") {
+      const fechaFormateada = formatDateForAPI(data.fechaNacimiento);
+      if (fechaFormateada) payload.fecha_nacimiento = fechaFormateada;
+    }
+    if (data.tipoDocumento !== undefined && data.tipoDocumento !== "") payload.tipo_doc = data.tipoDocumento;
+    if (data.numeroDocumento !== undefined && data.numeroDocumento !== "") payload.num_doc = data.numeroDocumento;
+    if (data.estadoCivil !== undefined && data.estadoCivil !== "") payload.estado_civil = data.estadoCivil;
+    if (data.estado !== undefined && data.estado !== "") payload.estado = data.estado === "1" || data.estado === 1 ? 1 : 0;
+
+    const response = await fetch(
+      `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_informacion_personal&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
+  // Función para actualizar Información Familiar
+  const actualizarInformacionFamiliar = async (colaboradorId, data) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {};
+    if (data.tieneHijos !== undefined && data.tieneHijos !== "") {
+      payload.tiene_hijos = data.tieneHijos === "1" || data.tieneHijos === 1 || data.tieneHijos === "Sí" || data.tieneHijos === "SI" ? 1 : 0;
+    }
+    if (data.cantHijos !== undefined && data.cantHijos !== "") {
+      payload.cant_hijos = parseInt(data.cantHijos) || 0;
+    }
+
+    const response = await fetch(
+      `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_informacion_familiar&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
+  // Función para actualizar Ubicación
+  const actualizarUbicacion = async (colaboradorId, data) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {};
+    if (data.direccion !== undefined && data.direccion !== "") payload.direccion = data.direccion;
+    if (data.googleMaps !== undefined && data.googleMaps !== "") payload.google_maps = data.googleMaps;
+
+    const response = await fetch(
+      `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_ubicacion&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
+  // Función para actualizar Información Laboral
+  const actualizarInformacionLaboral = async (colaboradorId, data) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {};
+    if (data.ocupacion !== undefined && data.ocupacion !== "") payload.ocupacion = data.ocupacion;
+    if (data.cargo !== undefined && data.cargo !== "") payload.cargo = data.cargo;
+    if (data.area !== undefined && data.area !== "") {
+      const areaId = getAreaId(data.area);
+      if (areaId) {
+        payload.area_principal = areaId;
+      } else {
+        // Si no se encuentra el ID, intentar usar el valor directamente si es numérico
+        const numArea = parseInt(data.area);
+        if (!isNaN(numArea)) {
+          payload.area_principal = numArea;
+        }
+      }
+    }
+    // Para el rol, necesitamos el ID numérico. Por ahora, si viene como string, intentamos parsearlo
+    if (data.rol !== undefined && data.rol !== "") {
+      const numRol = parseInt(data.rol);
+      if (!isNaN(numRol)) {
+        payload.rol = numRol;
+      } else {
+        // Si es un string, intentar buscar en rolesDisponibles o usar un mapeo
+        // Por ahora, lo dejamos como está y el backend debería manejarlo
+        payload.rol = data.rol;
+      }
+    }
+
+    const response = await fetch(
+      `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_informacion_laboral&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
+  // Función para actualizar Seguros
+  const actualizarSeguros = async (colaboradorId, data) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {};
+    if (data.seguroVidaLey !== undefined && data.seguroVidaLey !== "") {
+      // Convertir a 0 o 1
+      payload.seguro_vida_ley = data.seguroVidaLey === "1" || data.seguroVidaLey === 1 || data.seguroVidaLey === "Sí" || data.seguroVidaLey === "SI" ? 1 : 0;
+    }
+    if (data.fechaVencimiento !== undefined && data.fechaVencimiento !== "") {
+      const fechaFormateada = formatDateForAPI(data.fechaVencimiento);
+      if (fechaFormateada) payload.fecha_vencimiento = fechaFormateada;
+    }
+    if (data.fechaInicio !== undefined && data.fechaInicio !== "") {
+      const fechaFormateada = formatDateForAPI(data.fechaInicio);
+      if (fechaFormateada) payload.fecha_inicio = fechaFormateada;
+    }
+
+    const response = await fetch(
+      `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_seguros&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
   };
 
   // Función para cargar medios de comunicación desde la API
@@ -290,6 +578,95 @@ function RecursosHumanosContent() {
       setLoadingColaboradores(false);
     }
   }, []);
+
+  // Función para obtener áreas disponibles
+  const fetchAreas = useCallback(async () => {
+    try {
+      setLoadingAreas(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      // Obtener áreas desde el endpoint obtener_areas
+      const response = await fetch(
+        `https://colaboradores2026-2946605267.us-central1.run.app?method=obtener_areas`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          // Mapear a formato { id, nombre }
+          const areasMapeadas = data.map(area => ({
+            id: area.ID || area.id,
+            ID: area.ID || area.id,
+            nombre: area.NOMBRE || area.nombre,
+            NOMBRE: area.NOMBRE || area.nombre,
+          }));
+          setAreasDisponibles(areasMapeadas);
+        } else {
+          // Si falla, usar áreas por defecto
+          setAreasDisponibles([
+            { id: 1, nombre: "ADMINISTRACION" },
+            { id: 2, nombre: "LOGISTICA" },
+            { id: 3, nombre: "SISTEMAS" },
+            { id: 4, nombre: "MARKETING" },
+            { id: 5, nombre: "VENTAS" },
+            { id: 6, nombre: "FACTURACION" },
+            { id: 7, nombre: "IMPORTACION" },
+            { id: 8, nombre: "RECURSOS HUMANOS" },
+            { id: 9, nombre: "GERENCIA" },
+          ]);
+        }
+      } else {
+        // Si falla, usar áreas por defecto
+        setAreasDisponibles([
+          { id: 1, nombre: "ADMINISTRACION" },
+          { id: 2, nombre: "LOGISTICA" },
+          { id: 3, nombre: "SISTEMAS" },
+          { id: 4, nombre: "MARKETING" },
+          { id: 5, nombre: "VENTAS" },
+          { id: 6, nombre: "FACTURACION" },
+          { id: 7, nombre: "IMPORTACION" },
+          { id: 8, nombre: "RECURSOS HUMANOS" },
+          { id: 9, nombre: "GERENCIA" },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error al obtener áreas:", error);
+      // Usar áreas por defecto en caso de error
+      setAreasDisponibles([
+        { id: 1, nombre: "ADMINISTRACION" },
+        { id: 2, nombre: "LOGISTICA" },
+        { id: 3, nombre: "SISTEMAS" },
+        { id: 4, nombre: "MARKETING" },
+        { id: 5, nombre: "VENTAS" },
+        { id: 6, nombre: "FACTURACION" },
+        { id: 7, nombre: "IMPORTACION" },
+        { id: 8, nombre: "RECURSOS HUMANOS" },
+        { id: 9, nombre: "GERENCIA" },
+      ]);
+    } finally {
+      setLoadingAreas(false);
+    }
+  }, []);
+
+  // Cargar áreas cuando se abre el modal
+  useEffect(() => {
+    if (isVerDetallesModalOpen) {
+      fetchAreas();
+      // Inicializar roles disponibles
+      setRolesDisponibles(["ADMINISTRADOR", "USUARIO", "SUPERVISOR", "GERENTE", "ASISTENTE"]);
+    }
+  }, [isVerDetallesModalOpen, fetchAreas]);
 
   // Cargar colaboradores al montar el componente
   useEffect(() => {
@@ -1028,14 +1405,58 @@ function RecursosHumanosContent() {
           setIsVerDetallesModalOpen(false);
           setSelectedColaboradorCompleto(null);
           setDatosEditables([]);
+          setDatosSecciones({
+            "informacion-personal": [],
+            "informacion-familiar": [],
+            "ubicacion": [],
+            "informacion-laboral": [],
+            "seguros": [],
+          });
+          setActiveTab("informacion-personal");
+          setEditingSections({
+            "informacion-personal": false,
+            "informacion-familiar": false,
+            "ubicacion": false,
+            "informacion-laboral": false,
+            "seguros": false,
+            "datos": false,
+            "correo": false,
+          });
+          setErrorDatosSeccion(null);
         }}
         title={`Detalles del Colaborador - ${selectedColaboradorCompleto ? (selectedColaboradorCompleto.nombre || selectedColaboradorCompleto.NOMBRE || selectedColaboradorCompleto.name || selectedColaboradorCompleto.NAME || "") : ""}`}
-        size="lg"
+        size="full"
       >
         {selectedColaboradorCompleto && (
-          <div className="space-y-4">
-            {/* Función helper para obtener valores */}
+          <div className="space-y-3">
+            {/* Tabs Navigation */}
+            <div className="flex space-x-1 border-b border-gray-200 overflow-x-auto">
+              {[
+                { id: "informacion-personal", label: "Información Personal" },
+                { id: "informacion-familiar", label: "Información Familiar" },
+                { id: "ubicacion", label: "Ubicación" },
+                { id: "informacion-laboral", label: "Información Laboral" },
+                { id: "seguros", label: "Seguros" },
+                { id: "datos", label: "Datos" },
+                { id: "correo", label: "Correo" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeTab === tab.id
+                      ? "text-[#1E63F7] border-b-2 border-[#1E63F7] bg-blue-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {/* Contenido del Tab Activo */}
+            <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             {(() => {
+              // Función helper para obtener valores
               const getValue = (obj, keys) => {
                 for (const key of keys) {
                   if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
@@ -1188,87 +1609,936 @@ function RecursosHumanosContent() {
                 </div>
               );
 
-              return (
-                <div className="space-y-5">
-                  {/* Información Personal */}
-                  <Seccion title="Información Personal">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SeccionField label="Nombre" value={infoPersonal.nombre} />
-                      <SeccionField label="2do Nombre" value={infoPersonal.segundoNombre} />
-                      <SeccionField label="Apellido" value={infoPersonal.apellido} />
-                      <SeccionField label="2do Apellido" value={infoPersonal.segundoApellido} />
-                      <SeccionField label="Fecha Nac" value={infoPersonal.fechaNacimiento} />
-                      <SeccionField label="Tipo Doc" value={infoPersonal.tipoDocumento} />
-                      <SeccionField label="N° Doc" value={infoPersonal.numeroDocumento} />
-                      <SeccionField label="Estado civil" value={infoPersonal.estadoCivil} />
-                      <SeccionField label="Estado" value={infoPersonal.estado} />
-                    </div>
-                  </Seccion>
+              // Componente para campo editable o de solo lectura
+              const EditableField = ({ label, value, fieldKey, sectionKey, isEditing, onChange, type = "text", options = [] }) => {
+                let displayValue = value === "No disponible" || value === "-" ? "" : value;
+                
+                // Para campos numéricos, asegurar que el valor sea numérico
+                if (type === "number" && displayValue && displayValue !== "") {
+                  // Si el valor es "No disponible", dejarlo vacío
+                  if (displayValue === "No disponible" || displayValue === "-") {
+                    displayValue = "";
+                  } else {
+                    // Intentar convertir a número
+                    const numValue = Number(displayValue);
+                    if (!isNaN(numValue)) {
+                      displayValue = numValue.toString();
+                    }
+                  }
+                }
+                
+                // Para campos de fecha, convertir formato DD/MM/YYYY a YYYY-MM-DD para el input type="date"
+                const getDateValue = () => {
+                  if (type === "date" && displayValue) {
+                    // Si ya está en formato YYYY-MM-DD, retornarlo
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
+                      return displayValue;
+                    }
+                    // Si está en formato DD/MM/YYYY, convertir a YYYY-MM-DD
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
+                      const [dia, mes, año] = displayValue.split("/");
+                      return `${año}-${mes}-${dia}`;
+                    }
+                    // Si es una fecha válida, intentar convertir
+                    try {
+                      const date = new Date(displayValue);
+                      if (!isNaN(date.getTime())) {
+                        const año = date.getFullYear();
+                        const mes = String(date.getMonth() + 1).padStart(2, "0");
+                        const dia = String(date.getDate()).padStart(2, "0");
+                        return `${año}-${mes}-${dia}`;
+                      }
+                    } catch (e) {
+                      // Ignorar errores de conversión
+                    }
+                  }
+                  return displayValue;
+                };
+                
+                return (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      {label}
+                    </label>
+                    {isEditing ? (
+                      options.length > 0 ? (
+                        <select
+                          value={displayValue}
+                          onChange={(e) => {
+                            // Si es un objeto (área), guardar el nombre pero mantener el ID disponible
+                            const selectedOption = options.find(opt => {
+                              if (typeof opt === "object" && opt !== null) {
+                                return (opt.nombre || opt.NOMBRE) === e.target.value || (opt.id || opt.ID) === e.target.value;
+                              }
+                              return opt === e.target.value;
+                            });
+                            // Guardar el nombre del área/rol para mostrar, pero la función getAreaId lo convertirá a ID
+                            const valueToSave = selectedOption && typeof selectedOption === "object" 
+                              ? (selectedOption.nombre || selectedOption.NOMBRE) 
+                              : e.target.value;
+                            onChange(fieldKey, valueToSave);
+                          }}
+                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                        >
+                          <option value="">Seleccionar {label}</option>
+                          {options.map((option, idx) => {
+                            const optionValue = typeof option === "object" && option !== null 
+                              ? (option.nombre || option.NOMBRE || option) 
+                              : option;
+                            const optionKey = typeof option === "object" && option !== null
+                              ? (option.id || option.ID || idx)
+                              : option;
+                            return (
+                              <option key={optionKey} value={optionValue}>
+                                {optionValue}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      ) : (
+                        <input
+                          type={type}
+                          value={type === "date" ? getDateValue() : displayValue}
+                          onChange={(e) => {
+                            let valueToSave = e.target.value;
+                            // Para campos numéricos, validar que sea un número
+                            if (type === "number") {
+                              if (valueToSave === "" || !isNaN(Number(valueToSave))) {
+                                onChange(fieldKey, valueToSave);
+                              }
+                            } else {
+                              onChange(fieldKey, valueToSave);
+                            }
+                          }}
+                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          placeholder={label}
+                          min={type === "number" ? "0" : undefined}
+                        />
+                      )
+                    ) : (
+                      <p className={`text-sm px-3 py-2 rounded-lg border ${
+                        displayValue && displayValue !== "" 
+                          ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
+                          : "bg-gray-50 border-gray-200 text-gray-500"
+                      }`}>
+                        {displayValue || "No disponible"}
+                      </p>
+                    )}
+                  </div>
+                );
+              };
 
-                  {/* Información Familiar */}
-                  <Seccion title="Información Familiar">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SeccionField label="¿Tiene hijos?" value={infoFamiliar.tieneHijos} />
-                      <SeccionField label="Cant hijos" value={infoFamiliar.cantHijos} />
-                    </div>
-                  </Seccion>
+              // Función para guardar cambios de una sección
+              const handleSaveSection = async () => {
+                if (!selectedColaboradorCompleto) return;
+                
+                const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
+                if (!colaboradorId) {
+                  setNotification({
+                    show: true,
+                    message: "Error: No se pudo obtener el ID del colaborador",
+                    type: "error"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                  return;
+                }
 
-                  {/* Ubicación */}
-                  <Seccion title="Ubicación">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SeccionField label="Dirección" value={ubicacion.direccion} />
-                      <SeccionField label="Google Maps" value={ubicacion.googleMaps} />
-                    </div>
-                  </Seccion>
+                try {
+                  let response;
+                  let updatedColaborador = { ...selectedColaboradorCompleto };
 
-                  {/* Información Laboral */}
-                  <Seccion title="Información Laboral">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SeccionField label="Ocupación" value={infoLaboral.ocupacion} />
-                      <SeccionField label="Cargo" value={infoLaboral.cargo} />
-                      <SeccionField label="Área" value={infoLaboral.area} />
-                      <SeccionField label="Rol" value={infoLaboral.rol} />
-                    </div>
-                  </Seccion>
+                  switch (activeTab) {
+                    case "informacion-personal":
+                      response = await actualizarInformacionPersonal(colaboradorId, editDataPersonal);
+                      // Actualizar selectedColaboradorCompleto con los datos editados
+                      if (editDataPersonal.nombre !== undefined) updatedColaborador.NOMBRE = editDataPersonal.nombre;
+                      if (editDataPersonal.segundoNombre !== undefined) updatedColaborador.SEGUNDO_NOMBRE = editDataPersonal.segundoNombre;
+                      if (editDataPersonal.apellido !== undefined) updatedColaborador.APELLIDO = editDataPersonal.apellido;
+                      if (editDataPersonal.segundoApellido !== undefined) updatedColaborador.SEGUNDO_APELLIDO = editDataPersonal.segundoApellido;
+                      if (editDataPersonal.fechaNacimiento !== undefined) updatedColaborador.FECHA_NACIMIENTO = editDataPersonal.fechaNacimiento;
+                      if (editDataPersonal.tipoDocumento !== undefined) updatedColaborador.TIPO_DOCUMENTO = editDataPersonal.tipoDocumento;
+                      if (editDataPersonal.numeroDocumento !== undefined) updatedColaborador.NUMERO_DOCUMENTO = editDataPersonal.numeroDocumento;
+                      if (editDataPersonal.estadoCivil !== undefined) updatedColaborador.ESTADO_CIVIL = editDataPersonal.estadoCivil;
+                      if (editDataPersonal.estado !== undefined) updatedColaborador.ESTADO = editDataPersonal.estado;
+                      break;
+                    case "informacion-familiar":
+                      response = await actualizarInformacionFamiliar(colaboradorId, editDataFamiliar);
+                      if (editDataFamiliar.tieneHijos !== undefined) updatedColaborador.HIJOS_BOOLEAN = editDataFamiliar.tieneHijos;
+                      if (editDataFamiliar.cantHijos !== undefined) updatedColaborador.CANT_HIJOS = editDataFamiliar.cantHijos;
+                      break;
+                    case "ubicacion":
+                      response = await actualizarUbicacion(colaboradorId, editDataUbicacion);
+                      if (editDataUbicacion.direccion !== undefined) updatedColaborador.DIRECCION = editDataUbicacion.direccion;
+                      if (editDataUbicacion.googleMaps !== undefined) updatedColaborador.GOOGLE_MAPS = editDataUbicacion.googleMaps;
+                      break;
+                    case "informacion-laboral":
+                      response = await actualizarInformacionLaboral(colaboradorId, editDataLaboral);
+                      if (editDataLaboral.ocupacion !== undefined) updatedColaborador.OCUPACION = editDataLaboral.ocupacion;
+                      if (editDataLaboral.cargo !== undefined) updatedColaborador.CARGO = editDataLaboral.cargo;
+                      if (editDataLaboral.area !== undefined) updatedColaborador.AREA = editDataLaboral.area;
+                      if (editDataLaboral.rol !== undefined) updatedColaborador.ROL = editDataLaboral.rol;
+                      break;
+                    case "seguros":
+                      response = await actualizarSeguros(colaboradorId, editDataSeguros);
+                      if (editDataSeguros.seguroVidaLey !== undefined) updatedColaborador.SEGURO_VIDA_LEY = editDataSeguros.seguroVidaLey;
+                      if (editDataSeguros.fechaVencimiento !== undefined) updatedColaborador.SEGURO_FECHA_VENCIMIENTO = editDataSeguros.fechaVencimiento;
+                      if (editDataSeguros.fechaInicio !== undefined) updatedColaborador.SEGURO_FECHA_INICIO = editDataSeguros.fechaInicio;
+                      break;
+                    default:
+                      return;
+                  }
 
-                  {/* Seguros */}
-                  <Seccion title="Seguros">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SeccionField label="Seguro Vida Ley" value={seguros.seguroVidaLey} />
-                      <SeccionField label="Fecha vencimiento" value={seguros.fechaVencimiento} />
-                      <SeccionField label="Fecha inicio" value={seguros.fechaInicio} />
-                    </div>
-                  </Seccion>
+                  // Verificar si la actualización fue exitosa
+                  if (response && (response.filas_afectadas === 0 || response.filas_afectadas === undefined)) {
+                    console.warn("La actualización no afectó ninguna fila");
+                  }
 
-                  {/* Campo DATOS especial - Array de teléfonos, correos, etc. */}
-                  {(() => {
-                    const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
-                    
-                    // Usar datosEditables (ya inicializados en useEffect)
+                  // Actualizar el estado local
+                  setSelectedColaboradorCompleto(updatedColaborador);
+                  
+                  // Cerrar modo de edición
+                  setEditingSections(prev => ({ ...prev, [activeTab]: false }));
+                  
+                  // Mostrar notificación de éxito
+                  setNotification({
+                    show: true,
+                    message: "Cambios guardados exitosamente",
+                    type: "success"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+                  // Recargar los datos del colaborador para asegurar sincronización
+                  await fetchColaboradores();
+                } catch (error) {
+                  console.error("Error al guardar cambios:", error);
+                  setNotification({
+                    show: true,
+                    message: `Error al guardar: ${error.message || "Error desconocido"}`,
+                    type: "error"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                }
+              };
+
+              // Renderizar contenido según el tab activo
+              const renderTabContent = () => {
+                const isEditing = editingSections[activeTab];
+                
+                // Función para manejar cambios en campos editables
+                const handleFieldChange = (fieldKey, value) => {
+                  switch (activeTab) {
+                    case "informacion-personal":
+                      setEditDataPersonal(prev => ({ ...prev, [fieldKey]: value }));
+                      break;
+                    case "informacion-familiar":
+                      setEditDataFamiliar(prev => ({ ...prev, [fieldKey]: value }));
+                      break;
+                    case "ubicacion":
+                      setEditDataUbicacion(prev => ({ ...prev, [fieldKey]: value }));
+                      break;
+                    case "informacion-laboral":
+                      setEditDataLaboral(prev => ({ ...prev, [fieldKey]: value }));
+                      break;
+                    case "seguros":
+                      setEditDataSeguros(prev => ({ ...prev, [fieldKey]: value }));
+                      break;
+                    default:
+                      break;
+                  }
+                };
+
+                // Función para obtener el valor actual (editado o original)
+                const getCurrentValue = (fieldKey, originalValue) => {
+                  let editedValue = null;
+                  switch (activeTab) {
+                    case "informacion-personal":
+                      editedValue = editDataPersonal[fieldKey];
+                      break;
+                    case "informacion-familiar":
+                      editedValue = editDataFamiliar[fieldKey];
+                      break;
+                    case "ubicacion":
+                      editedValue = editDataUbicacion[fieldKey];
+                      break;
+                    case "informacion-laboral":
+                      editedValue = editDataLaboral[fieldKey];
+                      break;
+                    case "seguros":
+                      editedValue = editDataSeguros[fieldKey];
+                      break;
+                    default:
+                      break;
+                  }
+                  return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
+                };
+
+                switch (activeTab) {
+                  case "informacion-personal":
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Personal</h3>
+                          <div className="flex items-center space-x-2">
+                            {!isEditing ? (
+                              <button
+                                onClick={() => {
+                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                                  // Inicializar datos editables con valores actuales
+                                  setEditDataPersonal({
+                                    nombre: infoPersonal.nombre !== "No disponible" ? infoPersonal.nombre : "",
+                                    segundoNombre: infoPersonal.segundoNombre !== "No disponible" ? infoPersonal.segundoNombre : "",
+                                    apellido: infoPersonal.apellido !== "No disponible" ? infoPersonal.apellido : "",
+                                    segundoApellido: infoPersonal.segundoApellido !== "No disponible" ? infoPersonal.segundoApellido : "",
+                                    fechaNacimiento: infoPersonal.fechaNacimiento !== "No disponible" && infoPersonal.fechaNacimiento !== "-" ? infoPersonal.fechaNacimiento : "",
+                                    tipoDocumento: infoPersonal.tipoDocumento !== "No disponible" ? infoPersonal.tipoDocumento : "",
+                                    numeroDocumento: infoPersonal.numeroDocumento !== "No disponible" ? infoPersonal.numeroDocumento : "",
+                                    estadoCivil: infoPersonal.estadoCivil !== "No disponible" ? infoPersonal.estadoCivil : "",
+                                    estado: infoPersonal.estado !== "No disponible" ? infoPersonal.estado : "",
+                                  });
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleSaveSection}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <EditableField 
+                            label="Nombre" 
+                            value={getCurrentValue("nombre", infoPersonal.nombre)} 
+                            fieldKey="nombre"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="2do Nombre" 
+                            value={getCurrentValue("segundoNombre", infoPersonal.segundoNombre)} 
+                            fieldKey="segundoNombre"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Apellido" 
+                            value={getCurrentValue("apellido", infoPersonal.apellido)} 
+                            fieldKey="apellido"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="2do Apellido" 
+                            value={getCurrentValue("segundoApellido", infoPersonal.segundoApellido)} 
+                            fieldKey="segundoApellido"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Fecha Nac" 
+                            value={getCurrentValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
+                            fieldKey="fechaNacimiento"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            type="date"
+                          />
+                          <EditableField 
+                            label="Tipo Doc" 
+                            value={getCurrentValue("tipoDocumento", infoPersonal.tipoDocumento)} 
+                            fieldKey="tipoDocumento"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="N° Doc" 
+                            value={getCurrentValue("numeroDocumento", infoPersonal.numeroDocumento)} 
+                            fieldKey="numeroDocumento"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Estado civil" 
+                            value={getCurrentValue("estadoCivil", infoPersonal.estadoCivil)} 
+                            fieldKey="estadoCivil"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Estado" 
+                            value={getCurrentValue("estado", infoPersonal.estado)} 
+                            fieldKey="estado"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                        </div>
+                      </div>
+                    );
+
+                  case "informacion-familiar":
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Familiar</h3>
+                          <div className="flex items-center space-x-2">
+                            {!isEditing ? (
+                              <button
+                                onClick={() => {
+                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                                  setEditDataFamiliar({
+                                    tieneHijos: infoFamiliar.tieneHijos !== "No disponible" ? infoFamiliar.tieneHijos : "",
+                                    cantHijos: infoFamiliar.cantHijos !== "No disponible" ? infoFamiliar.cantHijos : "",
+                                  });
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleSaveSection}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <EditableField 
+                            label="¿Tiene hijos?" 
+                            value={getCurrentValue("tieneHijos", infoFamiliar.tieneHijos)} 
+                            fieldKey="tieneHijos"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Cant hijos" 
+                            value={getCurrentValue("cantHijos", infoFamiliar.cantHijos)} 
+                            fieldKey="cantHijos"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            type="number"
+                          />
+                        </div>
+                      </div>
+                    );
+
+                  case "ubicacion":
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 uppercase">Ubicación</h3>
+                          <div className="flex items-center space-x-2">
+                            {!isEditing ? (
+                              <button
+                                onClick={() => {
+                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                                  setEditDataUbicacion({
+                                    direccion: ubicacion.direccion !== "No disponible" ? ubicacion.direccion : "",
+                                    googleMaps: ubicacion.googleMaps !== "No disponible" ? ubicacion.googleMaps : "",
+                                  });
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleSaveSection}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <EditableField 
+                            label="Dirección" 
+                            value={getCurrentValue("direccion", ubicacion.direccion)} 
+                            fieldKey="direccion"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Google Maps" 
+                            value={getCurrentValue("googleMaps", ubicacion.googleMaps)} 
+                            fieldKey="googleMaps"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                        </div>
+                      </div>
+                    );
+
+                  case "informacion-laboral":
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Laboral</h3>
+                          <div className="flex items-center space-x-2">
+                            {!isEditing ? (
+                              <button
+                                onClick={() => {
+                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                                  setEditDataLaboral({
+                                    ocupacion: infoLaboral.ocupacion !== "No disponible" ? infoLaboral.ocupacion : "",
+                                    cargo: infoLaboral.cargo !== "No disponible" ? infoLaboral.cargo : "",
+                                    area: infoLaboral.area !== "No disponible" ? infoLaboral.area : "",
+                                    rol: infoLaboral.rol !== "No disponible" ? infoLaboral.rol : "",
+                                  });
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleSaveSection}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <EditableField 
+                            label="Ocupación" 
+                            value={getCurrentValue("ocupacion", infoLaboral.ocupacion)} 
+                            fieldKey="ocupacion"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Cargo" 
+                            value={getCurrentValue("cargo", infoLaboral.cargo)} 
+                            fieldKey="cargo"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Área" 
+                            value={getCurrentValue("area", infoLaboral.area)} 
+                            fieldKey="area"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            options={areasDisponibles}
+                          />
+                          <EditableField 
+                            label="Rol" 
+                            value={getCurrentValue("rol", infoLaboral.rol)} 
+                            fieldKey="rol"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            options={rolesDisponibles}
+                          />
+                        </div>
+                      </div>
+                    );
+
+                  case "seguros":
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 uppercase">Seguros</h3>
+                          <div className="flex items-center space-x-2">
+                            {!isEditing ? (
+                              <button
+                                onClick={() => {
+                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                                  setEditDataSeguros({
+                                    seguroVidaLey: seguros.seguroVidaLey !== "No disponible" ? seguros.seguroVidaLey : "",
+                                    fechaVencimiento: seguros.fechaVencimiento !== "No disponible" && seguros.fechaVencimiento !== "-" ? seguros.fechaVencimiento : "",
+                                    fechaInicio: seguros.fechaInicio !== "No disponible" && seguros.fechaInicio !== "-" ? seguros.fechaInicio : "",
+                                  });
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleSaveSection}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Guardar</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <EditableField 
+                            label="Seguro Vida Ley" 
+                            value={getCurrentValue("seguroVidaLey", seguros.seguroVidaLey)} 
+                            fieldKey="seguroVidaLey"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                          />
+                          <EditableField 
+                            label="Fecha vencimiento" 
+                            value={getCurrentValue("fechaVencimiento", seguros.fechaVencimiento)} 
+                            fieldKey="fechaVencimiento"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            type="date"
+                          />
+                          <EditableField 
+                            label="Fecha inicio" 
+                            value={getCurrentValue("fechaInicio", seguros.fechaInicio)} 
+                            fieldKey="fechaInicio"
+                            sectionKey={activeTab}
+                            isEditing={isEditing}
+                            onChange={handleFieldChange}
+                            type="date"
+                          />
+                        </div>
+                      </div>
+                    );
+
+                  case "datos":
+                    // Sección DATOS con todas las subsecciones
+                    const seccionesDatos = [
+                      {
+                        id: "informacion-personal",
+                        nombre: "Información Personal",
+                        campos: [
+                          { key: "nombre", label: "Nombre", type: "text", required: true },
+                          { key: "segundoNombre", label: "2do Nombre", type: "text" },
+                          { key: "apellido", label: "Apellido", type: "text", required: true },
+                          { key: "segundoApellido", label: "2do Apellido", type: "text" },
+                          { key: "fechaNacimiento", label: "Fecha Nacimiento", type: "date" },
+                          { key: "tipoDocumento", label: "Tipo Documento", type: "select", options: tiposDocumento },
+                          { key: "numeroDocumento", label: "N° Documento", type: "text" },
+                          { key: "estadoCivil", label: "Estado Civil", type: "text" },
+                          { key: "estado", label: "Estado", type: "text" },
+                        ]
+                      },
+                      {
+                        id: "informacion-familiar",
+                        nombre: "Información Familiar",
+                        campos: [
+                          { key: "tieneHijos", label: "¿Tiene hijos?", type: "text" },
+                          { key: "cantHijos", label: "Cant hijos", type: "number" },
+                        ]
+                      },
+                      {
+                        id: "ubicacion",
+                        nombre: "Ubicación",
+                        campos: [
+                          { key: "direccion", label: "Dirección", type: "text" },
+                          { key: "googleMaps", label: "Google Maps", type: "text" },
+                        ]
+                      },
+                      {
+                        id: "informacion-laboral",
+                        nombre: "Información Laboral",
+                        campos: [
+                          { key: "ocupacion", label: "Ocupación", type: "text" },
+                          { key: "cargo", label: "Cargo", type: "text" },
+                          { key: "area", label: "Área", type: "select", options: areasDisponibles },
+                          { key: "rol", label: "Rol", type: "select", options: rolesDisponibles },
+                        ]
+                      },
+                      {
+                        id: "seguros",
+                        nombre: "Seguros",
+                        campos: [
+                          { key: "seguroVidaLey", label: "Seguro Vida Ley", type: "text" },
+                          { key: "fechaVencimiento", label: "Fecha Vencimiento", type: "date" },
+                          { key: "fechaInicio", label: "Fecha Inicio", type: "date" },
+                        ]
+                      },
+                    ];
+
+                    return (
+                      <div>
+                        {errorDatosSeccion && (
+                          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                            <p className="text-xs text-red-600">{errorDatosSeccion}</p>
+                          </div>
+                        )}
+                        {seccionesDatos.map((seccion) => {
+                          const datosSeccion = datosSecciones[seccion.id] || [];
+                          
+                          return (
+                            <div key={seccion.id} className="mb-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
+                                  {seccion.nombre}
+                                </h4>
+                                <button
+                                  onClick={() => {
+                                    const nuevoItem = {};
+                                    seccion.campos.forEach(campo => {
+                                      nuevoItem[campo.key] = "";
+                                    });
+                                    nuevoItem.id = `temp-${Date.now()}-${Math.random()}`;
+                                    nuevoItem.isNew = true;
+                                    setDatosSecciones(prev => ({
+                                      ...prev,
+                                      [seccion.id]: [...(prev[seccion.id] || []), nuevoItem]
+                                    }));
+                                    setErrorDatosSeccion(null);
+                                  }}
+                                  disabled={savingDatosSeccion || loadingAreas}
+                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  <span>Agregar</span>
+                                </button>
+                              </div>
+                              <div className="space-y-3">
+                                {datosSeccion.map((item, itemIndex) => {
+                                    return (
+                                    <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded p-3 shadow-sm relative">
+                                      <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+                                        {item.id && !item.isNew ? (
+                                          // Botón Actualizar para items existentes
+                                          <button
+                                            onClick={async () => {
+                                              // Validar campos requeridos
+                                              const camposRequeridos = seccion.campos.filter(c => c.required);
+                                              const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
+                                              if (faltantes.length > 0) {
+                                                setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
+                                                return;
+                                              }
+                                              try {
+                                                setSavingDatosSeccion(true);
+                                                setErrorDatosSeccion(null);
+                                                // TODO: Llamar a API para actualizar
+                                                // await handleActualizarDatoSeccion(seccion.id, item.id, item);
+                                                setNotification({
+                                                  show: true,
+                                                  message: "Datos actualizados exitosamente",
+                                                  type: "success"
+                                                });
+                                                setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                                              } catch (error) {
+                                                setErrorDatosSeccion(error.message || "Error al actualizar");
+                                              } finally {
+                                                setSavingDatosSeccion(false);
+                                              }
+                                            }}
+                                            disabled={savingDatosSeccion || loadingAreas}
+                                            className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                            title="Actualizar"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>Actualizar</span>
+                                          </button>
+                                        ) : (
+                                          // Botón Guardar para items nuevos (no temporales)
+                                          <button
+                                            onClick={async () => {
+                                              // Validar campos requeridos
+                                              const camposRequeridos = seccion.campos.filter(c => c.required);
+                                              const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
+                                              if (faltantes.length > 0) {
+                                                setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
+                                                return;
+                                              }
+                                              try {
+                                                setSavingDatosSeccion(true);
+                                                setErrorDatosSeccion(null);
+                                                // TODO: Llamar a API para guardar
+                                                // const nuevoId = await handleAgregarDatoSeccion(seccion.id, item);
+                                                // Actualizar el item con el ID real
+                                                const nuevosDatos = [...datosSeccion];
+                                                nuevosDatos[itemIndex] = { ...item, id: `real-${Date.now()}`, isNew: false };
+                                                setDatosSecciones(prev => ({
+                                                  ...prev,
+                                                  [seccion.id]: nuevosDatos
+                                                }));
+                                                setNotification({
+                                                  show: true,
+                                                  message: "Datos guardados exitosamente",
+                                                  type: "success"
+                                                });
+                                                setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                                              } catch (error) {
+                                                setErrorDatosSeccion(error.message || "Error al guardar");
+                                              } finally {
+                                                setSavingDatosSeccion(false);
+                                              }
+                                            }}
+                                            disabled={savingDatosSeccion || loadingAreas}
+                                            className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                            title="Guardar"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>Guardar</span>
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => {
+                                            if (item.id && !item.isNew) {
+                                              // TODO: Llamar a API para eliminar
+                                              // handleEliminarDatoSeccion(seccion.id, item.id);
+                                            }
+                                            const nuevosDatos = datosSeccion.filter((_, idx) => idx !== itemIndex);
+                                            setDatosSecciones(prev => ({
+                                              ...prev,
+                                              [seccion.id]: nuevosDatos
+                                            }));
+                                            setErrorDatosSeccion(null);
+                                          }}
+                                          disabled={savingDatosSeccion || loadingAreas}
+                                          className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                          title="Eliminar"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                          <span>Eliminar</span>
+                                        </button>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3 pr-32">
+                                        {seccion.campos.map((campo) => (
+                                          <div key={campo.key} className="flex flex-col">
+                                            <label className="text-xs font-bold text-gray-700 mb-1">
+                                              {campo.label}
+                                              {campo.required && <span className="text-red-500 ml-1">*</span>}
+                                            </label>
+                                            {campo.type === "select" ? (
+                                              <select
+                                                value={item[campo.key] || ""}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosSeccion];
+                                                  nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
+                                                  setDatosSecciones(prev => ({
+                                                    ...prev,
+                                                    [seccion.id]: nuevosDatos
+                                                  }));
+                                                  setErrorDatosSeccion(null);
+                                                }}
+                                                className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                              >
+                                                <option value="">Seleccionar...</option>
+                                                {campo.options?.map((opt) => (
+                                                  <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                              </select>
+                                            ) : (
+                                              <input
+                                                type={campo.type}
+                                                value={item[campo.key] || ""}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosSeccion];
+                                                  nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
+                                                  setDatosSecciones(prev => ({
+                                                    ...prev,
+                                                    [seccion.id]: nuevosDatos
+                                                  }));
+                                                  setErrorDatosSeccion(null);
+                                                }}
+                                                placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+                                                className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                              />
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+
+                  case "correo":
+                    // Renderizar la sección CORREO (solo medios de comunicación tipo CORREO)
                     const datosParaMostrar = datosEditables || [];
                     
-                    // Agrupar por MEDIO
+                    // Filtrar solo CORREO y agrupar
                     const agrupados = {};
                     datosParaMostrar.forEach((item, idx) => {
                       if (item && typeof item === "object") {
                         const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
-                        const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                        const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                        const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
-                        
-                        if (!agrupados[medio]) {
-                          agrupados[medio] = [];
+                        // Solo mostrar CORREO
+                        if (medio === "CORREO") {
+                          const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
+                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                          
+                          if (!agrupados[medio]) {
+                            agrupados[medio] = [];
+                          }
+                          agrupados[medio].push({
+                            tipo,
+                            nombre,
+                            contenido,
+                            medio,
+                            index: idx,
+                            originalItem: item,
+                            ID: getValue(item, ["ID", "id", "Id"]),
+                            id: getValue(item, ["ID", "id", "Id"])
+                          });
                         }
-                        agrupados[medio].push({
-                          tipo,
-                          nombre,
-                          contenido,
-                          medio,
-                          index: idx,
-                          originalItem: item,
-                          ID: getValue(item, ["ID", "id", "Id"]),
-                          id: getValue(item, ["ID", "id", "Id"])
-                        });
                       }
                     });
 
@@ -1276,37 +2546,32 @@ function RecursosHumanosContent() {
                     if (Object.keys(agrupados).length === 0) {
                       agrupados["CORREO"] = [];
                     }
-                    
-                    if (Object.keys(agrupados).length > 0) {
 
-                      return (
-                        <div className="border-t border-gray-200 pt-4 mt-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
-                            {loadingMedios && (
-                              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Cargando...</span>
-                              </div>
-                            )}
+                    return (
+                      <div>
+                        {loadingMedios && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Cargando...</span>
                           </div>
-                          {errorSavingDatos && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <p className="text-sm text-red-600">{errorSavingDatos}</p>
-                            </div>
-                          )}
-                          {Object.keys(agrupados).map((medio, medioIndex) => (
-                            <div key={medioIndex} className="mb-5">
+                        )}
+                        {errorSavingDatos && (
+                          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                            <p className="text-xs text-red-600">{errorSavingDatos}</p>
+                          </div>
+                        )}
+                        {Object.keys(agrupados).length > 0 ? (
+                          Object.keys(agrupados).map((medio, medioIndex) => (
+                            <div key={medioIndex} className="mb-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
                                   {medio}
                                 </h4>
                                 <button
                                   onClick={() => {
-                                    // Solo agregar un formulario vacío a la UI (no guardar todavía)
                                     const nuevoItem = {
                                       TIPO: "",
                                       tipo: "",
@@ -1322,7 +2587,7 @@ function RecursosHumanosContent() {
                                     setErrorSavingDatos(null);
                                   }}
                                   disabled={savingDatos || loadingMedios}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
                                 >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1332,16 +2597,14 @@ function RecursosHumanosContent() {
                               </div>
                               <div className="space-y-3">
                                 {agrupados[medio].map((item, itemIndex) => (
-                                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
+                                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded p-3 shadow-sm relative">
                                     <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
-                                      {/* Botón Guardar/Actualizar */}
                                       {(() => {
                                         const medioId = item.ID || item.id || item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
                                         const itemActual = datosParaMostrar[item.index] || {};
                                         const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.medio || itemActual.MEDIO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
                                         
                                         if (medioId) {
-                                          // Si tiene ID, mostrar botón "Actualizar"
                                           return (
                                             <button
                                               onClick={async () => {
@@ -1357,7 +2620,7 @@ function RecursosHumanosContent() {
                                                 }
                                               }}
                                               disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
-                                              className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
                                               title="Actualizar"
                                             >
                                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1367,7 +2630,6 @@ function RecursosHumanosContent() {
                                             </button>
                                           );
                                         } else {
-                                          // Si no tiene ID, mostrar botón "Guardar"
                                           return (
                                             <button
                                               onClick={async () => {
@@ -1383,7 +2645,7 @@ function RecursosHumanosContent() {
                                                 }
                                               }}
                                               disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
-                                              className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
                                               title="Guardar"
                                             >
                                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1395,12 +2657,10 @@ function RecursosHumanosContent() {
                                         }
                                       })()}
                                       
-                                      {/* Botón Eliminar */}
                                       <button
                                         onClick={async () => {
                                           const medioId = item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
                                           if (medioId) {
-                                            // Si tiene ID, eliminar de la BD
                                             try {
                                               await handleEliminarMedio(medioId);
                                               setErrorSavingDatos(null);
@@ -1408,13 +2668,12 @@ function RecursosHumanosContent() {
                                               // Error ya se muestra en errorSavingDatos
                                             }
                                           } else {
-                                            // Si no tiene ID, solo eliminar de la UI (medio nuevo no guardado)
                                             const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
                                             setDatosEditables(nuevosDatos);
                                           }
                                         }}
                                         disabled={savingDatos || loadingMedios}
-                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
                                         title="Eliminar"
                                       >
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1423,10 +2682,10 @@ function RecursosHumanosContent() {
                                         <span>Eliminar</span>
                                       </button>
                                     </div>
-                                    <div className="space-y-3 pr-32">
+                                    <div className="space-y-2 pr-32">
                                       <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
-                                        <div className="flex-1 flex items-center space-x-4">
+                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Tipo:</label>
+                                        <div className="flex-1 flex items-center space-x-3">
                                           <label className="flex items-center space-x-1.5 cursor-pointer">
                                             <input
                                               type="checkbox"
@@ -1434,7 +2693,6 @@ function RecursosHumanosContent() {
                                               onChange={(e) => {
                                                 const nuevosDatos = [...datosParaMostrar];
                                                 const itemActual = nuevosDatos[item.index] || {};
-                                                // Si se selecciona CORPORATIVO, deseleccionar PERSONAL
                                                 const nuevoTipo = e.target.checked ? "CORPORATIVO" : "";
                                                 nuevosDatos[item.index] = {
                                                   ...itemActual,
@@ -1444,7 +2702,7 @@ function RecursosHumanosContent() {
                                                   medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null); // Limpiar error al cambiar
+                                                setErrorSavingDatos(null);
                                               }}
                                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                                             />
@@ -1457,7 +2715,6 @@ function RecursosHumanosContent() {
                                               onChange={(e) => {
                                                 const nuevosDatos = [...datosParaMostrar];
                                                 const itemActual = nuevosDatos[item.index] || {};
-                                                // Si se selecciona PERSONAL, deseleccionar CORPORATIVO
                                                 const nuevoTipo = e.target.checked ? "PERSONAL" : "";
                                                 nuevosDatos[item.index] = {
                                                   ...itemActual,
@@ -1467,7 +2724,7 @@ function RecursosHumanosContent() {
                                                   medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                                 };
                                                 setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null); // Limpiar error al cambiar
+                                                setErrorSavingDatos(null);
                                               }}
                                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                                             />
@@ -1476,9 +2733,8 @@ function RecursosHumanosContent() {
                                         </div>
                                       </div>
                                       
-                                      {/* Medio */}
                                       <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
+                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Medio:</label>
                                         <div className="flex-1 flex items-center space-x-3">
                                           <label className="flex items-center space-x-1.5 cursor-pointer">
                                             <input
@@ -1544,7 +2800,7 @@ function RecursosHumanosContent() {
                                       </div>
                                       
                                       <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
+                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Nombre:</label>
                                         <input
                                           type="text"
                                           value={item.nombre || ""}
@@ -1559,14 +2815,14 @@ function RecursosHumanosContent() {
                                               medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
                                             };
                                             setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null); // Limpiar error al cambiar
+                                            setErrorSavingDatos(null);
                                           }}
                                           placeholder="Ej: CORREO PERSONAL 1"
-                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         />
                                       </div>
                                       <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Contenido:</label>
+                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Contenido:</label>
                                         <input
                                           type="text"
                                           value={item.contenido || ""}
@@ -1581,7 +2837,7 @@ function RecursosHumanosContent() {
                                               medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
                                             };
                                             setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null); // Limpiar error al cambiar
+                                            setErrorSavingDatos(null);
                                           }}
                                           placeholder={
                                             (item.medio === "CORREO" || item.MEDIO === "CORREO") 
@@ -1590,7 +2846,7 @@ function RecursosHumanosContent() {
                                               ? "Ej: 987654321"
                                               : "Ej: 956224010"
                                           }
-                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
+                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
                                         />
                                       </div>
                                     </div>
@@ -1598,333 +2854,21 @@ function RecursosHumanosContent() {
                                 ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    // Si no hay datos, mostrar la sección vacía con opción de agregar
-                    return (
-                        <div className="border-t border-gray-200 pt-4 mt-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-bold text-gray-800">DATOS</h3>
-                            {loadingMedios && (
-                              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Cargando...</span>
-                              </div>
-                            )}
-                          </div>
-                          {errorSavingDatos && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <p className="text-sm text-red-600">{errorSavingDatos}</p>
-                            </div>
-                          )}
-                        <div className="mb-5">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
-                              CORREO
-                            </h4>
-                            <button
-                              onClick={() => {
-                                // Solo agregar un formulario vacío a la UI (no guardar todavía)
-                                const nuevoItem = {
-                                  TIPO: "",
-                                  tipo: "",
-                                  MEDIO: "TELEFONO",
-                                  medio: "TELEFONO",
-                                  NOMBRE: "",
-                                  nombre: "",
-                                  CONTENIDO: "",
-                                  contenido: ""
-                                };
-                                setDatosEditables([nuevoItem]);
-                                setErrorSavingDatos(null);
-                              }}
-                              disabled={savingDatos || loadingMedios}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                              </svg>
-                              <span>Agregar</span>
-                            </button>
-                          </div>
-                          
-                          {/* Mostrar formulario si hay datos editables (aunque estén vacíos) */}
-                          {datosEditables.length > 0 ? (
-                            <div className="space-y-3">
-                              {datosEditables.map((item, idx) => {
-                                const medioId = item?.ID || item?.id;
-                                const tieneTodosLosCampos = item?.tipo && item?.medio && item?.nombre && item?.contenido;
-                                
-                                return (
-                                  <div key={idx} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-sm relative">
-                                    <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
-                                      {/* Botón Guardar (solo para nuevos) */}
-                                      {!medioId && (
-                                        <button
-                                          onClick={async () => {
-                                            if (!tieneTodosLosCampos) {
-                                              setErrorSavingDatos("Todos los campos son requeridos");
-                                              return;
-                                            }
-                                            try {
-                                              await handleAgregarMedio(item);
-                                              setErrorSavingDatos(null);
-                                            } catch (error) {
-                                              // Error ya se muestra en errorSavingDatos
-                                            }
-                                          }}
-                                          disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
-                                          className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                          title="Guardar"
-                                        >
-                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                          </svg>
-                                          <span>Guardar</span>
-                                        </button>
-                                      )}
-                                      
-                                      {/* Botón Eliminar */}
-                                      <button
-                                        onClick={() => {
-                                          if (medioId) {
-                                            handleEliminarMedio(medioId).catch(() => {});
-                                          } else {
-                                            const nuevosDatos = datosEditables.filter((_, i) => i !== idx);
-                                            setDatosEditables(nuevosDatos);
-                                          }
-                                        }}
-                                        disabled={savingDatos || loadingMedios}
-                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                        title="Eliminar"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        <span>Eliminar</span>
-                                      </button>
-                                    </div>
-                                    
-                                    <div className="space-y-3 pr-32">
-                                      {/* Tipo */}
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Tipo:</label>
-                                        <div className="flex-1 flex items-center space-x-4">
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={item.tipo === "CORPORATIVO" || item.TIPO === "CORPORATIVO"}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosEditables];
-                                                nuevosDatos[idx] = {
-                                                  ...item,
-                                                  TIPO: e.target.checked ? "CORPORATIVO" : "",
-                                                  tipo: e.target.checked ? "CORPORATIVO" : "",
-                                                  MEDIO: item.MEDIO || item.medio || "CORREO",
-                                                  medio: item.medio || item.MEDIO || "CORREO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">CORPORATIVO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={item.tipo === "PERSONAL" || item.TIPO === "PERSONAL"}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosEditables];
-                                                nuevosDatos[idx] = {
-                                                  ...item,
-                                                  TIPO: e.target.checked ? "PERSONAL" : "",
-                                                  tipo: e.target.checked ? "PERSONAL" : "",
-                                                  MEDIO: item.MEDIO || item.medio || "CORREO",
-                                                  medio: item.medio || item.MEDIO || "CORREO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">PERSONAL</span>
-                                          </label>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Medio */}
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Medio:</label>
-                                        <div className="flex-1 flex items-center space-x-3">
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${idx}`}
-                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosEditables];
-                                                nuevosDatos[idx] = {
-                                                  ...item,
-                                                  MEDIO: "TELEFONO",
-                                                  medio: "TELEFONO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">TELEFONO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${idx}`}
-                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosEditables];
-                                                nuevosDatos[idx] = {
-                                                  ...item,
-                                                  MEDIO: "CORREO",
-                                                  medio: "CORREO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">CORREO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${idx}`}
-                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosEditables];
-                                                nuevosDatos[idx] = {
-                                                  ...item,
-                                                  MEDIO: "TELEFONO_EMERGENCIA",
-                                                  medio: "TELEFONO_EMERGENCIA"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
-                                          </label>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Nombre */}
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Nombre:</label>
-                                        <input
-                                          type="text"
-                                          value={item.nombre || item.NOMBRE || ""}
-                                          onChange={(e) => {
-                                            const nuevosDatos = [...datosEditables];
-                                            nuevosDatos[idx] = {
-                                              ...item,
-                                              NOMBRE: e.target.value,
-                                              nombre: e.target.value
-                                            };
-                                            setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null);
-                                          }}
-                                          placeholder="Ej: CORREO PERSONAL 1"
-                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                      </div>
-                                      
-                                      {/* Contenido */}
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[80px] pt-1.5">Contenido:</label>
-                                        <input
-                                          type="text"
-                                          value={item.contenido || item.CONTENIDO || ""}
-                                          onChange={(e) => {
-                                            const nuevosDatos = [...datosEditables];
-                                            nuevosDatos[idx] = {
-                                              ...item,
-                                              CONTENIDO: e.target.value,
-                                              contenido: e.target.value
-                                            };
-                                            setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null);
-                                          }}
-                                          placeholder={
-                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
-                                              ? "Ej: correo@ejemplo.com" 
-                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
-                                              ? "Ej: 987654321"
-                                              : "Ej: 956224010"
-                                          }
-                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-1.5 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
-                          )}
-                        </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
+                        )}
                       </div>
                     );
-                  })()}
 
-                  {/* Otros objetos anidados (excluyendo DATOS) */}
-                  {campos.filter(campo => {
-                    const campoLower = campo.toLowerCase();
-                    const valor = selectedColaboradorCompleto[campo];
-                    // Excluir DATOS (ya se muestra arriba) tanto si es array como objeto
-                    if (campoLower === "datos") {
-                      return false;
-                    }
-                    return typeof valor === "object" && 
-                           valor !== null &&
-                           !Array.isArray(valor);
-                  }).map((campo, index) => {
-                    const objeto = selectedColaboradorCompleto[campo];
-                    const subCampos = Object.keys(objeto);
-                    
-                    return (
-                      <div key={`nested-${index}`} className="border-t border-gray-200 pt-4 mt-4">
-                        <h3 className="text-sm font-bold text-gray-800 mb-3">
-                          {campo.charAt(0).toUpperCase() + campo.slice(1).replace(/_/g, " ")}
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          {subCampos.map((subCampo, subIndex) => {
-                            const value = objeto[subCampo];
-                            const displayValue = formatValue(value);
-                            
-                            return (
-                              <div key={subIndex}>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                  {subCampo.charAt(0).toUpperCase() + subCampo.slice(1).replace(/_/g, " ")}
-                                </label>
-                                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                                  {displayValue}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
+                  default:
+                    return <div>Tab no encontrado</div>;
+                }
+              };
+
+              return renderTabContent();
             })()}
+            </div>
           </div>
         )}
       </Modal>
