@@ -87,6 +87,22 @@ export default function LogisticaPage() {
             </svg>
           ),
         },
+        {
+          id: "incidencias",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          ),
+          title: "Incidencias",
+          description: "Registrar y gestionar incidencias logísticas",
+          buttonText: "Gestionar Incidencias",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          ),
+        },
       ],
     },
     {
@@ -294,6 +310,8 @@ export default function LogisticaPage() {
                                     router.push("/logistica/importaciones");
                                   } else if (card.id === "listado-solicitudes") {
                                     router.push("/logistica/solicitudes-incidencias");
+                                  } else if (card.id === "incidencias") {
+                                    router.push("/logistica/incidencias");
                                   }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"

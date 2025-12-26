@@ -1368,7 +1368,7 @@ export default function CotizacionesPage() {
             `}</style>
 
             {/* Header con Botón Volver alineado */}
-            <div className="mb-4 flex items-start justify-start max-w-[75rem] mx-auto">
+            <div className="mb-4 flex items-start justify-start max-w-[100rem] mx-auto">
               <button
                 onClick={() => router.push("/marketing")}
                 className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
