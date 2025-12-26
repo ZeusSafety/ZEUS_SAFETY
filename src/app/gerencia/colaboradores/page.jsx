@@ -102,8 +102,8 @@ export default function ColaboradoresPage() {
       url.searchParams.append('id_colaborador', idColab.toString());
 
       // Preparar el body - la API requiere un array de objetos con NOMBRE y ESTADO
-      // Formato esperado: [{ "NOMBRE": "LOGISTICA", "ESTADO": "0" }, ...]
-      // ESTADO: "0" = permitido/activo, "1" = no permitido/inactivo
+      // Formato esperado: [{ "NOMBRE": "LOGISTICA", "ESTADO": "1" }, ...]
+      // ESTADO: "1" = permitido/activo, "0" = no permitido/inactivo (CORREGIDO)
       // IMPORTANTE: El body es directamente el array, NO un objeto con 'datos'
       const modulosFormateados = Array.isArray(modulosPermitidos) 
         ? modulosPermitidos
@@ -112,8 +112,10 @@ export default function ColaboradoresPage() {
               const nombreModulo = mod.nombre || mod.NOMBRE || mod.id;
               const nombreFinal = String(nombreModulo).trim().toUpperCase();
               
-              // Determinar el estado: "0" si está permitido, "1" si no
-              const estado = (mod.permitido === false) ? "1" : "0";
+              // Determinar el estado: "1" si está permitido (true), "0" si no está permitido (false)
+              // IMPORTANTE: Solo "1" si permitido es explícitamente true, cualquier otra cosa es "0"
+              const estado = (mod.permitido === true) ? "1" : "0";
+              console.log(`🔄 Formateando módulo ${nombreFinal}: permitido=${mod.permitido}, estado=${estado}`);
               
               // Retornar objeto con formato que espera la API (exactamente como Postman)
               return {
@@ -204,19 +206,30 @@ export default function ColaboradoresPage() {
 
       // Crear un mapa de módulos permitidos para búsqueda rápida
       const modulosPermitidosMap = new Map();
+      console.log("🔍 modulosPermisos antes de mapear:", JSON.stringify(modulosPermisos, null, 2));
       modulosPermisos.forEach(mod => {
         const nombreModulo = String(mod.id || mod.nombre || mod.NOMBRE).toUpperCase().trim();
-        modulosPermitidosMap.set(nombreModulo, mod.permitido !== false);
+        // Usar el valor booleano explícito: solo true si es explícitamente true
+        const estaPermitido = mod.permitido === true;
+        modulosPermitidosMap.set(nombreModulo, estaPermitido);
+        console.log(`📝 Módulo: ${nombreModulo}, permitido (raw): ${mod.permitido}, tipo: ${typeof mod.permitido}, mapeado como: ${estaPermitido}`);
       });
 
       // Crear array con TODOS los módulos y su estado
-      const modulosConEstado = todosLosModulos.map(nombreModulo => ({
-        nombre: nombreModulo,
-        permitido: modulosPermitidosMap.get(nombreModulo) !== false // Si no está en el mapa, asumir permitido
-      }));
+      const modulosConEstado = todosLosModulos.map(nombreModulo => {
+        // Obtener el estado del mapa, si no está en el mapa, asumir false (no permitido)
+        const estaPermitido = modulosPermitidosMap.has(nombreModulo) 
+          ? modulosPermitidosMap.get(nombreModulo) === true  // Solo true si es explícitamente true
+          : false;  // Si no está en el mapa, es false (no permitido)
+        console.log(`🔎 Módulo ${nombreModulo}: en mapa=${modulosPermitidosMap.has(nombreModulo)}, valor=${modulosPermitidosMap.get(nombreModulo)}, final=${estaPermitido}`);
+        return {
+          nombre: nombreModulo,
+          permitido: estaPermitido
+        };
+      });
 
-      console.log("Módulos con estado a enviar:", modulosConEstado);
-      console.log("ID Colaborador:", selectedColaborador.id);
+      console.log("📤 Módulos con estado a enviar:", JSON.stringify(modulosConEstado, null, 2));
+      console.log("👤 ID Colaborador:", selectedColaborador.id);
 
       // Validar que haya módulos
       if (!Array.isArray(modulosConEstado) || modulosConEstado.length === 0) {
@@ -957,12 +970,36 @@ export default function ColaboradoresPage() {
       const data = await response.json();
       console.log("Permisos recibidos de la API:", data);
 
-      // Mapear módulos
-      const modulos = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
-        id: mod.NOMBRE || mod.nombre || mod.Nombre,
-        nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
-        permitido: true, // Si está en la lista, está permitido
-      })) : [];
+      // Lista completa de todos los módulos posibles
+      const todosLosModulos = [
+        "MARKETING",
+        "IMPORTACION",
+        "SISTEMAS",
+        "FACTURACION",
+        "LOGISTICA",
+        "GERENCIA",
+        "ADMINISTRACION",
+        "VENTAS",
+        "RECURSOS HUMANOS"
+      ];
+
+      // Crear un mapa de módulos permitidos desde la API
+      const modulosPermitidosMap = new Map();
+      if (Array.isArray(data.modulos)) {
+        data.modulos.forEach((mod) => {
+          const nombreModulo = String(mod.NOMBRE || mod.nombre || mod.Nombre || "").toUpperCase().trim();
+          if (nombreModulo) {
+            modulosPermitidosMap.set(nombreModulo, true);
+          }
+        });
+      }
+
+      // Crear array con TODOS los módulos y su estado (permitido o no)
+      const modulos = todosLosModulos.map((nombreModulo) => ({
+        id: nombreModulo,
+        nombre: nombreModulo,
+        permitido: modulosPermitidosMap.has(nombreModulo), // true si está en el mapa, false si no
+      }));
 
       setModulosPermisos(modulos);
 
@@ -1425,7 +1462,8 @@ export default function ColaboradoresPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/gerencia")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -1924,8 +1962,8 @@ export default function ColaboradoresPage() {
                               Concedido
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-red-500 border-2 border-red-600 text-white">
-                              Denegado
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-gray-500 border-2 border-gray-600 text-white">
+                              Apagado
                             </span>
                           )}
                         </td>

@@ -1,21 +1,16 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "../../components/context/AuthContext";
-import { Header } from "../../components/layout/Header";
-import { Sidebar } from "../../components/layout/Sidebar";
-import Modal from "../../components/ui/Modal";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../components/context/AuthContext";
+import { Header } from "../../../components/layout/Header";
+import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
-function RecursosHumanosContent() {
+function GestionColaboradoresContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    "gestion-colaboradores": false,
-    "solicitudes-incidencias": false,
-  });
   
   // Estados para colaboradores
   const [colaboradores, setColaboradores] = useState([]);
@@ -532,31 +527,6 @@ function RecursosHumanosContent() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    // Leer el parámetro de consulta "section" de la URL
-    const section = searchParams.get("section");
-    if (section) {
-      // Validar que la sección existe en las secciones disponibles
-      const validSections = [
-        "gestion-colaboradores",
-      ];
-      if (validSections.includes(section)) {
-        setExpandedSections((prev) => ({
-          ...prev,
-          [section]: true,
-        }));
-      }
-    }
-  }, [searchParams]);
-
-  const toggleSection = (sectionId) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
-
-
   // Función para obtener colaboradores de la API
   const fetchColaboradores = useCallback(async () => {
     try {
@@ -666,6 +636,13 @@ function RecursosHumanosContent() {
       setLoadingColaboradores(false);
     }
   }, []);
+
+  // Cargar colaboradores automáticamente al montar
+  useEffect(() => {
+    if (!loading && user) {
+      fetchColaboradores();
+    }
+  }, [loading, user, fetchColaboradores]);
 
   // Función para obtener áreas disponibles
   const fetchAreas = useCallback(async () => {
@@ -792,7 +769,6 @@ function RecursosHumanosContent() {
     }
   }, [isAreaSelectOpen]);
 
-  // Ya no cargamos colaboradores automáticamente aquí, se cargarán en la nueva página
 
   // Función para agregar un medio de comunicación
   const handleAgregarMedio = async (nuevoMedio) => {
@@ -1078,7 +1054,7 @@ function RecursosHumanosContent() {
         <div className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -1132,7 +1108,8 @@ function RecursosHumanosContent() {
 
               <button 
                 onClick={() => setIsAgregarColaboradorModalOpen(true)}
-                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group"
+                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               >
                 <span>+ Agregar Colaborador</span>
               </button>
@@ -1269,7 +1246,7 @@ function RecursosHumanosContent() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("users")}
                   </div>
                   <div>
@@ -1453,13 +1430,14 @@ function RecursosHumanosContent() {
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
-              onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              onClick={() => router.push("/recursos-humanos")}
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Volver al Menú</span>
+              <span>Volver a Recursos Humanos</span>
             </button>
 
             {/* Card contenedor blanco */}
@@ -1469,151 +1447,18 @@ function RecursosHumanosContent() {
             <div className="mb-6">
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
+                  {getIcon("users")}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>RECURSOS HUMANOS</h1>
-                  <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de personal y nómina</p>
+                  <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>GESTIÓN DE COLABORADORES</h1>
+                  <p className="text-sm text-gray-600 font-normal mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de colaboradores activos e inactivos</p>
                 </div>
               </div>
             </div>
 
-            {/* Secciones */}
-            <div className="space-y-3">
-              {sections.map((section) => (
-                <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                  {/* Header de Sección */}
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div className="text-white">{getIcon(section.icon)}</div>
-                      <h2 className="text-base font-bold text-white">{section.name}</h2>
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Contenido de la Sección */}
-                  {expandedSections[section.id] && (
-                    <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
-                      {section.id === "gestion-colaboradores" ? (
-                        <div className="grid gap-2.5 grid-cols-1">
-                          <div
-                            className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                            style={{ 
-                              boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
-                              transform: 'translateY(0)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
-                            }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                            
-                            <div className="relative z-10">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                  {getIcon("users")}
-                                </div>
-                              </div>
-                              <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Gestión de Colaboradores</h3>
-                              <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar colaboradores activos e inactivos</p>
-                              <button 
-                                type="button"
-                                onClick={() => router.push("/recursos-humanos/gestion-colaboradores")}
-                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
-                                style={{ fontFamily: 'var(--font-poppins)' }}
-                              >
-                                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
-                                <span className="relative z-10 flex items-center space-x-1.5">
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  <span>Ver Colaboradores</span>
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : section.id === "solicitudes-incidencias" ? (
-                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
-                          <div className="grid gap-2.5 grid-cols-1">
-                            <div
-                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                              style={{ 
-                                boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
-                                transform: 'translateY(0)'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
-                              }}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                              
-                              <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                  </div>
-                                </div>
-                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h3>
-                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar Solicitudes/Incidencias</p>
-                                <button 
-                                  type="button"
-                                  onClick={() => router.push("/recursos-humanos/solicitudes-incidencias")}
-                                  className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
-                                  style={{ fontFamily: 'var(--font-poppins)' }}
-                                >
-                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
-                                  <span className="relative z-10 flex items-center space-x-1.5">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <span>Ver Solicitudes/Incidencias</span>
-                                  </span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm mx-auto mb-3">
-                            {getIcon(section.icon)}
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{section.name}</h3>
-                          <p className="text-gray-600">Esta sección estará disponible próximamente</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+            {/* Contenido */}
+            <div className="space-y-4">
+              {renderGestionColaboradoresContent()}
             </div>
             </div>
           </div>
@@ -1822,7 +1667,7 @@ function RecursosHumanosContent() {
 
               const Seccion = ({ title, children }) => (
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-[#1E63F7] to-[#1D4ED8] px-4 py-3">
+                  <div className="bg-gradient-to-r from-blue-700 to-blue-800 px-4 py-3">
                     <h3 className="text-sm font-bold text-white uppercase tracking-wide">{title}</h3>
                   </div>
                   <div className="p-4">
@@ -3649,14 +3494,14 @@ function RecursosHumanosContent() {
   );
 }
 
-export default function RecursosHumanosPage() {
+export default function GestionColaboradoresPage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     }>
-      <RecursosHumanosContent />
+      <GestionColaboradoresContent />
     </Suspense>
   );
 }

@@ -29,19 +29,19 @@ export function ChatBotButton() {
       {/* Botón flotante circular - Esquina inferior derecha - Solo visible en web */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="hidden md:flex fixed bottom-6 right-6 w-14 h-14 bg-[#D9E8FF] backdrop-blur-sm rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 items-center justify-center z-[99999] hover:scale-110 active:scale-95 border-2 border-[#1E63F7]/50 relative overflow-hidden group"
+        className="hidden md:flex fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 backdrop-blur-sm rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 items-center justify-center z-[99999] hover:scale-110 active:scale-95 border-2 border-blue-700/30 relative overflow-hidden group"
         style={{ position: 'fixed', pointerEvents: 'auto' }}
         aria-label="Abrir chatbot"
       >
         {/* Efecto de pulso de fondo */}
-        <div className="absolute inset-0 bg-[#1E63F7]/20 rounded-full animate-pulse"></div>
+        <div className="absolute inset-0 bg-blue-700/20 rounded-full animate-pulse"></div>
         
         {/* Efecto de brillo al hover */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
         
         {/* Icono de robot */}
         <svg
-          className="w-6 h-6 text-[#1E63F7] relative z-10"
+          className="w-6 h-6 text-blue-700 relative z-10"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -72,13 +72,13 @@ export function ChatBotButton() {
 
       {/* Ventana del chat - Solo visible en web */}
       {isOpen && (
-        <div className="hidden md:flex fixed bottom-24 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 z-[9998] flex-col overflow-hidden">
+        <div className="hidden md:flex fixed bottom-24 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border border-gray-200/60 z-[9998] flex-col overflow-hidden" style={{ boxShadow: '0px 20px 60px -12px rgba(0, 0, 0, 0.15)' }}>
           {/* Header del chat */}
-          <div className="bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+          <div className="bg-gradient-to-br from-blue-700 to-blue-800 px-4 py-3.5 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
                 <svg
-                  className="w-5 h-5 text-blue-600"
+                  className="w-5 h-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -92,11 +92,11 @@ export function ChatBotButton() {
                   <path d="M9 14h6" strokeLinecap="round" />
                 </svg>
               </div>
-              <h3 className="text-white font-semibold text-sm">Chatbot</h3>
+              <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>Chatbot</h3>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:text-gray-200 transition-colors"
+              className="text-white/90 hover:text-white hover:bg-white/10 rounded-lg p-1 transition-all duration-200"
               aria-label="Cerrar chat"
             >
               <svg
@@ -116,13 +116,13 @@ export function ChatBotButton() {
           </div>
 
           {/* Contenido del chat */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+            <div className="space-y-5">
               {/* Mensaje Próximamente */}
-              <div className="text-center mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-700 to-blue-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <svg
-                    className="w-8 h-8 text-white"
+                    className="w-10 h-10 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -136,28 +136,28 @@ export function ChatBotButton() {
                     <path d="M9 14h6" strokeLinecap="round" />
                   </svg>
                 </div>
-                <h4 className="text-lg font-bold text-gray-800 mb-2">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Próximamente
                 </h4>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 mb-5" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Estamos trabajando en nuestro chatbot.
                 </p>
               </div>
 
               {/* Separador */}
-              <div className="border-t border-gray-200 my-4"></div>
+              <div className="border-t border-gray-200"></div>
 
               {/* Enlaces a PDFs */}
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-gray-700 mb-2">Documentos disponibles:</p>
+                <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide" style={{ fontFamily: 'var(--font-poppins)' }}>Documentos disponibles:</p>
                 
                 <a
                   href="https://storage.googleapis.com/archivos_sistema/archivos_generales_zeus/POLITICAS%20DE%20LA%20EMPRESA%20.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-red-50 rounded-lg border border-gray-200 hover:border-red-300 transition-all duration-200 group"
+                  className="flex items-center gap-3 p-3.5 bg-white hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-md transition-all duration-200 group"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-xl flex items-center justify-center group-hover:from-red-200 group-hover:to-red-300 transition-all duration-200 shadow-sm">
                     {/* Icono PDF real */}
                     <svg
                       className="w-7 h-7 text-red-600"
@@ -192,15 +192,15 @@ export function ChatBotButton() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-red-700 transition-colors">
+                    <p className="text-sm font-semibold text-gray-900 group-hover:text-red-700 transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Políticas de la Empresa
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       PDF
                     </p>
                   </div>
                   <svg
-                    className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors flex-shrink-0"
+                    className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -218,12 +218,12 @@ export function ChatBotButton() {
                   href="https://storage.googleapis.com/archivos_sistema/archivos_generales_zeus/REGLAMENTO%20INTERNO%20DE%20TRABAJO%20-%20ZEUS%20SAFETY.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200 group"
+                  className="flex items-center gap-3 p-3.5 bg-white hover:bg-blue-50 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300 transition-all duration-200 shadow-sm">
                     {/* Icono PDF real */}
                     <svg
-                      className="w-7 h-7 text-blue-600"
+                      className="w-7 h-7 text-blue-700"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -255,15 +255,15 @@ export function ChatBotButton() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
+                    <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Reglamento Interno de Trabajo
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       PDF
                     </p>
                   </div>
                   <svg
-                    className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0"
+                    className="w-5 h-5 text-gray-400 group-hover:text-blue-700 transition-colors flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

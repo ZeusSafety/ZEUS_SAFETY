@@ -116,24 +116,6 @@ export default function PerfilPage() {
       title: "Permisos asignados",
       route: "/permisos",
     },
-    {
-      id: "solicitudes",
-      iconName: "solicitudes",
-      title: "Mis solicitudes pendientes",
-      route: "/solicitudes",
-    },
-    {
-      id: "mensajes",
-      iconName: "mensajes",
-      title: "Centro de mensajes / tickets",
-      route: "/mensajes",
-    },
-    {
-      id: "historial",
-      iconName: "historial",
-      title: "Historial de accesos",
-      route: "/historial-accesos",
-    },
   ];
 
   return (
@@ -152,7 +134,8 @@ export default function PerfilPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -165,14 +148,14 @@ export default function PerfilPage() {
               {/* Header */}
               <div className="mb-6">
                 <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mi Perfil</h1>
-                    <p className="text-sm text-gray-600 font-medium mt-0.5">Gestiona tu cuenta y configuración</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>Mi Perfil</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona tu cuenta y configuración</p>
                   </div>
                 </div>
               </div>
@@ -187,16 +170,16 @@ export default function PerfilPage() {
                     style={{ borderRadius: '14px', boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
                   >
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                         {getIcon(option.iconName)}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-800 transition-colors">
+                        <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-700 transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
                           {option.title}
                         </h3>
                       </div>
                       <svg
-                        className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-800 transition-colors"
+                        className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-700 transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

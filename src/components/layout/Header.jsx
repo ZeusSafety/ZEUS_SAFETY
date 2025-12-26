@@ -47,7 +47,7 @@ export function Header({ onMenuToggle }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-sm sm:text-sm md:text-base font-bold text-gray-900 tracking-tight whitespace-nowrap">
+          <h1 className="text-sm sm:text-sm md:text-base font-medium text-gray-900 tracking-tight whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
               Sistema de Integración
             </h1>
         </div>
