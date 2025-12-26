@@ -6,6 +6,7 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+import { area } from "framer-motion/client";
 
 // Usar el proxy de Next.js para evitar problemas de CORS
 const API_URL = "/api/solicitudes-incidencias";
@@ -20,9 +21,12 @@ export default function SolicitudesIncidenciasMarketingPage() {
   
   // Filtros - Iniciar con MARKETING seleccionado por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("MARKETING");
+
+  // FILTROS
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
+  const [areaEmision, setAreaEmision] = useState("");
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,12 +131,21 @@ export default function SolicitudesIncidenciasMarketingPage() {
   const solicitudesFiltradas = useMemo(() => {
     let filtered = [...solicitudes];
 
-    // Filtrar por área de recepción (solo si hay un valor seleccionado)
+    // Filtrar por área de Recepción (MARKETING por defecto)
     if (areaRecepcion && areaRecepcion.trim() !== "") {
       filtered = filtered.filter(s => {
         // Buscar el área en múltiples campos posibles
-        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
+        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_DESTINO || s.area_destino || "";
         return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
+      });
+    }
+
+    // Filtrar por área de Emision (solo si hay un valor seleccionado)
+    if (areaEmision && areaEmision.trim() !== "") {
+      filtered = filtered.filter(s => {
+        // Buscar el área en múltiples campos posibles
+        const area = s.AREA_EMISION || s.area_emision || s.AREA || s.area || "";
+        return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
       });
     }
 
@@ -168,7 +181,7 @@ export default function SolicitudesIncidenciasMarketingPage() {
     }
 
     return filtered;
-  }, [solicitudes, areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [solicitudes, areaRecepcion,areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Calcular paginación
   const totalPages = Math.ceil(solicitudesFiltradas.length / itemsPerPage);
@@ -179,7 +192,7 @@ export default function SolicitudesIncidenciasMarketingPage() {
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Funciones para modales
   const mostrarTextoEnModal = (texto, titulo) => {
@@ -415,13 +428,26 @@ export default function SolicitudesIncidenciasMarketingPage() {
               {/* Filtros */}
               <div className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
+                <div hidden >
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Área de Recepción
                   </label>
                   <select
                     value={areaRecepcion}
                     onChange={(e) => setAreaRecepcion(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  >
+                    <option value="MARKETING">MARKETING</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Área de Emisión
+                  </label>
+                  <select
+                    value={areaEmision}
+                    onChange={(e) => setAreaEmision(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                   >
                     <option value="">Todas las áreas</option>
@@ -515,26 +541,26 @@ export default function SolicitudesIncidenciasMarketingPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
+                        <tr className="bg-blue-700 border-b-2 border-blue-800 text-center justify-center">
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap text-center">Respondido Por</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap text-center">Estado</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-gray-100 text-center justify-center">
                         {solicitudesPaginadas.map((solicitud, index) => {
                           const tieneReprogramaciones = solicitud.REPROGRAMACIONES && 
                             (Array.isArray(solicitud.REPROGRAMACIONES) ? solicitud.REPROGRAMACIONES.length > 0 : 
@@ -547,7 +573,7 @@ export default function SolicitudesIncidenciasMarketingPage() {
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_CONSULTA)}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.NUMERO_SOLICITUD || '-'}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.REGISTRADO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA || '-'}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">{solicitud.AREA || '-'}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RES_INCIDENCIA || '-'}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
@@ -598,10 +624,10 @@ export default function SolicitudesIncidenciasMarketingPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA_RECEPCION || '-'}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">{solicitud.AREA_RECEPCION || '-'}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RESPONDIDO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => mostrarTextoEnModal(solicitud.RESPUESTA_R || solicitud.RESPUESTA || 'No especificado.', 'Respuesta')}
@@ -639,14 +665,14 @@ export default function SolicitudesIncidenciasMarketingPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${getEstadoBadge(solicitud.ESTADO)}`}>
                                   {solicitud.ESTADO || 'Pendiente'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">
                                 {tieneReprogramaciones ? (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center justify-center gap-2 justify-center text-center">
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
                                       SI
                                     </span>

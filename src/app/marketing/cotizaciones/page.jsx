@@ -151,10 +151,11 @@ export default function CotizacionesPage() {
   const [producto, setProducto] = useState("");
   const [codigo, setCodigo] = useState("");
   const [cantidad, setCantidad] = useState(1);
-  const [unidadMedida, setUnidadMedida] = useState("UNIDADES");
+  const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
   
   // Opciones de unidad de medida
   const opcionesUnidadMedida = [
+    { value: "", label: "Seleccione Unidad de Medida" },
     { value: "DOCENAS", label: "DOCENAS" },
     { value: "UNIDADES", label: "UNIDADES" },
     { value: "PARES", label: "PARES" },
@@ -702,7 +703,7 @@ export default function CotizacionesPage() {
     setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
-    setUnidadMedida("UNIDADES"); // Resetear a valor por defecto
+    setUnidadMedida("Seleccione Unidad de Medida"); 
     setPrecioVenta("");
     setTotal(0.00);
     setProductoSeleccionado(null);
@@ -717,7 +718,7 @@ export default function CotizacionesPage() {
   const generarHTMLCotizacion = (numeroCotizacion) => {
     return `
     <style>
-       /* Botón de descarga */
+        /* Botón de descarga */
         .download-button-container {
             position: fixed;
             top: 20px;
@@ -808,7 +809,7 @@ export default function CotizacionesPage() {
         .company-info {
             width: 50%;
             text-align: center;
-            font-size: 11px;
+            font-size: 14px;
             line-height: 1.4;
             padding-top: 5px;
             color: #000000;
@@ -853,7 +854,7 @@ export default function CotizacionesPage() {
         .client-info {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             margin-bottom: 15px;
             line-height: 1.8;
@@ -1161,7 +1162,7 @@ export default function CotizacionesPage() {
                         <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
                         <td style="border: 1px solid #000; font-size: 12px;">BCP Soles</td>
                         <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 0px solid #000; font-size: 12px;">191-2233941-0-59</td>
+                        <td style="border: 1px solid #000; font-size: 12px;">191-2233941-0-59</td>
                         <td style="border: 1px solid #000; font-size: 12px;">00219100223394105953</td>
                     </tr>
                     <tr>
@@ -1208,7 +1209,7 @@ export default function CotizacionesPage() {
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px';
-      tempDiv.style.width = '900px';
+      tempDiv.style.width = '1000px';
       tempDiv.style.backgroundColor = 'white';
 
       // Usamos un código temporal para el diseño, el real lo asigna el backend
@@ -1303,7 +1304,7 @@ export default function CotizacionesPage() {
 
       if (response.ok && data.success) {
         const numeroFinal = data.codigo_cotizacion;
-        alert(`Cotización ${numeroFinal} registrada y guardada en la nube con éxito.`);
+        alert(`Cotización ${numeroFinal} registrada y guardada con éxito.`);
 
         // --- PASO D: Descargar para el usuario ---
         // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
