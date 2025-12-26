@@ -24,6 +24,7 @@ export function Sidebar({ isOpen, onClose }) {
     { id: "recursos-humanos", name: "Recursos Humanos", icon: "users", hasSubmenu: true },
     { id: "ventas", name: "Ventas", icon: "document", hasSubmenu: true },
     { id: "permisos", name: "Permisos/Solicitudes e Incidencias", icon: "list", hasSubmenu: true },
+    { id: "boletin-informativo", name: "Boletín informativo", icon: "birthday", hasSubmenu: true },
     { id: "seguimiento-monitoreo", name: "Seguimiento y Monitoreo", icon: "location", hasSubmenu: false },
   ];
 
@@ -52,6 +53,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "accesibilidad-credenciales", name: "Accesibilidad y Credenciales", icon: "key" },
+        { id: "registro-actividad-general", name: "Registro de Actividad (Logs generales)", icon: "shield" },
       ],
     },
     {
@@ -418,6 +420,22 @@ export function Sidebar({ isOpen, onClose }) {
     },
   ];
 
+  // Submenús de Boletín Informativo
+  const boletinInformativoSubmenu = [
+    {
+      id: "dashboard-boletin",
+      name: "Dashboard",
+      icon: "home",
+      hasSubmenu: false,
+    },
+    {
+      id: "calendario-cumpleanos",
+      name: "Calendario de Cumpleaños",
+      icon: "birthday",
+      hasSubmenu: false,
+    },
+  ];
+
   // Submenús de Permisos/Solicitudes e Incidencias
   const permisosSubmenu = [
     {
@@ -596,6 +614,11 @@ export function Sidebar({ isOpen, onClose }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       ),
+      birthday: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+        </svg>
+      ),
       book: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -658,6 +681,12 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
+    if (itemId === "registro-actividad-general") {
+      router.push("/gerencia/registro-actividad-general");
+      setSelectedItem(itemId);
+      return;
+    }
+    
     if (itemId === "productos") {
       router.push("/gerencia/productos");
       setSelectedItem(itemId);
@@ -686,6 +715,13 @@ export function Sidebar({ isOpen, onClose }) {
     // Navegación para Seguimiento y Monitoreo
     if (itemId === "seguimiento-monitoreo") {
       router.push("/seguimiento-monitoreo");
+      setSelectedItem(itemId);
+      return;
+    }
+    
+    // Navegación para Boletín Informativo
+    if (itemId === "dashboard-boletin" || itemId === "calendario-cumpleanos") {
+      router.push("/calendario-cumpleanos");
       setSelectedItem(itemId);
       return;
     }
@@ -1013,28 +1049,44 @@ export function Sidebar({ isOpen, onClose }) {
               MÓDULOS
             </h3>
           </div>
-          <div className={`flex-1 ${Object.values(expandedModules).some(expanded => expanded === true) ? 'overflow-y-auto custom-scrollbar' : 'overflow-y-auto custom-scrollbar lg:overflow-hidden'} py-2`}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar py-2">
           <ul className="space-y-1 px-2">
             {modules.map((module) => (
               <li key={module.id}>
                 <button
-                  onClick={() => toggleModule(module.id)}
+                  onClick={() => {
+                    if (!module.hasSubmenu) {
+                      // Para módulos sin submenú, navegar directamente
+                      if (module.id === "seguimiento-monitoreo") {
+                        router.push("/seguimiento-monitoreo");
+                        setSelectedItem(module.id);
+                      }
+                    } else {
+                      toggleModule(module.id);
+                    }
+                  }}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all duration-200 group hover:shadow-md active:scale-[0.98] ${
-                    (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                    (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos" || module.id === "boletin-informativo") && expandedModules[module.id]
+                      ? "bg-[#E8EFFF] text-[#0B327B] border-l-4 border-[#1E63F7] shadow-sm"
+                      : module.id === "seguimiento-monitoreo" && selectedItem === module.id
                       ? "bg-[#E8EFFF] text-[#0B327B] border-l-4 border-[#1E63F7] shadow-sm"
                       : "text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] border-l-4 border-transparent"
                   }`}
                 >
                   <div className="flex items-center space-x-2">
                     <span className={`transition-colors flex-shrink-0 ${
-                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos" || module.id === "boletin-informativo") && expandedModules[module.id]
+                        ? "text-[#1E63F7]"
+                        : module.id === "seguimiento-monitoreo" && selectedItem === module.id
                         ? "text-[#1E63F7]"
                         : "text-gray-600 group-hover:text-[#1E63F7]"
                     }`}>
                       {getIcon(module.icon)}
                     </span>
                     <span className={`text-xs text-left leading-tight ${
-                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos") && expandedModules[module.id]
+                      (module.id === "gerencia" || module.id === "administracion" || module.id === "importacion" || module.id === "logistica" || module.id === "ventas" || module.id === "marketing" || module.id === "sistemas" || module.id === "recursos-humanos" || module.id === "facturacion" || module.id === "permisos" || module.id === "boletin-informativo") && expandedModules[module.id]
+                        ? "text-[#0B327B] font-bold"
+                        : module.id === "seguimiento-monitoreo" && selectedItem === module.id
                         ? "text-[#0B327B] font-bold"
                         : "text-gray-800 group-hover:text-[#0B327B] font-semibold"
                     }`}>
@@ -1589,6 +1641,71 @@ export function Sidebar({ isOpen, onClose }) {
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {facturacionSubmenu.map((item) => (
+                        <div key={item.id}>
+                          {!item.hasSubmenu ? (
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(item.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 border-l-4 ${
+                                  expandedSubmenus[item.id]
+                                    ? "bg-[#E8EFFF] text-gray-900 border-[#1E63F7] font-bold"
+                                    : "text-gray-700 hover:bg-gray-200 hover:text-gray-900 border-transparent hover:border-[#1E63F7] font-semibold"
+                                }`}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <span className={expandedSubmenus[item.id] ? "text-[#1E63F7]" : "text-gray-500"}>{getIcon(item.icon)}</span>
+                                  <span className={`text-xs font-semibold whitespace-nowrap ${expandedSubmenus[item.id] ? "text-gray-900" : "text-gray-800"}`}>{item.name}</span>
+                                </div>
+                                <svg
+                                  className={`w-3.5 h-3.5 text-gray-400 transition-all duration-200 ${
+                                    expandedSubmenus[item.id] ? "rotate-180 text-gray-600" : ""
+                                  }`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              {expandedSubmenus[item.id] && item.subItems && (
+                                <div className="ml-3 mt-0.5 space-y-0.5">
+                                  {item.subItems.map((subItem) => (
+                                    <button
+                                      key={subItem.id}
+                                      onClick={() => handleSubmenuClick(subItem.id, module.id)}
+                                      className={`w-full flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-md transition-all duration-200 text-xs border-l-4 ${
+                                        selectedItem === subItem.id
+                                          ? "bg-gray-300 text-gray-900 border-[#1E63F7] font-bold"
+                                          : "text-gray-600 hover:bg-gray-200 hover:text-gray-900 border-transparent hover:border-[#1E63F7] font-medium"
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 ${selectedItem === subItem.id ? "text-gray-900" : "text-gray-400"}`}>{getIcon(subItem.icon)}</span>
+                                      <span className="text-left whitespace-nowrap">{subItem.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submenú de Boletín Informativo */}
+                {module.id === "boletin-informativo" && expandedModules[module.id] && (
+                  <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
+                    <div className="space-y-0.5">
+                      {boletinInformativoSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button

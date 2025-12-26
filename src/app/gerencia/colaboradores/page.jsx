@@ -18,6 +18,8 @@ export default function ColaboradoresPage() {
   const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false);
   const [isVerDetallesModalOpen, setIsVerDetallesModalOpen] = useState(false);
+  const [isEliminarSubVistaModalOpen, setIsEliminarSubVistaModalOpen] = useState(false);
+  const [subVistaAEliminar, setSubVistaAEliminar] = useState(null);
   const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [selectedColaboradorCompleto, setSelectedColaboradorCompleto] = useState(null);
   const [datosEditables, setDatosEditables] = useState([]);
@@ -57,11 +59,12 @@ export default function ColaboradoresPage() {
     }
   }, [isVerDetallesModalOpen, selectedColaboradorCompleto]);
   const [newColaboradorForm, setNewColaboradorForm] = useState({
+    id_colaborador: null,
     nombre: "",
     apellido: "",
     area: "",
-    correo: "",
-    fechaCumpleanos: "",
+    usuario: "",
+    contraseña: "",
   });
   
   // Estados para datos de la API
@@ -71,37 +74,14 @@ export default function ColaboradoresPage() {
   const [errorColaboradores, setErrorColaboradores] = useState(null);
 
   // Estados para el modal de permisos (diseño tipo tablero)
-  const [modulosPermisos, setModulosPermisos] = useState([
-    { id: "MARKETING", nombre: "MARKETING", permitido: true },
-    { id: "IMPORTACION", nombre: "IMPORTACION", permitido: true },
-    { id: "SISTEMAS", nombre: "SISTEMAS", permitido: true },
-    { id: "FACTURACION", nombre: "FACTURACION", permitido: true },
-    { id: "LOGISTICA", nombre: "LOGISTICA", permitido: true },
-    { id: "GERENCIA", nombre: "GERENCIA", permitido: true },
-    { id: "ADMINISTRACION", nombre: "ADMINISTRACION", permitido: true },
-    { id: "VENTAS", nombre: "VENTAS", permitido: true },
-    { id: "RRHH", nombre: "RECURSOS HUMANOS", permitido: true },
-    { id: "PERMISOS", nombre: "PERMISOS / SOLICITUDES E INCIDENCIAS", permitido: true },
-    { id: "SEGUIMIENTO_MONITOREO", nombre: "SEGUIMIENTO Y MONITOREO", permitido: false },
-  ]);
-
-  const [subVistasPermitidas, setSubVistasPermitidas] = useState([
-    { id: "IMPORTACIONES_REGISTRO", nombre: "IMPORTACIONES_REGISTRO", url: "/importacion/registro", area: "IMPORTACION" },
-    { id: "LISTADO_IMPORTACIONES_IMPORT", nombre: "LISTADO_IMPORTACIONES_IMPORT", url: "/importacion/listado", area: "IMPORTACION" },
-    { id: "INCIDENCIAS_PROFORMAS", nombre: "INCIDENCIAS_PROFORMAS", url: "/facturacion/incidencias/proformas", area: "FACTURACION" },
-    { id: "LISTADO_IMPORTACIONES_LOGISTICA", nombre: "LISTADO_IMPORTACIONES_LOGISTICA", url: "/logistica/importaciones", area: "LOGISTICA" },
-  ]);
-
-  const [subVistasDisponibles, setSubVistasDisponibles] = useState([
-    { id: "GESTION_CLIENTES_MARKETING", nombre: "GESTION DE CLIENTES - MARKETING", url: "/marketing/gestion-clientes", area: "MARKETING" },
-    { id: "LISTADO_VENTAS_MARKETING", nombre: "LISTADO DE VENTAS - MARKETING", url: "/marketing/listado-ventas", area: "MARKETING" },
-    { id: "GESTION_USUARIOS", nombre: "GESTION DE USUARIOS", url: "/gerencia/gestion-usuarios", area: "GERENCIA" },
-    { id: "GESTION_PRODUCTOS", nombre: "GESTION DE PRODUCTOS", url: "/gerencia/gestion-productos", area: "GERENCIA" },
-    { id: "RRHH_MEDIOS_COMUNICACION", nombre: "MEDIOS DE COMUNICACION - RRHH", url: "/recursos-humanos", area: "RECURSOS HUMANOS" },
-  ]);
+  const [modulosPermisos, setModulosPermisos] = useState([]);
+  const [subVistasPermitidas, setSubVistasPermitidas] = useState([]);
+  const [subVistasDisponibles, setSubVistasDisponibles] = useState([]);
+  const [loadingPermisos, setLoadingPermisos] = useState(false);
 
   const [filtroAreaSubVista, setFiltroAreaSubVista] = useState("TODAS");
   const [busquedaSubVista, setBusquedaSubVista] = useState("");
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" }); // success, error
 
   const togglePermisoModulo = (id) => {
     setModulosPermisos((prev) =>
@@ -111,22 +91,189 @@ export default function ColaboradoresPage() {
     );
   };
 
-  const handleAgregarSubVista = (id) => {
-    setSubVistasDisponibles((prevDisponibles) => {
-      const vista = prevDisponibles.find((v) => v.id === id);
-      if (!vista) return prevDisponibles;
-      setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
-      return prevDisponibles.filter((v) => v.id !== id);
-    });
+  // Función para insertar una subvista
+  const insertarSubVista = async (userId, subVistaId) => {
+    try {
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'insertar_subvista');
+      url.searchParams.append('user', userId);
+
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          id_sub_vista: subVistaId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al insertar subvista:", error);
+      throw error;
+    }
   };
 
-  const handleEliminarSubVista = (id) => {
-    setSubVistasPermitidas((prevPermitidas) => {
-      const vista = prevPermitidas.find((v) => v.id === id);
-      if (!vista) return prevPermitidas;
-      setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, vista]);
-      return prevPermitidas.filter((v) => v.id !== id);
+  // Función para eliminar una subvista
+  const eliminarSubVista = async (userId, subVistaId) => {
+    try {
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'eliminar_subvista');
+      url.searchParams.append('user', userId);
+
+      const response = await fetch(url.toString(), {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          id_sub_vista: subVistaId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al eliminar subvista:", error);
+      throw error;
+    }
+  };
+
+  const handleAgregarSubVista = async (id) => {
+    if (!selectedColaborador || !selectedColaborador.usuario) {
+      console.error("❌ Error: No se pudo identificar el usuario del colaborador", selectedColaborador);
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el usuario del colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+      return;
+    }
+
+    const nombreUsuario = selectedColaborador.usuario;
+    const vista = subVistasDisponibles.find((v) => v.id === id);
+    if (!vista) {
+      console.error("❌ Error: No se encontró la vista con id", id);
+      return;
+    }
+
+    console.log("➕ Agregando subvista:", {
+      nombreUsuario,
+      subVistaId: id,
+      vistaNombre: vista.nombre
     });
+
+    try {
+      await insertarSubVista(nombreUsuario, id);
+      
+      // Actualizar estados localmente
+      setSubVistasDisponibles((prevDisponibles) => prevDisponibles.filter((v) => v.id !== id));
+      setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
+      
+      // Mostrar notificación de éxito
+      setNotification({
+        show: true,
+        message: "Subvista agregada exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+    } catch (error) {
+      console.error("Error al agregar subvista:", error);
+      setNotification({
+        show: true,
+        message: `Error al agregar subvista: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
+  };
+
+  const handleEliminarSubVistaClick = (id) => {
+    const vista = subVistasPermitidas.find((v) => v.id === id);
+    if (vista) {
+      setSubVistaAEliminar(vista);
+      setIsEliminarSubVistaModalOpen(true);
+    }
+  };
+
+  const handleConfirmarEliminarSubVista = async () => {
+    if (!subVistaAEliminar || !selectedColaborador || !selectedColaborador.usuario) {
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el usuario del colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+      return;
+    }
+
+    const nombreUsuario = selectedColaborador.usuario;
+    const id = subVistaAEliminar.id;
+
+    console.log("➖ Eliminando subvista:", {
+      nombreUsuario,
+      subVistaId: id,
+      vistaNombre: subVistaAEliminar.nombre
+    });
+
+    try {
+      await eliminarSubVista(nombreUsuario, id);
+      
+      // Actualizar estados localmente
+      setSubVistasPermitidas((prevPermitidas) => prevPermitidas.filter((v) => v.id !== id));
+      setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, subVistaAEliminar]);
+      
+      // Mostrar notificación de éxito
+      setNotification({
+        show: true,
+        message: "Subvista eliminada exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+      
+      // Cerrar modal y limpiar estado
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+    } catch (error) {
+      console.error("Error al eliminar subvista:", error);
+      setNotification({
+        show: true,
+        message: `Error al eliminar subvista: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+      setIsEliminarSubVistaModalOpen(false);
+      setSubVistaAEliminar(null);
+    }
   };
 
   useEffect(() => {
@@ -397,7 +544,7 @@ export default function ColaboradoresPage() {
         throw new Error("No se encontró el token de autenticación");
       }
 
-      const response = await fetch("/api/colaboradores", {
+      const response = await fetch("https://colaboradores2026-2946605267.us-central1.run.app?method=colaboradores_gerencia_listado", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -413,13 +560,52 @@ export default function ColaboradoresPage() {
 
       const data = await response.json();
       console.log("Datos recibidos de la API:", data);
+      console.log("Primer colaborador de ejemplo:", data && Array.isArray(data) && data.length > 0 ? data[0] : "No hay datos");
+      
+      // Buscar colaboradores recién agregados (Jhan Pier Sambos y Pilsen Pier)
+      if (Array.isArray(data)) {
+        const colaboradoresRecientes = data.filter(c => {
+          const nombre = (c.NOMBRE || c.nombre || c.Nombre || c.name || c.NAME || "").toUpperCase();
+          const apellido = (c.APELLIDO || c.apellido || c.Apellido || c.apellidos || c.APELLIDOS || c.lastname || c.LASTNAME || "").toUpperCase();
+          return (nombre.includes("JHAN") && apellido.includes("SAMBOS")) ||
+                 (nombre.includes("PILSEN") && apellido.includes("PIER"));
+        });
+        
+        if (colaboradoresRecientes.length > 0) {
+          colaboradoresRecientes.forEach((colab, idx) => {
+            console.log(`🔍 Colaborador recién agregado ${idx + 1}:`, {
+              nombre: colab.NOMBRE || colab.nombre || colab.Nombre || colab.name || colab.NAME,
+              apellido: colab.APELLIDO || colab.apellido || colab.Apellido || colab.apellidos || colab.APELLIDOS || colab.lastname || colab.LASTNAME,
+              objetoCompleto: colab,
+              camposUsuario: Object.keys(colab).filter(k => 
+                k.toLowerCase().includes('usuario') || 
+                k.toLowerCase().includes('user') || 
+                k.toLowerCase().includes('login')
+              ).reduce((acc, key) => {
+                acc[key] = {
+                  valor: colab[key],
+                  tipo: typeof colab[key],
+                  esNull: colab[key] === null,
+                  esUndefined: colab[key] === undefined,
+                  esVacio: colab[key] === "",
+                  esStringVacio: typeof colab[key] === "string" && colab[key].trim() === ""
+                };
+                return acc;
+              }, {}),
+              todosLosCampos: Object.keys(colab)
+            });
+          });
+        } else {
+          console.log("⚠️ No se encontró Jhan Pier Sambos o Pilsen Pier en la respuesta de la API");
+        }
+      }
 
       // Guardar los datos originales completos
       setColaboradoresCompletos(Array.isArray(data) ? data : []);
 
       // Mapear los datos de la API al formato esperado
       // La API puede devolver diferentes estructuras, así que intentamos varias opciones
-      const colaboradoresMapeados = Array.isArray(data) ? data.map((colab) => {
+      const colaboradoresMapeados = Array.isArray(data) ? data.map((colab, index) => {
         // Intentar obtener los campos con diferentes nombres posibles
         const getValue = (obj, keys) => {
           for (const key of keys) {
@@ -451,8 +637,8 @@ export default function ColaboradoresPage() {
           }
         }
 
-        // Obtener área - puede estar en un objeto anidado
-        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
+        // Obtener área - puede estar en un objeto anidado o como AREA_PRINCIPAL (ID)
+        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT", "AREA_PRINCIPAL", "area_principal"]);
         if (!areaValue && colab.A && colab.A.NOMBRE) {
           areaValue = colab.A.NOMBRE;
         }
@@ -471,6 +657,8 @@ export default function ColaboradoresPage() {
             }
           }
         }
+        // Si areaValue es un número (ID de área), mantenerlo como está por ahora
+        // El backend debería devolver el nombre del área, pero si solo viene el ID, lo mostramos
 
         // Determinar si está activo
         const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
@@ -480,17 +668,76 @@ export default function ColaboradoresPage() {
                         estadoValue !== 0 &&
                         estadoValue !== "0";
 
+        // Obtener usuario - puede venir como null, undefined, o no existir
+        // IMPORTANTE: Si el colaborador no tiene credenciales, el campo puede venir como null, undefined, o string vacío
+        const usuarioRaw = getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]);
+        
+        // Verificar explícitamente si el valor es null, undefined, o string vacío
+        let usuarioFinal = "";
+        if (usuarioRaw !== null && usuarioRaw !== undefined && usuarioRaw !== "") {
+          const usuarioStr = String(usuarioRaw).trim();
+          if (usuarioStr !== "" && usuarioStr !== "null" && usuarioStr !== "undefined") {
+            usuarioFinal = usuarioStr;
+          }
+        }
+        
+        // Log para depuración de TODOS los colaboradores para encontrar los sin usuario
+        console.log(`🔍 Colaborador ${index} (${getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"])} ${getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"])}):`, {
+          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]),
+          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]),
+          usuarioRaw: usuarioRaw,
+          usuarioRawType: typeof usuarioRaw,
+          usuarioRawValue: JSON.stringify(usuarioRaw),
+          usuarioFinal: usuarioFinal,
+          usuarioFinalType: typeof usuarioFinal,
+          usuarioFinalLength: usuarioFinal.length,
+          tieneUsuario: usuarioFinal !== "",
+          // Mostrar todos los campos relacionados con usuario del objeto original
+          camposUsuario: Object.keys(colab).filter(k => 
+            k.toLowerCase().includes('usuario') || 
+            k.toLowerCase().includes('user') || 
+            k.toLowerCase().includes('login')
+          ).reduce((acc, key) => {
+            acc[key] = colab[key];
+            return acc;
+          }, {}),
+          objetoCompleto: colab
+        });
+
         return {
-          id: getValue(colab, ["id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
-          nombre: getValue(colab, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]) || "",
-          apellido: getValue(colab, ["apellido", "APELLIDO", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
-          area: areaValue || "Sin área asignada",
-          correo: getValue(colab, ["correo", "CORREO", "Correo", "email", "EMAIL", "Email", "correo_electronico", "CORREO_ELECTRONICO"]) || "",
+          id: getValue(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
+          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
+          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
+          area: getValue(colab, ["AREA", "area", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]) || "Sin área asignada",
+          usuario: usuarioFinal,
           fechaCumpleanos: fechaFormateada,
-          activo: isActivo,
+          activo: getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
         };
       }) : [];
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
+      
+      // Log detallado de cada colaborador y su campo usuario
+      console.log("🔍 Análisis detallado de colaboradores:");
+      colaboradoresMapeados.forEach((c, idx) => {
+        console.log(`  ${idx + 1}. ${c.nombre} ${c.apellido}:`, {
+          usuario: c.usuario,
+          usuarioType: typeof c.usuario,
+          usuarioIsEmpty: c.usuario === "",
+          usuarioIsNull: c.usuario === null,
+          usuarioIsUndefined: c.usuario === undefined,
+          usuarioTrimmed: c.usuario ? String(c.usuario).trim() : "N/A",
+          usuarioTrimmedLength: c.usuario ? String(c.usuario).trim().length : 0,
+          tieneUsuario: c.usuario && String(c.usuario).trim() !== ""
+        });
+      });
+      
+      const sinUsuario = colaboradoresMapeados.filter(c => {
+        const tieneUsuario = c.usuario && String(c.usuario).trim() !== "";
+        return !tieneUsuario;
+      });
+      console.log("Colaboradores sin usuario:", sinUsuario);
+      console.log("Total colaboradores:", colaboradoresMapeados.length);
+      console.log("Colaboradores con usuario:", colaboradoresMapeados.length - sinUsuario.length);
       setColaboradores(colaboradoresMapeados);
     } catch (error) {
       console.error("Error al obtener colaboradores:", error);
@@ -500,12 +747,122 @@ export default function ColaboradoresPage() {
     }
   }, []);
 
+  // Función para obtener todas las subvistas disponibles desde la API
+  const fetchSubVistasDisponibles = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `https://api-login-accesos-2946605267.us-central1.run.app?metodo=listado_subvistas`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Subvistas disponibles recibidas de la API:", data);
+
+      // Mapear las subvistas al formato esperado
+      const subVistasMapeadas = Array.isArray(data) ? data.map((vista) => ({
+        id: vista.ID || vista.id,
+        nombre: vista.SUB_VISTA || vista.sub_vista || vista.nombre,
+        area: vista.AREA || vista.area || "",
+      })) : [];
+
+      return subVistasMapeadas;
+    } catch (error) {
+      console.error("Error al obtener subvistas disponibles:", error);
+      return [];
+    }
+  }, []);
+
+  // Función para obtener permisos de la API
+  const fetchPermisos = useCallback(async (usuario) => {
+    try {
+      setLoadingPermisos(true);
+      const response = await fetch(`https://api-login-accesos-2946605267.us-central1.run.app?metodo=get_permissions&user=${encodeURIComponent(usuario)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Permisos recibidos de la API:", data);
+
+      // Mapear módulos
+      const modulos = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
+        id: mod.NOMBRE || mod.nombre || mod.Nombre,
+        nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
+        permitido: true, // Si está en la lista, está permitido
+      })) : [];
+
+      setModulosPermisos(modulos);
+
+      // Mapear sub_vistas permitidas
+      const subVistasPermitidasIds = Array.isArray(data.sub_vistas) 
+        ? data.sub_vistas.map((vista) => vista.ID_SUB_VISTAS || vista.id || vista.ID)
+        : [];
+      
+      const subVistas = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => ({
+        id: vista.ID_SUB_VISTAS || vista.id || vista.ID,
+        nombre: vista.NOMBRE || vista.nombre || vista.Nombre,
+        url: "",
+        area: "", // Se puede inferir del nombre si es necesario
+      })) : [];
+
+      setSubVistasPermitidas(subVistas);
+
+      // Obtener todas las subvistas disponibles desde la API
+      const todasLasSubVistas = await fetchSubVistasDisponibles();
+      
+      // Calcular sub_vistas disponibles: todas las posibles menos las permitidas
+      const disponibles = todasLasSubVistas.filter(
+        (vista) => !subVistasPermitidasIds.includes(vista.id)
+      );
+      setSubVistasDisponibles(disponibles);
+    } catch (error) {
+      console.error("Error al obtener permisos:", error);
+      // En caso de error, mantener valores por defecto vacíos
+      setModulosPermisos([]);
+      setSubVistasPermitidas([]);
+      // Intentar cargar subvistas disponibles incluso si hay error en permisos
+      try {
+        const todasLasSubVistas = await fetchSubVistasDisponibles();
+        setSubVistasDisponibles(todasLasSubVistas);
+      } catch (subVistasError) {
+        console.error("Error al obtener subvistas disponibles:", subVistasError);
+        setSubVistasDisponibles([]);
+      }
+    } finally {
+      setLoadingPermisos(false);
+    }
+  }, [fetchSubVistasDisponibles]);
+
   // Cargar colaboradores al montar el componente
   useEffect(() => {
     if (!loading && user) {
       fetchColaboradores();
     }
   }, [loading, user, fetchColaboradores]);
+
+  // Recargar colaboradores cuando se abre el modal de agregar
+  useEffect(() => {
+    if (isAgregarModalOpen) {
+      fetchColaboradores();
+    }
+  }, [isAgregarModalOpen, fetchColaboradores]);
 
   const activos = colaboradores.filter(c => c.activo !== false);
   const inactivos = colaboradores.filter(c => c.activo === false);
@@ -516,27 +873,319 @@ export default function ColaboradoresPage() {
   const paginatedActivos = activos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const paginatedInactivos = inactivos.slice((currentPageInactivos - 1) * itemsPerPage, currentPageInactivos * itemsPerPage);
 
-  // Desactivar / activar colaboradores solo a nivel de frontend (sin API)
-  const handleDesactivarColaborador = () => {
+  // Desactivar colaborador con API
+  const handleDesactivarColaborador = async () => {
     if (!selectedColaborador) return;
-    const idSeleccionado = selectedColaborador.id;
-    setColaboradores((prev) =>
-      prev.map((c) =>
-        c.id === idSeleccionado ? { ...c, activo: false } : c
-      )
-    );
-    setIsDesactivarModalOpen(false);
-    setSelectedColaborador(null);
+    
+    try {
+      // Buscar el colaborador completo para obtener el correo
+      const getValue = (obj, keys) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+            return obj[key];
+          }
+        }
+        return null;
+      };
+
+      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        return idOriginal && String(idOriginal) === String(selectedColaborador.id);
+      });
+
+      console.log("🔍 [DESACTIVAR] Buscando colaborador completo:", {
+        idBuscado: selectedColaborador.id,
+        colaboradorCompletoEncontrado: colaboradorCompleto ? "Sí" : "No",
+        totalColaboradoresCompletos: colaboradoresCompletos.length,
+        primerColaboradorEjemplo: colaboradoresCompletos[0] ? {
+          ID_PERSONA: colaboradoresCompletos[0].ID_PERSONA,
+          id: colaboradoresCompletos[0].id,
+          ID: colaboradoresCompletos[0].ID,
+          CORREO: colaboradoresCompletos[0].CORREO,
+          correo: colaboradoresCompletos[0].correo
+        } : "No hay colaboradores"
+      });
+
+      if (!colaboradorCompleto) {
+        console.error("❌ [DESACTIVAR] No se encontró el colaborador completo");
+        setNotification({
+          show: true,
+          message: "Error: No se encontró la información completa del colaborador",
+          type: "error"
+        });
+        setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+        setIsDesactivarModalOpen(false);
+        setSelectedColaborador(null);
+        return;
+      }
+
+      // Obtener correo del colaborador - verificar directamente en el objeto
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
+                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
+                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+      
+      // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
+      if (correo === null || correo === undefined || correo === "") {
+        try {
+          const token = localStorage.getItem("token");
+          const username = selectedColaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+          
+          if (username) {
+            const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
+            const perfilResponse = await fetch(perfilUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            });
+            
+            if (perfilResponse.ok) {
+              const perfilData = await perfilResponse.json();
+              const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
+              if (perfilCorreo && perfilCorreo !== "" && perfilCorreo !== "null" && perfilCorreo !== "undefined") {
+                correo = perfilCorreo;
+              }
+            }
+          }
+        } catch (perfilError) {
+          console.warn("⚠️ [DESACTIVAR] No se pudo obtener correo del perfil:", perfilError);
+        }
+      }
+      
+      // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
+      if (correo === "" || correo === "null" || correo === "undefined") {
+        correo = null;
+      }
+
+      console.log("📧 [DESACTIVAR] Correo obtenido:", {
+        correo: correo,
+        correoType: typeof correo,
+        correoIsNull: correo === null,
+        correoIsEmpty: correo === "",
+        objetoCompleto: colaboradorCompleto
+      });
+
+      const token = localStorage.getItem("token");
+      const url = `https://colaboradores2026-2946605267.us-central1.run.app?metodo=desactivar_activar_usuario&id=${selectedColaborador.id}`;
+
+      console.log("🔍 [DESACTIVAR] Enviando petición:", {
+        id: selectedColaborador.id,
+        estado: "0",
+        correo: correo || "(vacío/null)",
+        correoType: typeof correo,
+        url: url
+      });
+
+      // Si correo es null, enviarlo como null explícitamente en JSON
+      const requestBody = {
+        estado: "0", // 0 para desactivar
+      };
+      
+      // Solo incluir correo si no es null, o incluir null explícitamente
+      // El backend espera correo en el body, así que lo incluimos siempre
+      requestBody.correo = correo; // null se serializará correctamente en JSON
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const responseText = await response.text();
+      console.log("📥 [DESACTIVAR] Respuesta de la API:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          errorData = { error: responseText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Verificar la respuesta para asegurar que se actualizó
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("✅ [DESACTIVAR] Datos parseados:", responseData);
+      } catch {
+        console.warn("⚠️ [DESACTIVAR] No se pudo parsear la respuesta como JSON");
+      }
+
+      // Actualizar estado local después de éxito en la API
+      setColaboradores((prev) =>
+        prev.map((c) =>
+          c.id === selectedColaborador.id ? { ...c, activo: false } : c
+        )
+      );
+
+      // Recargar colaboradores para asegurar sincronización con el backend
+      await fetchColaboradores();
+
+      setNotification({
+        show: true,
+        message: "Colaborador desactivado exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+      setIsDesactivarModalOpen(false);
+      setSelectedColaborador(null);
+    } catch (error) {
+      console.error("Error al desactivar colaborador:", error);
+      setNotification({
+        show: true,
+        message: `Error al desactivar colaborador: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
   };
 
-  const handleActivarColaborador = (colaborador) => {
+  // Activar colaborador con API
+  const handleActivarColaborador = async (colaborador) => {
     if (!colaborador) return;
-    const idSeleccionado = colaborador.id;
-    setColaboradores((prev) =>
-      prev.map((c) =>
-        c.id === idSeleccionado ? { ...c, activo: true } : c
-      )
-    );
+
+    try {
+      // Buscar el colaborador completo para obtener el correo
+      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+        const getValue = (obj, keys) => {
+          for (const key of keys) {
+            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+              return obj[key];
+            }
+          }
+          return "";
+        };
+        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        return idOriginal && idOriginal === colaborador.id;
+      });
+
+      if (!colaboradorCompleto) {
+        setNotification({
+          show: true,
+          message: "Error: No se encontró la información completa del colaborador",
+          type: "error"
+        });
+        setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+        return;
+      }
+
+      // Obtener correo del colaborador - verificar directamente en el objeto
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
+                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
+                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+      
+      // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
+      if (correo === null || correo === undefined || correo === "") {
+        try {
+          const token = localStorage.getItem("token");
+          const username = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+          
+          if (username) {
+            const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
+            const perfilResponse = await fetch(perfilUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            });
+            
+            if (perfilResponse.ok) {
+              const perfilData = await perfilResponse.json();
+              const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
+              if (perfilCorreo && perfilCorreo !== "" && perfilCorreo !== "null" && perfilCorreo !== "undefined") {
+                correo = perfilCorreo;
+              }
+            }
+          }
+        } catch (perfilError) {
+          console.warn("⚠️ [ACTIVAR] No se pudo obtener correo del perfil:", perfilError);
+        }
+      }
+      
+      // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
+      if (correo === "" || correo === "null" || correo === "undefined") {
+        correo = null;
+      }
+
+      const token = localStorage.getItem("token");
+      const url = `https://colaboradores2026-2946605267.us-central1.run.app?metodo=desactivar_activar_usuario&id=${colaborador.id}`;
+
+      // Si correo es null, enviarlo como null explícitamente en JSON
+      const requestBody = {
+        estado: "1", // 1 para activar
+      };
+      
+      // Solo incluir correo si no es null, o incluir null explícitamente
+      // El backend espera correo en el body, así que lo incluimos siempre
+      requestBody.correo = correo; // null se serializará correctamente en JSON
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Actualizar estado local después de éxito en la API
+      setColaboradores((prev) =>
+        prev.map((c) =>
+          c.id === colaborador.id ? { ...c, activo: true } : c
+        )
+      );
+
+      // Recargar colaboradores para asegurar sincronización
+      await fetchColaboradores();
+
+      setNotification({
+        show: true,
+        message: "Colaborador activado exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+    } catch (error) {
+      console.error("Error al activar colaborador:", error);
+      setNotification({
+        show: true,
+        message: `Error al activar colaborador: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
   };
 
   // Derivados para el modal de permisos (usuario / contraseña / avatar)
@@ -622,14 +1271,16 @@ export default function ColaboradoresPage() {
               onClick={() => router.push("/gerencia")}
               className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver a Gerencia</span>
             </button>
 
-            {/* Sección: Listado de Colaboradores */}
+            {/* Contenedor principal con fondo */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
+              {/* Sección: Listado de Colaboradores */}
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
@@ -692,12 +1343,15 @@ export default function ColaboradoresPage() {
                 {/* Botón Agregar */}
                 <button
                   onClick={() => {
+                    // Recargar colaboradores antes de abrir el modal para tener la lista actualizada
+                    fetchColaboradores();
                     setNewColaboradorForm({
+                      id_colaborador: null,
                       nombre: "",
                       apellido: "",
                       area: "",
-                      correo: "",
-                      fechaCumpleanos: "",
+                      usuario: "",
+                      contraseña: "",
                     });
                     setIsAgregarModalOpen(true);
                   }}
@@ -718,7 +1372,7 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
@@ -761,33 +1415,40 @@ export default function ColaboradoresPage() {
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedColaborador(colaborador);
                                         setSelectedColaboradorCompleto(colaboradorCompleto);
                                         setIsPermisosModalOpen(true);
+                                        // Obtener permisos cuando se abre el modal
+                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                        if (usuario) {
+                                          await fetchPermisos(usuario);
+                                        }
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar permisos del colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                       </svg>
-                                      <span>Permisos</span>
+                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
                                     </button>
                                     <button
                                       onClick={() => {
                                         setSelectedColaborador(colaborador);
                                         setIsDesactivarModalOpen(true);
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-orange-600 border-2 border-orange-700 hover:bg-orange-700 hover:border-orange-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Desactivar colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                      <span>Desactivar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Desactivar</span>
                                     </button>
                                   </div>
                                 </td>
@@ -837,8 +1498,8 @@ export default function ColaboradoresPage() {
               </div>
             </div>
 
-            {/* Sección: Colaboradores Inactivos */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+              {/* Sección: Colaboradores Inactivos */}
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               <div>
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
@@ -892,7 +1553,7 @@ export default function ColaboradoresPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CORREO</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                         </tr>
                       </thead>
@@ -935,30 +1596,37 @@ export default function ColaboradoresPage() {
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.correo}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedColaborador(colaborador);
                                         setSelectedColaboradorCompleto(colaboradorCompleto);
                                         setIsPermisosModalOpen(true);
+                                        // Obtener permisos cuando se abre el modal
+                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                        if (usuario) {
+                                          await fetchPermisos(usuario);
+                                        }
                                       }}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Gestionar permisos del colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                       </svg>
-                                      <span>Permisos</span>
+                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
                                     </button>
                                     <button
                                       onClick={() => handleActivarColaborador(colaborador)}
-                                      className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      title="Activar colaborador"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                       </svg>
-                                      <span>Activar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Activar</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1006,6 +1674,7 @@ export default function ColaboradoresPage() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
           </main>
@@ -1046,32 +1715,11 @@ export default function ColaboradoresPage() {
                   </div>
                 </div>
               </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="block text-xs font-semibold text-gray-600 mb-1">Usuario</span>
-                    <div className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900">
-                      {usuarioValue}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="block text-xs font-semibold text-gray-600 mb-1">Contraseña</span>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm tracking-[0.25em] text-gray-900">
-                        {maskedPassword}
-                      </div>
-                      <button className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg hover:shadow-md hover:scale-[1.02] transition-all duration-200 shadow-sm">
-                        Editar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Permisos por Módulo */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex itemsCenter justify-between">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 6a4 4 0 118 0v2a2 2 0 012 2v4a2 2 0 01-2 2h-1m-4 4H6a2 2 0 01-2-2v-5a2 2 0 012-2h2" />
@@ -1080,16 +1728,22 @@ export default function ColaboradoresPage() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700 border-b-2 border-blue-800">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MÓDULO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PERMISO</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {modulosPermisos.map((mod) => (
+                {loadingPermisos ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Cargando permisos...</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MÓDULO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PERMISO</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {modulosPermisos.length > 0 ? modulosPermisos.map((mod) => (
                       <tr key={mod.id} className="hover:bg-slate-200 transition-colors">
                         <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
                           {mod.nombre}
@@ -1120,9 +1774,16 @@ export default function ColaboradoresPage() {
                           )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    )) : (
+                        <tr>
+                          <td colSpan={3} className="px-3 py-4 text-center text-sm text-gray-500">
+                            No hay módulos disponibles
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -1143,51 +1804,48 @@ export default function ColaboradoresPage() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-blue-700 border-b-2 border-blue-800">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">URL</th>
-                      <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {subVistasPermitidas.map((vista) => (
-                      <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                          {vista.nombre}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px]">
-                          {vista.url ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
-                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              PDF
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-gray-400">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => handleEliminarSubVista(vista.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>Eliminar</span>
-                          </button>
-                        </td>
+                {loadingPermisos ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Cargando sub vistas...</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {subVistasPermitidas.length > 0 ? subVistasPermitidas.map((vista) => (
+                        <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            {vista.nombre}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => handleEliminarSubVistaClick(vista.id)}
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              title="Eliminar sub vista"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              <span style={{ pointerEvents: 'none' }}>Eliminar</span>
+                            </button>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={2} className="px-3 py-4 text-center text-sm text-gray-500">
+                            No hay sub vistas disponibles
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -1244,41 +1902,81 @@ export default function ColaboradoresPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {subVistasDisponibles
-                        .filter((vista) =>
-                          filtroAreaSubVista === "TODAS" ? true : vista.area === filtroAreaSubVista
-                        )
-                        .filter((vista) =>
-                          busquedaSubVista
-                            ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
-                            : true
-                        )
-                        .map((vista) => (
-                          <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {vista.nombre}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {vista.area}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <button
-                                onClick={() => handleAgregarSubVista(vista.id)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 border-2 border-emerald-700 hover:bg-emerald-700 hover:border-emerald-800 text-white rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
-                                <span>Agregar</span>
-                              </button>
+                      {(() => {
+                        const vistasFiltradas = subVistasDisponibles
+                          .filter((vista) =>
+                            filtroAreaSubVista === "TODAS" ? true : vista.area === filtroAreaSubVista
+                          )
+                          .filter((vista) =>
+                            busquedaSubVista
+                              ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
+                              : true
+                          );
+                        
+                        return vistasFiltradas.length > 0 ? (
+                          vistasFiltradas.map((vista) => (
+                            <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                {vista.nombre}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                {vista.area}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <button
+                                  onClick={() => handleAgregarSubVista(vista.id)}
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Agregar sub vista"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>Agregar</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} className="px-3 py-4 text-center text-sm text-gray-500">
+                              No hay sub vistas disponibles para agregar
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </Modal>
+      {/* Modal de Confirmación para Eliminar SubVista */}
+      <Modal
+        isOpen={isEliminarSubVistaModalOpen}
+        onClose={() => {
+          setIsEliminarSubVistaModalOpen(false);
+          setSubVistaAEliminar(null);
+        }}
+        title="Eliminar Sub Vista"
+        size="md"
+        primaryButtonText="Sí, Eliminar"
+        onPrimaryButtonClick={handleConfirmarEliminarSubVista}
+        secondaryButtonText="Cancelar"
+        onSecondaryButtonClick={() => {
+          setIsEliminarSubVistaModalOpen(false);
+          setSubVistaAEliminar(null);
+        }}
+      >
+        {subVistaAEliminar && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              ¿Estás seguro de que deseas eliminar la sub vista <strong>{subVistaAEliminar.nombre}</strong>?
+            </p>
+            <p className="text-xs text-gray-500">
+              Esta acción eliminará el permiso de esta sub vista para el usuario.
+            </p>
           </div>
         )}
       </Modal>
@@ -1316,21 +2014,26 @@ export default function ColaboradoresPage() {
         onClose={() => {
           setIsAgregarModalOpen(false);
           setNewColaboradorForm({
+            id_colaborador: null,
             nombre: "",
             apellido: "",
             area: "",
-            correo: "",
-            fechaCumpleanos: "",
+            usuario: "",
+            contraseña: "",
           });
         }}
         title="Agregar Nuevo Colaborador"
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
+          {/* Primera columna: Formulario */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Nombre <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Nombre
               </label>
               <input
                 type="text"
@@ -1341,8 +2044,11 @@ export default function ColaboradoresPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Apellido <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Apellido
               </label>
               <input
                 type="text"
@@ -1352,82 +2058,229 @@ export default function ColaboradoresPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Área
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.area}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
+                placeholder="Ej: Administracion, Ventas, Logistica"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Usuario
+              </label>
+              <input
+                type="text"
+                value={newColaboradorForm.usuario}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, usuario: e.target.value })}
+                placeholder="Usuario"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={newColaboradorForm.contraseña}
+                onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, contraseña: e.target.value })}
+                placeholder="Contraseña"
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Área <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newColaboradorForm.area}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, area: e.target.value })}
-              placeholder="Ej: Administracion, Ventas, Logistica"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
+
+          {/* Segunda columna: Lista de colaboradores sin usuario/contraseña */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Colaboradores sin Usuario/Contraseña
+              </label>
+              <div className="border border-gray-300 rounded-lg max-h-[400px] overflow-y-auto custom-scrollbar">
+                {(() => {
+                  const colaboradoresSinUsuario = colaboradores.filter(colab => {
+                    const tieneUsuario = colab.usuario && String(colab.usuario).trim() !== "";
+                    return !tieneUsuario;
+                  });
+                  
+                  return colaboradoresSinUsuario.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      No hay colaboradores sin usuario/contraseña
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {colaboradoresSinUsuario
+                      .map((colab, index) => (
+                        <button
+                          key={colab.id || index}
+                          onClick={() => {
+                            setNewColaboradorForm({
+                              id_colaborador: colab.id || null,
+                              nombre: colab.nombre || "",
+                              apellido: colab.apellido || "",
+                              area: colab.area || "",
+                              usuario: "",
+                              contraseña: "",
+                            });
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-200 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {colab.nombre} {colab.apellido}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-0.5">{colab.area || "Sin área asignada"}</p>
+                            </div>
+                            <svg
+                              className="w-5 h-5 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Correo <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={newColaboradorForm.correo}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, correo: e.target.value })}
-              placeholder="correo@ejemplo.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Fecha de Cumpleaños <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newColaboradorForm.fechaCumpleanos}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, fechaCumpleanos: e.target.value })}
-              placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
-          </div>
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setIsAgregarModalOpen(false);
-                setNewColaboradorForm({
-                  nombre: "",
-                  apellido: "",
-                  area: "",
-                  correo: "",
-                  fechaCumpleanos: "",
-                });
-              }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={() => {
-                // Validar campos requeridos
-                if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.area || !newColaboradorForm.correo || !newColaboradorForm.fechaCumpleanos) {
-                  alert("Por favor, complete todos los campos requeridos");
-                  return;
+        </div>
+        
+        <div className="flex items-center justify-end space-x-3 pt-4 mt-6 border-t border-gray-200">
+          <button
+            onClick={() => {
+              setIsAgregarModalOpen(false);
+              setNewColaboradorForm({
+                id_colaborador: null,
+                nombre: "",
+                apellido: "",
+                area: "",
+                usuario: "",
+                contraseña: "",
+              });
+            }}
+            className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              // Validar campos requeridos
+              if (!newColaboradorForm.id_colaborador || !newColaboradorForm.usuario || !newColaboradorForm.contraseña) {
+                alert("Por favor, seleccione un colaborador y complete usuario y contraseña");
+                return;
+              }
+
+              try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                  throw new Error("No se encontró el token de autenticación");
                 }
-                console.log("Agregar colaborador:", newColaboradorForm);
-                alert("Funcionalidad de agregado pendiente de implementar");
+
+                const response = await fetch(
+                  `https://colaboradores2026-2946605267.us-central1.run.app?metodo=agregar_credenciales`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                      "Authorization": `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      id_colaborador: newColaboradorForm.id_colaborador,
+                      usuario: newColaboradorForm.usuario,
+                      contrasena: newColaboradorForm.contraseña,
+                    }),
+                  }
+                );
+
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+                  throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log("Credenciales agregadas exitosamente:", data);
+                
+                // Mostrar notificación de éxito
+                setNotification({
+                  show: true,
+                  message: "Credenciales agregadas exitosamente",
+                  type: "success"
+                });
+                
+                // Cerrar modal y resetear formulario
                 setIsAgregarModalOpen(false);
                 setNewColaboradorForm({
+                  id_colaborador: null,
                   nombre: "",
                   apellido: "",
                   area: "",
-                  correo: "",
-                  fechaCumpleanos: "",
+                  usuario: "",
+                  contraseña: "",
                 });
-              }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
-            >
-              Agregar Colaborador
-            </button>
-          </div>
+
+                // Recargar la lista de colaboradores
+                fetchColaboradores();
+                
+                // Ocultar notificación después de 3 segundos
+                setTimeout(() => {
+                  setNotification({ show: false, message: "", type: "success" });
+                }, 3000);
+              } catch (error) {
+                console.error("Error al agregar credenciales:", error);
+                // Mostrar notificación de error
+                setNotification({
+                  show: true,
+                  message: `Error al agregar credenciales: ${error.message}`,
+                  type: "error"
+                });
+                // Ocultar notificación después de 4 segundos
+                setTimeout(() => {
+                  setNotification({ show: false, message: "", type: "error" });
+                }, 4000);
+              }
+            }}
+            className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+          >
+            Agregar Colaborador
+          </button>
         </div>
       </Modal>
 
@@ -1607,12 +2460,13 @@ export default function ColaboradoresPage() {
                                     };
                                     setDatosEditables([...datosParaMostrar, nuevoItem]);
                                   }}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Agregar nuevo dato"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                   </svg>
-                                  <span>Agregar</span>
+                                  <span style={{ pointerEvents: 'none' }}>Agregar</span>
                                 </button>
                               </div>
                               <div className="space-y-3">
@@ -1623,13 +2477,13 @@ export default function ColaboradoresPage() {
                                         const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
                                         setDatosEditables(nuevosDatos);
                                       }}
-                                      className="absolute top-2 right-2 flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                                      className="absolute top-2 right-2 inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Eliminar"
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                      <span>Eliminar</span>
+                                      <span style={{ pointerEvents: 'none' }}>Eliminar</span>
                                     </button>
                                     <div className="space-y-2 pr-8">
                                       {item.tipo && (
@@ -1714,6 +2568,54 @@ export default function ColaboradoresPage() {
           </div>
         )}
       </Modal>
+
+      {/* Notificación Toast */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${
+            notification.type === "success" 
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
+              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+          } min-w-[320px] max-w-md`}>
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+              notification.type === "success" 
+                ? "bg-green-500" 
+                : "bg-red-500"
+            }`}>
+              {notification.type === "success" ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${
+                notification.type === "success" 
+                  ? "text-green-800" 
+                  : "text-red-800"
+              }`}>
+                {notification.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setNotification({ show: false, message: "", type: notification.type })}
+              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${
+                notification.type === "success" 
+                  ? "hover:text-green-600" 
+                  : "hover:text-red-600"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

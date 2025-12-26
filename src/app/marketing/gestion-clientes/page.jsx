@@ -418,7 +418,7 @@ export default function GestionClientesMarketingPage() {
                     <tbody className="divide-y divide-gray-100">
                       {currentClientes.length > 0 ? (
                         currentClientes.map((cliente, index) => (
-                          <tr key={cliente.id} className="hover:bg-slate-100 transition-colors">
+                          <tr key={cliente.id} className="hover:bg-slate-200 transition-colors">
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
                               {cliente.id}
                             </td>
