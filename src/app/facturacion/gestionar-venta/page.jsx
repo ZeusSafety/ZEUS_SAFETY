@@ -71,6 +71,16 @@ export default function GestionarVentaPage() {
   const [loadingDetalles, setLoadingDetalles] = useState(false);
   const [modalVerOpen, setModalVerOpen] = useState(false);
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
+  const [modalEditarPagoOpen, setModalEditarPagoOpen] = useState(false);
+  const [formularioEditarPago, setFormularioEditarPago] = useState({
+    tipo_comprobante: "",
+    forma_pago: "",
+    fecha_pago: "",
+    regularizado: "NO",
+    cancelado: "NO",
+    estado: "COMPLETADO",
+    anulado: "NO"
+  });
   const [modalEliminarOpen, setModalEliminarOpen] = useState(false);
   const [modalMensaje, setModalMensaje] = useState({ open: false, tipo: "success", mensaje: "" });
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState({ open: false, venta: null, mensaje: "" });
@@ -443,6 +453,7 @@ export default function GestionarVentaPage() {
       if (pagosResponse.ok) {
         const pagosData = await pagosResponse.json();
         const pagos = Array.isArray(pagosData) ? pagosData : (pagosData.data || pagosData.pagos || []);
+        console.log("Datos de pagos recibidos de API:", pagos);
         setPagosVenta(pagos);
       }
     } catch (error) {
@@ -904,7 +915,17 @@ export default function GestionarVentaPage() {
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.asesor}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.comprobante}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
+                              <span className={`px-2 py-1 rounded text-[10px] font-semibold ${
+                                (venta.estado || "").toUpperCase() === "CANCELADO"
+                                  ? "bg-red-100 text-red-800"
+                                  : (venta.estado || "").toUpperCase() === "ANULADO"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : (venta.estado || "").toUpperCase() === "COMPLETADO"
+                                  ? "bg-green-100 text-green-800"
+                                  : (venta.estado || "").toUpperCase() === "PENDIENTE"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}>
                                 {venta.estado}
                               </span>
                             </td>
@@ -1128,10 +1149,16 @@ export default function GestionarVentaPage() {
                                   <td className="px-3 py-2 text-gray-800">{venta.asesor}</td>
                                   <td className="px-3 py-2 text-gray-800">{venta.comprobante}</td>
                                   <td className="px-3 py-2">
-                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-semibold ${
-                                      venta.estado === "COMPLETADO" 
-                                        ? "bg-green-100 text-green-800" 
-                                        : "bg-yellow-100 text-yellow-800"
+                                    <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
+                                      (venta.estado || "").toUpperCase() === "CANCELADO"
+                                        ? "bg-red-100 text-red-800"
+                                        : (venta.estado || "").toUpperCase() === "ANULADO"
+                                        ? "bg-orange-100 text-orange-800"
+                                        : (venta.estado || "").toUpperCase() === "COMPLETADO"
+                                        ? "bg-green-100 text-green-800"
+                                        : (venta.estado || "").toUpperCase() === "PENDIENTE"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-gray-100 text-gray-800"
                                     }`}>
                                       {venta.estado}
                                     </span>
@@ -1394,10 +1421,16 @@ export default function GestionarVentaPage() {
                             Estado
                           </p>
                           <div className="mt-1">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${
-                              (detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO").toUpperCase() === "COMPLETADO"
+                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
+                              ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "CANCELADO"
+                                ? "bg-red-100 text-red-800"
+                                : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "ANULADO"
+                                ? "bg-orange-100 text-orange-800"
+                                : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "COMPLETADO"
                                 ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
+                                : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "PENDIENTE"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
                             }`}>
                               {detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO"}
                             </span>
@@ -1678,7 +1711,7 @@ export default function GestionarVentaPage() {
                           Cancelado
                         </p>
                         <div className="mt-1">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${
+                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
                             (datosPago?.CANCELADO || "NO").toUpperCase() === "SI" 
                               ? "bg-red-100 text-red-800" 
                               : "bg-green-100 text-green-800"
@@ -1692,8 +1725,12 @@ export default function GestionarVentaPage() {
                           Estado
                         </p>
                         <div className="mt-1">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${
-                            (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "COMPLETADO" 
+                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
+                            (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "CANCELADO"
+                              ? "bg-red-100 text-red-800"
+                              : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "ANULADO"
+                              ? "bg-orange-100 text-orange-800"
+                              : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "COMPLETADO" 
                               ? "bg-green-100 text-green-800" 
                               : (datosPago?.ESTADO || "").toUpperCase() === "PENDIENTE"
                               ? "bg-yellow-100 text-yellow-800"
@@ -1703,6 +1740,44 @@ export default function GestionarVentaPage() {
                           </span>
                         </div>
                       </div>
+                      {(datosPago?.ANULADO || ventaSeleccionada?.anulado) && (
+                        <div>
+                          <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
+                            Anulado
+                          </p>
+                          <div className="mt-1">
+                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
+                              (datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO").toUpperCase() === "SI" 
+                                ? "bg-orange-100 text-orange-800" 
+                                : "bg-gray-100 text-gray-800"
+                            }`}>
+                              {datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO"}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          setFormularioEditarPago({
+                            tipo_comprobante: datosPago?.COMPROBANTE || "",
+                            forma_pago: datosPago?.TIPO_DE_PAGO || "",
+                            fecha_pago: datosPago?.FECHA_DE_PAGO || "",
+                            regularizado: datosPago?.REGULARIZADO || "NO",
+                            cancelado: datosPago?.CANCELADO || "NO",
+                            estado: datosPago?.ESTADO || "COMPLETADO",
+                            anulado: datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO"
+                          });
+                          setModalEditarPagoOpen(true);
+                        }}
+                        className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Editar</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1731,30 +1806,69 @@ export default function GestionarVentaPage() {
                   </div>
                   <div className="p-4">
                     {pagosVenta && pagosVenta.length > 0 ? (
-                      <div className="space-y-2">
-                        {pagosVenta.map((pago, index) => (
-                          <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                            <div className="flex items-center justify-between">
-              <div>
-                                <p className="text-xs font-semibold text-gray-700">
-                                  {formatDate(pago.FECHA_PAGO || pago.fecha_pago || pago.FECHA || pago.fecha)}
-                                </p>
-                                <p className="text-[10px] text-gray-500 mt-1">
-                                  {pago.MEDIO_PAGO || pago.medio_pago || pago.FORMA_PAGO || pago.forma_pago || "N/A"}
-                                </p>
-                              </div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {formatCurrency(pago.MONTO || pago.monto || pago.MONTO_PAGADO || pago.monto_pagado || 0)}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                        <div className="pt-2 border-t border-gray-200 mt-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-gray-700">Total Pagado:</span>
-                            <span className="text-sm font-bold text-gray-900">{formatCurrency(totalPagado)}</span>
-                          </div>
-                        </div>
+                      <div className="rounded-lg border border-gray-200 overflow-hidden">
+                        <table className="w-full text-[11px]">
+                          <thead>
+                            <tr className="bg-green-600 text-white">
+                              <th className="px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wide">Nombre</th>
+                              <th className="px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wide">Comprobante</th>
+                              <th className="px-3 py-2.5 text-right font-bold text-[10px] uppercase tracking-wide">Monto</th>
+                              <th className="px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wide">Medio de Pago</th>
+                              <th className="px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wide">Fecha Regularización</th>
+                              <th className="px-3 py-2.5 text-center font-bold text-[10px] uppercase tracking-wide">Validación</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {pagosVenta.map((pago, index) => {
+                              // Obtener los valores reales de la API con múltiples variantes posibles
+                              const nombre = pago.NOMBRE || pago.nombre || pago.NOMBRE_PERSONA || pago.nombre_persona || pago.NOMBRE_COMPLETO || pago.nombre_completo || "N/A";
+                              // Usar el comprobante de Información de Pago (el mismo que se muestra arriba)
+                              const comprobante = datosPago?.N_COMPROBANTE || ventaSeleccionada?.comprobante || pago.COMPROBANTE || pago.comprobante || pago.N_COMPROBANTE || pago.n_comprobante || pago.NUMERO_COMPROBANTE || pago.numero_comprobante || pago.COMPROBANTE_PAGO || pago.comprobante_pago || "N/A";
+                              const medioPago = pago.MEDIO_PAGO || pago.medio_pago || pago.MEDIO_DE_PAGO || pago.medio_de_pago || pago.FORMA_PAGO || pago.forma_pago || pago.FORMA_DE_PAGO || pago.forma_de_pago || pago.TIPO_PAGO || pago.tipo_pago || datosPago?.TIPO_DE_PAGO || "N/A";
+                              const monto = pago.MONTO || pago.monto || pago.MONTO_PAGADO || pago.monto_pagado || pago.MONTO_TOTAL || pago.monto_total || 0;
+                              const fechaReg = pago.FECHA_REGULARIZACION || pago.fecha_regularizacion || pago.FECHA_REG || pago.fecha_reg || pago.FECHA_PAGO || pago.fecha_pago || pago.FECHA || pago.fecha || "N/A";
+                              const validacion = pago.VALIDACION || pago.validacion || pago.ESTADO_VALIDACION || pago.estado_validacion || "VALIDO";
+                              
+                              return (
+                                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-3 py-2.5 text-gray-900 font-medium">
+                                    {nombre}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-gray-900 font-medium">
+                                    {comprobante}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right font-bold text-gray-900">
+                                    {formatCurrency(monto)}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-gray-900 font-medium">
+                                    {medioPago}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-gray-900 font-medium">
+                                    {fechaReg !== "N/A" ? formatDate(fechaReg) : "N/A"}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center">
+                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${
+                                      validacion.toUpperCase() === "VALIDO"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}>
+                                      {validacion.toUpperCase()}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            <tr className="bg-blue-50 border-t-2 border-blue-200">
+                              <td colSpan="2" className="px-3 py-2.5 text-left font-bold text-gray-900">
+                                TOTAL PAGADO:
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-bold text-gray-900">
+                                {formatCurrency(totalPagado)}
+                              </td>
+                              <td colSpan="3"></td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
                       <div className="p-6 flex flex-col items-center justify-center text-gray-400 space-y-3">
@@ -1976,6 +2090,224 @@ export default function GestionarVentaPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal Editar Información de Pago */}
+      <Modal
+        isOpen={modalEditarPagoOpen}
+        onClose={() => {
+          setModalEditarPagoOpen(false);
+          setFormularioEditarPago({
+            tipo_comprobante: "",
+            forma_pago: "",
+            fecha_pago: "",
+            regularizado: "NO",
+            cancelado: "NO",
+            estado: "COMPLETADO",
+            anulado: "NO"
+          });
+        }}
+        title="Editar Información de Pago"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Tipo Comprobante
+            </label>
+            <input
+              type="text"
+              value={formularioEditarPago.tipo_comprobante}
+              onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, tipo_comprobante: e.target.value })}
+              className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+              placeholder="Ej: FACTURA, BOLETA"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Forma de Pago
+            </label>
+            <select
+              value={formularioEditarPago.forma_pago}
+              onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, forma_pago: e.target.value })}
+              className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Seleccione...</option>
+              <option value="EFECTIVO">EFECTIVO</option>
+              <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+              <option value="TARJETA">TARJETA</option>
+              <option value="YAPE">YAPE</option>
+              <option value="PLIN">PLIN</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Fecha de Pago
+            </label>
+            <input
+              type="date"
+              value={formularioEditarPago.fecha_pago ? (() => {
+                try {
+                  const date = new Date(formularioEditarPago.fecha_pago);
+                  if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                  }
+                } catch {}
+                return "";
+              })() : ""}
+              onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, fecha_pago: e.target.value })}
+              className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Regularizado
+              </label>
+              <select
+                value={formularioEditarPago.regularizado}
+                onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, regularizado: e.target.value })}
+                className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Cancelado
+              </label>
+              <select
+                value={formularioEditarPago.cancelado}
+                onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, cancelado: e.target.value })}
+                className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Estado
+              </label>
+              <select
+                value={formularioEditarPago.estado}
+                onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, estado: e.target.value })}
+                className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="COMPLETADO">COMPLETADO</option>
+                <option value="PENDIENTE">PENDIENTE</option>
+                <option value="CANCELADO">CANCELADO</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Anulado
+              </label>
+              <select
+                value={formularioEditarPago.anulado}
+                onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, anulado: e.target.value })}
+                className="w-full px-3 py-2 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 mt-4">
+          <button
+            onClick={() => {
+              setModalEditarPagoOpen(false);
+              setFormularioEditarPago({
+                tipo_comprobante: "",
+                forma_pago: "",
+                fecha_pago: "",
+                regularizado: "NO",
+                cancelado: "NO",
+                estado: "COMPLETADO",
+                anulado: "NO"
+              });
+            }}
+            className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem("token");
+                const idPago = datosPago?.ID_PAGO || ventaSeleccionada?.id;
+                
+                if (!idPago) {
+                  setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró el ID del pago." });
+                  return;
+                }
+
+                // Formatear fecha si es necesario
+                let fechaFormateada = formularioEditarPago.fecha_pago;
+                if (fechaFormateada && fechaFormateada.includes('-')) {
+                  const [year, month, day] = fechaFormateada.split('-');
+                  fechaFormateada = `${day}/${month}/${year}`;
+                }
+
+                const requestBody = {
+                  id_pago: idPago,
+                  tipo_comprobante: formularioEditarPago.tipo_comprobante,
+                  forma_pago: formularioEditarPago.forma_pago,
+                  fecha_pago: fechaFormateada,
+                  regularizado: formularioEditarPago.regularizado,
+                  cancelado: formularioEditarPago.cancelado,
+                  estado: formularioEditarPago.estado,
+                  anulado: formularioEditarPago.anulado
+                };
+
+                const response = await fetch(`${VENTAS_API_URL}?area=ventas&forma=actualizar_pago`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    ...(token && { Authorization: `Bearer ${token}` })
+                  },
+                  body: JSON.stringify(requestBody),
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(errorText || `Error ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Actualizar datosPago con los nuevos valores
+                setDatosPago({
+                  ...datosPago,
+                  COMPROBANTE: formularioEditarPago.tipo_comprobante,
+                  TIPO_DE_PAGO: formularioEditarPago.forma_pago,
+                  FECHA_DE_PAGO: fechaFormateada,
+                  REGULARIZADO: formularioEditarPago.regularizado,
+                  CANCELADO: formularioEditarPago.cancelado,
+                  ESTADO: formularioEditarPago.estado,
+                  ANULADO: formularioEditarPago.anulado
+                });
+
+                setModalEditarPagoOpen(false);
+                setModalMensaje({ open: true, tipo: "success", mensaje: "Información de pago actualizada correctamente." });
+                
+                // Recargar detalles para asegurar que todo esté actualizado
+                await cargarDetallesVenta(ventaSeleccionada.id, true);
+              } catch (error) {
+                console.error("Error al actualizar información de pago:", error);
+                setModalMensaje({ open: true, tipo: "error", mensaje: `Error al actualizar: ${error.message}` });
+              }
+            }}
+            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Guardar Cambios
+          </button>
+        </div>
       </Modal>
 
       {/* Modal Eliminar */}

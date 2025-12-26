@@ -32,7 +32,7 @@ export default function Modal({
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
-    full: "max-w-6xl",
+    full: "max-w-7xl",
   };
 
   const showFooter = !hideFooter && (primaryButtonText || secondaryButtonText);

@@ -91,6 +91,162 @@ export default function ColaboradoresPage() {
     );
   };
 
+  // Función para actualizar módulos del colaborador
+  const actualizarModulos = async (idColaborador, modulosPermitidos) => {
+    try {
+      // Asegurar que id_colaborador sea un número
+      const idColab = typeof idColaborador === 'string' ? parseInt(idColaborador, 10) : idColaborador;
+      
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'update_modules');
+      url.searchParams.append('id_colaborador', idColab.toString());
+
+      // Preparar el body - la API requiere un array de objetos con NOMBRE y ESTADO
+      // Formato esperado: [{ "NOMBRE": "LOGISTICA", "ESTADO": "0" }, ...]
+      // ESTADO: "0" = permitido/activo, "1" = no permitido/inactivo
+      // IMPORTANTE: El body es directamente el array, NO un objeto con 'datos'
+      const modulosFormateados = Array.isArray(modulosPermitidos) 
+        ? modulosPermitidos
+            .map(mod => {
+              // mod es un objeto con { nombre, permitido }
+              const nombreModulo = mod.nombre || mod.NOMBRE || mod.id;
+              const nombreFinal = String(nombreModulo).trim().toUpperCase();
+              
+              // Determinar el estado: "0" si está permitido, "1" si no
+              const estado = (mod.permitido === false) ? "1" : "0";
+              
+              // Retornar objeto con formato que espera la API (exactamente como Postman)
+              return {
+                NOMBRE: nombreFinal,
+                ESTADO: estado
+              };
+            })
+            .filter(mod => mod.NOMBRE !== '')
+        : [];
+
+      // Formato correcto según Postman: el body es directamente el array, NO un objeto
+      // id_colaborador va solo en la URL como query parameter
+      const requestBody = modulosFormateados;
+
+      console.log("Enviando a update_modules:", {
+        url: url.toString(),
+        body: requestBody,
+        bodyStringified: JSON.stringify(requestBody),
+        modulosPermitidos: modulosPermitidos,
+        tipo_modulosPermitidos: typeof modulosPermitidos,
+        esArray: Array.isArray(modulosPermitidos),
+        id_colaborador: idColab,
+        tipo_id_colaborador: typeof idColab,
+        bodyType: Array.isArray(requestBody) ? "array" : typeof requestBody
+      });
+
+      const response = await fetch(url.toString(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response from API:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          url: url.toString(),
+          bodySent: requestBody
+        });
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || errorText || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al actualizar módulos:", error);
+      throw error;
+    }
+  };
+
+  // Función para guardar cambios de módulos
+  const handleGuardarModulos = async () => {
+    if (!selectedColaborador || !selectedColaborador.id) {
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+      return;
+    }
+
+    try {
+      // Lista completa de todos los módulos posibles (según Postman)
+      const todosLosModulos = [
+        "MARKETING",
+        "IMPORTACION",
+        "SISTEMAS",
+        "FACTURACION",
+        "LOGISTICA",
+        "GERENCIA",
+        "ADMINISTRACION",
+        "VENTAS",
+        "RECURSOS HUMANOS"
+      ];
+
+      // Crear un mapa de módulos permitidos para búsqueda rápida
+      const modulosPermitidosMap = new Map();
+      modulosPermisos.forEach(mod => {
+        const nombreModulo = String(mod.id || mod.nombre || mod.NOMBRE).toUpperCase().trim();
+        modulosPermitidosMap.set(nombreModulo, mod.permitido !== false);
+      });
+
+      // Crear array con TODOS los módulos y su estado
+      const modulosConEstado = todosLosModulos.map(nombreModulo => ({
+        nombre: nombreModulo,
+        permitido: modulosPermitidosMap.get(nombreModulo) !== false // Si no está en el mapa, asumir permitido
+      }));
+
+      console.log("Módulos con estado a enviar:", modulosConEstado);
+      console.log("ID Colaborador:", selectedColaborador.id);
+
+      // Validar que haya módulos
+      if (!Array.isArray(modulosConEstado) || modulosConEstado.length === 0) {
+        throw new Error("Error: No hay módulos para actualizar");
+      }
+
+      await actualizarModulos(selectedColaborador.id, modulosConEstado);
+
+      setNotification({
+        show: true,
+        message: "Módulos actualizados exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+      // Recargar permisos para asegurar sincronización
+      if (selectedColaborador.usuario) {
+        await fetchPermisos(selectedColaborador.usuario);
+      }
+    } catch (error) {
+      console.error("Error al guardar módulos:", error);
+      setNotification({
+        show: true,
+        message: `Error al guardar módulos: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
+  };
+
   // Función para insertar una subvista
   const insertarSubVista = async (userId, subVistaId) => {
     try {
@@ -1948,6 +2104,25 @@ export default function ColaboradoresPage() {
                   </table>
                 </div>
               </div>
+            </div>
+
+            {/* Botón para guardar cambios de módulos */}
+            <div className="flex items-center justify-end space-x-3 pt-4 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsPermisosModalOpen(false);
+                  setSelectedColaborador(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGuardarModulos}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Guardar Cambios
+              </button>
             </div>
           </div>
         )}

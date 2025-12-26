@@ -9,12 +9,40 @@ async function fetchFromAPI(method, request, body = null) {
 
     console.log("Token recibido:", token ? token.substring(0, 20) + "..." : "No hay token");
 
+    // Obtener query parameters de la URL
+    const { searchParams } = new URL(request.url);
+    const methodParam = searchParams.get("method") || searchParams.get("metodo");
+
     // Construir URL según el método
     let apiUrl = "https://colaboradores2026-2946605267.us-central1.run.app";
+    
     if (method === "GET") {
-      apiUrl += "?method=listado_colaboradores";
+      if (methodParam) {
+        // Si hay un método específico, usarlo
+        apiUrl += `?method=${methodParam}`;
+        // Agregar otros parámetros si existen
+        const idColaborador = searchParams.get("id_colaborador");
+        if (idColaborador) {
+          apiUrl += `&id_colaborador=${idColaborador}`;
+        }
+      } else {
+        apiUrl += "?method=listado_colaboradores";
+      }
     } else if (method === "PUT") {
-      apiUrl += "?method=actualizar_colaborador";
+      if (methodParam) {
+        apiUrl += `?metodo=${methodParam}`;
+        // Agregar ID si existe
+        const id = searchParams.get("id");
+        if (id) {
+          apiUrl += `&id=${id}`;
+        }
+      } else {
+        apiUrl += "?method=actualizar_colaborador";
+      }
+    } else if (method === "POST") {
+      if (methodParam) {
+        apiUrl += `?metodo=${methodParam}`;
+      }
     }
 
     console.log("Llamando a API:", apiUrl);

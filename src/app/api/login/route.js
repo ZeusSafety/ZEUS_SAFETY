@@ -14,11 +14,14 @@ const MODULE_MAPPING = {
   "ventas": "ventas",
   "marketing": "marketing",
   "sistemas": "sistemas",
-  "recursos-humanos": "recursos-humanos",
-  "recursos humanos": "recursos-humanos",
-  "facturacion": "facturacion",
-  "facturación": "facturacion",
-  "permisos": "permisos",
+    "recursos-humanos": "recursos-humanos",
+    "recursos humanos": "recursos-humanos",
+    "facturacion": "facturacion",
+    "facturación": "facturacion",
+    "permisos": "permisos",
+    "boletin-informativo": "boletin-informativo",
+    "boletín informativo": "boletin-informativo",
+    "boletin informativo": "boletin-informativo",
 };
 
 export async function POST(request) {
@@ -288,6 +291,9 @@ export async function POST(request) {
           "facturación": "facturacion",
           "recursos humanos": "recursos-humanos",
           "recursos-humanos": "recursos-humanos",
+          "boletin-informativo": "boletin-informativo",
+          "boletín informativo": "boletin-informativo",
+          "boletin informativo": "boletin-informativo",
         };
         
         if (specialMapping[modLower]) {
@@ -342,9 +348,15 @@ export async function POST(request) {
       "recursos-humanos",
       "facturacion",
       "permisos",
+      "boletin-informativo",
     ];
 
-    const finalModules = isAdmin ? allModules : normalizedModules;
+    let finalModules = isAdmin ? allModules : normalizedModules;
+    
+    // Asegurar que "boletin-informativo" siempre esté disponible para todos los usuarios
+    if (!finalModules.includes("boletin-informativo")) {
+      finalModules = [...finalModules, "boletin-informativo"];
+    }
     
     console.log("Final modules:", finalModules);
     console.log("Final modules count:", finalModules.length);

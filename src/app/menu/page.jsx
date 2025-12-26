@@ -128,13 +128,6 @@ export default function MenuPage() {
       status: "Disponible",
     },
     {
-      id: "permisos",
-      name: "Permisos/Solicitudes e Incidencias",
-      icon: "list",
-      description: "Gestión de permisos y solicitudes",
-      status: "Disponible",
-    },
-    {
       id: "seguimiento-monitoreo",
       name: "Seguimiento y Monitoreo",
       icon: "location",

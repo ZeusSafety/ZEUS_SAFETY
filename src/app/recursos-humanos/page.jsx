@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback } from "react";
+import { useState, useEffect, Suspense, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
@@ -74,6 +74,16 @@ function RecursosHumanosContent() {
     areaPrincipal: "",
   });
   const [loadingAgregarColaborador, setLoadingAgregarColaborador] = useState(false);
+  const [isAreaSelectOpen, setIsAreaSelectOpen] = useState(false);
+  const areaSelectRef = useRef(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [isImagenModalOpen, setIsImagenModalOpen] = useState(false);
+  const [selectedColaboradorImagen, setSelectedColaboradorImagen] = useState(null);
+  const [imagenPreview, setImagenPreview] = useState(null);
+  const [imagenActualGuardada, setImagenActualGuardada] = useState(null); // Imagen guardada en BD
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [loadingImagenActual, setLoadingImagenActual] = useState(false);
 
   // Función para obtener el ID del colaborador
   const getColaboradorId = (colaborador) => {
@@ -327,6 +337,96 @@ function RecursosHumanosContent() {
 
     const response = await fetch(
       `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_seguros&id=${colaboradorId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
+  // Función para obtener la imagen actual del colaborador
+  const fetchImagenColaborador = useCallback(async (colaboradorId) => {
+    try {
+      setLoadingImagenActual(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación");
+      }
+
+      const response = await fetch(
+        `/api/colaboradores?method=obtener_imagen_colaborador&id_colaborador=${colaboradorId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Si no se encuentra (404), no hay imagen, retornar null
+        if (response.status === 404) {
+          return null;
+        }
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      let imageUrl = data?.IMAGE_URL || data?.image_url || null;
+      
+      console.log("🔍 Datos recibidos del backend:", data);
+      console.log("🔍 URL extraída:", imageUrl);
+      
+      if (!imageUrl) {
+        console.log("⚠️ No se encontró imagen para el colaborador");
+        return null;
+      }
+      
+      console.log("✅ URL obtenida de BD:", imageUrl);
+      
+      // Con no_encriptar, la URL ya viene completa y se puede usar directamente
+      // Igual que en productos - no necesita procesamiento adicional
+      return imageUrl;
+    } catch (error) {
+      console.error("Error al obtener imagen del colaborador:", error);
+      // Si hay error, retornar null en lugar de lanzar excepción
+      return null;
+    } finally {
+      setLoadingImagenActual(false);
+    }
+  }, []);
+
+  // Función para guardar/actualizar imagen del colaborador
+  // El backend maneja automáticamente INSERT o UPDATE según si existe la imagen
+  const guardarImagenColaborador = async (colaboradorId, imageUrl) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No se encontró el token de autenticación");
+    }
+
+    const payload = {
+      image_url: imageUrl,
+      nombre: "Foto de Perfil",
+      tipo: "FOTOCHECK"
+    };
+
+    // El backend actualizar_imagen_colaborador maneja automáticamente INSERT o UPDATE
+    const response = await fetch(
+      `/api/colaboradores?metodo=actualizar_imagen_colaborador&id=${colaboradorId}`,
       {
         method: "PUT",
         headers: {
@@ -667,6 +767,42 @@ function RecursosHumanosContent() {
       setRolesDisponibles(["ADMINISTRADOR", "USUARIO", "SUPERVISOR", "GERENTE", "ASISTENTE"]);
     }
   }, [isVerDetallesModalOpen, fetchAreas]);
+
+  // Cargar áreas cuando se abre el modal de agregar colaborador
+  useEffect(() => {
+    if (isAgregarColaboradorModalOpen) {
+      fetchAreas();
+      setIsAreaSelectOpen(false);
+    }
+  }, [isAgregarColaboradorModalOpen, fetchAreas]);
+
+  // Calcular posición del dropdown cuando se abre
+  useEffect(() => {
+    if (isAreaSelectOpen && areaSelectRef.current) {
+      const rect = areaSelectRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isAreaSelectOpen]);
+
+  // Cerrar el dropdown de áreas al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isAreaSelectOpen && !event.target.closest('.area-select-container') && !event.target.closest('.area-dropdown')) {
+        setIsAreaSelectOpen(false);
+      }
+    };
+
+    if (isAreaSelectOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isAreaSelectOpen]);
 
   // Cargar colaboradores al montar el componente
   useEffect(() => {
@@ -1090,6 +1226,39 @@ function RecursosHumanosContent() {
                                     </svg>
                                     <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
                                   </button>
+                                  <button
+                                    onClick={async () => {
+                                      setSelectedColaboradorImagen(colaboradorCompleto);
+                                      setIsImagenModalOpen(true);
+                                      setImagenPreview(null);
+                                      setImagenActualGuardada(null);
+                                      setSelectedImageFile(null);
+                                      
+                                      // Obtener imagen actual del backend
+                                      const colaboradorId = getColaboradorId(colaboradorCompleto);
+                                      console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
+                                      if (colaboradorId) {
+                                        const imagenUrl = await fetchImagenColaborador(colaboradorId);
+                                        console.log("🔄 Imagen obtenida:", imagenUrl);
+                                        if (imagenUrl) {
+                                          setImagenActualGuardada(imagenUrl);
+                                          console.log("✅ Imagen actual guardada establecida:", imagenUrl);
+                                          // NO establecer imagenPreview aquí - solo para archivos nuevos
+                                        } else {
+                                          setImagenActualGuardada(null);
+                                          console.log("⚠️ No hay imagen guardada para este colaborador");
+                                        }
+                                      }
+                                    }}
+                                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
+                                    title="Gestionar imagen del colaborador"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                  </button>
                             </div>
                           </td>
                         </tr>
@@ -1226,6 +1395,39 @@ function RecursosHumanosContent() {
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                     <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      setSelectedColaboradorImagen(colaboradorCompleto);
+                                      setIsImagenModalOpen(true);
+                                      setImagenPreview(null);
+                                      setImagenActualGuardada(null);
+                                      setSelectedImageFile(null);
+                                      
+                                      // Obtener imagen actual del backend
+                                      const colaboradorId = getColaboradorId(colaboradorCompleto);
+                                      console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
+                                      if (colaboradorId) {
+                                        const imagenUrl = await fetchImagenColaborador(colaboradorId);
+                                        console.log("🔄 Imagen obtenida:", imagenUrl);
+                                        if (imagenUrl) {
+                                          setImagenActualGuardada(imagenUrl);
+                                          console.log("✅ Imagen actual guardada establecida:", imagenUrl);
+                                          // NO establecer imagenPreview aquí - solo para archivos nuevos
+                                        } else {
+                                          setImagenActualGuardada(null);
+                                          console.log("⚠️ No hay imagen guardada para este colaborador");
+                                        }
+                                      }
+                                    }}
+                                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
+                                    title="Gestionar imagen del colaborador"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
                                   </button>
                             </div>
                           </td>
@@ -2878,6 +3080,7 @@ function RecursosHumanosContent() {
         isOpen={isAgregarColaboradorModalOpen}
         onClose={() => {
           setIsAgregarColaboradorModalOpen(false);
+          setIsAreaSelectOpen(false);
           setNewColaboradorForm({
             nombre: "",
             apellido: "",
@@ -2916,14 +3119,91 @@ function RecursosHumanosContent() {
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Área Principal <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
-              value={newColaboradorForm.areaPrincipal}
-              onChange={(e) => setNewColaboradorForm({ ...newColaboradorForm, areaPrincipal: e.target.value })}
-              placeholder="ID del Área (Ej: 1, 2, 3...)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder:text-gray-600"
-            />
-            <p className="mt-1 text-xs text-gray-500">Ingrese el ID numérico del área principal</p>
+            <div className="relative area-select-container" ref={areaSelectRef}>
+              <button
+                type="button"
+                onClick={() => !loadingAreas && setIsAreaSelectOpen(!isAreaSelectOpen)}
+                disabled={loadingAreas}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-left flex items-center justify-between transition-all duration-200 hover:border-gray-400 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border-gray-300 shadow-sm bg-white ${
+                  isAreaSelectOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+                }`}
+              >
+                <span className={newColaboradorForm.areaPrincipal ? 'text-gray-900' : 'text-gray-500'}>
+                  {newColaboradorForm.areaPrincipal
+                    ? areasDisponibles.find(a => (a.id || a.ID) == newColaboradorForm.areaPrincipal)?.nombre || areasDisponibles.find(a => (a.id || a.ID) == newColaboradorForm.areaPrincipal)?.NOMBRE || 'Seleccione un área'
+                    : 'Seleccione un área'}
+                </span>
+                <svg
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                    isAreaSelectOpen ? 'transform rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isAreaSelectOpen && !loadingAreas && (
+                <div
+                  className="area-dropdown fixed z-[10000] bg-white shadow-xl rounded-lg border border-gray-200 overflow-hidden"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    left: `${dropdownPosition.left}px`,
+                    width: `${dropdownPosition.width}px`,
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                  }}
+                >
+                  <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+                    {areasDisponibles.length > 0 ? (
+                      areasDisponibles.map((area) => {
+                        const areaId = area.id || area.ID;
+                        const areaNombre = area.nombre || area.NOMBRE;
+                        const isSelected = newColaboradorForm.areaPrincipal == areaId;
+                        
+                        return (
+                          <button
+                            key={areaId}
+                            type="button"
+                            onClick={() => {
+                              setNewColaboradorForm({ ...newColaboradorForm, areaPrincipal: String(areaId) });
+                              setIsAreaSelectOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm transition-all duration-150 rounded-md ${
+                              isSelected
+                                ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-200'
+                                : 'text-gray-900 hover:bg-gray-50'
+                            }`}
+                          >
+                            {areaNombre}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="px-3 py-2 text-xs text-gray-500 text-center">
+                        No hay áreas disponibles
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {loadingAreas && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
+            {loadingAreas && (
+              <p className="mt-1.5 text-xs text-gray-500 flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Cargando áreas...
+              </p>
+            )}
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
@@ -3024,6 +3304,278 @@ function RecursosHumanosContent() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal Ver/Insertar Imagen */}
+      <Modal
+        isOpen={isImagenModalOpen}
+        onClose={() => {
+          setIsImagenModalOpen(false);
+          setSelectedColaboradorImagen(null);
+          setImagenPreview(null);
+          setImagenActualGuardada(null);
+          setSelectedImageFile(null);
+        }}
+        title={selectedColaboradorImagen ? `Imagen de ${selectedColaboradorImagen?.nombre || selectedColaboradorImagen?.NOMBRE || ""} ${selectedColaboradorImagen?.apellido || selectedColaboradorImagen?.APELLIDO || ""}` : "Imagen del Colaborador"}
+        size="md"
+      >
+        {selectedColaboradorImagen && (
+          <div className="space-y-8">
+            {/* Imagen Actual - Solo mostrar si hay imagen guardada en BD (no preview de archivo nuevo) */}
+            {imagenActualGuardada && !selectedImageFile && (
+              <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                  <h3 className="text-base font-semibold text-gray-800 tracking-tight">Imagen Actual</h3>
+                </div>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative w-full max-w-lg bg-white rounded-xl p-4 shadow-inner border border-gray-100">
+                    <img 
+                      src={imagenActualGuardada} 
+                      alt="Imagen actual" 
+                      className="w-full h-auto max-h-72 object-contain rounded-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <a
+                    href={imagenActualGuardada}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Ver Imagen Actual</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Subir Nueva Imagen */}
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-1 h-5 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                <h3 className="text-base font-semibold text-gray-800 tracking-tight">Subir Nueva Imagen</h3>
+              </div>
+              {selectedImageFile && imagenPreview ? (
+                <div className="space-y-4">
+                  <div className="relative w-full max-w-lg mx-auto bg-white rounded-xl p-4 shadow-inner border border-gray-200">
+                    <div className="relative h-56 rounded-lg overflow-hidden bg-gray-50">
+                      <img 
+                        src={imagenPreview} 
+                        alt="Vista previa" 
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        onClick={() => {
+                          setSelectedImageFile(null);
+                          setImagenPreview(null); // Limpiar preview para que se muestre imagenActualGuardada
+                          const input = document.getElementById('imagen-input');
+                          if (input) input.value = '';
+                        }}
+                        className="absolute top-3 right-3 p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 shadow-md"
+                        title="Eliminar imagen seleccionada"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-800 mb-1">Archivo seleccionado</p>
+                        <p className="text-xs text-gray-600 truncate mb-1">{selectedImageFile?.name}</p>
+                        <p className="text-xs text-gray-500">Tamaño: {(selectedImageFile?.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('imagen-input');
+                      if (input) input.click();
+                    }}
+                    className="w-full max-w-lg mx-auto px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  >
+                    Cambiar Imagen
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="imagen-input"
+                  className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 hover:border-blue-400 transition-all duration-200"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Hacer clic para seleccionar archivo</span>
+                    </p>
+                    <p className="text-xs text-gray-500">JPG, PNG, GIF (MAX. 10MB)</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Validar tamaño (máximo 10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                          setNotification({
+                            show: true,
+                            message: "El archivo es demasiado grande. El tamaño máximo es 10MB.",
+                            type: "error"
+                          });
+                          setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                          e.target.value = "";
+                          return;
+                        }
+                        
+                        setSelectedImageFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          // Solo actualizar preview, NO tocar imagenActualGuardada
+                          setImagenPreview(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                    id="imagen-input"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setIsImagenModalOpen(false);
+                setSelectedColaboradorImagen(null);
+                setImagenPreview(null);
+                setImagenActualGuardada(null);
+                setSelectedImageFile(null);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedImageFile) {
+                  setNotification({
+                    show: true,
+                    message: "Por favor, selecciona una imagen para subir.",
+                    type: "error"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                  return;
+                }
+
+                const colaboradorId = getColaboradorId(selectedColaboradorImagen);
+                if (!colaboradorId) {
+                  setNotification({
+                    show: true,
+                    message: "No se pudo obtener el ID del colaborador.",
+                    type: "error"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                  return;
+                }
+
+                try {
+                  setUploadingImage(true);
+                  
+                  // Crear FormData para enviar el archivo
+                  const formData = new FormData();
+                  formData.append('file', selectedImageFile);
+
+                  // Subir archivo a la API de storage (usando no_encriptar como en productos)
+                  const uploadResponse = await fetch(
+                    `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_colaboradores&folder_bucket=ZEUS_1&method=no_encriptar`,
+                    {
+                      method: 'POST',
+                      body: formData,
+                    }
+                  );
+
+                  if (!uploadResponse.ok) {
+                    throw new Error(`Error al subir la imagen: ${uploadResponse.status}`);
+                  }
+
+                  const uploadData = await uploadResponse.json();
+                  const imageUrl = uploadData.url;
+
+                  if (!imageUrl) {
+                    throw new Error("La API no devolvió la URL de la imagen");
+                  }
+
+                  console.log("URL de imagen recibida:", imageUrl);
+
+                  // Guardar/actualizar en la base de datos
+                  await guardarImagenColaborador(colaboradorId, imageUrl);
+
+                  // Recargar la imagen actual desde el backend para mostrarla en el modal
+                  const imagenActualizada = await fetchImagenColaborador(colaboradorId);
+                  if (imagenActualizada) {
+                    setImagenActualGuardada(imagenActualizada);
+                    setImagenPreview(imagenActualizada);
+                    console.log("Imagen actualizada cargada desde BD:", imagenActualizada);
+                  } else {
+                    // Si no se encuentra, usar la URL que acabamos de subir
+                    setImagenActualGuardada(imageUrl);
+                    setImagenPreview(imageUrl);
+                  }
+
+                  // Limpiar el archivo seleccionado para que el botón se deshabilite
+                  setSelectedImageFile(null);
+
+                  // Recargar la lista de colaboradores para obtener los datos actualizados
+                  await fetchColaboradores();
+
+                  setNotification({
+                    show: true,
+                    message: "Imagen subida y guardada exitosamente.",
+                    type: "success"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+                  // NO cerrar el modal automáticamente - dejar que el usuario vea la imagen guardada
+                  // El usuario puede cerrarlo manualmente con el botón Cancelar o la X
+                } catch (error) {
+                  console.error("Error al subir imagen:", error);
+                  setNotification({
+                    show: true,
+                    message: `Error al subir la imagen: ${error.message}`,
+                    type: "error"
+                  });
+                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 5000);
+                } finally {
+                  setUploadingImage(false);
+                }
+              }}
+              disabled={!selectedImageFile || uploadingImage}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-purple-500 to-purple-600 hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {uploadingImage ? "Subiendo..." : "Guardar Imagen"}
+            </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Notificación Toast */}
