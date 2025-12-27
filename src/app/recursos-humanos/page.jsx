@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, Suspense, useCallback, useRef, useMemo, memo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
@@ -147,6 +147,36 @@ function RecursosHumanosContent() {
     return null;
   };
 
+  // Función para obtener el ID del rol desde el nombre
+  const getRolId = (rolNombre) => {
+    if (!rolNombre) return null;
+    
+    // Mapeo de nombres de roles a IDs numéricos
+    const rolesMap = {
+      "ADMINISTRADOR": 1,
+      "GERENTE": 2,
+      "SUPERVISOR": 3,
+      "USUARIO": 4,
+      "ASISTENTE": 5,
+    };
+    
+    // Convertir a mayúsculas para comparar
+    const rolUpper = String(rolNombre).toUpperCase().trim();
+    
+    // Buscar en el mapeo
+    if (rolesMap[rolUpper] !== undefined) {
+      return rolesMap[rolUpper];
+    }
+    
+    // Si ya es un número, retornarlo
+    const numRol = parseInt(rolNombre);
+    if (!isNaN(numRol)) {
+      return numRol;
+    }
+    
+    return null;
+  };
+
   // Función para actualizar Información Personal
   const actualizarInformacionPersonal = async (colaboradorId, data) => {
     const token = localStorage.getItem("token");
@@ -276,17 +306,24 @@ function RecursosHumanosContent() {
         }
       }
     }
-    // Para el rol, necesitamos el ID numérico. Por ahora, si viene como string, intentamos parsearlo
+    // Para el rol, necesitamos el ID numérico. Convertir el nombre del rol a ID
     if (data.rol !== undefined && data.rol !== "") {
-      const numRol = parseInt(data.rol);
-      if (!isNaN(numRol)) {
-        payload.rol = numRol;
+      const rolId = getRolId(data.rol);
+      console.log("🔍 Debug Rol:", { 
+        rolOriginal: data.rol, 
+        rolId: rolId, 
+        tipoRolId: typeof rolId 
+      });
+      if (rolId !== null) {
+        // Asegurar que sea un número entero
+        payload.rol = Number(rolId);
       } else {
-        // Si es un string, intentar buscar en rolesDisponibles o usar un mapeo
-        // Por ahora, lo dejamos como está y el backend debería manejarlo
-        payload.rol = data.rol;
+        // Si no se puede convertir, lanzar un error
+        throw new Error(`Rol "${data.rol}" no es válido. Los roles válidos son: ADMINISTRADOR, GERENTE, SUPERVISOR, USUARIO, ASISTENTE`);
       }
     }
+
+    console.log("📤 Payload enviado a API:", payload);
 
     const response = await fetch(
       `https://colaboradores2026-2946605267.us-central1.run.app?metodo=actualizar_informacion_laboral&id=${colaboradorId}`,
@@ -491,6 +528,683 @@ function RecursosHumanosContent() {
       setLoadingMedios(false);
     }
   }, []);
+
+  // Componente EditableField - PATRÓN PROFESIONAL: Input 100% no controlado
+  // ✅ Mientras escribes, el padre NO sabe nada
+  // ✅ El valor vive solo en el input con useRef
+  // ✅ Commit al padre SOLO en onBlur
+  const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditing, onCommit, type = "text", options = [] }) => {
+    const inputRef = useRef(null);
+    const onCommitRef = useRef(onCommit);
+    const inputKey = useMemo(() => `input-${fieldKey}-${sectionKey}`, [fieldKey, sectionKey]);
+    const isPastingRef = useRef(false);
+    
+    // Mantener onCommit actualizado
+    useEffect(() => {
+      onCommitRef.current = onCommit;
+    }, [onCommit]);
+    
+    // Formatear fecha para display inicial
+    const formatDateForDisplay = useCallback((val) => {
+      if (!val || val === "No disponible" || val === "-") return "";
+      if (type === "date") {
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          const [año, mes, dia] = val.split("-");
+          return `${dia}/${mes}/${año}`;
+        }
+        try {
+          const date = new Date(val);
+          if (!isNaN(date.getTime())) {
+            const año = date.getFullYear();
+            const mes = String(date.getMonth() + 1).padStart(2, "0");
+            const dia = String(date.getDate()).padStart(2, "0");
+            return `${dia}/${mes}/${año}`;
+          }
+        } catch (e) {}
+      }
+      return val || "";
+    }, [type]);
+    
+    // Formatear fecha completa (acepta múltiples formatos) - PRIORITARIO
+    const formatCompleteDate = useCallback((val) => {
+      if (!val || val.trim() === "") return "";
+      
+      const trimmed = val.trim();
+      
+      // Si ya está en formato DD/MM/YYYY, retornarlo
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+        return trimmed;
+      }
+      
+      // Si está en formato YYYY-MM-DD, convertir
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const [año, mes, dia] = trimmed.split("-");
+        return `${dia}/${mes}/${año}`;
+      }
+      
+      // Extraer solo números
+      const numbers = trimmed.replace(/\D/g, "");
+      
+      // Si tiene 8 dígitos, formatear como DD/MM/YYYY
+      if (numbers.length === 8) {
+        return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
+      }
+      
+      // Si tiene más de 8 dígitos, tomar los primeros 8
+      if (numbers.length > 8) {
+        const limited = numbers.slice(0, 8);
+        return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+      }
+      
+      // Intentar parsear como fecha si tiene formato reconocible
+      try {
+        // Intentar con formato común
+        if (trimmed.includes("/") || trimmed.includes("-") || trimmed.includes(".")) {
+          const date = new Date(trimmed);
+          if (!isNaN(date.getTime())) {
+            const año = date.getFullYear();
+            const mes = String(date.getMonth() + 1).padStart(2, "0");
+            const dia = String(date.getDate()).padStart(2, "0");
+            return `${dia}/${mes}/${año}`;
+          }
+        }
+      } catch (e) {}
+      
+      // Si no se puede formatear, retornar el valor original (permitir escritura libre)
+      return trimmed;
+    }, []);
+    
+    // Formatear fecha mientras se escribe (solo números) - SOLO para escritura incremental
+    const formatDateInput = useCallback((val) => {
+      const numbers = val.replace(/\D/g, "");
+      const limited = numbers.slice(0, 8);
+      if (limited.length <= 2) return limited;
+      if (limited.length <= 4) return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    }, []);
+    
+    // Valor inicial formateado
+    const getInitialValue = useCallback(() => {
+      const val = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
+      return formatDateForDisplay(val);
+    }, [initialValue, formatDateForDisplay]);
+    
+    // Handler onPaste - Para pegar fechas completas - PRIORITARIO
+    const handlePaste = useCallback((e) => {
+      if (type === "date" && inputRef.current) {
+        isPastingRef.current = true;
+        e.preventDefault();
+        e.stopPropagation();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const formatted = formatCompleteDate(pastedText);
+        inputRef.current.value = formatted;
+        // Seleccionar todo el texto después del pegado
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.setSelectionRange(0, formatted.length);
+            isPastingRef.current = false;
+          }
+        }, 50);
+      }
+    }, [type, formatCompleteDate]);
+    
+    // Handler onChange - Formatea SOLO si no es un pegado
+    const handleChange = useCallback((e) => {
+      // Si se está pegando, NO hacer nada - el onPaste ya maneja el formateo
+      if (isPastingRef.current) {
+        return;
+      }
+      
+      if (type === "date" && inputRef.current) {
+        const currentValue = e.target.value;
+        
+        // Solo formateo incremental mientras se escribe (no para fechas completas)
+        // Las fechas completas se formatearán en onBlur
+        if (currentValue.length < 10) {
+          const formatted = formatDateInput(currentValue);
+          if (formatted !== currentValue) {
+            const cursorPos = inputRef.current.selectionStart || 0;
+            inputRef.current.value = formatted;
+            // Restaurar cursor
+            setTimeout(() => {
+              if (inputRef.current) {
+                const newPos = Math.min(cursorPos + (formatted.length - currentValue.length), formatted.length);
+                inputRef.current.setSelectionRange(newPos, newPos);
+              }
+            }, 0);
+          }
+        }
+      }
+      // NO hacer nada más - el input es completamente no controlado
+    }, [type, formatDateInput]);
+    
+    // Handler onBlur - COMMIT al padre y formatear fecha completa si es necesario
+    const handleBlur = useCallback(() => {
+      if (!inputRef.current) return;
+      
+      let finalValue = inputRef.current.value;
+      
+      if (type === "date") {
+        finalValue = finalValue.trim();
+        // Si tiene contenido pero no está formateado correctamente, formatearlo
+        if (finalValue && finalValue.length > 0) {
+          const formatted = formatCompleteDate(finalValue);
+          if (formatted !== finalValue && formatted.length === 10) {
+            inputRef.current.value = formatted;
+            finalValue = formatted;
+          }
+        }
+      } else if (type === "number") {
+        if (finalValue === "" || !isNaN(Number(finalValue))) {
+          finalValue = finalValue === "" ? "" : Number(finalValue).toString();
+        } else {
+          // Valor inválido, restaurar inicial
+          inputRef.current.value = getInitialValue();
+          return;
+        }
+      }
+      
+      // Commit al padre
+      onCommitRef.current(fieldKey, finalValue);
+    }, [type, fieldKey, getInitialValue, formatCompleteDate]);
+    
+    const displayValue = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
+    const formattedDisplayValue = formatDateForDisplay(displayValue);
+    
+    return (
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+          {label}
+        </label>
+        {isEditing ? (
+          options.length > 0 ? (
+            <select
+              value={formattedDisplayValue}
+              onChange={(e) => {
+                const selectedOption = options.find(opt => {
+                  if (typeof opt === "object" && opt !== null) {
+                    return (opt.nombre || opt.NOMBRE) === e.target.value || (opt.id || opt.ID) === e.target.value;
+                  }
+                  return opt === e.target.value;
+                });
+                const valueToSave = selectedOption && typeof selectedOption === "object" 
+                  ? (selectedOption.nombre || selectedOption.NOMBRE) 
+                  : e.target.value;
+                onCommitRef.current(fieldKey, valueToSave);
+              }}
+              className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+            >
+              <option value="">Seleccionar {label}</option>
+              {options.map((option, idx) => {
+                const optionValue = typeof option === "object" && option !== null 
+                  ? (option.nombre || option.NOMBRE || option) 
+                  : option;
+                const optionKey = typeof option === "object" && option !== null
+                  ? (option.id || option.ID || idx)
+                  : option;
+                return (
+                  <option key={optionKey} value={optionValue}>
+                    {optionValue}
+                  </option>
+                );
+              })}
+            </select>
+          ) : (
+            <input
+              key={inputKey}
+              ref={inputRef}
+              type={type === "date" ? "text" : type}
+              defaultValue={getInitialValue()}
+              onBlur={handleBlur}
+              onChange={handleChange}
+              onPaste={handlePaste}
+              className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              placeholder={type === "date" ? "DD/MM/YYYY o pegar fecha completa" : label}
+              min={type === "number" ? "0" : undefined}
+              maxLength={type === "date" ? 20 : undefined}
+            />
+          )
+        ) : (
+          <p className={`text-sm px-3 py-2 rounded-lg border ${
+            formattedDisplayValue && formattedDisplayValue !== "" 
+              ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
+              : "bg-gray-50 border-gray-200 text-gray-500"
+          }`}>
+            {formattedDisplayValue || "No disponible"}
+          </p>
+        )}
+      </div>
+    );
+  }, (prevProps, nextProps) => {
+    // NO re-renderizar mientras está editando
+    if (nextProps.isEditing && prevProps.isEditing) return true;
+    // Re-renderizar solo cuando cambia isEditing o initialValue (y no está editando)
+    if (prevProps.isEditing !== nextProps.isEditing) return false;
+    if (!nextProps.isEditing && prevProps.initialValue !== nextProps.initialValue) return false;
+    return true;
+  });
+  
+  EditableField.displayName = 'EditableField';
+
+  // ============================================
+  // COMPONENTES DE TABS - Componentes React reales y memoizados
+  // Esto evita que se desmonten en cada render
+  // ============================================
+
+  // Tab: Información Personal
+  const InformacionPersonalTab = memo(({ 
+    infoPersonal, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onCommit,
+    getInitialValue,
+    tiposDocumento 
+  }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Personal</h3>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={onEdit}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar</span>
+              </button>
+            ) : (
+              <button
+                onClick={onSave}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Guardar</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EditableField 
+            label="Nombre" 
+            initialValue={getInitialValue("nombre", infoPersonal.nombre)} 
+            fieldKey="nombre"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="2do Nombre" 
+            initialValue={getInitialValue("segundoNombre", infoPersonal.segundoNombre)} 
+            fieldKey="segundoNombre"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Apellido" 
+            initialValue={getInitialValue("apellido", infoPersonal.apellido)} 
+            fieldKey="apellido"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="2do Apellido" 
+            initialValue={getInitialValue("segundoApellido", infoPersonal.segundoApellido)} 
+            fieldKey="segundoApellido"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Fecha Nac" 
+            initialValue={getInitialValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
+            fieldKey="fechaNacimiento"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            type="date"
+          />
+          <EditableField 
+            label="Tipo Doc" 
+            initialValue={getInitialValue("tipoDocumento", infoPersonal.tipoDocumento)} 
+            fieldKey="tipoDocumento"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            options={tiposDocumento}
+          />
+          <EditableField 
+            label="N° Doc" 
+            initialValue={getInitialValue("numeroDocumento", infoPersonal.numeroDocumento)} 
+            fieldKey="numeroDocumento"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Estado civil" 
+            initialValue={getInitialValue("estadoCivil", infoPersonal.estadoCivil)} 
+            fieldKey="estadoCivil"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Estado" 
+            initialValue={getInitialValue("estado", infoPersonal.estado)} 
+            fieldKey="estado"
+            sectionKey="informacion-personal"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+        </div>
+      </div>
+    );
+  });
+  InformacionPersonalTab.displayName = 'InformacionPersonalTab';
+
+  // Tab: Información Familiar
+  const InformacionFamiliarTab = memo(({ 
+    infoFamiliar, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onCommit,
+    getInitialValue 
+  }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Familiar</h3>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={onEdit}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar</span>
+              </button>
+            ) : (
+              <button
+                onClick={onSave}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Guardar</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EditableField 
+            label="¿Tiene hijos?" 
+            initialValue={getInitialValue("tieneHijos", infoFamiliar.tieneHijos)} 
+            fieldKey="tieneHijos"
+            sectionKey="informacion-familiar"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Cant hijos" 
+            initialValue={getInitialValue("cantHijos", infoFamiliar.cantHijos)} 
+            fieldKey="cantHijos"
+            sectionKey="informacion-familiar"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            type="number"
+          />
+        </div>
+      </div>
+    );
+  });
+  InformacionFamiliarTab.displayName = 'InformacionFamiliarTab';
+
+  // Tab: Ubicación
+  const UbicacionTab = memo(({ 
+    ubicacion, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onCommit,
+    getInitialValue 
+  }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800 uppercase">Ubicación</h3>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={onEdit}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar</span>
+              </button>
+            ) : (
+              <button
+                onClick={onSave}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Guardar</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EditableField 
+            label="Dirección" 
+            initialValue={getInitialValue("direccion", ubicacion.direccion)} 
+            fieldKey="direccion"
+            sectionKey="ubicacion"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Google Maps" 
+            initialValue={getInitialValue("googleMaps", ubicacion.googleMaps)} 
+            fieldKey="googleMaps"
+            sectionKey="ubicacion"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+        </div>
+      </div>
+    );
+  });
+  UbicacionTab.displayName = 'UbicacionTab';
+
+  // Tab: Información Laboral
+  const InformacionLaboralTab = memo(({ 
+    infoLaboral, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onCommit,
+    getInitialValue,
+    areasDisponibles,
+    rolesDisponibles 
+  }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Laboral</h3>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={onEdit}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar</span>
+              </button>
+            ) : (
+              <button
+                onClick={onSave}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Guardar</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EditableField 
+            label="Ocupación" 
+            initialValue={getInitialValue("ocupacion", infoLaboral.ocupacion)} 
+            fieldKey="ocupacion"
+            sectionKey="informacion-laboral"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Cargo" 
+            initialValue={getInitialValue("cargo", infoLaboral.cargo)} 
+            fieldKey="cargo"
+            sectionKey="informacion-laboral"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Área" 
+            initialValue={getInitialValue("area", infoLaboral.area)} 
+            fieldKey="area"
+            sectionKey="informacion-laboral"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            options={areasDisponibles}
+          />
+          <EditableField 
+            label="Rol" 
+            initialValue={getInitialValue("rol", infoLaboral.rol)} 
+            fieldKey="rol"
+            sectionKey="informacion-laboral"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            options={rolesDisponibles.map(r => ({ nombre: r }))}
+          />
+        </div>
+      </div>
+    );
+  });
+  InformacionLaboralTab.displayName = 'InformacionLaboralTab';
+
+  // Tab: Seguros
+  const SegurosTab = memo(({ 
+    seguros, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onCommit,
+    getInitialValue 
+  }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800 uppercase">Seguros</h3>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={onEdit}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar</span>
+              </button>
+            ) : (
+              <button
+                onClick={onSave}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Guardar</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EditableField 
+            label="Seguro Vida Ley" 
+            initialValue={getInitialValue("seguroVidaLey", seguros.seguroVidaLey)} 
+            fieldKey="seguroVidaLey"
+            sectionKey="seguros"
+            isEditing={isEditing}
+            onCommit={onCommit}
+          />
+          <EditableField 
+            label="Fecha vencimiento" 
+            initialValue={getInitialValue("fechaVencimiento", seguros.fechaVencimiento)} 
+            fieldKey="fechaVencimiento"
+            sectionKey="seguros"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            type="date"
+          />
+          <EditableField 
+            label="Fecha inicio" 
+            initialValue={getInitialValue("fechaInicio", seguros.fechaInicio)} 
+            fieldKey="fechaInicio"
+            sectionKey="seguros"
+            isEditing={isEditing}
+            onCommit={onCommit}
+            type="date"
+          />
+        </div>
+      </div>
+    );
+  });
+  SegurosTab.displayName = 'SegurosTab';
+
+  // Función para COMMIT de cambios - SOLO se llama en onBlur
+  // El padre NO sabe nada mientras se escribe
+  const handleFieldCommit = useCallback((fieldKey, value) => {
+    switch (activeTab) {
+      case "informacion-personal":
+        setEditDataPersonal(prev => ({ ...prev, [fieldKey]: value }));
+        break;
+      case "informacion-familiar":
+        setEditDataFamiliar(prev => ({ ...prev, [fieldKey]: value }));
+        break;
+      case "ubicacion":
+        setEditDataUbicacion(prev => ({ ...prev, [fieldKey]: value }));
+        break;
+      case "informacion-laboral":
+        setEditDataLaboral(prev => ({ ...prev, [fieldKey]: value }));
+        break;
+      case "seguros":
+        setEditDataSeguros(prev => ({ ...prev, [fieldKey]: value }));
+        break;
+      default:
+        break;
+    }
+  }, [activeTab]);
 
   // Cargar medios de comunicación cuando se abre el modal
   useEffect(() => {
@@ -1233,9 +1947,9 @@ function RecursosHumanosContent() {
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
+                                </svg>
                                     <span style={{ pointerEvents: 'none' }}>Imagen</span>
-                                  </button>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1403,9 +2117,9 @@ function RecursosHumanosContent() {
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
+                                </svg>
                                     <span style={{ pointerEvents: 'none' }}>Imagen</span>
-                                  </button>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1506,52 +2220,52 @@ function RecursosHumanosContent() {
 
                   {/* Contenido de la Sección */}
                   {expandedSections[section.id] && (
-                    <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
+                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
                       {section.id === "gestion-colaboradores" ? (
-                        <div className="grid gap-2.5 grid-cols-1">
-                          <div
-                            className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                            style={{ 
-                              boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
-                              transform: 'translateY(0)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
-                            }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                            
-                            <div className="relative z-10">
-                              <div className="flex items-start justify-between mb-2">
+                          <div className="grid gap-2.5 grid-cols-1">
+                            <div
+                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                              style={{ 
+                                boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                transform: 'translateY(0)'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                              
+                              <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-2">
                                 <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
                                   {getIcon("users")}
+                                  </div>
                                 </div>
-                              </div>
                               <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Gestión de Colaboradores</h3>
                               <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar colaboradores activos e inactivos</p>
-                              <button 
+                                <button 
                                 type="button"
                                 onClick={() => router.push("/recursos-humanos/gestion-colaboradores")}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
                                 style={{ fontFamily: 'var(--font-poppins)' }}
                               >
                                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
-                                <span className="relative z-10 flex items-center space-x-1.5">
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
+                                  <span className="relative z-10 flex items-center space-x-1.5">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
                                   <span>Ver Colaboradores</span>
-                                </span>
-                              </button>
+                                  </span>
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
                       ) : section.id === "solicitudes-incidencias" ? (
                         <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
                           <div className="grid gap-2.5 grid-cols-1">
@@ -1577,12 +2291,12 @@ function RecursosHumanosContent() {
                                   <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                  </div>
-                                </div>
+                                  </svg>
+                              </div>
+                                    </div>
                                 <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h3>
                                 <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar Solicitudes/Incidencias</p>
-                                <button 
+                                <button
                                   type="button"
                                   onClick={() => router.push("/recursos-humanos/solicitudes-incidencias")}
                                   className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
@@ -1593,13 +2307,13 @@ function RecursosHumanosContent() {
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
+                                  </svg>
                                     <span>Ver Solicitudes/Incidencias</span>
                                   </span>
                                 </button>
                               </div>
-                            </div>
-                          </div>
+                                      </div>
+                                        </div>
                         </div>
                       ) : (
                         <div className="text-center py-8">
@@ -1804,19 +2518,19 @@ function RecursosHumanosContent() {
 
               const SeccionField = ({ label, value }) => {
                 const isAvailable = value !== "No disponible" && value !== "-";
-                return (
+                      return (
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                       {label}
-                    </label>
+                          </label>
                     <p className={`text-sm px-3 py-2 rounded-lg border ${
                       isAvailable 
                         ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
                         : "bg-gray-50 border-gray-200 text-gray-500"
                     }`}>
                       {value}
-                    </p>
-                  </div>
+                          </p>
+                        </div>
                 );
               };
 
@@ -1831,124 +2545,7 @@ function RecursosHumanosContent() {
                 </div>
               );
 
-              // Componente para campo editable o de solo lectura
-              const EditableField = ({ label, value, fieldKey, sectionKey, isEditing, onChange, type = "text", options = [] }) => {
-                let displayValue = value === "No disponible" || value === "-" ? "" : value;
-                
-                // Para campos numéricos, asegurar que el valor sea numérico
-                if (type === "number" && displayValue && displayValue !== "") {
-                  // Si el valor es "No disponible", dejarlo vacío
-                  if (displayValue === "No disponible" || displayValue === "-") {
-                    displayValue = "";
-                  } else {
-                    // Intentar convertir a número
-                    const numValue = Number(displayValue);
-                    if (!isNaN(numValue)) {
-                      displayValue = numValue.toString();
-                    }
-                  }
-                }
-                
-                // Para campos de fecha, convertir formato DD/MM/YYYY a YYYY-MM-DD para el input type="date"
-                const getDateValue = () => {
-                  if (type === "date" && displayValue) {
-                    // Si ya está en formato YYYY-MM-DD, retornarlo
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
-                      return displayValue;
-                    }
-                    // Si está en formato DD/MM/YYYY, convertir a YYYY-MM-DD
-                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
-                      const [dia, mes, año] = displayValue.split("/");
-                      return `${año}-${mes}-${dia}`;
-                    }
-                    // Si es una fecha válida, intentar convertir
-                    try {
-                      const date = new Date(displayValue);
-                      if (!isNaN(date.getTime())) {
-                        const año = date.getFullYear();
-                        const mes = String(date.getMonth() + 1).padStart(2, "0");
-                        const dia = String(date.getDate()).padStart(2, "0");
-                        return `${año}-${mes}-${dia}`;
-                      }
-                    } catch (e) {
-                      // Ignorar errores de conversión
-                    }
-                  }
-                  return displayValue;
-                };
-                
-                return (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                      {label}
-                    </label>
-                    {isEditing ? (
-                      options.length > 0 ? (
-                        <select
-                          value={displayValue}
-                          onChange={(e) => {
-                            // Si es un objeto (área), guardar el nombre pero mantener el ID disponible
-                            const selectedOption = options.find(opt => {
-                              if (typeof opt === "object" && opt !== null) {
-                                return (opt.nombre || opt.NOMBRE) === e.target.value || (opt.id || opt.ID) === e.target.value;
-                              }
-                              return opt === e.target.value;
-                            });
-                            // Guardar el nombre del área/rol para mostrar, pero la función getAreaId lo convertirá a ID
-                            const valueToSave = selectedOption && typeof selectedOption === "object" 
-                              ? (selectedOption.nombre || selectedOption.NOMBRE) 
-                              : e.target.value;
-                            onChange(fieldKey, valueToSave);
-                          }}
-                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                        >
-                          <option value="">Seleccionar {label}</option>
-                          {options.map((option, idx) => {
-                            const optionValue = typeof option === "object" && option !== null 
-                              ? (option.nombre || option.NOMBRE || option) 
-                              : option;
-                            const optionKey = typeof option === "object" && option !== null
-                              ? (option.id || option.ID || idx)
-                              : option;
-                            return (
-                              <option key={optionKey} value={optionValue}>
-                                {optionValue}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      ) : (
-                        <input
-                          type={type}
-                          value={type === "date" ? getDateValue() : displayValue}
-                          onChange={(e) => {
-                            let valueToSave = e.target.value;
-                            // Para campos numéricos, validar que sea un número
-                            if (type === "number") {
-                              if (valueToSave === "" || !isNaN(Number(valueToSave))) {
-                                onChange(fieldKey, valueToSave);
-                              }
-                            } else {
-                              onChange(fieldKey, valueToSave);
-                            }
-                          }}
-                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                          placeholder={label}
-                          min={type === "number" ? "0" : undefined}
-                        />
-                      )
-                    ) : (
-                      <p className={`text-sm px-3 py-2 rounded-lg border ${
-                        displayValue && displayValue !== "" 
-                          ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
-                          : "bg-gray-50 border-gray-200 text-gray-500"
-                      }`}>
-                        {displayValue || "No disponible"}
-                      </p>
-                    )}
-                  </div>
-                );
-              };
+              // EditableField ahora está definido fuera de esta función para evitar recreaciones
 
               // Función para guardar cambios de una sección
               const handleSaveSection = async () => {
@@ -2042,434 +2639,137 @@ function RecursosHumanosContent() {
                 }
               };
 
-              // Renderizar contenido según el tab activo
+              // Función para obtener el valor inicial (editado si existe, sino original)
+              const getInitialValue = useCallback((fieldKey, originalValue) => {
+                let editedValue = null;
+                switch (activeTab) {
+                  case "informacion-personal":
+                    editedValue = editDataPersonal[fieldKey];
+                    break;
+                  case "informacion-familiar":
+                    editedValue = editDataFamiliar[fieldKey];
+                    break;
+                  case "ubicacion":
+                    editedValue = editDataUbicacion[fieldKey];
+                    break;
+                  case "informacion-laboral":
+                    editedValue = editDataLaboral[fieldKey];
+                    break;
+                  case "seguros":
+                    editedValue = editDataSeguros[fieldKey];
+                    break;
+                  default:
+                    break;
+                }
+                return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
+              }, [activeTab, editDataPersonal, editDataFamiliar, editDataUbicacion, editDataLaboral, editDataSeguros]);
+
+              // Renderizar contenido según el tab activo - USANDO COMPONENTES REALES
               const renderTabContent = () => {
                 const isEditing = editingSections[activeTab];
-                
-                // Función para manejar cambios en campos editables
-                const handleFieldChange = (fieldKey, value) => {
-                  switch (activeTab) {
-                    case "informacion-personal":
-                      setEditDataPersonal(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "informacion-familiar":
-                      setEditDataFamiliar(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "ubicacion":
-                      setEditDataUbicacion(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "informacion-laboral":
-                      setEditDataLaboral(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "seguros":
-                      setEditDataSeguros(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    default:
-                      break;
-                  }
-                };
-
-                // Función para obtener el valor actual (editado o original)
-                const getCurrentValue = (fieldKey, originalValue) => {
-                  let editedValue = null;
-                  switch (activeTab) {
-                    case "informacion-personal":
-                      editedValue = editDataPersonal[fieldKey];
-                      break;
-                    case "informacion-familiar":
-                      editedValue = editDataFamiliar[fieldKey];
-                      break;
-                    case "ubicacion":
-                      editedValue = editDataUbicacion[fieldKey];
-                      break;
-                    case "informacion-laboral":
-                      editedValue = editDataLaboral[fieldKey];
-                      break;
-                    case "seguros":
-                      editedValue = editDataSeguros[fieldKey];
-                      break;
-                    default:
-                      break;
-                  }
-                  return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
-                };
 
                 switch (activeTab) {
                   case "informacion-personal":
                     return (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Personal</h3>
-                          <div className="flex items-center space-x-2">
-                            {!isEditing ? (
-                              <button
-                                onClick={() => {
-                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                                  // Inicializar datos editables con valores actuales
-                                  setEditDataPersonal({
-                                    nombre: infoPersonal.nombre !== "No disponible" ? infoPersonal.nombre : "",
-                                    segundoNombre: infoPersonal.segundoNombre !== "No disponible" ? infoPersonal.segundoNombre : "",
-                                    apellido: infoPersonal.apellido !== "No disponible" ? infoPersonal.apellido : "",
-                                    segundoApellido: infoPersonal.segundoApellido !== "No disponible" ? infoPersonal.segundoApellido : "",
-                                    fechaNacimiento: infoPersonal.fechaNacimiento !== "No disponible" && infoPersonal.fechaNacimiento !== "-" ? infoPersonal.fechaNacimiento : "",
-                                    tipoDocumento: infoPersonal.tipoDocumento !== "No disponible" ? infoPersonal.tipoDocumento : "",
-                                    numeroDocumento: infoPersonal.numeroDocumento !== "No disponible" ? infoPersonal.numeroDocumento : "",
-                                    estadoCivil: infoPersonal.estadoCivil !== "No disponible" ? infoPersonal.estadoCivil : "",
-                                    estado: infoPersonal.estado !== "No disponible" ? infoPersonal.estado : "",
-                                  });
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Editar</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleSaveSection}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <EditableField 
-                            label="Nombre" 
-                            value={getCurrentValue("nombre", infoPersonal.nombre)} 
-                            fieldKey="nombre"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="2do Nombre" 
-                            value={getCurrentValue("segundoNombre", infoPersonal.segundoNombre)} 
-                            fieldKey="segundoNombre"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Apellido" 
-                            value={getCurrentValue("apellido", infoPersonal.apellido)} 
-                            fieldKey="apellido"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="2do Apellido" 
-                            value={getCurrentValue("segundoApellido", infoPersonal.segundoApellido)} 
-                            fieldKey="segundoApellido"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Fecha Nac" 
-                            value={getCurrentValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
-                            fieldKey="fechaNacimiento"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            type="date"
-                          />
-                          <EditableField 
-                            label="Tipo Doc" 
-                            value={getCurrentValue("tipoDocumento", infoPersonal.tipoDocumento)} 
-                            fieldKey="tipoDocumento"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="N° Doc" 
-                            value={getCurrentValue("numeroDocumento", infoPersonal.numeroDocumento)} 
-                            fieldKey="numeroDocumento"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Estado civil" 
-                            value={getCurrentValue("estadoCivil", infoPersonal.estadoCivil)} 
-                            fieldKey="estadoCivil"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Estado" 
-                            value={getCurrentValue("estado", infoPersonal.estado)} 
-                            fieldKey="estado"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                        </div>
-                      </div>
+                      <InformacionPersonalTab
+                        infoPersonal={infoPersonal}
+                        isEditing={isEditing}
+                        onEdit={() => {
+                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                          setEditDataPersonal({
+                            nombre: infoPersonal.nombre !== "No disponible" ? infoPersonal.nombre : "",
+                            segundoNombre: infoPersonal.segundoNombre !== "No disponible" ? infoPersonal.segundoNombre : "",
+                            apellido: infoPersonal.apellido !== "No disponible" ? infoPersonal.apellido : "",
+                            segundoApellido: infoPersonal.segundoApellido !== "No disponible" ? infoPersonal.segundoApellido : "",
+                            fechaNacimiento: infoPersonal.fechaNacimiento !== "No disponible" && infoPersonal.fechaNacimiento !== "-" ? infoPersonal.fechaNacimiento : "",
+                            tipoDocumento: infoPersonal.tipoDocumento !== "No disponible" ? infoPersonal.tipoDocumento : "",
+                            numeroDocumento: infoPersonal.numeroDocumento !== "No disponible" ? infoPersonal.numeroDocumento : "",
+                            estadoCivil: infoPersonal.estadoCivil !== "No disponible" ? infoPersonal.estadoCivil : "",
+                            estado: infoPersonal.estado !== "No disponible" ? infoPersonal.estado : "",
+                          });
+                        }}
+                        onSave={handleSaveSection}
+                        onCommit={handleFieldCommit}
+                        getInitialValue={getInitialValue}
+                        tiposDocumento={tiposDocumento}
+                      />
                     );
 
                   case "informacion-familiar":
                     return (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Familiar</h3>
-                          <div className="flex items-center space-x-2">
-                            {!isEditing ? (
-                              <button
-                                onClick={() => {
-                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                                  setEditDataFamiliar({
-                                    tieneHijos: infoFamiliar.tieneHijos !== "No disponible" ? infoFamiliar.tieneHijos : "",
-                                    cantHijos: infoFamiliar.cantHijos !== "No disponible" ? infoFamiliar.cantHijos : "",
-                                  });
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Editar</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleSaveSection}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <EditableField 
-                            label="¿Tiene hijos?" 
-                            value={getCurrentValue("tieneHijos", infoFamiliar.tieneHijos)} 
-                            fieldKey="tieneHijos"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Cant hijos" 
-                            value={getCurrentValue("cantHijos", infoFamiliar.cantHijos)} 
-                            fieldKey="cantHijos"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            type="number"
-                          />
-                        </div>
-                      </div>
+                      <InformacionFamiliarTab
+                        infoFamiliar={infoFamiliar}
+                        isEditing={isEditing}
+                        onEdit={() => {
+                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                          setEditDataFamiliar({
+                            tieneHijos: infoFamiliar.tieneHijos !== "No disponible" ? infoFamiliar.tieneHijos : "",
+                            cantHijos: infoFamiliar.cantHijos !== "No disponible" ? infoFamiliar.cantHijos : "",
+                          });
+                        }}
+                        onSave={handleSaveSection}
+                        onCommit={handleFieldCommit}
+                        getInitialValue={getInitialValue}
+                      />
                     );
 
                   case "ubicacion":
                     return (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 uppercase">Ubicación</h3>
-                          <div className="flex items-center space-x-2">
-                            {!isEditing ? (
-                              <button
-                                onClick={() => {
-                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                                  setEditDataUbicacion({
-                                    direccion: ubicacion.direccion !== "No disponible" ? ubicacion.direccion : "",
-                                    googleMaps: ubicacion.googleMaps !== "No disponible" ? ubicacion.googleMaps : "",
-                                  });
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Editar</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleSaveSection}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <EditableField 
-                            label="Dirección" 
-                            value={getCurrentValue("direccion", ubicacion.direccion)} 
-                            fieldKey="direccion"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Google Maps" 
-                            value={getCurrentValue("googleMaps", ubicacion.googleMaps)} 
-                            fieldKey="googleMaps"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                        </div>
-                      </div>
+                      <UbicacionTab
+                        ubicacion={ubicacion}
+                        isEditing={isEditing}
+                        onEdit={() => {
+                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                          setEditDataUbicacion({
+                            direccion: ubicacion.direccion !== "No disponible" ? ubicacion.direccion : "",
+                            googleMaps: ubicacion.googleMaps !== "No disponible" ? ubicacion.googleMaps : "",
+                          });
+                        }}
+                        onSave={handleSaveSection}
+                        onCommit={handleFieldCommit}
+                        getInitialValue={getInitialValue}
+                      />
                     );
 
                   case "informacion-laboral":
                     return (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 uppercase">Información Laboral</h3>
-                          <div className="flex items-center space-x-2">
-                            {!isEditing ? (
-                              <button
-                                onClick={() => {
-                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                                  setEditDataLaboral({
-                                    ocupacion: infoLaboral.ocupacion !== "No disponible" ? infoLaboral.ocupacion : "",
-                                    cargo: infoLaboral.cargo !== "No disponible" ? infoLaboral.cargo : "",
-                                    area: infoLaboral.area !== "No disponible" ? infoLaboral.area : "",
-                                    rol: infoLaboral.rol !== "No disponible" ? infoLaboral.rol : "",
-                                  });
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Editar</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleSaveSection}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <EditableField 
-                            label="Ocupación" 
-                            value={getCurrentValue("ocupacion", infoLaboral.ocupacion)} 
-                            fieldKey="ocupacion"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Cargo" 
-                            value={getCurrentValue("cargo", infoLaboral.cargo)} 
-                            fieldKey="cargo"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Área" 
-                            value={getCurrentValue("area", infoLaboral.area)} 
-                            fieldKey="area"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            options={areasDisponibles}
-                          />
-                          <EditableField 
-                            label="Rol" 
-                            value={getCurrentValue("rol", infoLaboral.rol)} 
-                            fieldKey="rol"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            options={rolesDisponibles}
-                          />
-                        </div>
-                      </div>
+                      <InformacionLaboralTab
+                        infoLaboral={infoLaboral}
+                        isEditing={isEditing}
+                        onEdit={() => {
+                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                          setEditDataLaboral({
+                            ocupacion: infoLaboral.ocupacion !== "No disponible" ? infoLaboral.ocupacion : "",
+                            cargo: infoLaboral.cargo !== "No disponible" ? infoLaboral.cargo : "",
+                            area: infoLaboral.area !== "No disponible" ? infoLaboral.area : "",
+                            rol: infoLaboral.rol !== "No disponible" ? infoLaboral.rol : "",
+                          });
+                        }}
+                        onSave={handleSaveSection}
+                        onCommit={handleFieldCommit}
+                        getInitialValue={getInitialValue}
+                        areasDisponibles={areasDisponibles}
+                        rolesDisponibles={rolesDisponibles}
+                      />
                     );
 
                   case "seguros":
                     return (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 uppercase">Seguros</h3>
-                          <div className="flex items-center space-x-2">
-                            {!isEditing ? (
-                              <button
-                                onClick={() => {
-                                  setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                                  setEditDataSeguros({
-                                    seguroVidaLey: seguros.seguroVidaLey !== "No disponible" ? seguros.seguroVidaLey : "",
-                                    fechaVencimiento: seguros.fechaVencimiento !== "No disponible" && seguros.fechaVencimiento !== "-" ? seguros.fechaVencimiento : "",
-                                    fechaInicio: seguros.fechaInicio !== "No disponible" && seguros.fechaInicio !== "-" ? seguros.fechaInicio : "",
-                                  });
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Editar</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleSaveSection}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Guardar</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <EditableField 
-                            label="Seguro Vida Ley" 
-                            value={getCurrentValue("seguroVidaLey", seguros.seguroVidaLey)} 
-                            fieldKey="seguroVidaLey"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                          />
-                          <EditableField 
-                            label="Fecha vencimiento" 
-                            value={getCurrentValue("fechaVencimiento", seguros.fechaVencimiento)} 
-                            fieldKey="fechaVencimiento"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            type="date"
-                          />
-                          <EditableField 
-                            label="Fecha inicio" 
-                            value={getCurrentValue("fechaInicio", seguros.fechaInicio)} 
-                            fieldKey="fechaInicio"
-                            sectionKey={activeTab}
-                            isEditing={isEditing}
-                            onChange={handleFieldChange}
-                            type="date"
-                          />
-                        </div>
-                      </div>
+                      <SegurosTab
+                        seguros={seguros}
+                        isEditing={isEditing}
+                        onEdit={() => {
+                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                          setEditDataSeguros({
+                            seguroVidaLey: seguros.seguroVidaLey !== "No disponible" ? seguros.seguroVidaLey : "",
+                            fechaVencimiento: seguros.fechaVencimiento !== "No disponible" && seguros.fechaVencimiento !== "-" ? seguros.fechaVencimiento : "",
+                            fechaInicio: seguros.fechaInicio !== "No disponible" && seguros.fechaInicio !== "-" ? seguros.fechaInicio : "",
+                          });
+                        }}
+                        onSave={handleSaveSection}
+                        onCommit={handleFieldCommit}
+                        getInitialValue={getInitialValue}
+                      />
                     );
 
                   case "datos":
@@ -2743,23 +3043,23 @@ function RecursosHumanosContent() {
                         const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
                         // Solo mostrar CORREO
                         if (medio === "CORREO") {
-                          const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
-                          
-                          if (!agrupados[medio]) {
-                            agrupados[medio] = [];
-                          }
-                          agrupados[medio].push({
-                            tipo,
-                            nombre,
-                            contenido,
-                            medio,
-                            index: idx,
-                            originalItem: item,
-                            ID: getValue(item, ["ID", "id", "Id"]),
-                            id: getValue(item, ["ID", "id", "Id"])
-                          });
+                        const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
+                        const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                        const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                        
+                        if (!agrupados[medio]) {
+                          agrupados[medio] = [];
+                        }
+                        agrupados[medio].push({
+                          tipo,
+                          nombre,
+                          contenido,
+                          medio,
+                          index: idx,
+                          originalItem: item,
+                          ID: getValue(item, ["ID", "id", "Id"]),
+                          id: getValue(item, ["ID", "id", "Id"])
+                        });
                         }
                       }
                     });
@@ -2769,22 +3069,22 @@ function RecursosHumanosContent() {
                       agrupados["CORREO"] = [];
                     }
 
-                    return (
+                      return (
                       <div>
-                        {loadingMedios && (
+                            {loadingMedios && (
                           <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Cargando...</span>
-                          </div>
-                        )}
-                        {errorSavingDatos && (
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Cargando...</span>
+                              </div>
+                            )}
+                          {errorSavingDatos && (
                           <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
                             <p className="text-xs text-red-600">{errorSavingDatos}</p>
-                          </div>
-                        )}
+                            </div>
+                          )}
                         {Object.keys(agrupados).length > 0 ? (
                           Object.keys(agrupados).map((medio, medioIndex) => (
                             <div key={medioIndex} className="mb-4">
@@ -3080,8 +3380,8 @@ function RecursosHumanosContent() {
                         ) : (
                           <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
                         )}
-                      </div>
-                    );
+                        </div>
+                      );
 
                   default:
                     return <div>Tab no encontrado</div>;
@@ -3162,7 +3462,7 @@ function RecursosHumanosContent() {
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                                </svg>
               </button>
 
               {isAreaSelectOpen && !loadingAreas && (
@@ -3203,11 +3503,11 @@ function RecursosHumanosContent() {
                     ) : (
                       <div className="px-3 py-2 text-xs text-gray-500 text-center">
                         No hay áreas disponibles
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                              </div>
+                            )}
+                          </div>
+                            </div>
+                          )}
 
               {loadingAreas && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
@@ -3226,11 +3526,11 @@ function RecursosHumanosContent() {
             )}
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
+                            <button
+                              onClick={() => {
                 setIsAgregarColaboradorModalOpen(false);
                 setNewColaboradorForm({
-                  nombre: "",
+                                  nombre: "",
                   apellido: "",
                   areaPrincipal: "",
                 });
@@ -3238,14 +3538,14 @@ function RecursosHumanosContent() {
               className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Cancelar
-            </button>
-            <button
-              onClick={async () => {
+                            </button>
+                                        <button
+                                          onClick={async () => {
                 // Validar campos requeridos
                 if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.areaPrincipal) {
                   alert("Por favor, complete todos los campos requeridos");
-                  return;
-                }
+                                              return;
+                                            }
 
                 try {
                   setLoadingAgregarColaborador(true);
@@ -3301,7 +3601,7 @@ function RecursosHumanosContent() {
                   setTimeout(() => {
                     setNotification({ show: false, message: "", type: "success" });
                   }, 3000);
-                } catch (error) {
+                                            } catch (error) {
                   console.error("Error al agregar colaborador:", error);
                   // Mostrar notificación de error
                   setNotification({
@@ -3321,7 +3621,7 @@ function RecursosHumanosContent() {
               className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingAgregarColaborador ? "Agregando..." : "Agregar Colaborador"}
-            </button>
+                                        </button>
           </div>
         </div>
       </Modal>
@@ -3390,8 +3690,8 @@ function RecursosHumanosContent() {
                         alt="Vista previa" 
                         className="w-full h-full object-contain"
                       />
-                      <button
-                        onClick={() => {
+                                      <button
+                                        onClick={() => {
                           setSelectedImageFile(null);
                           setImagenPreview(null); // Limpiar preview para que se muestre imagenActualGuardada
                           const input = document.getElementById('imagen-input');
@@ -3401,11 +3701,11 @@ function RecursosHumanosContent() {
                         title="Eliminar imagen seleccionada"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                        </div>
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-0.5">
@@ -3413,7 +3713,7 @@ function RecursosHumanosContent() {
                           <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                        </div>
+                                      </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-gray-800 mb-1">Archivo seleccionado</p>
@@ -3431,7 +3731,7 @@ function RecursosHumanosContent() {
                   >
                     Cambiar Imagen
                   </button>
-                </div>
+                                        </div>
               ) : (
                 <label
                   htmlFor="imagen-input"
@@ -3445,11 +3745,11 @@ function RecursosHumanosContent() {
                       <span className="font-semibold">Hacer clic para seleccionar archivo</span>
                     </p>
                     <p className="text-xs text-gray-500">JPG, PNG, GIF (MAX. 10MB)</p>
-                  </div>
-                  <input
+                                      </div>
+                                        <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                                          onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
                         // Validar tamaño (máximo 10MB)
@@ -3478,8 +3778,8 @@ function RecursosHumanosContent() {
                   />
                 </label>
               )}
-            </div>
-
+                                      </div>
+                                      
             {/* Botones de acción */}
             <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
@@ -3593,8 +3893,8 @@ function RecursosHumanosContent() {
             >
               {uploadingImage ? "Subiendo..." : "Guardar Imagen"}
             </button>
-            </div>
-          </div>
+                              </div>
+                        </div>
         )}
       </Modal>
 
@@ -3620,7 +3920,7 @@ function RecursosHumanosContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               )}
-            </div>
+                      </div>
             <div className="flex-1">
               <p className={`text-sm font-semibold ${
                 notification.type === "success" 
@@ -3643,8 +3943,8 @@ function RecursosHumanosContent() {
               </svg>
             </button>
           </div>
-        </div>
-      )}
+          </div>
+        )}
     </div>
   );
 }

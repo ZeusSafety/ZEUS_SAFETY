@@ -30,6 +30,7 @@ export function Sidebar({ isOpen, onClose }) {
 
   // Filtrar módulos según los permisos del usuario
   const userModules = user?.modules || [];
+  const userSubVistas = user?.subVistas || [];
   const isAdmin = user?.isAdmin || false;
   
   // Si es admin, mostrar todos los módulos
@@ -41,6 +42,99 @@ export function Sidebar({ isOpen, onClose }) {
     : userModules.length > 0
     ? allModules.filter((module) => userModules.includes(module.id))
     : []).filter((module) => module.id !== "seguimiento-monitoreo");
+  
+  // Mapeo COMPLETO de nombres de sub_vistas (de la API) a IDs de items del sidebar
+  // Este mapeo conecta los nombres que vienen de la API con los IDs usados en el sidebar
+  const subVistaToItemIdMap = {
+    // FACTURACIÓN (según la tabla de sub_vistas)
+    "REGISTRAR VENTAS": "crear-venta-fact",
+    "GESTIONAR VENTAS": "gestionar-venta-fact",
+    "REGISTRAR REGULARIZACION": "crear-regularizacion-fact",
+    "GESTION_REGULARIZACION": "gestionar-regularizacion-fact",
+    "INCIDENCIAS_PROFORMAS": "incidencia-proformas",
+    "LISTADO DE IMPORTACIONES": "listado-importaciones-fact",
+    "CONFIGURACION_VENTAS": "configuracion-general-fact",
+    "SOLICITUDES ADMIN-FACTURACION": "listado-solicitudes-facturacion",
+    "FRANJA_DE_PRECIOS": "listado-precios-facturacion",
+    
+    // Importación
+    "IMPORTACIONES_REGISTRO": "registro",
+    "LISTADO_IMPORTACIONES_IMPORT": "listado-import",
+    "SOLICITUDES_LISTADO": "listado-solicitudes",
+    "LISTADO_INCIDENCIAS_IMPORTACION": "incidencias-importaciones",
+    "LISTADO_IMPORTACIONES_LOGISTICA": "importaciones-log",
+    
+    // Administración
+    "LISTADO_REGISTRO_INCIDENCIA_PROFORMAS": "proformas",
+    
+    // Marketing
+    "GESTION DE CLIENTES - MARKETING": "gestion-clientes-marketing",
+    "LISTADO DE VENTAS - MARKETING": "listado-ventas-marketing",
+    "RECENCIA DE CLIENTES": "recencia-clientes",
+    "SOLICITUDES ADMIN-MARKETING": "listado-solicitudes-incidencias-marketing",
+    "STOCK MALVINAS POR MAYOR CAJAS": "stock-precios-mayor",
+    
+    // Gerencia
+    "GESTION DE USUARIOS": "accesibilidad-credenciales",
+    "GESTION DE PRODUCTOS": "productos",
+    "SOLICITUDES ADMIN-GERENCIA": "listado-solicitudes",
+    "GESTION DESCUENTO DE CAJAS MALVINAS": "gestion-precios",
+    "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS": "listado-precios",
+  };
+  
+  // Mapeo de items principales (con submenús) a sus subItems
+  // Esto permite ocultar items principales si el usuario no tiene ninguna sub_vista dentro
+  const itemToSubItemsMap = {
+    "ventas-facturacion": ["crear-venta-fact", "gestionar-venta-fact"],
+    "regularizacion-facturacion": ["crear-regularizacion-fact", "gestionar-regularizacion-fact"],
+    "listados-facturacion": ["incidencia-proformas", "listado-importaciones-fact"],
+    "configuracion-facturacion": ["configuracion-general-fact"],
+    "franja-precios-facturacion": ["listado-precios-facturacion"],
+    "solicitudes-facturacion": ["listado-solicitudes-facturacion"],
+  };
+  
+  // Función para verificar si un item del sidebar está permitido según las sub_vistas
+  const isItemAllowed = (itemId) => {
+    // Si es admin, permitir todo
+    if (isAdmin) return true;
+    
+    // Si no hay sub_vistas asignadas, no permitir nada (array vacío = sin acceso)
+    if (userSubVistas.length === 0) return false;
+    
+    // Obtener nombres de sub_vistas del usuario (normalizados)
+    const subVistaNames = userSubVistas.map(sv => (sv.nombre || "").toUpperCase().trim()).filter(n => n);
+    
+    // Si es un item principal con submenú, verificar si tiene al menos un subItem permitido
+    if (itemToSubItemsMap[itemId]) {
+      const subItems = itemToSubItemsMap[itemId];
+      return subItems.some(subItemId => {
+        // Buscar si alguna sub_vista mapea a este subItemId
+        return Object.entries(subVistaToItemIdMap).some(([subVistaName, mappedId]) => {
+          if (mappedId === subItemId) {
+            return subVistaNames.includes(subVistaName.toUpperCase().trim());
+          }
+          return false;
+        });
+      });
+    }
+    
+    // Para items individuales (sin submenú), verificar directamente
+    const hasAccess = Object.entries(subVistaToItemIdMap).some(([subVistaName, mappedId]) => {
+      if (mappedId === itemId) {
+        return subVistaNames.includes(subVistaName.toUpperCase().trim());
+      }
+      return false;
+    });
+    
+    // Si el item está en el mapeo, solo permitir si tiene acceso
+    if (Object.values(subVistaToItemIdMap).includes(itemId)) {
+      return hasAccess;
+    }
+    
+    // Para items que NO están en el mapeo (como dashboards), permitir solo si el usuario tiene acceso al módulo
+    // Los dashboards se permiten si el usuario tiene el módulo, independientemente de sub_vistas
+    return true; // Dashboards y items generales se permiten si el módulo está disponible
+  };
 
   // Submenús de Gerencia
   const gerenciaSubmenu = [
@@ -406,6 +500,15 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "listado-precios-facturacion", name: "Listado de precios", icon: "list" },
+      ],
+    },
+    {
+      id: "solicitudes-facturacion",
+      name: "Solicitudes/Incidencias",
+      icon: "document-list",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-solicitudes-facturacion", name: "Listado de Solicitudes/Incidencias", icon: "list" },
       ],
     },
   ];
@@ -904,6 +1007,12 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
 
+    if (itemId === "listado-solicitudes-facturacion") {
+      router.push("/facturacion/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+
     // Navegación para Administración
     if (itemId === "gestionar-productos") {
       router.push("/administracion/configuracion/gestionar-productos");
@@ -1075,13 +1184,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {gerenciaSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1110,7 +1221,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1143,13 +1254,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {administracionSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1178,7 +1291,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1210,13 +1323,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {importacionSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1245,7 +1360,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1277,13 +1392,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {logisticaSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1312,7 +1429,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1344,13 +1461,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {ventasSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1379,7 +1498,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1411,13 +1530,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {marketingSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1446,7 +1567,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1478,13 +1599,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {sistemasSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1513,7 +1636,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1545,13 +1668,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {recursosHumanosSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1580,7 +1705,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1609,7 +1734,14 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "facturacion" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {facturacionSubmenu.map((item) => (
+                      {facturacionSubmenu.filter(item => {
+                        // Para items con submenú, verificar si tiene al menos un subItem permitido
+                        if (item.hasSubmenu && item.subItems) {
+                          return item.subItems.some(subItem => isItemAllowed(subItem.id));
+                        }
+                        // Para items sin submenú, verificar directamente
+                        return isItemAllowed(item.id);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
                             <button
@@ -1647,7 +1779,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1679,13 +1811,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {boletinInformativoSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1714,7 +1848,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}
@@ -1746,13 +1880,15 @@ export function Sidebar({ isOpen, onClose }) {
                       {permisosSubmenu.map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            <button
-                              onClick={() => handleSubmenuClick(item.id, module.id)}
-                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                            >
-                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                              <span className="text-left">{item.name}</span>
-                            </button>
+                            isItemAllowed(item.id) && (
+                              <button
+                                onClick={() => handleSubmenuClick(item.id, module.id)}
+                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                              >
+                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                                <span className="text-left">{item.name}</span>
+                              </button>
+                            )
                           ) : (
                             <>
                               <button
@@ -1781,7 +1917,7 @@ export function Sidebar({ isOpen, onClose }) {
                               </button>
                               {expandedSubmenus[item.id] && item.subItems && (
                                 <div className="ml-3 mt-0.5 space-y-0.5">
-                                  {item.subItems.map((subItem) => (
+                                  {item.subItems.filter(subItem => isItemAllowed(subItem.id)).map((subItem) => (
                                     <button
                                       key={subItem.id}
                                       onClick={() => handleSubmenuClick(subItem.id, module.id)}

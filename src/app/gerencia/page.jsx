@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
+import { isCardAllowed as checkCardAllowed } from "../../utils/subVistasMapping";
 
 export default function GerenciaPage() {
   const router = useRouter();
@@ -61,6 +62,11 @@ export default function GerenciaPage() {
   if (!user) {
     return null;
   }
+
+  // Función para verificar si un card está permitido según las sub_vistas
+  const isCardAllowed = (cardId) => {
+    return checkCardAllowed(cardId, user);
+  };
 
   const sections = [
     {
@@ -254,7 +260,21 @@ export default function GerenciaPage() {
 
             {/* Secciones */}
             <div className="space-y-3">
-              {sections.map((section) => {
+              {sections
+                .map((section) => {
+                  // Filtrar cards permitidos en esta sección
+                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                  
+                  // Si no hay cards permitidos, no mostrar la sección
+                  if (allowedCards.length === 0) return null;
+
+                  return {
+                    ...section,
+                    cards: allowedCards,
+                  };
+                })
+                .filter(section => section !== null)
+                .map((section) => {
                 const sectionId = section.id;
                 const handleClick = (e) => {
                   e.preventDefault();

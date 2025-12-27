@@ -353,12 +353,43 @@ export async function POST(request) {
     console.log("Final modules count:", finalModules.length);
     console.log("Final isAdmin:", isAdmin);
 
+    // Procesar sub_vistas de la respuesta
+    let userSubVistas = [];
+    if (data.sub_vistas) {
+      userSubVistas = Array.isArray(data.sub_vistas) ? data.sub_vistas : [data.sub_vistas];
+    } else if (data.subVistas) {
+      userSubVistas = Array.isArray(data.subVistas) ? data.subVistas : [data.subVistas];
+    } else if (data.subvistas) {
+      userSubVistas = Array.isArray(data.subvistas) ? data.subvistas : [data.subvistas];
+    }
+    
+    // Normalizar sub_vistas: extraer IDs y nombres
+    const normalizedSubVistas = userSubVistas
+      .filter(vista => vista !== null && vista !== undefined)
+      .map((vista) => {
+        if (typeof vista === 'object' && vista !== null) {
+          return {
+            id: vista.ID_SUB_VISTAS || vista.id || vista.ID || vista.id_sub_vistas || null,
+            nombre: vista.NOMBRE || vista.nombre || vista.Nombre || ""
+          };
+        }
+        return { id: vista, nombre: "" };
+      })
+      .filter(vista => vista.id !== null && vista.id !== undefined && vista.id !== "");
+    
+    console.log("Normalized sub_vistas:", normalizedSubVistas);
+    console.log("Sub_vistas count:", normalizedSubVistas.length);
+    
+    // NOTA: Si el array de sub_vistas está vacío, el usuario NO debe tener acceso a ninguna sub_vista
+    // No asumir acceso completo solo porque el array está vacío - esto es intencional cuando se quitan todos los permisos
+
     // Construir objeto de usuario
     const user = {
       id: data.id || data.userId || data.id_usuario || email,
       email: email,
       name: data.nombre || data.name || data.usuario || data.username || email,
       modules: finalModules,
+      subVistas: isAdmin ? [] : normalizedSubVistas, // Si es admin, sub_vistas vacío (tiene acceso a todo)
       isAdmin: isAdmin,
       rol: data.rol || data.role || (isAdmin ? 1 : 2), // Guardar el rol del usuario
     };
@@ -367,6 +398,8 @@ export async function POST(request) {
     console.log("User:", JSON.stringify(user, null, 2));
     console.log("User modules array:", user.modules);
     console.log("User modules length:", user.modules.length);
+    console.log("User subVistas array:", user.subVistas);
+    console.log("User subVistas length:", user.subVistas.length);
     console.log("=========================");
 
     return NextResponse.json({

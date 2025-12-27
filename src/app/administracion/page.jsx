@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/context/AuthContext";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
+import { isCardAllowed as checkCardAllowed } from "../../utils/subVistasMapping";
 
 export default function AdministracionPage() {
   const router = useRouter();
@@ -182,7 +183,21 @@ export default function AdministracionPage() {
 
             {/* Secciones */}
             <div className="space-y-3">
-              {sections.map((section) => (
+              {sections
+                .map((section) => {
+                  // Filtrar cards permitidos en esta sección
+                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                  
+                  // Si no hay cards permitidos, no mostrar la sección
+                  if (allowedCards.length === 0) return null;
+
+                  return {
+                    ...section,
+                    cards: allowedCards,
+                  };
+                })
+                .filter(section => section !== null)
+                .map((section) => (
                 <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                   {/* Header de Sección */}
                   <button
