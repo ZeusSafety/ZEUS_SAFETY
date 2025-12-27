@@ -32,11 +32,15 @@ export function Sidebar({ isOpen, onClose }) {
   const userModules = user?.modules || [];
   const isAdmin = user?.isAdmin || false;
   
-  // Si es admin o no tiene módulos definidos, mostrar todos
+  // Si es admin, mostrar todos los módulos
+  // Si no es admin pero tiene módulos, filtrar
+  // Si no es admin y no tiene módulos, no mostrar ninguno (array vacío)
   // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
-  const modules = (isAdmin || userModules.length === 0 
+  const modules = (isAdmin 
     ? allModules 
-    : allModules.filter((module) => userModules.includes(module.id))).filter((module) => module.id !== "seguimiento-monitoreo");
+    : userModules.length > 0
+    ? allModules.filter((module) => userModules.includes(module.id))
+    : []).filter((module) => module.id !== "seguimiento-monitoreo");
 
   // Submenús de Gerencia
   const gerenciaSubmenu = [

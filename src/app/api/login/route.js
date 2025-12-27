@@ -324,17 +324,8 @@ export async function POST(request) {
       console.log("Detected as admin by username:", email);
     }
 
-    // Si no hay módulos pero el usuario existe y la autenticación fue exitosa
-    // Podría ser admin o necesitar todos los módulos
-    if (!isAdmin && userModules.length === 0 && data && !data.error) {
-      // Verificar si hay algún indicador de que debería tener acceso
-      const hasAccess = data.acceso !== false && data.activo !== false && data.estado !== "inactivo";
-      if (hasAccess) {
-        // Si no tiene módulos pero tiene acceso, asumir admin
-        isAdmin = true;
-        console.log("No modules found but user has access - assuming admin");
-      }
-    }
+    // NOTA: Si el array de módulos está vacío, el usuario NO debe tener acceso a ningún módulo
+    // No asumir que es admin solo porque el array está vacío - esto es intencional cuando se quitan todos los permisos
 
     // Si es administrador, tiene acceso a todos los módulos
     const allModules = [
