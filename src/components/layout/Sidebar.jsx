@@ -182,6 +182,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "proformas", name: "Proformas", icon: "document" },
+
       ],
     },
     {
@@ -771,7 +772,7 @@ export function Sidebar({ isOpen, onClose }) {
     }
 
     if (itemId === "proformas") {
-      router.push("/logistica/proformas");
+      router.push("/logistica/incidencias");
       setSelectedItem(itemId);
       return;
     }

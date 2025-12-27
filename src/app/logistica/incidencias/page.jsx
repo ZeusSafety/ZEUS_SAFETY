@@ -212,10 +212,10 @@ export default function IncidenciasPage() {
       return;
     }
 
-    // Validar que al menos un item de error tenga datos
-    const itemsConDatos = itemsError.filter(item => item.detalle.trim() || item.debeSer.trim());
+    // Validar que al menos un item de error tenga ambos campos completos
+    const itemsConDatos = itemsError.filter(item => item.detalle.trim() && item.debeSer.trim());
     if (itemsConDatos.length === 0) {
-      alert("Por favor ingrese al menos un item de error");
+      alert("Por favor ingrese al menos un item de error completo (tanto el detalle como la solución)");
       return;
     }
 
@@ -226,30 +226,53 @@ export default function IncidenciasPage() {
         return;
       }
 
+      // Preparar el array de detalle con el formato correcto
+      const detalle = itemsConDatos.map(item => ({
+        error: item.detalle.trim(),
+        solucion: item.debeSer.trim()
+      }));
+
+      // Preparar los datos según el formato del endpoint
       const data = {
-        encargado_comprobante: encargadoComprobante,
         fecha_emision: fechaEmision,
-        responsable_incidencia: responsableIncidencia === "OTROS" ? responsableIncidenciaOtros : responsableIncidencia,
-        area: area,
-        numero_proforma: numeroProforma,
-        numero_comprobante: numeroComprobante,
-        items_error: itemsConDatos,
+        encargado_comprobante: encargadoComprobante,
+        responsable_incidencia: responsableIncidencia === "OTROS" ? responsableIncidenciaOtros.trim() : responsableIncidencia,
+        area: area.toUpperCase(),
+        numero_proforma: numeroProforma.trim(),
+        numero_comprobante: numeroComprobante.trim(),
         tipo_incidencia: tipoIncidencia,
-        observacion_detallada: tipoIncidencia === "OTROS" ? observacionDetallada : "",
-        registrado_por: registradoPor === "OTROS" ? registradoPorOtros : registradoPor,
+        observacion: tipoIncidencia === "OTROS" ? observacionDetallada.trim() : "",
+        registrado_por: registradoPor === "OTROS" ? registradoPorOtros.trim() : registradoPor,
+        detalle: detalle
       };
 
-      // Aquí iría la llamada a la API
-      // const response = await fetch("/api/incidencias", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Authorization": `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify(data)
-      // });
+      // Llamada al endpoint a través de la ruta API local (proxy)
+      const response = await fetch("/api/incidencias-proformas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
 
-      // Por ahora simulamos el guardado
+      // Verificar si la respuesta es exitosa
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          router.push("/login");
+          throw new Error("Token expirado. Por favor, inicie sesión nuevamente.");
+        }
+
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Mostrar mensaje de éxito
       alert("Incidencia guardada exitosamente");
 
       // Limpiar formulario
@@ -266,11 +289,11 @@ export default function IncidenciasPage() {
       setRegistradoPor("");
       setRegistradoPorOtros("");
 
-      // Recargar lista
+      // Recargar lista de incidencias
       // cargarIncidencias();
     } catch (error) {
       console.error("Error al guardar incidencia:", error);
-      alert("Error al guardar la incidencia");
+      alert(`Error al guardar la incidencia: ${error.message}`);
     }
   };
 
@@ -830,7 +853,7 @@ export default function IncidenciasPage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleGuardarIncidencia}
-                    className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="px-6 py-2 bg-green-500 hover:bg-green-300 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
                     Guardar Incidencia
                   </button>

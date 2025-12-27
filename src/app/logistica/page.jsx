@@ -80,7 +80,7 @@ export default function LogisticaPage() {
           ),
           title: "Proformas",
           description: "Registrar nueva incidencia Proformas",
-          buttonText: "+ Registrar Incidencia",
+          buttonText: "Registrar Incidencia",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -310,7 +310,7 @@ export default function LogisticaPage() {
                                     router.push("/logistica/importaciones");
                                   } else if (card.id === "listado-solicitudes") {
                                     router.push("/logistica/solicitudes-incidencias");
-                                  } else if (card.id === "incidencias") {
+                                  } else if (card.id === "proformas") {
                                     router.push("/logistica/incidencias");
                                   }
                                 }}
