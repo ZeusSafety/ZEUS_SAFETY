@@ -1,13 +1,29 @@
 import { NextResponse } from "next/server";
 
 // Función auxiliar para hacer peticiones a la API externa de incidencias proformas
-async function fetchFromAPI(method, request, bodyToSend = null) {
+async function fetchFromAPI(method, request, bodyToSend = null, params = {}) {
   try {
     // Obtener el token de los headers de la petición
     const authHeader = request.headers.get("authorization");
 
     // Construir la URL base
-    const apiUrl = "https://api-incidencias-proformas-zeus-2946605267.us-central1.run.app";
+    let apiUrl = "https://api-incidencias-proformas-zeus-2946605267.us-central1.run.app";
+
+    // Agregar parámetros de query si existen
+    const queryParams = new URLSearchParams();
+    if (params.tipo) {
+      queryParams.append("tipo", params.tipo);
+    }
+    if (params.id) {
+      queryParams.append("id", params.id);
+    }
+    if (params.metodo) {
+      queryParams.append("metodo", params.metodo);
+    }
+
+    if (queryParams.toString()) {
+      apiUrl += "?" + queryParams.toString();
+    }
 
     // Preparar headers para la petición a la API externa
     const headers = {
@@ -107,8 +123,19 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
+    // Obtener parámetros de query
+    const { searchParams } = new URL(request.url);
+    const params = {};
+    
+    if (searchParams.get("tipo")) {
+      params.tipo = searchParams.get("tipo");
+    }
+    if (searchParams.get("id")) {
+      params.id = searchParams.get("id");
+    }
+
     // Llamar a la función auxiliar para hacer la petición a la API externa
-    return await fetchFromAPI("GET", request);
+    return await fetchFromAPI("GET", request, null, params);
   } catch (error) {
     console.error("Error en GET incidencias-proformas:", error.message);
 
@@ -121,4 +148,33 @@ export async function GET(request) {
     );
   }
 }
+
+export async function PUT(request) {
+  try {
+    // Obtener parámetros de query
+    const { searchParams } = new URL(request.url);
+    const params = {};
+    
+    if (searchParams.get("metodo")) {
+      params.metodo = searchParams.get("metodo");
+    }
+
+    // Obtener el body de la petición
+    const body = await request.json();
+
+    // Llamar a la función auxiliar para hacer la petición a la API externa
+    return await fetchFromAPI("PUT", request, body, params);
+  } catch (error) {
+    console.error("Error en PUT incidencias-proformas:", error.message);
+
+    return NextResponse.json(
+      {
+        error: error.message || "Error al procesar la solicitud",
+        details: error.stack
+      },
+      { status: 500 }
+    );
+  }
+}
+
 
