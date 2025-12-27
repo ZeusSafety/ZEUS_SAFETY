@@ -62,11 +62,11 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         className={`w-full px-4 py-2.5 border rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
           disabled 
             ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-200 bg-white text-gray-900 shadow-sm hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-          isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+            : `border-gray-200 bg-[#F7FAFF] text-gray-900 shadow-sm hover:shadow-md focus:ring-2 focus:ring-blue-700 focus:border-blue-700 focus:bg-white ${
+          isOpen ? 'ring-2 ring-blue-700 border-blue-700 bg-white' : ''
               }`
         }`}
-        style={{ borderRadius: '0.5rem' }}
+        style={{ fontFamily: 'var(--font-poppins)', borderRadius: '0.5rem' }}
       >
         <span className={value ? (disabled ? 'text-gray-600' : 'text-gray-900') : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -104,10 +104,11 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 onClick={() => handleSelect(option.value)}
                 className={`w-full text-left px-4 py-3 transition-all duration-150 ${
                   value === option.value
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
                     : 'text-gray-900 hover:bg-gray-50'
                 }`}
                 style={{ 
+                  fontFamily: 'var(--font-poppins)',
                   borderRadius: '0.375rem',
                   margin: '0.125rem 0',
                   border: 'none'
@@ -706,7 +707,8 @@ export default function EditarPerfilPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/perfil")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -722,18 +724,18 @@ export default function EditarPerfilPage() {
                 borderRadius: '14px'
               }}>
                 {/* Decorative gradient overlay sutil */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-50/30 to-transparent rounded-full blur-2xl -mr-24 -mt-24"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-100/30 to-transparent rounded-full blur-2xl -mr-24 -mt-24"></div>
                 
                 <div className="relative p-5">
                   {/* Header con título elegante */}
                   <div className="mb-5 pb-4 border-b border-gray-200/60">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                      <h2 className="text-xl font-semibold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
                         Perfil
                       </h2>
                     </div>
@@ -743,7 +745,7 @@ export default function EditarPerfilPage() {
                     {/* Foto de Perfil - Más grande */}
                     <div className="flex-shrink-0 relative">
                       {/* Outer glow effect sutil */}
-                      <div className="absolute -inset-1 bg-gradient-to-br from-[#1E63F7]/20 to-blue-300/10 rounded-xl opacity-50 blur-sm"></div>
+                      <div className="absolute -inset-1 bg-gradient-to-br from-blue-700/20 to-blue-800/10 rounded-xl opacity-50 blur-sm"></div>
                       
                       {/* Photo container */}
                       <div className="relative w-52 h-52 rounded-xl border-3 border-white bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shadow-lg" style={{ 
@@ -782,13 +784,14 @@ export default function EditarPerfilPage() {
                     <div className="flex-1 pt-0.5">
                       {/* Nombre Completo - Tipografía premium */}
                       <div className="mb-4">
-                        <h3 className="text-xl font-extrabold text-gray-900 leading-tight tracking-tight mb-1.5" style={{ 
+                        <h3 className="text-xl font-semibold text-gray-900 leading-tight tracking-tight mb-1.5" style={{ 
                           letterSpacing: '-0.01em',
-                          lineHeight: '1.2'
+                          lineHeight: '1.2',
+                          fontFamily: 'var(--font-poppins)'
                         }}>
                           {[formData.primerNombre, formData.segundoNombre, formData.primerApellido, formData.segundoApellido].filter(Boolean).join(" ").toUpperCase() || "Sin nombre"}
                         </h3>
-                        <div className="w-14 h-0.5 bg-gradient-to-r from-[#1E63F7] to-blue-400 rounded-full"></div>
+                        <div className="w-14 h-0.5 bg-gradient-to-r from-blue-700 to-blue-800 rounded-full"></div>
                       </div>
 
                       {/* Información con iconos y badges */}
@@ -796,27 +799,27 @@ export default function EditarPerfilPage() {
                         {/* Usuario */}
                         <div className="flex items-center group">
                           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
-                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4.5 h-4.5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Usuario</div>
-                            <div className="text-sm font-bold text-gray-900">{formData.usuario || "-"}</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Usuario</div>
+                            <div className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{formData.usuario || "-"}</div>
                           </div>
                         </div>
 
                         {/* Área */}
                         <div className="flex items-center group">
                           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
-                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4.5 h-4.5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Área</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Área</div>
                             <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50">
-                              <span className="text-xs font-bold text-[#1E63F7]">{formData.areaPrincipal || "-"}</span>
+                              <span className="text-xs font-semibold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formData.areaPrincipal || "-"}</span>
                             </div>
                           </div>
                         </div>
@@ -824,14 +827,14 @@ export default function EditarPerfilPage() {
                         {/* Rol */}
                         <div className="flex items-center group">
                           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mr-3 shadow-sm">
-                            <svg className="w-4.5 h-4.5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4.5 h-4.5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Rol</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Rol</div>
                             <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50">
-                              <span className="text-xs font-bold text-[#1E63F7]">{formData.rol || "-"}</span>
+                              <span className="text-xs font-semibold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formData.rol || "-"}</span>
                             </div>
                           </div>
                         </div>
@@ -847,14 +850,14 @@ export default function EditarPerfilPage() {
                   {/* Header */}
                   <div className="mb-6">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
                       <div>
-                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Editar Perfil</h1>
-                        <p className="text-sm text-gray-600 font-medium mt-0.5">Actualiza tu información personal</p>
+                        <h1 className="text-xl font-semibold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>Editar Perfil</h1>
+                        <p className="text-sm text-gray-600 font-normal mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Actualiza tu información personal</p>
                       </div>
                     </div>
                   </div>
@@ -862,15 +865,15 @@ export default function EditarPerfilPage() {
                   {/* Mensaje de error */}
                   {error && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-600">{error}</p>
+                      <p className="text-sm text-red-600" style={{ fontFamily: 'var(--font-poppins)' }}>{error}</p>
                     </div>
                   )}
 
                   {/* Loading state */}
                   {loadingData && (
                     <div className="mb-4 flex items-center justify-center p-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="ml-3 text-sm text-gray-600">Cargando datos del perfil...</span>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                      <span className="ml-3 text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando datos del perfil...</span>
                     </div>
                   )}
 
@@ -880,7 +883,7 @@ export default function EditarPerfilPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Primer Nombre */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Primer Nombre
                     </label>
                     <input
@@ -888,14 +891,15 @@ export default function EditarPerfilPage() {
                       name="primerNombre"
                       value={formData.primerNombre}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 transition-all duration-200 text-sm text-gray-900 bg-[#F7FAFF] focus:bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       required
                     />
                   </div>
 
                   {/* Segundo Nombre */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Segundo Nombre
                     </label>
                     <input
@@ -903,13 +907,14 @@ export default function EditarPerfilPage() {
                       name="segundoNombre"
                       value={formData.segundoNombre}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 transition-all duration-200 text-sm text-gray-900 bg-[#F7FAFF] focus:bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Primer Apellido */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Primer Apellido
                     </label>
                     <input
@@ -917,14 +922,15 @@ export default function EditarPerfilPage() {
                       name="primerApellido"
                       value={formData.primerApellido}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 transition-all duration-200 text-sm text-gray-900 bg-[#F7FAFF] focus:bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       required
                     />
                   </div>
 
                   {/* Segundo Apellido */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Segundo Apellido
                     </label>
                     <input
@@ -932,13 +938,14 @@ export default function EditarPerfilPage() {
                       name="segundoApellido"
                       value={formData.segundoApellido}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm text-gray-900"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 transition-all duration-200 text-sm text-gray-900 bg-[#F7FAFF] focus:bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Fecha de Nacimiento (no modificable) */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Fecha de Nacimiento
                     </label>
                     <input
@@ -947,12 +954,13 @@ export default function EditarPerfilPage() {
                       value={formData.fechaNacimiento}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Fecha de Ingreso (no modificable) */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Fecha de Ingreso
                     </label>
                     <input
@@ -961,12 +969,13 @@ export default function EditarPerfilPage() {
                       value={formData.fechaIngreso}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Fecha de Planilla y Correo en la misma fila */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Fecha de Planilla
                     </label>
                     <input
@@ -975,12 +984,13 @@ export default function EditarPerfilPage() {
                       value={formData.fechaPlanilla}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Correo (no modificable) */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Correo
                     </label>
                     <input
@@ -989,12 +999,13 @@ export default function EditarPerfilPage() {
                       value={formData.correo}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Usuario y Contraseña en la misma fila */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Usuario
                     </label>
                     <input
@@ -1003,12 +1014,13 @@ export default function EditarPerfilPage() {
                       value={formData.usuario}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Contraseña (no modificable) */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Contraseña
                     </label>
                     <input
@@ -1017,12 +1029,13 @@ export default function EditarPerfilPage() {
                       value={formData.contraseña}
                       disabled
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   {/* Área Principal */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Área Principal
                     </label>
                     <CustomSelect
@@ -1048,7 +1061,7 @@ export default function EditarPerfilPage() {
 
                   {/* Rol */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Rol
                     </label>
                     <CustomSelect
@@ -1073,14 +1086,16 @@ export default function EditarPerfilPage() {
                   <button
                     type="button"
                     onClick={() => router.push("/perfil")}
-                    className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200 text-sm"
+                    className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200 text-sm"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="px-6 py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     {isLoading ? "Guardando..." : "Guardar Cambios"}
                   </button>

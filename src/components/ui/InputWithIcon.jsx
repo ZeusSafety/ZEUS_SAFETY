@@ -17,7 +17,8 @@ export function InputWithIcon({
       {label && (
         <label
           htmlFor={name}
-          className="block text-sm font-semibold text-gray-800 mb-2.5"
+          className="block text-sm font-medium text-gray-800 mb-2.5"
+          style={{ fontFamily: 'var(--font-poppins)' }}
         >
           {label}
         </label>
@@ -25,7 +26,7 @@ export function InputWithIcon({
       <div className="relative">
         {icon && (
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <div className={premium ? "text-[#8A94A6]" : "text-gray-400"}>
+            <div className="text-gray-400 opacity-60">
               {icon}
             </div>
           </div>
@@ -39,23 +40,25 @@ export function InputWithIcon({
           placeholder={placeholder}
           required={required}
           className={`
-            w-full px-4 py-3 border-2 font-medium
-            focus:outline-none focus:ring-2
+            w-full px-4 py-2.5 border font-medium
+            focus:outline-none focus:ring-2 focus:ring-offset-1
             text-gray-900 placeholder-gray-400
+            transition-all duration-200
             ${icon ? "pl-12" : ""}
             ${premium 
-              ? `rounded-[12px] bg-[#F9FBFD] border-[#E2E8F0] hover:border-[#D1D9E6] focus:ring-[#1E63F7]/30 focus:border-[#1E63F7] ${error ? "border-red-400 bg-red-50/50 focus:ring-red-500/30 focus:border-red-500" : ""}`
-              : `rounded-xl bg-slate-200 border-gray-300 hover:border-gray-400 focus:ring-blue-500/30 focus:border-blue-500 ${error ? "border-red-400 bg-red-50/50 focus:ring-red-500/30 focus:border-red-500" : ""}`
+              ? `rounded-[12px] bg-[#F7FAFF] border-[#E2E8F0] hover:border-[#D1D9E6] focus:ring-blue-700/40 focus:border-blue-700 focus:bg-white ${error ? "border-red-400 bg-red-50/50 focus:ring-red-500/40 focus:border-red-500" : ""}`
+              : `rounded-xl bg-slate-100 border-gray-300 hover:border-gray-400 focus:ring-blue-700/40 focus:border-blue-700 focus:bg-white ${error ? "border-red-400 bg-red-50/50 focus:ring-red-500/40 focus:border-red-500" : ""}`
             }
           `}
           style={{ 
             transition: 'all 0.2s ease',
+            fontFamily: 'var(--font-poppins)',
           }}
           {...props}
         />
       </div>
       {error && (
-        <p className="mt-2 text-sm font-medium text-red-600">{error}</p>
+        <p className="mt-2 text-sm font-normal text-red-600" style={{ fontFamily: 'var(--font-poppins)' }}>{error}</p>
       )}
     </div>
   );

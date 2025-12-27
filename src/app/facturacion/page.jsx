@@ -298,7 +298,7 @@ export default function FacturacionPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -312,14 +312,14 @@ export default function FacturacionPage() {
             {/* Header */}
             <div className="mb-6">
               <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 tracking-tight">FACTURACIÓN</h1>
-                  <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de Ventas y Regularización</p>
+                  <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>FACTURACIÓN</h1>
+                  <p className="text-sm text-gray-600 font-normal mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Gestión de Ventas y Regularización</p>
                 </div>
               </div>
             </div>
@@ -331,7 +331,7 @@ export default function FacturacionPage() {
                   {/* Header de Sección */}
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                   >
                     <div className="flex items-center space-x-2">
                       <div className="text-white">{section.icon}</div>
@@ -350,98 +350,61 @@ export default function FacturacionPage() {
 
                   {/* Cards de la Sección */}
                   {expandedSections[section.id] && (
-                    <div className={section.id === "solicitudes-incidencias" ? "p-3 bg-gradient-to-br from-slate-50 to-slate-100" : "p-4 bg-white"}>
-                      <div className={`grid ${section.id === "solicitudes-incidencias" ? "gap-2.5 grid-cols-1" : `gap-4 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}`}>
+                    <div className={section.id === "solicitudes-incidencias" ? "p-3 bg-gradient-to-br from-slate-50 to-slate-100" : "p-3 bg-white"}>
+                      <div className={`grid ${section.id === "solicitudes-incidencias" ? "gap-2.5 grid-cols-1" : `gap-2.5 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}`}>
                         {section.cards.map((card) => {
-                          const isRegistrar = card.id.includes("registrar");
-                          const isConfiguracion = card.id.includes("configuracion");
-                          const iconShape = (isRegistrar || isConfiguracion) ? "rounded-full" : "rounded-lg";
-                          const isSolicitudesCard = card.id === "listado-solicitudes";
-                          
-                          if (isSolicitudesCard) {
-                            return (
-                              <div
-                                key={card.id}
-                                className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                                style={{ 
-                                  boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
-                                  transform: 'translateY(0)'
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = 'translateY(-2px)';
-                                  e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
-                                }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                                
-                                <div className="relative z-10">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                      {card.icon}
-                                    </div>
-                                  </div>
-                                  <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">{card.title}</h3>
-                                  <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">{card.description}</p>
-                                  <button 
-                                    onClick={() => {
-                                      router.push("/facturacion/solicitudes-incidencias");
-                                    }}
-                                    className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
-                                  >
-                                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
-                                    <span className="relative z-10 flex items-center space-x-1.5">
-                                      {card.buttonIcon}
-                                      <span>{card.buttonText}</span>
-                                    </span>
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          }
-                          
                           return (
                             <div
                               key={card.id}
-                              className="bg-[#FFFFFF] rounded-[14px] p-6 border-2 border-gray-300 hover:border-[#1E63F7] transition-all duration-200 flex flex-col items-center text-center"
-                              style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}
+                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                              style={{ 
+                                boxShadow: 'rgba(0, 0, 0, 0.04) 0px 2px 8px',
+                                transform: 'translateY(0px)'
+                              }}
                             >
-                              <div className={`w-12 h-12 ${iconShape} bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] flex items-center justify-center text-white shadow-sm mb-4`}>
-                                {card.icon}
+                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl"></div>
+                              <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                    {card.icon}
+                                  </div>
+                                </div>
+                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>{card.title}</h3>
+                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>{card.description}</p>
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    if (card.id === "listado-importaciones") {
+                                      router.push("/facturacion/listado-importaciones");
+                                    } else if (card.id === "registrar-venta") {
+                                      router.push("/facturacion/crear-venta");
+                                    } else if (card.id === "gestionar-venta") {
+                                      router.push("/facturacion/gestionar-venta");
+                                    } else if (card.id === "registrar-regularizacion") {
+                                      router.push("/facturacion/crear-regularizacion");
+                                    } else if (card.id === "gestionar-regularizacion") {
+                                      router.push("/facturacion/gestionar-regularizacion");
+                                    } else if (card.id === "incidencia-proformas") {
+                                      router.push("/facturacion/incidencia-proformas");
+                                    } else if (card.id === "gestionar-configuracion") {
+                                      router.push("/facturacion/configuracion");
+                                    } else if (card.id === "listado-precios") {
+                                      router.push("/gerencia/listado-precios");
+                                    } else if (card.id === "listado-solicitudes") {
+                                      router.push("/facturacion/solicitudes-incidencias");
+                                    }
+                                    // Add more routes as needed
+                                  }}
+                                  className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
+                                  <span className="relative z-10 flex items-center space-x-1.5">
+                                    {card.buttonIcon}
+                                    <span>{card.buttonText}</span>
+                                  </span>
+                                </button>
                               </div>
-                              <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
-                              <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
-                              <button 
-                                onClick={() => {
-                                  if (card.id === "listado-importaciones") {
-                                    router.push("/facturacion/listado-importaciones");
-                                  } else if (card.id === "registrar-venta") {
-                                    router.push("/facturacion/crear-venta");
-                                  } else if (card.id === "gestionar-venta") {
-                                    router.push("/facturacion/gestionar-venta");
-                                  } else if (card.id === "registrar-regularizacion") {
-                                    router.push("/facturacion/crear-regularizacion");
-                                  } else if (card.id === "gestionar-regularizacion") {
-                                    router.push("/facturacion/gestionar-regularizacion");
-                                  } else if (card.id === "incidencia-proformas") {
-                                    router.push("/facturacion/incidencia-proformas");
-                                  } else if (card.id === "gestionar-configuracion") {
-                                    router.push("/facturacion/configuracion");
-                                  } else if (card.id === "listado-precios") {
-                                    router.push("/gerencia/listado-precios");
-                                  } else if (card.id === "listado-solicitudes") {
-                                    router.push("/facturacion/solicitudes-incidencias");
-                                  }
-                                  // Add more routes as needed
-                                }}
-                                className="w-full flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm group"
-                              >
-                                {card.buttonIcon}
-                                <span>{card.buttonText}</span>
-                              </button>
                             </div>
                           );
                         })}

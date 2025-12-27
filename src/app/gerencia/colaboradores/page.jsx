@@ -91,6 +91,175 @@ export default function ColaboradoresPage() {
     );
   };
 
+  // Función para actualizar módulos del colaborador
+  const actualizarModulos = async (idColaborador, modulosPermitidos) => {
+    try {
+      // Asegurar que id_colaborador sea un número
+      const idColab = typeof idColaborador === 'string' ? parseInt(idColaborador, 10) : idColaborador;
+      
+      const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
+      url.searchParams.append('metodo', 'update_modules');
+      url.searchParams.append('id_colaborador', idColab.toString());
+
+      // Preparar el body - la API requiere un array de objetos con NOMBRE y ESTADO
+      // Formato esperado: [{ "NOMBRE": "LOGISTICA", "ESTADO": "1" }, ...]
+      // ESTADO: "1" = permitido/activo, "0" = no permitido/inactivo (CORREGIDO)
+      // IMPORTANTE: El body es directamente el array, NO un objeto con 'datos'
+      const modulosFormateados = Array.isArray(modulosPermitidos) 
+        ? modulosPermitidos
+            .map(mod => {
+              // mod es un objeto con { nombre, permitido }
+              const nombreModulo = mod.nombre || mod.NOMBRE || mod.id;
+              const nombreFinal = String(nombreModulo).trim().toUpperCase();
+              
+              // Determinar el estado: "1" si está permitido (true), "0" si no está permitido (false)
+              // IMPORTANTE: Solo "1" si permitido es explícitamente true, cualquier otra cosa es "0"
+              const estado = (mod.permitido === true) ? "1" : "0";
+              console.log(`🔄 Formateando módulo ${nombreFinal}: permitido=${mod.permitido}, estado=${estado}`);
+              
+              // Retornar objeto con formato que espera la API (exactamente como Postman)
+              return {
+                NOMBRE: nombreFinal,
+                ESTADO: estado
+              };
+            })
+            .filter(mod => mod.NOMBRE !== '')
+        : [];
+
+      // Formato correcto según Postman: el body es directamente el array, NO un objeto
+      // id_colaborador va solo en la URL como query parameter
+      const requestBody = modulosFormateados;
+
+      console.log("Enviando a update_modules:", {
+        url: url.toString(),
+        body: requestBody,
+        bodyStringified: JSON.stringify(requestBody),
+        modulosPermitidos: modulosPermitidos,
+        tipo_modulosPermitidos: typeof modulosPermitidos,
+        esArray: Array.isArray(modulosPermitidos),
+        id_colaborador: idColab,
+        tipo_id_colaborador: typeof idColab,
+        bodyType: Array.isArray(requestBody) ? "array" : typeof requestBody
+      });
+
+      const response = await fetch(url.toString(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response from API:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          url: url.toString(),
+          bodySent: requestBody
+        });
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Error ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.message || errorText || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error al actualizar módulos:", error);
+      throw error;
+    }
+  };
+
+  // Función para guardar cambios de módulos
+  const handleGuardarModulos = async () => {
+    if (!selectedColaborador || !selectedColaborador.id) {
+      setNotification({
+        show: true,
+        message: "Error: No se pudo identificar el colaborador",
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+      return;
+    }
+
+    try {
+      // Lista completa de todos los módulos posibles (según Postman)
+      const todosLosModulos = [
+        "MARKETING",
+        "IMPORTACION",
+        "SISTEMAS",
+        "FACTURACION",
+        "LOGISTICA",
+        "GERENCIA",
+        "ADMINISTRACION",
+        "VENTAS",
+        "RECURSOS HUMANOS"
+      ];
+
+      // Crear un mapa de módulos permitidos para búsqueda rápida
+      const modulosPermitidosMap = new Map();
+      console.log("🔍 modulosPermisos antes de mapear:", JSON.stringify(modulosPermisos, null, 2));
+      modulosPermisos.forEach(mod => {
+        const nombreModulo = String(mod.id || mod.nombre || mod.NOMBRE).toUpperCase().trim();
+        // Usar el valor booleano explícito: solo true si es explícitamente true
+        const estaPermitido = mod.permitido === true;
+        modulosPermitidosMap.set(nombreModulo, estaPermitido);
+        console.log(`📝 Módulo: ${nombreModulo}, permitido (raw): ${mod.permitido}, tipo: ${typeof mod.permitido}, mapeado como: ${estaPermitido}`);
+      });
+
+      // Crear array con TODOS los módulos y su estado
+      const modulosConEstado = todosLosModulos.map(nombreModulo => {
+        // Obtener el estado del mapa, si no está en el mapa, asumir false (no permitido)
+        const estaPermitido = modulosPermitidosMap.has(nombreModulo) 
+          ? modulosPermitidosMap.get(nombreModulo) === true  // Solo true si es explícitamente true
+          : false;  // Si no está en el mapa, es false (no permitido)
+        console.log(`🔎 Módulo ${nombreModulo}: en mapa=${modulosPermitidosMap.has(nombreModulo)}, valor=${modulosPermitidosMap.get(nombreModulo)}, final=${estaPermitido}`);
+        return {
+          nombre: nombreModulo,
+          permitido: estaPermitido
+        };
+      });
+
+      console.log("📤 Módulos con estado a enviar:", JSON.stringify(modulosConEstado, null, 2));
+      console.log("👤 ID Colaborador:", selectedColaborador.id);
+
+      // Validar que haya módulos
+      if (!Array.isArray(modulosConEstado) || modulosConEstado.length === 0) {
+        throw new Error("Error: No hay módulos para actualizar");
+      }
+
+      await actualizarModulos(selectedColaborador.id, modulosConEstado);
+
+      setNotification({
+        show: true,
+        message: "Módulos actualizados exitosamente",
+        type: "success"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+      // Recargar permisos para asegurar sincronización
+      if (selectedColaborador.usuario) {
+        await fetchPermisos(selectedColaborador.usuario);
+      }
+    } catch (error) {
+      console.error("Error al guardar módulos:", error);
+      setNotification({
+        show: true,
+        message: `Error al guardar módulos: ${error.message}`,
+        type: "error"
+      });
+      setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 4000);
+    }
+  };
+
   // Función para insertar una subvista
   const insertarSubVista = async (userId, subVistaId) => {
     try {
@@ -801,12 +970,36 @@ export default function ColaboradoresPage() {
       const data = await response.json();
       console.log("Permisos recibidos de la API:", data);
 
-      // Mapear módulos
-      const modulos = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
-        id: mod.NOMBRE || mod.nombre || mod.Nombre,
-        nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
-        permitido: true, // Si está en la lista, está permitido
-      })) : [];
+      // Lista completa de todos los módulos posibles
+      const todosLosModulos = [
+        "MARKETING",
+        "IMPORTACION",
+        "SISTEMAS",
+        "FACTURACION",
+        "LOGISTICA",
+        "GERENCIA",
+        "ADMINISTRACION",
+        "VENTAS",
+        "RECURSOS HUMANOS"
+      ];
+
+      // Crear un mapa de módulos permitidos desde la API
+      const modulosPermitidosMap = new Map();
+      if (Array.isArray(data.modulos)) {
+        data.modulos.forEach((mod) => {
+          const nombreModulo = String(mod.NOMBRE || mod.nombre || mod.Nombre || "").toUpperCase().trim();
+          if (nombreModulo) {
+            modulosPermitidosMap.set(nombreModulo, true);
+          }
+        });
+      }
+
+      // Crear array con TODOS los módulos y su estado (permitido o no)
+      const modulos = todosLosModulos.map((nombreModulo) => ({
+        id: nombreModulo,
+        nombre: nombreModulo,
+        permitido: modulosPermitidosMap.has(nombreModulo), // true si está en el mapa, false si no
+      }));
 
       setModulosPermisos(modulos);
 
@@ -1269,7 +1462,8 @@ export default function ColaboradoresPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/gerencia")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -1768,8 +1962,8 @@ export default function ColaboradoresPage() {
                               Concedido
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-red-500 border-2 border-red-600 text-white">
-                              Denegado
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-gray-500 border-2 border-gray-600 text-white">
+                              Apagado
                             </span>
                           )}
                         </td>
@@ -1948,6 +2142,25 @@ export default function ColaboradoresPage() {
                   </table>
                 </div>
               </div>
+            </div>
+
+            {/* Botón para guardar cambios de módulos */}
+            <div className="flex items-center justify-end space-x-3 pt-4 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setIsPermisosModalOpen(false);
+                  setSelectedColaborador(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGuardarModulos}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              >
+                Guardar Cambios
+              </button>
             </div>
           </div>
         )}

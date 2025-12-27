@@ -98,7 +98,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
           <div className={`flex items-center space-x-1.5 rounded-full text-xs shadow-sm group-hover:shadow-md transition-all duration-300 ${getStatusBg(module.status)} relative overflow-hidden ${
@@ -112,13 +112,13 @@ export function ModuleCard({ module, onClick, index = 0 }) {
               </>
             )}
             <div className={`w-2 h-2 rounded-full ${getStatusColor(module.status)} shadow-sm relative z-10 ${module.status === "Disponible" ? "animate-pulse-slow" : ""}`}></div>
-            <span className={`relative z-10 ${module.status === "Disponible" ? "font-semibold" : ""}`}>{module.status}</span>
+            <span className={`relative z-10 ${module.status === "Disponible" ? "font-medium" : "font-normal"}`} style={{ fontFamily: 'var(--font-poppins)' }}>{module.status}</span>
           </div>
         </div>
-        <h3 className="text-base font-semibold text-gray-900 mb-1.5 group-hover:text-blue-800 transition-colors">
+        <h3 className="text-base font-medium text-gray-900 mb-1.5 group-hover:text-blue-800 transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
           {module.name}
         </h3>
-        <p className="text-xs text-gray-500 leading-relaxed">
+        <p className="text-xs text-gray-500 leading-relaxed font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>
           {module.description}
         </p>
       </div>

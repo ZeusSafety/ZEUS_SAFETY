@@ -35,7 +35,7 @@ image.png
 /* Custom Scrollbar Styles - Mejorado */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(29, 78, 216, 0.7) transparent;
+  scrollbar-color: rgb(29, 78, 216) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -49,13 +49,13 @@ image.png
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(29, 78, 216, 0.7);
+  background: rgb(29, 78, 216);
   border-radius: 10px;
   transition: all 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(29, 78, 216, 0.8);
+  background: rgb(30, 64, 175);
 }
 
 /* Animations - Mejoradas */

@@ -14,11 +14,14 @@ const MODULE_MAPPING = {
   "ventas": "ventas",
   "marketing": "marketing",
   "sistemas": "sistemas",
-  "recursos-humanos": "recursos-humanos",
-  "recursos humanos": "recursos-humanos",
-  "facturacion": "facturacion",
-  "facturación": "facturacion",
-  "permisos": "permisos",
+    "recursos-humanos": "recursos-humanos",
+    "recursos humanos": "recursos-humanos",
+    "facturacion": "facturacion",
+    "facturación": "facturacion",
+    "permisos": "permisos",
+    "boletin-informativo": "boletin-informativo",
+    "boletín informativo": "boletin-informativo",
+    "boletin informativo": "boletin-informativo",
 };
 
 export async function POST(request) {
@@ -288,6 +291,9 @@ export async function POST(request) {
           "facturación": "facturacion",
           "recursos humanos": "recursos-humanos",
           "recursos-humanos": "recursos-humanos",
+          "boletin-informativo": "boletin-informativo",
+          "boletín informativo": "boletin-informativo",
+          "boletin informativo": "boletin-informativo",
         };
         
         if (specialMapping[modLower]) {
@@ -318,17 +324,8 @@ export async function POST(request) {
       console.log("Detected as admin by username:", email);
     }
 
-    // Si no hay módulos pero el usuario existe y la autenticación fue exitosa
-    // Podría ser admin o necesitar todos los módulos
-    if (!isAdmin && userModules.length === 0 && data && !data.error) {
-      // Verificar si hay algún indicador de que debería tener acceso
-      const hasAccess = data.acceso !== false && data.activo !== false && data.estado !== "inactivo";
-      if (hasAccess) {
-        // Si no tiene módulos pero tiene acceso, asumir admin
-        isAdmin = true;
-        console.log("No modules found but user has access - assuming admin");
-      }
-    }
+    // NOTA: Si el array de módulos está vacío, el usuario NO debe tener acceso a ningún módulo
+    // No asumir que es admin solo porque el array está vacío - esto es intencional cuando se quitan todos los permisos
 
     // Si es administrador, tiene acceso a todos los módulos
     const allModules = [
@@ -342,9 +339,15 @@ export async function POST(request) {
       "recursos-humanos",
       "facturacion",
       "permisos",
+      "boletin-informativo",
     ];
 
-    const finalModules = isAdmin ? allModules : normalizedModules;
+    let finalModules = isAdmin ? allModules : normalizedModules;
+    
+    // Asegurar que "boletin-informativo" siempre esté disponible para todos los usuarios
+    if (!finalModules.includes("boletin-informativo")) {
+      finalModules = [...finalModules, "boletin-informativo"];
+    }
     
     console.log("Final modules:", finalModules);
     console.log("Final modules count:", finalModules.length);

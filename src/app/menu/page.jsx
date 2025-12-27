@@ -221,26 +221,26 @@ export default function MenuPage() {
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h1 className="text-lg sm:text-2xl font-bold mb-1.5 sm:mb-2 tracking-tight text-white">
+                    <h1 className="text-lg sm:text-2xl font-medium mb-1.5 sm:mb-2 tracking-tight text-white" style={{ fontFamily: 'var(--font-poppins)' }}>
                       {getWelcomeMessage()}
                     </h1>
-                    <p className="text-blue-50 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed font-medium">
+                    <p className="text-blue-50 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>
                       {isAdmin || userModules.length >= 5
                         ? "Gestiona todos los módulos del sistema ZEUS SAFETY desde este panel centralizado."
                         : `Accede a tus módulos asignados del sistema ZEUS SAFETY.`}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#1E63F7] shadow-md">
+                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-white/20 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border border-white/30 shadow-md hover:bg-white/30 transition-all duration-200">
                         <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span className="text-[10px] sm:text-xs font-semibold text-white">Panel de Control</span>
+                        <span className="text-[10px] sm:text-xs font-medium text-white" style={{ fontFamily: 'var(--font-poppins)' }}>Panel de Control</span>
                       </div>
-                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border-2 border-[#1E63F7] shadow-md">
+                      <div className="flex items-center space-x-1 sm:space-x-1.5 bg-white/20 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border border-white/30 shadow-md hover:bg-white/30 transition-all duration-200">
                         <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-[10px] sm:text-xs font-semibold text-white">{getCurrentDate()}</span>
+                        <span className="text-[10px] sm:text-xs font-medium text-white" style={{ fontFamily: 'var(--font-poppins)' }}>{getCurrentDate()}</span>
                       </div>
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function MenuPage() {
           {/* Modules Grid */}
           <div className="max-w-[95%] mx-auto px-4 pt-6 pb-4">
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">MÓDULOS DISPONIBLES</h2>
+              <h2 className="text-xl font-medium text-gray-900 mb-2 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>MÓDULOS DISPONIBLES</h2>
               <div className="w-16 h-1 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full"></div>
             </div>
             {availableModules.length > 0 ? (

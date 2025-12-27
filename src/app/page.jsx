@@ -18,24 +18,12 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <main className="flex flex-col items-center gap-6">
-        <h1 className="text-3xl font-semibold">Zeus Web</h1>
-        <p className="text-lg text-zinc-600">Sistema de gestión</p>
-        <p className="text-sm text-gray-500">Bienvenido, {user.name || user.email}</p>
-      </main>
-    </div>
-  );
+  return null;
 }
 
