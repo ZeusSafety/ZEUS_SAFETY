@@ -1,11 +1,259 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback, useRef } from "react";
+import { useState, useEffect, Suspense, useCallback, useRef, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+
+// ============================================
+// COMPONENTE EditableField - Estable y memoizado
+// Input no controlado con commit en onBlur
+// ============================================
+const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditing, onCommit, type = "text", options = [] }) => {
+  const inputRef = useRef(null);
+  const onCommitRef = useRef(onCommit);
+  const inputKey = useMemo(() => `input-${fieldKey}-${sectionKey}`, [fieldKey, sectionKey]);
+  const isPastingRef = useRef(false);
+  
+  // Mantener onCommit actualizado
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+  }, [onCommit]);
+  
+  // Formatear fecha para display inicial
+  const formatDateForDisplay = useCallback((val) => {
+    if (!val || val === "No disponible" || val === "-") return "";
+    if (type === "date") {
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        const [año, mes, dia] = val.split("-");
+        return `${dia}/${mes}/${año}`;
+      }
+      try {
+        const date = new Date(val);
+        if (!isNaN(date.getTime())) {
+          const año = date.getFullYear();
+          const mes = String(date.getMonth() + 1).padStart(2, "0");
+          const dia = String(date.getDate()).padStart(2, "0");
+          return `${dia}/${mes}/${año}`;
+        }
+      } catch (e) {}
+    }
+    return val || "";
+  }, [type]);
+  
+  // Formatear fecha completa (acepta múltiples formatos)
+  const formatCompleteDate = useCallback((val) => {
+    if (!val || val.trim() === "") return "";
+    
+    const trimmed = val.trim();
+    
+    // Si ya está en formato DD/MM/YYYY, retornarlo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+    
+    // Si está en formato YYYY-MM-DD, convertir
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [año, mes, dia] = trimmed.split("-");
+      return `${dia}/${mes}/${año}`;
+    }
+    
+    // Extraer solo números
+    const numbers = trimmed.replace(/\D/g, "");
+    
+    // Si tiene 8 dígitos, formatear como DD/MM/YYYY
+    if (numbers.length === 8) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
+    }
+    
+    // Si tiene más de 8 dígitos, tomar los primeros 8
+    if (numbers.length > 8) {
+      const limited = numbers.slice(0, 8);
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    }
+    
+    // Intentar parsear como fecha si tiene formato reconocible
+    try {
+      if (trimmed.includes("/") || trimmed.includes("-") || trimmed.includes(".")) {
+        const date = new Date(trimmed);
+        if (!isNaN(date.getTime())) {
+          const año = date.getFullYear();
+          const mes = String(date.getMonth() + 1).padStart(2, "0");
+          const dia = String(date.getDate()).padStart(2, "0");
+          return `${dia}/${mes}/${año}`;
+        }
+      }
+    } catch (e) {}
+    
+    return trimmed;
+  }, []);
+  
+  // Formatear fecha mientras se escribe (solo números)
+  const formatDateInput = useCallback((val) => {
+    const numbers = val.replace(/\D/g, "");
+    const limited = numbers.slice(0, 8);
+    if (limited.length <= 2) return limited;
+    if (limited.length <= 4) return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+  }, []);
+  
+  // Valor inicial formateado
+  const getInitialValue = useCallback(() => {
+    const val = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
+    return formatDateForDisplay(val);
+  }, [initialValue, formatDateForDisplay]);
+  
+  // Handler onPaste - Para pegar fechas completas
+  const handlePaste = useCallback((e) => {
+    if (type === "date" && inputRef.current) {
+      isPastingRef.current = true;
+      e.preventDefault();
+      e.stopPropagation();
+      const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+      const formatted = formatCompleteDate(pastedText);
+      inputRef.current.value = formatted;
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(0, formatted.length);
+          isPastingRef.current = false;
+        }
+      }, 50);
+    }
+  }, [type, formatCompleteDate]);
+  
+  // Handler onChange - Formatea SOLO si no es un pegado
+  const handleChange = useCallback((e) => {
+    if (isPastingRef.current) {
+      return;
+    }
+    
+    if (type === "date" && inputRef.current) {
+      const currentValue = e.target.value;
+      
+      if (currentValue.length < 10) {
+        const formatted = formatDateInput(currentValue);
+        if (formatted !== currentValue) {
+          const cursorPos = inputRef.current.selectionStart || 0;
+          inputRef.current.value = formatted;
+          setTimeout(() => {
+            if (inputRef.current) {
+              const newPos = Math.min(cursorPos + (formatted.length - currentValue.length), formatted.length);
+              inputRef.current.setSelectionRange(newPos, newPos);
+            }
+          }, 0);
+        }
+      }
+    }
+  }, [type, formatDateInput]);
+  
+  // Handler onBlur - COMMIT al padre y formatear fecha completa si es necesario
+  const handleBlur = useCallback(() => {
+    if (!inputRef.current) return;
+    
+    let finalValue = inputRef.current.value;
+    
+    if (type === "date") {
+      finalValue = finalValue.trim();
+      if (finalValue && finalValue.length > 0) {
+        const formatted = formatCompleteDate(finalValue);
+        if (formatted !== finalValue && formatted.length === 10) {
+          inputRef.current.value = formatted;
+          finalValue = formatted;
+        }
+      }
+    } else if (type === "number") {
+      if (finalValue === "" || !isNaN(Number(finalValue))) {
+        finalValue = finalValue === "" ? "" : Number(finalValue).toString();
+      } else {
+        inputRef.current.value = getInitialValue();
+        return;
+      }
+    }
+    
+    // Commit al padre
+    onCommitRef.current(fieldKey, finalValue);
+  }, [type, fieldKey, getInitialValue, formatCompleteDate]);
+  
+  const displayValue = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
+  const formattedDisplayValue = type === "date" ? formatDateForDisplay(displayValue) : displayValue;
+  
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+        {label}
+      </label>
+      {isEditing ? (
+        options.length > 0 ? (
+          <select
+            value={formattedDisplayValue || ""}
+            onChange={(e) => {
+              const selectedOption = options.find(opt => {
+                if (typeof opt === "object" && opt !== null) {
+                  return (opt.nombre || opt.NOMBRE) === e.target.value || (opt.id || opt.ID) === e.target.value;
+                }
+                return opt === e.target.value;
+              });
+              const valueToSave = selectedOption && typeof selectedOption === "object" 
+                ? (selectedOption.nombre || selectedOption.NOMBRE) 
+                : e.target.value;
+              onCommitRef.current(fieldKey, valueToSave);
+            }}
+            className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          >
+            <option value="">Seleccionar {label}</option>
+            {options.map((option, idx) => {
+              const optionValue = typeof option === "object" && option !== null 
+                ? (option.nombre || option.NOMBRE || option) 
+                : option;
+              const optionKey = typeof option === "object" && option !== null
+                ? (option.id || option.ID || idx)
+                : option;
+              return (
+                <option key={optionKey} value={optionValue}>
+                  {optionValue}
+                </option>
+              );
+            })}
+          </select>
+        ) : (
+          <input
+            key={inputKey}
+            ref={inputRef}
+            type={type === "date" ? "text" : type}
+            defaultValue={getInitialValue()}
+            onBlur={handleBlur}
+            onChange={handleChange}
+            onPaste={handlePaste}
+            className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+            placeholder={type === "date" ? "DD/MM/YYYY o pegar fecha completa" : label}
+            min={type === "number" ? "0" : undefined}
+            maxLength={type === "date" ? 20 : undefined}
+          />
+        )
+      ) : (
+        <p className={`text-sm px-3 py-2 rounded-lg border ${
+          formattedDisplayValue && formattedDisplayValue !== "" 
+            ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
+            : "bg-gray-50 border-gray-200 text-gray-500"
+        }`}>
+          {formattedDisplayValue || "No disponible"}
+        </p>
+      )}
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // NO re-renderizar mientras está editando
+  if (nextProps.isEditing && prevProps.isEditing) return true;
+  // Re-renderizar solo cuando cambia isEditing o initialValue (y no está editando)
+  if (prevProps.isEditing !== nextProps.isEditing) return false;
+  if (!nextProps.isEditing && prevProps.initialValue !== nextProps.initialValue) return false;
+  return true;
+});
+
+EditableField.displayName = 'EditableField';
 
 function GestionColaboradoresContent() {
   const router = useRouter();
@@ -53,6 +301,7 @@ function GestionColaboradoresContent() {
   const [areasDisponibles, setAreasDisponibles] = useState([]);
   const [rolesDisponibles, setRolesDisponibles] = useState([]);
   const [tiposDocumento, setTiposDocumento] = useState(["DNI", "CE", "PASAPORTE", "RUC"]);
+  const [estadosCiviles, setEstadosCiviles] = useState(["SOLTERO", "SOLTERA", "CASADO", "CASADA", "DIVORCIADO", "DIVORCIADA", "VIUDO", "VIUDA", "CONVIVIENTE"]);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [savingDatosSeccion, setSavingDatosSeccion] = useState(false);
   const [errorDatosSeccion, setErrorDatosSeccion] = useState(null);
@@ -142,6 +391,51 @@ function GestionColaboradoresContent() {
     return null;
   };
 
+  // Función para convertir código corto a texto completo (para mostrar)
+  const convertirCodigoAEstadoCivil = (codigo) => {
+    if (!codigo || codigo === "") return "";
+    const codigoUpper = String(codigo).toUpperCase().trim();
+    
+    // Si ya es texto completo y está en la lista, retornarlo tal cual
+    if (estadosCiviles.includes(codigoUpper)) return codigoUpper;
+    
+    // Mapeo de códigos a texto completo (usar el primero de la lista para cada código)
+    if (codigoUpper === "S") return "SOLTERO"; // Por defecto SOLTERO, el usuario puede cambiarlo a SOLTERA
+    if (codigoUpper === "C") return "CASADO";
+    if (codigoUpper === "D") return "DIVORCIADO";
+    if (codigoUpper === "V") return "VIUDO";
+    if (codigoUpper === "CO") return "CONVIVIENTE";
+    
+    // Si no coincide con ningún código conocido, retornar el valor original
+    return codigoUpper;
+  };
+
+  // Función para convertir estado civil a código corto (para guardar)
+  const convertirEstadoCivilACodigo = (estadoCivil) => {
+    if (!estadoCivil || estadoCivil === "") return "";
+    const estadoUpper = String(estadoCivil).toUpperCase().trim();
+    
+    // Mapeo de estados civiles a códigos cortos (1-2 caracteres máximo)
+    if (estadoUpper === "SOLTERO" || estadoUpper === "SOLTERA" || estadoUpper === "S") return "S";
+    if (estadoUpper === "CASADO" || estadoUpper === "CASADA" || estadoUpper === "C") return "C";
+    if (estadoUpper === "DIVORCIADO" || estadoUpper === "DIVORCIADA" || estadoUpper === "D") return "D";
+    if (estadoUpper === "VIUDO" || estadoUpper === "VIUDA" || estadoUpper === "V") return "V";
+    if (estadoUpper === "CONVIVIENTE" || estadoUpper === "CO") return "CO";
+    
+    // Si ya es un código corto (1-2 caracteres), retornarlo tal cual
+    if (estadoUpper.length <= 2) return estadoUpper;
+    
+    // Si contiene alguna de las palabras clave, extraer el código
+    if (estadoUpper.includes("SOLTER")) return "S";
+    if (estadoUpper.includes("CASAD")) return "C";
+    if (estadoUpper.includes("DIVORCI")) return "D";
+    if (estadoUpper.includes("VIUD")) return "V";
+    if (estadoUpper.includes("CONVIV")) return "CO";
+    
+    // Por defecto, retornar el primer carácter en mayúscula
+    return estadoUpper.charAt(0);
+  };
+
   // Función para actualizar Información Personal
   const actualizarInformacionPersonal = async (colaboradorId, data) => {
     const token = localStorage.getItem("token");
@@ -160,7 +454,11 @@ function GestionColaboradoresContent() {
     }
     if (data.tipoDocumento !== undefined && data.tipoDocumento !== "") payload.tipo_doc = data.tipoDocumento;
     if (data.numeroDocumento !== undefined && data.numeroDocumento !== "") payload.num_doc = data.numeroDocumento;
-    if (data.estadoCivil !== undefined && data.estadoCivil !== "") payload.estado_civil = data.estadoCivil;
+    if (data.estadoCivil !== undefined && data.estadoCivil !== "" && data.estadoCivil !== "No disponible") {
+      const codigo = convertirEstadoCivilACodigo(data.estadoCivil);
+      // Asegurar que el código sea máximo 2 caracteres
+      payload.estado_civil = codigo.length > 2 ? codigo.substring(0, 2) : codigo;
+    }
     if (data.estado !== undefined && data.estado !== "") payload.estado = data.estado === "1" || data.estado === 1 ? 1 : 0;
 
     const response = await fetch(
@@ -312,8 +610,9 @@ function GestionColaboradoresContent() {
 
     const payload = {};
     if (data.seguroVidaLey !== undefined && data.seguroVidaLey !== "") {
-      // Convertir a 0 o 1
-      payload.seguro_vida_ley = data.seguroVidaLey === "1" || data.seguroVidaLey === 1 || data.seguroVidaLey === "Sí" || data.seguroVidaLey === "SI" ? 1 : 0;
+      // Convertir "Si"/"SI"/"Sí"/1 a 1, cualquier otra cosa (incluyendo "No") a 0
+      const strValue = String(data.seguroVidaLey).trim();
+      payload.seguro_vida_ley = (strValue === "1" || strValue === "Si" || strValue === "SI" || strValue === "Sí") ? 1 : 0;
     }
     if (data.fechaVencimiento !== undefined && data.fechaVencimiento !== "") {
       const fechaFormateada = formatDateForAPI(data.fechaVencimiento);
@@ -1608,6 +1907,22 @@ function GestionColaboradoresContent() {
               };
 
               // Información Personal
+              const estadoCivilRaw = getFieldValue(["estado_civil", "ESTADO_CIVIL", "estadoCivil"]);
+              let estadoCivilConvertido = "No disponible";
+              if (estadoCivilRaw && estadoCivilRaw !== null && estadoCivilRaw !== undefined && estadoCivilRaw !== "") {
+                const estadoStr = String(estadoCivilRaw).trim();
+                if (estadoStr !== "No disponible" && estadoStr !== "-") {
+                  estadoCivilConvertido = convertirCodigoAEstadoCivil(estadoStr);
+                  // Si la conversión no está en la lista, usar el valor original si está en la lista
+                  if (!estadosCiviles.includes(estadoCivilConvertido)) {
+                    const upperOriginal = estadoStr.toUpperCase();
+                    if (estadosCiviles.includes(upperOriginal)) {
+                      estadoCivilConvertido = upperOriginal;
+                    }
+                  }
+                }
+              }
+              
               const infoPersonal = {
                 nombre: formatFieldValue(getFieldValue(["nombre", "NOMBRE", "name", "NAME"])),
                 segundoNombre: formatFieldValue(getFieldValue(["segundo_nombre", "SEGUNDO_NOMBRE", "segundoNombre", "2do_nombre", "2DO_NOMBRE"])),
@@ -1616,7 +1931,7 @@ function GestionColaboradoresContent() {
                 fechaNacimiento: formatDateValue(getFieldValue(["fecha_nacimiento", "FECHA_NACIMIENTO", "fechaNacimiento", "fecha_nac", "FECHA_NAC"])),
                 tipoDocumento: formatFieldValue(getFieldValue(["tipo_documento", "TIPO_DOCUMENTO", "tipoDocumento", "tipo_doc", "TIPO_DOC"])),
                 numeroDocumento: formatFieldValue(getFieldValue(["numero_documento", "NUMERO_DOCUMENTO", "numeroDocumento", "n_doc", "N_DOC", "documento", "DOCUMENTO"])),
-                estadoCivil: formatFieldValue(getFieldValue(["estado_civil", "ESTADO_CIVIL", "estadoCivil"])),
+                estadoCivil: estadoCivilConvertido,
                 estado: formatFieldValue(getFieldValue(["estado", "ESTADO", "status", "STATUS"])),
               };
 
@@ -1641,8 +1956,23 @@ function GestionColaboradoresContent() {
               };
 
               // Seguros
+              // Función para convertir 1/0 a Si/No para el campo Seguro Vida Ley
+              const formatSeguroVidaLey = (value) => {
+                if (value === null || value === undefined || value === "") {
+                  return "No disponible";
+                }
+                const strValue = String(value).trim();
+                if (strValue === "1" || strValue === 1 || strValue === "Si" || strValue === "SI" || strValue === "Sí") {
+                  return "Si";
+                }
+                if (strValue === "0" || strValue === 0 || strValue === "No" || strValue === "NO") {
+                  return "No";
+                }
+                return strValue;
+              };
+              
               const seguros = {
-                seguroVidaLey: formatFieldValue(getFieldValue(["seguro_vida_ley", "SEGURO_VIDA_LEY", "seguroVidaLey"])),
+                seguroVidaLey: formatSeguroVidaLey(getFieldValue(["seguro_vida_ley", "SEGURO_VIDA_LEY", "seguroVidaLey"])),
                 fechaVencimiento: formatDateValue(getFieldValue(["seguro_fecha_vencimiento", "SEGURO_FECHA_VENCIMIENTO", "fecha_vencimiento", "FECHA_VENCIMIENTO"])),
                 fechaInicio: formatDateValue(getFieldValue(["seguro_fecha_inicio", "SEGURO_FECHA_INICIO", "fecha_inicio", "FECHA_INICIO"])),
               };
@@ -1676,123 +2006,47 @@ function GestionColaboradoresContent() {
                 </div>
               );
 
-              // Componente para campo editable o de solo lectura
-              const EditableField = ({ label, value, fieldKey, sectionKey, isEditing, onChange, type = "text", options = [] }) => {
-                let displayValue = value === "No disponible" || value === "-" ? "" : value;
-                
-                // Para campos numéricos, asegurar que el valor sea numérico
-                if (type === "number" && displayValue && displayValue !== "") {
-                  // Si el valor es "No disponible", dejarlo vacío
-                  if (displayValue === "No disponible" || displayValue === "-") {
-                    displayValue = "";
-                  } else {
-                    // Intentar convertir a número
-                    const numValue = Number(displayValue);
-                    if (!isNaN(numValue)) {
-                      displayValue = numValue.toString();
-                    }
+              // Función para obtener el valor inicial (sin ediciones pendientes)
+              const getInitialValue = (fieldKey, originalValue) => {
+                // Si es estadoCivil, manejar la conversión
+                if (fieldKey === "estadoCivil") {
+                  if (!originalValue || originalValue === "No disponible" || originalValue === "-") {
+                    return "";
                   }
+                  const upperValue = String(originalValue).toUpperCase().trim();
+                  // Si ya está en la lista de opciones, retornarlo tal cual
+                  if (estadosCiviles.includes(upperValue)) {
+                    return upperValue;
+                  }
+                  // Si no, intentar convertir de código a texto
+                  const converted = convertirCodigoAEstadoCivil(upperValue);
+                  if (estadosCiviles.includes(converted)) {
+                    return converted;
+                  }
+                  return upperValue;
                 }
-                
-                // Para campos de fecha, convertir formato DD/MM/YYYY a YYYY-MM-DD para el input type="date"
-                const getDateValue = () => {
-                  if (type === "date" && displayValue) {
-                    // Si ya está en formato YYYY-MM-DD, retornarlo
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
-                      return displayValue;
-                    }
-                    // Si está en formato DD/MM/YYYY, convertir a YYYY-MM-DD
-                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
-                      const [dia, mes, año] = displayValue.split("/");
-                      return `${año}-${mes}-${dia}`;
-                    }
-                    // Si es una fecha válida, intentar convertir
-                    try {
-                      const date = new Date(displayValue);
-                      if (!isNaN(date.getTime())) {
-                        const año = date.getFullYear();
-                        const mes = String(date.getMonth() + 1).padStart(2, "0");
-                        const dia = String(date.getDate()).padStart(2, "0");
-                        return `${año}-${mes}-${dia}`;
-                      }
-                    } catch (e) {
-                      // Ignorar errores de conversión
-                    }
-                  }
-                  return displayValue;
-                };
-                
-                return (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                      {label}
-                    </label>
-                    {isEditing ? (
-                      options.length > 0 ? (
-                        <select
-                          value={displayValue}
-                          onChange={(e) => {
-                            // Si es un objeto (área), guardar el nombre pero mantener el ID disponible
-                            const selectedOption = options.find(opt => {
-                              if (typeof opt === "object" && opt !== null) {
-                                return (opt.nombre || opt.NOMBRE) === e.target.value || (opt.id || opt.ID) === e.target.value;
-                              }
-                              return opt === e.target.value;
-                            });
-                            // Guardar el nombre del área/rol para mostrar, pero la función getAreaId lo convertirá a ID
-                            const valueToSave = selectedOption && typeof selectedOption === "object" 
-                              ? (selectedOption.nombre || selectedOption.NOMBRE) 
-                              : e.target.value;
-                            onChange(fieldKey, valueToSave);
-                          }}
-                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                        >
-                          <option value="">Seleccionar {label}</option>
-                          {options.map((option, idx) => {
-                            const optionValue = typeof option === "object" && option !== null 
-                              ? (option.nombre || option.NOMBRE || option) 
-                              : option;
-                            const optionKey = typeof option === "object" && option !== null
-                              ? (option.id || option.ID || idx)
-                              : option;
-                            return (
-                              <option key={optionKey} value={optionValue}>
-                                {optionValue}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      ) : (
-                        <input
-                          type={type}
-                          value={type === "date" ? getDateValue() : displayValue}
-                          onChange={(e) => {
-                            let valueToSave = e.target.value;
-                            // Para campos numéricos, validar que sea un número
-                            if (type === "number") {
-                              if (valueToSave === "" || !isNaN(Number(valueToSave))) {
-                                onChange(fieldKey, valueToSave);
-                              }
-                            } else {
-                              onChange(fieldKey, valueToSave);
-                            }
-                          }}
-                          className="text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                          placeholder={label}
-                          min={type === "number" ? "0" : undefined}
-                        />
-                      )
-                    ) : (
-                      <p className={`text-sm px-3 py-2 rounded-lg border ${
-                        displayValue && displayValue !== "" 
-                          ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
-                          : "bg-gray-50 border-gray-200 text-gray-500"
-                      }`}>
-                        {displayValue || "No disponible"}
-                      </p>
-                    )}
-                  </div>
-                );
+                return originalValue === "No disponible" || originalValue === "-" ? "" : originalValue;
+              };
+              
+              // Función para commit de cambios (se llama en onBlur)
+              const handleFieldCommit = (fieldKey, value) => {
+                switch (activeTab) {
+                  case "informacion-personal":
+                    setEditDataPersonal(prev => ({ ...prev, [fieldKey]: value }));
+                    break;
+                  case "informacion-familiar":
+                    setEditDataFamiliar(prev => ({ ...prev, [fieldKey]: value }));
+                    break;
+                  case "ubicacion":
+                    setEditDataUbicacion(prev => ({ ...prev, [fieldKey]: value }));
+                    break;
+                  case "informacion-laboral":
+                    setEditDataLaboral(prev => ({ ...prev, [fieldKey]: value }));
+                    break;
+                  case "seguros":
+                    setEditDataSeguros(prev => ({ ...prev, [fieldKey]: value }));
+                    break;
+                }
               };
 
               // Función para guardar cambios de una sección
@@ -1891,53 +2145,6 @@ function GestionColaboradoresContent() {
               const renderTabContent = () => {
                 const isEditing = editingSections[activeTab];
                 
-                // Función para manejar cambios en campos editables
-                const handleFieldChange = (fieldKey, value) => {
-                  switch (activeTab) {
-                    case "informacion-personal":
-                      setEditDataPersonal(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "informacion-familiar":
-                      setEditDataFamiliar(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "ubicacion":
-                      setEditDataUbicacion(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "informacion-laboral":
-                      setEditDataLaboral(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    case "seguros":
-                      setEditDataSeguros(prev => ({ ...prev, [fieldKey]: value }));
-                      break;
-                    default:
-                      break;
-                  }
-                };
-
-                // Función para obtener el valor actual (editado o original)
-                const getCurrentValue = (fieldKey, originalValue) => {
-                  let editedValue = null;
-                  switch (activeTab) {
-                    case "informacion-personal":
-                      editedValue = editDataPersonal[fieldKey];
-                      break;
-                    case "informacion-familiar":
-                      editedValue = editDataFamiliar[fieldKey];
-                      break;
-                    case "ubicacion":
-                      editedValue = editDataUbicacion[fieldKey];
-                      break;
-                    case "informacion-laboral":
-                      editedValue = editDataLaboral[fieldKey];
-                      break;
-                    case "seguros":
-                      editedValue = editDataSeguros[fieldKey];
-                      break;
-                    default:
-                      break;
-                  }
-                  return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
-                };
 
                 switch (activeTab) {
                   case "informacion-personal":
@@ -1986,76 +2193,77 @@ function GestionColaboradoresContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <EditableField 
                             label="Nombre" 
-                            value={getCurrentValue("nombre", infoPersonal.nombre)} 
+                            initialValue={getInitialValue("nombre", infoPersonal.nombre)} 
                             fieldKey="nombre"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="2do Nombre" 
-                            value={getCurrentValue("segundoNombre", infoPersonal.segundoNombre)} 
+                            initialValue={getInitialValue("segundoNombre", infoPersonal.segundoNombre)} 
                             fieldKey="segundoNombre"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Apellido" 
-                            value={getCurrentValue("apellido", infoPersonal.apellido)} 
+                            initialValue={getInitialValue("apellido", infoPersonal.apellido)} 
                             fieldKey="apellido"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="2do Apellido" 
-                            value={getCurrentValue("segundoApellido", infoPersonal.segundoApellido)} 
+                            initialValue={getInitialValue("segundoApellido", infoPersonal.segundoApellido)} 
                             fieldKey="segundoApellido"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Fecha Nac" 
-                            value={getCurrentValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
+                            initialValue={getInitialValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
                             fieldKey="fechaNacimiento"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             type="date"
                           />
                           <EditableField 
                             label="Tipo Doc" 
-                            value={getCurrentValue("tipoDocumento", infoPersonal.tipoDocumento)} 
+                            initialValue={getInitialValue("tipoDocumento", infoPersonal.tipoDocumento)} 
                             fieldKey="tipoDocumento"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="N° Doc" 
-                            value={getCurrentValue("numeroDocumento", infoPersonal.numeroDocumento)} 
+                            initialValue={getInitialValue("numeroDocumento", infoPersonal.numeroDocumento)} 
                             fieldKey="numeroDocumento"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Estado civil" 
-                            value={getCurrentValue("estadoCivil", infoPersonal.estadoCivil)} 
+                            initialValue={getInitialValue("estadoCivil", infoPersonal.estadoCivil)} 
                             fieldKey="estadoCivil"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
+                            options={estadosCiviles}
                           />
                           <EditableField 
                             label="Estado" 
-                            value={getCurrentValue("estado", infoPersonal.estado)} 
+                            initialValue={getInitialValue("estado", infoPersonal.estado)} 
                             fieldKey="estado"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                         </div>
                       </div>
@@ -2099,19 +2307,19 @@ function GestionColaboradoresContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <EditableField 
                             label="¿Tiene hijos?" 
-                            value={getCurrentValue("tieneHijos", infoFamiliar.tieneHijos)} 
+                            initialValue={getInitialValue("tieneHijos", infoFamiliar.tieneHijos)} 
                             fieldKey="tieneHijos"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Cant hijos" 
-                            value={getCurrentValue("cantHijos", infoFamiliar.cantHijos)} 
+                            initialValue={getInitialValue("cantHijos", infoFamiliar.cantHijos)} 
                             fieldKey="cantHijos"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             type="number"
                           />
                         </div>
@@ -2156,19 +2364,19 @@ function GestionColaboradoresContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <EditableField 
                             label="Dirección" 
-                            value={getCurrentValue("direccion", ubicacion.direccion)} 
+                            initialValue={getInitialValue("direccion", ubicacion.direccion)} 
                             fieldKey="direccion"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Google Maps" 
-                            value={getCurrentValue("googleMaps", ubicacion.googleMaps)} 
+                            initialValue={getInitialValue("googleMaps", ubicacion.googleMaps)} 
                             fieldKey="googleMaps"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                         </div>
                       </div>
@@ -2214,36 +2422,36 @@ function GestionColaboradoresContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <EditableField 
                             label="Ocupación" 
-                            value={getCurrentValue("ocupacion", infoLaboral.ocupacion)} 
+                            initialValue={getInitialValue("ocupacion", infoLaboral.ocupacion)} 
                             fieldKey="ocupacion"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Cargo" 
-                            value={getCurrentValue("cargo", infoLaboral.cargo)} 
+                            initialValue={getInitialValue("cargo", infoLaboral.cargo)} 
                             fieldKey="cargo"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                           />
                           <EditableField 
                             label="Área" 
-                            value={getCurrentValue("area", infoLaboral.area)} 
+                            initialValue={getInitialValue("area", infoLaboral.area)} 
                             fieldKey="area"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             options={areasDisponibles}
                           />
                           <EditableField 
                             label="Rol" 
-                            value={getCurrentValue("rol", infoLaboral.rol)} 
+                            initialValue={getInitialValue("rol", infoLaboral.rol)} 
                             fieldKey="rol"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             options={rolesDisponibles}
                           />
                         </div>
@@ -2289,28 +2497,29 @@ function GestionColaboradoresContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <EditableField 
                             label="Seguro Vida Ley" 
-                            value={getCurrentValue("seguroVidaLey", seguros.seguroVidaLey)} 
+                            initialValue={getInitialValue("seguroVidaLey", seguros.seguroVidaLey)} 
                             fieldKey="seguroVidaLey"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
+                            options={["Si", "No"]}
                           />
                           <EditableField 
                             label="Fecha vencimiento" 
-                            value={getCurrentValue("fechaVencimiento", seguros.fechaVencimiento)} 
+                            initialValue={getInitialValue("fechaVencimiento", seguros.fechaVencimiento)} 
                             fieldKey="fechaVencimiento"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             type="date"
                           />
                           <EditableField 
                             label="Fecha inicio" 
-                            value={getCurrentValue("fechaInicio", seguros.fechaInicio)} 
+                            initialValue={getInitialValue("fechaInicio", seguros.fechaInicio)} 
                             fieldKey="fechaInicio"
                             sectionKey={activeTab}
                             isEditing={isEditing}
-                            onChange={handleFieldChange}
+                            onCommit={handleFieldCommit}
                             type="date"
                           />
                         </div>
@@ -2581,30 +2790,42 @@ function GestionColaboradoresContent() {
                     // Renderizar la sección CORREO (solo medios de comunicación tipo CORREO)
                     const datosParaMostrar = datosEditables || [];
                     
-                    // Filtrar solo CORREO y agrupar
+                    // Filtrar y agrupar medios
                     const agrupados = {};
                     datosParaMostrar.forEach((item, idx) => {
                       if (item && typeof item === "object") {
                         const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
-                        // Solo mostrar CORREO
-                        if (medio === "CORREO") {
+                        const tieneId = getValue(item, ["ID", "id", "Id"]);
+                        const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                        const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                        
+                        // Mostrar CORREO siempre
+                        // También mostrar otros medios si:
+                        // - No tienen ID (son nuevos, aunque no tengan contenido aún)
+                        // - Tienen contenido (están siendo editados)
+                        // - Tienen nombre (están siendo editados)
+                        const debeMostrar = medio === "CORREO" || !tieneId || nombre || contenido;
+                        
+                        if (debeMostrar) {
                           const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
                           
                           if (!agrupados[medio]) {
                             agrupados[medio] = [];
                           }
-                          agrupados[medio].push({
-                            tipo,
-                            nombre,
-                            contenido,
-                            medio,
-                            index: idx,
-                            originalItem: item,
-                            ID: getValue(item, ["ID", "id", "Id"]),
-                            id: getValue(item, ["ID", "id", "Id"])
-                          });
+                          // Verificar que no esté ya en el array
+                          const yaExiste = agrupados[medio].some(existing => existing.index === idx);
+                          if (!yaExiste) {
+                            agrupados[medio].push({
+                              tipo,
+                              nombre,
+                              contenido,
+                              medio,
+                              index: idx,
+                              originalItem: item,
+                              ID: getValue(item, ["ID", "id", "Id"]),
+                              id: getValue(item, ["ID", "id", "Id"])
+                            });
+                          }
                         }
                       }
                     });
@@ -2810,11 +3031,20 @@ function GestionColaboradoresContent() {
                                               checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
                                               onChange={(e) => {
                                                 const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
+                                                const itemActual = nuevosDatos[item.index] || item.originalItem || {};
                                                 nuevosDatos[item.index] = {
                                                   ...itemActual,
+                                                  ...item.originalItem,
                                                   MEDIO: "TELEFONO",
-                                                  medio: "TELEFONO"
+                                                  medio: "TELEFONO",
+                                                  nombre: itemActual.nombre || itemActual.NOMBRE || item.nombre || item.NOMBRE || "",
+                                                  NOMBRE: itemActual.NOMBRE || itemActual.nombre || item.NOMBRE || item.nombre || "",
+                                                  contenido: itemActual.contenido || itemActual.CONTENIDO || item.contenido || item.CONTENIDO || "",
+                                                  CONTENIDO: itemActual.CONTENIDO || itemActual.contenido || item.CONTENIDO || item.contenido || "",
+                                                  tipo: itemActual.tipo || itemActual.TIPO || item.tipo || item.TIPO || "",
+                                                  TIPO: itemActual.TIPO || itemActual.tipo || item.TIPO || item.tipo || "",
+                                                  ID: itemActual.ID || itemActual.id || item.ID || item.id,
+                                                  id: itemActual.id || itemActual.ID || item.id || item.ID
                                                 };
                                                 setDatosEditables(nuevosDatos);
                                                 setErrorSavingDatos(null);
@@ -2830,11 +3060,20 @@ function GestionColaboradoresContent() {
                                               checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
                                               onChange={(e) => {
                                                 const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
+                                                const itemActual = nuevosDatos[item.index] || item.originalItem || {};
                                                 nuevosDatos[item.index] = {
                                                   ...itemActual,
+                                                  ...item.originalItem,
                                                   MEDIO: "CORREO",
-                                                  medio: "CORREO"
+                                                  medio: "CORREO",
+                                                  nombre: itemActual.nombre || itemActual.NOMBRE || item.nombre || item.NOMBRE || "",
+                                                  NOMBRE: itemActual.NOMBRE || itemActual.nombre || item.NOMBRE || item.nombre || "",
+                                                  contenido: itemActual.contenido || itemActual.CONTENIDO || item.contenido || item.CONTENIDO || "",
+                                                  CONTENIDO: itemActual.CONTENIDO || itemActual.contenido || item.CONTENIDO || item.contenido || "",
+                                                  tipo: itemActual.tipo || itemActual.TIPO || item.tipo || item.TIPO || "",
+                                                  TIPO: itemActual.TIPO || itemActual.tipo || item.TIPO || item.tipo || "",
+                                                  ID: itemActual.ID || itemActual.id || item.ID || item.id,
+                                                  id: itemActual.id || itemActual.ID || item.id || item.ID
                                                 };
                                                 setDatosEditables(nuevosDatos);
                                                 setErrorSavingDatos(null);
@@ -2850,11 +3089,20 @@ function GestionColaboradoresContent() {
                                               checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
                                               onChange={(e) => {
                                                 const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
+                                                const itemActual = nuevosDatos[item.index] || item.originalItem || {};
                                                 nuevosDatos[item.index] = {
                                                   ...itemActual,
+                                                  ...item.originalItem,
                                                   MEDIO: "TELEFONO_EMERGENCIA",
-                                                  medio: "TELEFONO_EMERGENCIA"
+                                                  medio: "TELEFONO_EMERGENCIA",
+                                                  nombre: itemActual.nombre || itemActual.NOMBRE || item.nombre || item.NOMBRE || "",
+                                                  NOMBRE: itemActual.NOMBRE || itemActual.nombre || item.NOMBRE || item.nombre || "",
+                                                  contenido: itemActual.contenido || itemActual.CONTENIDO || item.contenido || item.CONTENIDO || "",
+                                                  CONTENIDO: itemActual.CONTENIDO || itemActual.contenido || item.CONTENIDO || item.contenido || "",
+                                                  tipo: itemActual.tipo || itemActual.TIPO || item.tipo || item.TIPO || "",
+                                                  TIPO: itemActual.TIPO || itemActual.tipo || item.TIPO || item.tipo || "",
+                                                  ID: itemActual.ID || itemActual.id || item.ID || item.id,
+                                                  id: itemActual.id || itemActual.ID || item.id || item.ID
                                                 };
                                                 setDatosEditables(nuevosDatos);
                                                 setErrorSavingDatos(null);

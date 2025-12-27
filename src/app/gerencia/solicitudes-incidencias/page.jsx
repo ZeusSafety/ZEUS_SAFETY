@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
@@ -12,15 +12,30 @@ const API_URL = "/api/solicitudes-incidencias";
 
 export default function SolicitudesIncidenciasGerenciaPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
   
+  // Mapeo de módulos a áreas de emisión
+  const getAreaEmisionByModule = (path) => {
+    if (path.includes("/gerencia/")) return ""; // Todas las áreas
+    if (path.includes("/logistica/")) return "LOGISTICA";
+    if (path.includes("/marketing/")) return "MARKETING";
+    if (path.includes("/ventas/")) return "VENTAS";
+    if (path.includes("/facturacion/")) return "FACTURACIÓN";
+    if (path.includes("/importacion/")) return "IMPORTACIÓN";
+    if (path.includes("/administracion/")) return "ADMINISTRACION";
+    if (path.includes("/sistemas/")) return "SISTEMAS";
+    if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
+    return ""; // Por defecto todas las áreas
+  };
+  
   // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("");
-  const [areaEmision, setAreaEmision] = useState("");
+  const [areaEmision, setAreaEmision] = useState(() => getAreaEmisionByModule(pathname || ""));
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
@@ -589,17 +604,22 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   <select
                     value={areaEmision}
                     onChange={(e) => setAreaEmision(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 font-medium transition-all duration-200 hover:border-blue-300 bg-white cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%231E63F7%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E')] bg-no-repeat bg-right pr-10 shadow-sm"
+                    style={{
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundSize: '1.25rem 1.25rem',
+                      paddingRight: '2.5rem'
+                    }}
                   >
-                    <option value="">Todas las áreas</option>
-                    <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="MARKETING">MARKETING</option>
-                    <option value="VENTAS">VENTAS</option>
-                    <option value="FACTURACION">FACTURACIÓN</option>
-                    <option value="IMPORTACION">IMPORTACIÓN</option>
-                    <option value="ADMINISTRACION">ADMINISTRACION</option>
-                    <option value="SISTEMAS">SISTEMAS</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                    <option value="" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">Todas las áreas</option>
+                    <option value="LOGISTICA" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">LOGISTICA</option>
+                    <option value="MARKETING" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">MARKETING</option>
+                    <option value="VENTAS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">VENTAS</option>
+                    <option value="FACTURACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">FACTURACIÓN</option>
+                    <option value="IMPORTACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">ADMINISTRACION</option>
+                    <option value="SISTEMAS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">RECURSOS HUMANOS</option>
                   </select>
                 </div>
 

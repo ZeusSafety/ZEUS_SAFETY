@@ -59,6 +59,11 @@ export default function AdministracionPage() {
     return null;
   }
 
+  // Función para verificar si un card está permitido según las sub_vistas
+  const isCardAllowed = (cardId) => {
+    return checkCardAllowed(cardId, user);
+  };
+
   const sections = [
     {
       id: "incidencias",

@@ -144,11 +144,12 @@ export default function MenuPage() {
   // Si no es admin pero tiene módulos, filtrar
   // Si no es admin y no tiene módulos, no mostrar ninguno
   // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
+  // Ocultar "Permisos" del menú (pero seguirá visible en el sidebar)
   const availableModules = (isAdmin 
     ? allModules 
     : userModules.length > 0
     ? allModules.filter((module) => userModules.includes(module.id))
-    : []).filter((module) => module.id !== "seguimiento-monitoreo");
+    : []).filter((module) => module.id !== "seguimiento-monitoreo" && module.id !== "permisos");
   
   // Log para depuración - mostrar contenido completo
   console.log("=== MENU PAGE ===");
