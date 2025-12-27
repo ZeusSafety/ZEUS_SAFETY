@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
 import { useAuth } from "../../components/context/AuthContext";
 import FormularioRegistroSolicitudes from "../../components/permisos/FormularioRegistroSolicitudes";
 import MisSolicitudes from "../../components/permisos/MisSolicitudes";
 
-export default function PermisosPage() {
+function PermisosContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("menu");
@@ -118,7 +119,6 @@ export default function PermisosPage() {
             )}
 
             {activeTab === "menu" && (
-              /* Card contenedor blanco */
               <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)', borderRadius: '14px' }}>
                 {/* Header */}
                 <div className="mb-6">
@@ -135,8 +135,10 @@ export default function PermisosPage() {
                   </div>
                 </div>
 
-            {/* Formulario de Registro de Solicitudes */}
-            <FormularioRegistroSolicitudes onBack={() => router.push("/perfil")} />
+                {/* Formulario de Registro de Solicitudes */}
+                <FormularioRegistroSolicitudes onBack={() => router.push("/perfil")} />
+              </div>
+            )}
           </div>
         </main>
       </div>
