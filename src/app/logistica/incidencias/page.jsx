@@ -1032,7 +1032,7 @@ export default function IncidenciasPage() {
                   <button
                     onClick={handleGuardarIncidencia}
                     className="px-6 py-2 bg-green-500 hover:bg-green-300 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-                  >
+>
                     Guardar Incidencia
                   </button>
                 </div>
