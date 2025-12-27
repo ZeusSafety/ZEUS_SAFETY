@@ -6,17 +6,29 @@ import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/layout/Sidebar";
 import { useAuth } from "../../components/context/AuthContext";
 import FormularioRegistroSolicitudes from "../../components/permisos/FormularioRegistroSolicitudes";
+import MisSolicitudes from "../../components/permisos/MisSolicitudes";
 
 export default function PermisosPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("menu");
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Detectar si se debe mostrar el formulario desde la URL o sidebar
+  useEffect(() => {
+    const section = searchParams?.get('section');
+    if (section === 'registro-solicitudes-incidencias') {
+      setActiveTab("registro");
+    } else if (section === 'mis-solicitudes-incidencias') {
+      setActiveTab("listado");
+    }
+  }, [searchParams]);
 
   // Detectar si es desktop y abrir sidebar automáticamente
   useEffect(() => {
@@ -45,14 +57,36 @@ export default function PermisosPage() {
     return null;
   }
 
+  const options = [
+    {
+      id: "registro-solicitudes-incidencias",
+      title: "Registro de Solicitudes e Incidencias",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      ),
+      onClick: () => setActiveTab("registro"),
+    },
+    {
+      id: "mis-solicitudes-incidencias",
+      title: "Mis Solicitudes e Incidencias",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+      onClick: () => setActiveTab("listado"),
+    },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div 
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
         
@@ -60,15 +94,46 @@ export default function PermisosPage() {
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
-              onClick={() => router.push("/perfil")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm text-sm group"
-              style={{ fontFamily: 'var(--font-poppins)' }}
+              onClick={() => {
+                if (activeTab !== "menu") {
+                  setActiveTab("menu");
+                } else {
+                  router.push("/menu");
+                }
+              }}
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Volver</span>
+              <span>{activeTab !== "menu" ? "Volver a Opciones" : "Volver al Menú"}</span>
             </button>
+
+            {activeTab === "registro" && (
+              <FormularioRegistroSolicitudes onBack={() => setActiveTab("menu")} />
+            )}
+
+            {activeTab === "listado" && (
+              <MisSolicitudes onBack={() => setActiveTab("menu")} />
+            )}
+
+            {activeTab === "menu" && (
+              /* Card contenedor blanco */
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)', borderRadius: '14px' }}>
+                {/* Header */}
+                <div className="mb-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">PERMISOS/SOLICITUDES E INCIDENCIAS</h1>
+                      <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de Permisos y Solicitudes</p>
+                    </div>
+                  </div>
+                </div>
 
             {/* Formulario de Registro de Solicitudes */}
             <FormularioRegistroSolicitudes onBack={() => router.push("/perfil")} />
@@ -76,5 +141,17 @@ export default function PermisosPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function PermisosPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    }>
+      <PermisosContent />
+    </Suspense>
   );
 }

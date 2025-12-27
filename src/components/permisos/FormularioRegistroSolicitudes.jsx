@@ -57,7 +57,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
     REQUERIMIENTOS: '',
     INFORME: null,
     AREA_RECEPCION: '',
-    ESTADO: 'PENDIENTE'
+    ESTADO: 'Pendiente'
   });
 
   const [loading, setLoading] = useState(false);

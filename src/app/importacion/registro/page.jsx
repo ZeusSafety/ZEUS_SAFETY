@@ -6,8 +6,9 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import { color } from "framer-motion";
+import { form } from "framer-motion/client";
 
-// Componente Combobox personalizado con diseño de la imagen
+// Componente Combobox personalizado
 const CustomCombobox = ({ value, onChange, options, placeholder, disabled = false, label }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
@@ -367,7 +368,7 @@ export default function RegistroImportacionesPage() {
       fecha_llegada_productos: formData.fechaLlegada,
       estado_importacion: formData.estado,
       productos: formData.descripcionGeneral, // Equivale a descripción general
-      archivo_pdf: "https://storage.googleapis.com/bucket/default.pdf", // Valor por defecto o dinámico
+      archivo_pdf: formData.archivoPDF || "",
       detalles: listaProductos.map((prod, index) => ({
         item: index + 1,
         producto: prod.producto,
