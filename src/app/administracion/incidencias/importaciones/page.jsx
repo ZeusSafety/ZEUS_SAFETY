@@ -186,11 +186,65 @@ export default function IncidenciasImportacionesPage() {
       productosAfectados: [],
       observaciones: "Observaciones de prueba para incidencia 4",
     },
+    {
+      id: 3,
+      fechaRegistro: "2025-09-15T10:00:00",
+      numeroDespacho: "ZEUS35",
+      pdfInicial: "https://example.com/pdf7.pdf",
+      pdfIncidencia: null,
+      fechaRecepcion: "2025-09-14T19:00:00",
+      fechaCorreccion: "2025-09-15T19:00:00",
+      tieneIncidencias: true,
+      estado: "COMPLETADO",
+      solucionPdf: "https://example.com/solucion7.pdf",
+      respondidoPor: "KIMBERLY",
+      estadoDespacho: "CONCLUIDO",
+      fechaRegistroFacturacion: "2025-09-16T11:00:00",
+      observacionesFacturacion: "ACTA N° 643",
+      productosAfectados: [],
+      observaciones: "Observaciones de prueba para incidencia 3",
+    },
+    {
+      id: 2,
+      fechaRegistro: "2025-09-10T14:30:00",
+      numeroDespacho: "ZEUS33",
+      pdfInicial: "https://example.com/pdf8.pdf",
+      pdfIncidencia: null,
+      fechaRecepcion: "2025-09-09T19:00:00",
+      fechaCorreccion: "2025-09-10T19:00:00",
+      tieneIncidencias: false,
+      estado: "COMPLETADO",
+      solucionPdf: "https://example.com/solucion8.pdf",
+      respondidoPor: "KIMBERLY",
+      estadoDespacho: "CONCLUIDO",
+      fechaRegistroFacturacion: "2025-09-11T10:00:00",
+      observacionesFacturacion: "ACTA N° 642",
+      productosAfectados: [],
+      observaciones: "Observaciones de prueba para incidencia 2",
+    },
+    {
+      id: 1,
+      fechaRegistro: "2025-09-05T09:15:00",
+      numeroDespacho: "ZEUS31",
+      pdfInicial: "https://example.com/pdf9.pdf",
+      pdfIncidencia: null,
+      fechaRecepcion: "2025-09-04T19:00:00",
+      fechaCorreccion: "2025-09-05T19:00:00",
+      tieneIncidencias: true,
+      estado: "REVISADO",
+      solucionPdf: "https://example.com/solucion9.pdf",
+      respondidoPor: "KIMBERLY",
+      estadoDespacho: "NO CONCLUIDO",
+      fechaRegistroFacturacion: null,
+      observacionesFacturacion: null,
+      productosAfectados: [],
+      observaciones: "Observaciones de prueba para incidencia 1",
+    },
   ]);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const totalPages = Math.ceil(incidencias.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -288,6 +342,29 @@ export default function IncidenciasImportacionesPage() {
 
             {/* Contenedor principal con fondo blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
+              {/* Título con icono y API Conectada */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Incidencias Registradas</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Gestiona y revisa las incidencias de importaciones
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                </div>
+              </div>
+
               {/* Filtros de Búsqueda */}
               <div className="mb-6">
                 <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -332,18 +409,20 @@ export default function IncidenciasImportacionesPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       onClick={handleBuscar}
-                      className="flex items-center space-x-1.5 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                      className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <span>Buscar</span>
                     </button>
                     <button
                       onClick={() => setModalProcedimientos(true)}
-                      className="flex items-center space-x-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                      className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <span>Procedimientos</span>
@@ -352,75 +431,41 @@ export default function IncidenciasImportacionesPage() {
                 </div>
               </div>
 
-              {/* Incidencias Registradas */}
-              <div>
-                {/* Header y selector de elementos por página */}
-                <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Incidencias Registradas
-                </h3>
-                <div className="flex items-center gap-2 ml-auto">
-                  <label className="text-xs font-semibold text-gray-700">Elementos por página:</label>
-                  <div className="relative">
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md appearance-none pr-10 min-w-[100px] bg-gradient-to-br from-white to-gray-50"
-                    >
-                      <option value={25} className="bg-white text-gray-900 py-2 font-medium">25</option>
-                      <option value={50} className="bg-white text-gray-900 py-2 font-medium">50</option>
-                      <option value={100} className="bg-white text-gray-900 py-2 font-medium">100</option>
-                      <option value={200} className="bg-white text-gray-900 py-2 font-medium">200</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Tabla y paginación */}
-              <div className="overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                   <thead>
-                    <tr className="bg-blue-700 border-b-2 border-blue-800">
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID Incidencia</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha de Registro</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Número de Despacho</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PDF Inicial</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PDF Incidencia</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Ver Detalles</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha de Recepción</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha de Corrección</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Incidencias?</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Solución PDF</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">RESPONDIDO POR</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO DESPACHO</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA REGISTRO FACTURACIÓN</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">OBSERVACIONES FACTURACIÓN</th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Actualizar</th>
+                    <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ID Incidencia</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha de Registro</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Número de Despacho</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>PDF Inicial</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>PDF Incidencia</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Ver Detalles</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha de Recepción</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha de Corrección</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Incidencias?</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ESTADO</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Solución PDF</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>RESPONDIDO POR</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ESTADO DESPACHO</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA REGISTRO FACTURACIÓN</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>OBSERVACIONES FACTURACIÓN</th>
+                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Actualizar</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {incidenciasPaginadas.map((incidencia) => (
-                      <tr key={incidencia.id} className="hover:bg-slate-200 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{incidencia.id}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(incidencia.fechaRegistro)}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{incidencia.numeroDespacho}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
+                      <tr key={incidencia.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.id}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(incidencia.fechaRegistro)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.numeroDespacho}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
                           {incidencia.pdfInicial ? (
                             <div
-                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -471,10 +516,11 @@ export default function IncidenciasImportacionesPage() {
                             <span className="text-gray-400">No disponible</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
                           {incidencia.pdfIncidencia ? (
                             <div
-                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -525,39 +571,45 @@ export default function IncidenciasImportacionesPage() {
                             <span className="text-gray-400">No disponible</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <button
                             onClick={() => handleVerDetalles(incidencia)}
-                            className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
+                            className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                            style={{ fontFamily: 'var(--font-poppins)' }}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           </button>
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(incidencia.fechaRecepcion)}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(incidencia.fechaCorreccion)}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-600 border-2 border-green-700 text-white">
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(incidencia.fechaRecepcion)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(incidencia.fechaCorreccion)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
+                            incidencia.tieneIncidencias 
+                              ? "bg-gradient-to-br from-green-600 to-green-700" 
+                              : "bg-gradient-to-br from-red-600 to-red-700"
+                          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                             {incidencia.tieneIncidencias ? "SI" : "NO"}
                           </span>
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 text-white ${
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
                             incidencia.estado === "COMPLETADO" 
-                              ? "bg-green-600 border-green-700" 
+                              ? "bg-gradient-to-br from-green-600 to-green-700" 
                               : incidencia.estado === "REVISADO"
-                              ? "bg-orange-500 border-orange-600"
-                              : "bg-gray-500 border-gray-600"
-                          }`}>
+                              ? "bg-gradient-to-br from-orange-500 to-orange-600"
+                              : "bg-gradient-to-br from-gray-500 to-gray-600"
+                          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                             {incidencia.estado}
                           </span>
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] relative" style={{ pointerEvents: 'auto' }}>
                           {incidencia.solucionPdf ? (
                             <div
-                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -608,37 +660,38 @@ export default function IncidenciasImportacionesPage() {
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{incidencia.respondidoPor}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 text-white ${
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.respondidoPor}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
                             incidencia.estadoDespacho === "CONCLUIDO" 
-                              ? "bg-green-600 border-green-700" 
-                              : "bg-red-600 border-red-700"
-                          }`}>
+                              ? "bg-gradient-to-br from-green-600 to-green-700" 
+                              : "bg-gradient-to-br from-red-600 to-red-700"
+                          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                             {incidencia.estadoDespacho}
                           </span>
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                           {incidencia.fechaRegistroFacturacion ? formatearFechaAMPM(incidencia.fechaRegistroFacturacion) : "N/A"}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {incidencia.observacionesFacturacion ? (
                             <button
                               onClick={() => handleVerObservaciones(incidencia)}
-                              className="flex items-center justify-center w-8 h-8 bg-orange-600 hover:bg-orange-700 text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
+                              className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                             </button>
                           ) : (
-                            <span className="text-gray-400 text-[10px]">N/A</span>
+                            <span className="text-gray-400 text-[10px]" style={{ fontFamily: 'var(--font-poppins)' }}>N/A</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <button className="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <button className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                           </button>
@@ -649,41 +702,42 @@ export default function IncidenciasImportacionesPage() {
                 </table>
               </div>
               {/* Paginación */}
-              <div className="bg-slate-200 px-3 py-2 flex items-center justify-end border-t-2 border-slate-300">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    «
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    &lt;
-                  </button>
-                  <span className="text-[10px] text-gray-700 font-medium">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    &gt;
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    »
-                  </button>
-                </div>
-              </div>
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  &lt;
+                </button>
+                <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  &gt;
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  »
+                </button>
               </div>
             </div>
           </div>

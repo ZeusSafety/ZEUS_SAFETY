@@ -26,7 +26,7 @@ export default function RegistroActividadGeneralPage() {
   
   // Paginación para la vista de tabla
   const [currentPageTable, setCurrentPageTable] = useState(1);
-  const itemsPerPageTable = 20;
+  const itemsPerPageTable = 10;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -347,14 +347,14 @@ export default function RegistroActividadGeneralPage() {
           </div>
           <div className="flex flex-col">
             <div className="flex items-center space-x-1.5">
-              <span className="text-[10px] font-bold text-gray-900">{dia} {nombreMes} {año}</span>
-              <span className="text-[9px] text-gray-500 font-medium">({nombreDia})</span>
+              <span className="text-[10px] font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{dia} {nombreMes} {año}</span>
+              <span className="text-[9px] text-gray-500 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>({nombreDia})</span>
             </div>
             <div className="flex items-center space-x-1">
               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-[9px] text-gray-600 font-medium">{horas}:{minutos}:{segundos}</span>
+              <span className="text-[9px] text-gray-600 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>{horas}:{minutos}:{segundos}</span>
             </div>
           </div>
         </div>
@@ -413,8 +413,8 @@ export default function RegistroActividadGeneralPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Registro de Actividad</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Registro de Actividad</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Logs generales de sesión y actividad
                     </p>
                   </div>
@@ -436,7 +436,7 @@ export default function RegistroActividadGeneralPage() {
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                   </div>
                 )}
               </div>
@@ -446,12 +446,14 @@ export default function RegistroActividadGeneralPage() {
                 <button
                   onClick={descargarExcel}
                   disabled={loadingData || logs.length === 0}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-sm font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3" />
                   </svg>
-                  <span className="text-sm">Descargar Excel</span>
+                  <span>Descargar Excel</span>
                 </button>
                 <div className="flex items-center gap-2">
                   <button
@@ -459,15 +461,16 @@ export default function RegistroActividadGeneralPage() {
                       setViewMode("calendar");
                       setCurrentPageTable(1);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                       viewMode === "calendar"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
                     }`}
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div className="flex items-center space-x-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span>Calendario</span>
                     </div>
@@ -477,15 +480,16 @@ export default function RegistroActividadGeneralPage() {
                       setViewMode("table");
                       setCurrentPageTable(1);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                       viewMode === "table"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
                     }`}
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <div className="flex items-center space-x-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                       <span>Tabla</span>
                     </div>
@@ -523,30 +527,32 @@ export default function RegistroActividadGeneralPage() {
                     <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-4 flex items-center justify-between">
                       <button
                         onClick={() => cambiarMes('anterior')}
-                        className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all"
+                        className="p-2.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
                       <div className="text-center">
-                        <h2 className="text-lg font-bold text-white">{nombresMeses[currentMonth]} {currentYear}</h2>
-                        <p className="text-[10px] text-blue-100 mt-0.5">{Object.keys(logsPorDia).length} días con actividad</p>
+                        <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-poppins)' }}>{nombresMeses[currentMonth]} {currentYear}</h2>
+                        <p className="text-[10px] text-blue-100 mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>{diasConActividad.size} días con actividad</p>
                       </div>
                       <button
                         onClick={() => cambiarMes('siguiente')}
-                        className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all"
+                        className="p-2.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
                     </div>
 
                     {/* Días de la semana */}
-                    <div className="grid grid-cols-7 bg-blue-50 border-b-2 border-blue-200">
+                    <div className="grid grid-cols-7 bg-gradient-to-r from-blue-50 to-blue-100 border-b-2 border-blue-200">
                       {nombresDias.map((dia) => (
-                        <div key={dia} className="p-2.5 text-center text-[10px] font-bold text-blue-700">
+                        <div key={dia} className="p-2.5 text-center text-[10px] font-bold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                           {dia}
                         </div>
                       ))}
@@ -571,15 +577,15 @@ export default function RegistroActividadGeneralPage() {
                               <button
                                 key={diaIndex}
                                 onClick={() => setSelectedDate(dia)}
-                                className={`h-12 rounded-lg p-1.5 flex flex-col items-center justify-center transition-all relative ${
+                                className={`h-14 rounded-xl p-1.5 flex flex-col items-center justify-center transition-all duration-200 relative ${
                                   estaSeleccionado
-                                    ? "bg-blue-600 text-white shadow-md scale-105 ring-2 ring-blue-300"
+                                    ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg scale-105 ring-2 ring-blue-300 hover:shadow-xl"
                                     : tieneActividad
-                                    ? "bg-blue-50 hover:bg-blue-100 border border-blue-200 text-gray-900"
-                                    : "bg-gray-50 hover:bg-gray-100 text-gray-600"
-                                } ${esHoy && !estaSeleccionado ? "ring-1 ring-blue-400" : ""}`}
+                                    ? "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 text-gray-900 hover:shadow-md hover:scale-105"
+                                    : "bg-gray-50 hover:bg-gray-100 text-gray-600 hover:shadow-sm"
+                                } ${esHoy && !estaSeleccionado ? "ring-2 ring-blue-400 ring-opacity-50" : ""}`}
                               >
-                                <span className={`text-xs font-bold ${estaSeleccionado ? "text-white" : "text-gray-900"}`}>
+                                <span className={`text-xs font-bold ${estaSeleccionado ? "text-white" : "text-gray-900"}`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                   {dia}
                                 </span>
                                 {tieneActividad && (
@@ -605,39 +611,39 @@ export default function RegistroActividadGeneralPage() {
                   {selectedDate && (
                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
                       <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-3 border-b border-blue-200">
-                        <h3 className="text-lg font-bold text-gray-900">
+                        <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                           Actividad del {selectedDate} de {nombresMeses[currentMonth]} {currentYear}
                         </h3>
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                           {logsDelDia.length} {logsDelDia.length === 1 ? "inicio de sesión" : "inicios de sesión"}
                         </p>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="bg-blue-700 border-b-2 border-blue-800">
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA/HORA</th>
+                            <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>APELLIDO</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA/HORA</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                             {logsDelDia.length === 0 ? (
                               <tr>
-                                <td colSpan={3} className="px-3 py-4 text-center text-xs text-gray-500">
+                                <td colSpan={3} className="px-4 py-4 text-center text-xs text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
                                   No hay actividad registrada para este día
                                 </td>
                               </tr>
                             ) : (
                               logsDelDia.map((log, index) => (
-                                <tr key={log.ID || log.id || index} className="hover:bg-slate-200 transition-colors">
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                                <tr key={log.ID || log.id || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                  <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     {log.NOMBRE || log.nombre || "N/A"}
                                   </td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                  <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     {log.APELLIDO || log.apellido || "N/A"}
                                   </td>
-                                  <td className="px-3 py-2 whitespace-nowrap">
+                                  <td className="px-4 py-3 whitespace-nowrap">
                                     {formatearFecha(log.FECHA_HORA || log.fecha_hora || log.FECHA || log.fecha || log.timestamp || log.TIMESTAMP)}
                                   </td>
                                 </tr>
@@ -656,22 +662,22 @@ export default function RegistroActividadGeneralPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="bg-blue-700 border-b-2 border-blue-800">
-                            <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                            <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                            <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA/HORA</th>
+                          <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>APELLIDO</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA/HORA</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                           {logs.slice((currentPageTable - 1) * itemsPerPageTable, currentPageTable * itemsPerPageTable).map((log, index) => (
-                            <tr key={log.ID || log.id || index} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                            <tr key={log.ID || log.id || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {log.NOMBRE || log.nombre || "N/A"}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {log.APELLIDO || log.apellido || "N/A"}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap">
+                              <td className="px-4 py-3 whitespace-nowrap">
                                 {formatearFecha(log.FECHA_HORA || log.fecha_hora || log.FECHA || log.fecha || log.timestamp || log.TIMESTAMP)}
                               </td>
                             </tr>
@@ -682,35 +688,39 @@ export default function RegistroActividadGeneralPage() {
 
                     {/* Paginación */}
                     {Math.ceil(logs.length / itemsPerPageTable) > 1 && (
-                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                         <button
                           onClick={() => setCurrentPageTable(1)}
                           disabled={currentPageTable === 1}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           «
                         </button>
                         <button
                           onClick={() => setCurrentPageTable(currentPageTable - 1)}
                           disabled={currentPageTable === 1}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           &lt;
                         </button>
-                        <span className="text-[10px] text-gray-700 font-medium">
+                        <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                           Página {currentPageTable} de {Math.ceil(logs.length / itemsPerPageTable)}
                         </span>
                         <button
                           onClick={() => setCurrentPageTable(currentPageTable + 1)}
                           disabled={currentPageTable === Math.ceil(logs.length / itemsPerPageTable)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           &gt;
                         </button>
                         <button
                           onClick={() => setCurrentPageTable(Math.ceil(logs.length / itemsPerPageTable))}
                           disabled={currentPageTable === Math.ceil(logs.length / itemsPerPageTable)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           »
                         </button>

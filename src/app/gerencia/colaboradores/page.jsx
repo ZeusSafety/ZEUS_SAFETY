@@ -1485,8 +1485,8 @@ export default function ColaboradoresPage() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Listado de Colaboradores</h2>
-                      <p className="text-sm text-gray-600 mt-1">Gestiona los colaboradores activos del sistema</p>
+                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Colaboradores</h2>
+                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona los colaboradores activos del sistema</p>
                     </div>
                   </div>
                   <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
@@ -1499,21 +1499,21 @@ export default function ColaboradoresPage() {
                     {loadingColaboradores ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
+                        <span className="text-sm font-semibold text-yellow-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando...</span>
                       </>
                     ) : errorColaboradores ? (
                       <>
                         <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span className="text-sm font-semibold text-red-700">Error: {errorColaboradores}</span>
+                        <span className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>Error: {errorColaboradores}</span>
                       </>
                     ) : (
                       <>
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                        <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                       </>
                     )}
                   </div>
@@ -1522,12 +1522,13 @@ export default function ColaboradoresPage() {
                 {/* Mensaje de error */}
                 {errorColaboradores && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700">
+                    <p className="text-sm text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                       <strong>Error:</strong> {errorColaboradores}
                     </p>
                     <button
                       onClick={fetchColaboradores}
                       className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       Intentar de nuevo
                     </button>
@@ -1549,7 +1550,8 @@ export default function ColaboradoresPage() {
                     });
                     setIsAgregarModalOpen(true);
                   }}
-                  className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm"
+                  className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1605,11 +1607,11 @@ export default function ColaboradoresPage() {
                             }) || colaboradoresCompletos[index] || null;
 
                             return (
-                              <tr key={colaborador.id || `colab-${index}`} className="hover:bg-slate-200 transition-colors">
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
+                              <tr key={colaborador.id || `colab-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
@@ -1637,6 +1639,7 @@ export default function ColaboradoresPage() {
                                         setIsDesactivarModalOpen(true);
                                       }}
                                       className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                       title="Desactivar colaborador"
                                     >
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
@@ -1655,35 +1658,39 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {currentPage} de {totalPages}
                     </span>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>
@@ -1704,8 +1711,8 @@ export default function ColaboradoresPage() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Colaboradores Inactivos</h2>
-                      <p className="text-sm text-gray-600 mt-1">Sin acceso al sistema</p>
+                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Colaboradores Inactivos</h2>
+                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Sin acceso al sistema</p>
                     </div>
                   </div>
                   <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
@@ -1732,7 +1739,7 @@ export default function ColaboradoresPage() {
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                        <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                       </>
                     )}
                   </div>
@@ -1743,27 +1750,27 @@ export default function ColaboradoresPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>APELLIDO</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ÁREA</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>USUARIO</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ACCIÓN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {loadingColaboradores ? (
                           <tr>
-                            <td colSpan={5} className="px-3 py-8 text-center">
+                            <td colSpan={5} className="px-4 py-8 text-center">
                               <div className="flex items-center justify-center space-x-2">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                                <span className="text-sm text-gray-600">Cargando colaboradores...</span>
+                                <span className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando colaboradores...</span>
                               </div>
                             </td>
                           </tr>
                         ) : paginatedInactivos.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
                               No hay colaboradores inactivos
                             </td>
                           </tr>
@@ -1786,12 +1793,12 @@ export default function ColaboradoresPage() {
                             }) || colaboradoresCompletos[colaboradores.length + index] || null;
 
                             return (
-                              <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-slate-200 transition-colors">
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.usuario || "Sin usuario"}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
                                       onClick={async () => {
@@ -1806,6 +1813,7 @@ export default function ColaboradoresPage() {
                                       }}
                                       className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Gestionar permisos del colaborador"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1816,6 +1824,7 @@ export default function ColaboradoresPage() {
                                       onClick={() => handleActivarColaborador(colaborador)}
                                       className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Activar colaborador"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1833,35 +1842,39 @@ export default function ColaboradoresPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPageInactivos(1)}
                       disabled={currentPageInactivos === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
                       disabled={currentPageInactivos === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {currentPageInactivos} de {totalPagesInactivos}
                     </span>
                     <button
                       onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
                       disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPageInactivos(totalPagesInactivos)}
                       disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>

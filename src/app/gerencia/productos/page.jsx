@@ -53,7 +53,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
   return (
     <div className="relative" ref={selectRef}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
           {label}
         </label>
       )}
@@ -148,7 +148,7 @@ const CategoriaAccordion = ({ value, onChange, label, required, categorias = [] 
   return (
     <div className="relative" ref={accordionRef}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
           {label}
         </label>
       )}
@@ -218,7 +218,7 @@ export default function ProductosPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   const [isVerModalOpen, setIsVerModalOpen] = useState(false);
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isDesactivarModalOpen, setIsDesactivarModalOpen] = useState(false);
@@ -774,8 +774,8 @@ export default function ProductosPage() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Listado de Productos</h2>
-                      <p className="text-sm text-gray-600 mt-1">Gestiona los productos activos del sistema</p>
+                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Productos</h2>
+                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona los productos activos del sistema</p>
                     </div>
                   </div>
                   <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
@@ -788,21 +788,21 @@ export default function ProductosPage() {
                     {loadingData ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
+                        <span className="text-sm font-semibold text-yellow-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando...</span>
                       </>
                     ) : error ? (
                       <>
                         <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm font-semibold text-red-700">Error de conexión</span>
+                        <span className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>Error de conexión</span>
                       </>
                     ) : (
                       <>
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-sm font-semibold text-green-700">API Conectada</span>
+                        <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                       </>
                     )}
                   </div>
@@ -821,14 +821,15 @@ export default function ProductosPage() {
                           setSearchTerm(e.target.value);
                           setCurrentPage(1);
                         }}
-                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-white outline-none"
+                        className="w-full px-4 py-2.5 pl-11 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-gradient-to-br from-gray-50 to-white hover:border-blue-300 transition-all duration-200 font-medium outline-none shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                       <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                        className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
@@ -852,7 +853,8 @@ export default function ProductosPage() {
                       });
                       setIsAgregarModalOpen(true);
                     }}
-                    className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm whitespace-nowrap"
+                    className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-xs whitespace-nowrap"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -881,53 +883,56 @@ export default function ProductosPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">DESCRIPCIÓN</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CATEGORÍA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TIPO DE PRODUCTO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">COLOR/TIPO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TAMAÑO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PARES POR CAJA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FICHA TÉCNICA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">IMAGEN</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>CÓDIGO</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>DESCRIPCIÓN</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>CATEGORÍA</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>TIPO DE PRODUCTO</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>COLOR/TIPO</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>TAMAÑO</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>PARES POR CAJA</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FICHA TÉCNICA</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>IMAGEN</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ACCIONES</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {!loadingData && paginatedActivos.length === 0 ? (
                           <tr>
-                            <td colSpan="11" className="px-3 py-8 text-center text-sm text-gray-500">
+                            <td colSpan="11" className="px-4 py-8 text-center text-sm text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
                               No hay productos activos disponibles
                             </td>
                           </tr>
                         ) : (
                           paginatedActivos.map((producto) => (
-                          <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{producto.codigo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.nombre}</td>
-                            <td className="px-3 py-2 text-center">
-                              <button
-                                onClick={() => {
-                                  setSelectedDescripcion(producto.descripcion || "Sin descripción");
-                                  setIsDescripcionModalOpen(true);
-                                }}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 hover:scale-110 active:scale-95"
-                                title="Ver descripción completa"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              </button>
+                          <tr key={producto.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.codigo}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.nombre}</td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center">
+                                <button
+                                  onClick={() => {
+                                    setSelectedDescripcion(producto.descripcion || "Sin descripción");
+                                    setIsDescripcionModalOpen(true);
+                                  }}
+                                  className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                                  title="Ver descripción completa"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                </button>
+                              </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.categoria}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tipoProducto || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.colorTipo || "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.tamano || "-"}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.paresPorCaja || "-"}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.categoria}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tipoProducto || "-"}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.colorTipo || "-"}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tamano || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.paresPorCaja || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center">
                                   <button
                                     onClick={() => {
@@ -937,9 +942,10 @@ export default function ProductosPage() {
                                     }}
                                     className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
                                       producto.fichaTecnica
-                                        ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
-                                        : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+                                        ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                                        : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
                                     }`}
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                     title={producto.fichaTecnica ? "Gestionar PDF del producto (Tiene ficha técnica)" : "Agregar ficha técnica al producto"}
                                   >
                                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
@@ -951,7 +957,7 @@ export default function ProductosPage() {
                                   </button>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center">
                                   <button
                                     onClick={async () => {
@@ -1003,22 +1009,22 @@ export default function ProductosPage() {
                                       setImagePreview(null);
                                       setIsGestionarImagenModalOpen(true);
                                     }}
-                                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
+                                    className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
                                       producto.imagen
-                                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
-                                        : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+                                        ? "bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                                        : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
                                     }`}
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                     title={producto.imagen ? "Gestionar imagen del producto (Tiene imagen)" : "Agregar imagen al producto"}
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
                                   </button>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center space-x-2">
                                   <button
                                     onClick={() => {
@@ -1035,26 +1041,26 @@ export default function ProductosPage() {
                                       });
                                       setIsEditarModalOpen(true);
                                     }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Editar producto"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Editar</span>
                                   </button>
                                   <button
                                     onClick={() => {
                                       setSelectedProducto(producto);
                                       setIsDesactivarModalOpen(true);
                                     }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Eliminar producto"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Eliminar</span>
                                   </button>
                                 </div>
                               </td>
@@ -1066,35 +1072,39 @@ export default function ProductosPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {currentPage} de {totalPages}
                     </span>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>
@@ -1120,30 +1130,30 @@ export default function ProductosPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Código</label>
-                <p className="text-sm text-gray-900">{selectedProducto.codigo}</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Código</label>
+                <p className="text-sm text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{selectedProducto.codigo}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
-                <p className="text-sm text-gray-900">{selectedProducto.nombre}</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Nombre</label>
+                <p className="text-sm text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{selectedProducto.nombre}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Categoría</label>
-                <p className="text-sm text-gray-900">{selectedProducto.categoria}</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Categoría</label>
+                <p className="text-sm text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{selectedProducto.categoria}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Precio</label>
-                <p className="text-sm text-gray-900">${selectedProducto.precio ? Number(selectedProducto.precio).toFixed(2) : '0.00'}</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Precio</label>
+                <p className="text-sm text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>${selectedProducto.precio ? Number(selectedProducto.precio).toFixed(2) : '0.00'}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Stock</label>
-                <p className="text-sm text-gray-900">{selectedProducto.stock}</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Stock</label>
+                <p className="text-sm text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{selectedProducto.stock}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</label>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
                   selectedProducto.activo ? "bg-green-600 border-green-700 text-white" : "bg-red-600 border-red-700 text-white"
-                }`}>
+                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                   {selectedProducto.activo ? "Activo" : "Inactivo"}
                 </span>
               </div>
@@ -1151,7 +1161,8 @@ export default function ProductosPage() {
             <div className="flex items-center justify-end pt-4 border-t border-gray-200">
               <button
                 onClick={() => setIsVerModalOpen(false)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 hover:shadow-lg hover:scale-105 rounded-lg transition-all duration-200 shadow-md active:scale-[0.98]"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               >
                 Cerrar
               </button>
@@ -1175,14 +1186,15 @@ export default function ProductosPage() {
             {/* Columna Izquierda */}
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Código
                 </label>
                 <input
                   type="text"
                   value={editForm.codigo}
                   onChange={(e) => setEditForm({ ...editForm, codigo: e.target.value })}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
               <div>
@@ -1201,18 +1213,19 @@ export default function ProductosPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Color/Tipo
                 </label>
                 <input
                   type="text"
                   value={editForm.colorTipo}
                   onChange={(e) => setEditForm({ ...editForm, colorTipo: e.target.value })}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Pares por Caja
                 </label>
                 <input
@@ -1220,7 +1233,8 @@ export default function ProductosPage() {
                   min="0"
                   value={editForm.paresPorCaja}
                   onChange={(e) => setEditForm({ ...editForm, paresPorCaja: e.target.value })}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
             </div>
@@ -1228,14 +1242,15 @@ export default function ProductosPage() {
             {/* Columna Derecha */}
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Nombre
                 </label>
                 <input
                   type="text"
                   value={editForm.nombre}
                   onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
               <div>
@@ -1251,14 +1266,15 @@ export default function ProductosPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                   Tamaño
                 </label>
                 <input
                   type="text"
                   value={editForm.tamano}
                   onChange={(e) => setEditForm({ ...editForm, tamano: e.target.value })}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
             </div>
@@ -1266,15 +1282,16 @@ export default function ProductosPage() {
 
           {/* Descripción - Última fila, ocupa todo el ancho */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
               Descripción
             </label>
             <textarea
               value={editForm.descripcion}
               onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
               rows={3}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white resize-none"
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-gray-400 bg-white resize-none"
               placeholder="Descripción del producto"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
@@ -1284,7 +1301,8 @@ export default function ProductosPage() {
                 setIsEditarModalOpen(false);
                 setSelectedProducto(null);
               }}
-              className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-200"
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Cancelar
             </button>
@@ -1316,9 +1334,10 @@ export default function ProductosPage() {
                 }
               }}
               disabled={loadingData}
-              className="flex items-center space-x-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-[#1a56e0] hover:to-[#1a56e0] hover:shadow-lg rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 hover:shadow-lg hover:scale-105 rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-[0.98]"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               <span>{loadingData ? "Guardando..." : "Guardar Cambios"}</span>
@@ -1444,7 +1463,7 @@ export default function ProductosPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Código
             </label>
             <input
@@ -1452,11 +1471,12 @@ export default function ProductosPage() {
               value={newProductForm.codigo}
               onChange={(e) => setNewProductForm({ ...newProductForm, codigo: e.target.value })}
               placeholder="Ej: PROD001"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Nombre
             </label>
             <input
@@ -1464,11 +1484,12 @@ export default function ProductosPage() {
               value={newProductForm.nombre}
               onChange={(e) => setNewProductForm({ ...newProductForm, nombre: e.target.value })}
               placeholder="Nombre del producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Descripción
             </label>
             <textarea
@@ -1476,7 +1497,8 @@ export default function ProductosPage() {
               onChange={(e) => setNewProductForm({ ...newProductForm, descripcion: e.target.value })}
               rows={3}
               placeholder="Descripción del producto"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 resize-none"
+              className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 resize-none bg-white hover:border-gray-400 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
           <div>
@@ -1507,7 +1529,7 @@ export default function ProductosPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Color/Tipo
             </label>
             <input
@@ -1515,12 +1537,13 @@ export default function ProductosPage() {
               value={newProductForm.colorTipo}
               onChange={(e) => setNewProductForm({ ...newProductForm, colorTipo: e.target.value })}
               placeholder="Color o tipo"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Tamaño
               </label>
               <input
@@ -1528,11 +1551,12 @@ export default function ProductosPage() {
                 value={newProductForm.tamano}
                 onChange={(e) => setNewProductForm({ ...newProductForm, tamano: e.target.value })}
                 placeholder="Tamaño"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Pares por Caja
               </label>
               <input
@@ -1541,12 +1565,13 @@ export default function ProductosPage() {
                 value={newProductForm.paresPorCaja}
                 onChange={(e) => setNewProductForm({ ...newProductForm, paresPorCaja: e.target.value })}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Ficha Técnica (URL)
             </label>
             <input
@@ -1554,12 +1579,13 @@ export default function ProductosPage() {
               value={newProductForm.fichaTecnica}
               onChange={(e) => setNewProductForm({ ...newProductForm, fichaTecnica: e.target.value })}
               placeholder="URL de la ficha técnica (puede estar vacío)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Precio
               </label>
               <input
@@ -1569,11 +1595,12 @@ export default function ProductosPage() {
                 value={newProductForm.precio}
                 onChange={(e) => setNewProductForm({ ...newProductForm, precio: e.target.value })}
                 placeholder="0.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Stock
               </label>
               <input
@@ -1582,7 +1609,8 @@ export default function ProductosPage() {
                 value={newProductForm.stock}
                 onChange={(e) => setNewProductForm({ ...newProductForm, stock: e.target.value })}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white hover:border-gray-400 transition-all duration-200"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               />
             </div>
           </div>
@@ -1604,7 +1632,8 @@ export default function ProductosPage() {
                   fichaTecnica: "",
                 });
               }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Cancelar
             </button>
@@ -1639,7 +1668,8 @@ export default function ProductosPage() {
                 }
               }}
               disabled={loadingData}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 hover:shadow-lg hover:scale-105 rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-[0.98]"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               {loadingData ? "Agregando..." : "Agregar Producto"}
             </button>

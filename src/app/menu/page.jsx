@@ -144,11 +144,12 @@ export default function MenuPage() {
   // Si no es admin pero tiene módulos, filtrar
   // Si no es admin y no tiene módulos, no mostrar ninguno
   // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
+  // Ocultar "Permisos" del menú (pero seguirá visible en el sidebar)
   const availableModules = (isAdmin 
     ? allModules 
     : userModules.length > 0
     ? allModules.filter((module) => userModules.includes(module.id))
-    : []).filter((module) => module.id !== "seguimiento-monitoreo");
+    : []).filter((module) => module.id !== "seguimiento-monitoreo" && module.id !== "permisos");
   
   // Log para depuración - mostrar contenido completo
   console.log("=== MENU PAGE ===");
@@ -216,7 +217,7 @@ export default function MenuPage() {
           )}
 
           {/* Welcome Banner */}
-          <div className="max-      w-[95%] mx-auto px-2 sm:px-4 pt-3 sm:pt-4">
+          <div className="max-w-[95%] mx-auto px-2 sm:px-4 pt-3 sm:pt-4">
             <div className="relative text-white px-3 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(21, 94, 239, 0.25)' }}>
               <div className="relative z-10">
                 <div className="flex items-start justify-between">

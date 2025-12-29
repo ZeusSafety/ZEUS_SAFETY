@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
@@ -12,24 +12,39 @@ const API_URL = "/api/solicitudes-incidencias";
 
 export default function SolicitudesIncidenciasAdministracionPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
   
+  // Mapeo de módulos a áreas de emisión
+  const getAreaEmisionByModule = (path) => {
+    if (path.includes("/gerencia/")) return ""; // Todas las áreas
+    if (path.includes("/logistica/")) return "LOGISTICA";
+    if (path.includes("/marketing/")) return "MARKETING";
+    if (path.includes("/ventas/")) return "VENTAS";
+    if (path.includes("/facturacion/")) return "FACTURACIÓN";
+    if (path.includes("/importacion/")) return "IMPORTACIÓN";
+    if (path.includes("/administracion/")) return "ADMINISTRACION";
+    if (path.includes("/sistemas/")) return "SISTEMAS";
+    if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
+    return ""; // Por defecto todas las áreas
+  };
+  
   // Filtros - Iniciar con ADMINISTRACION seleccionado por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("ADMINISTRACION");
 
   // FILTROS ADICIONALES
-  const [areaEmision, setAreaEmision] = useState("");
+  const [areaEmision, setAreaEmision] = useState(() => getAreaEmisionByModule(pathname || ""));
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage] = useState(10);
   
   // Modales
   const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
@@ -51,6 +66,15 @@ export default function SolicitudesIncidenciasAdministracionPage() {
   const [formArchivoNombre, setFormArchivoNombre] = useState("");
   const [formEstado, setFormEstado] = useState("");
   const [formReprogramacion, setFormReprogramacion] = useState(false);
+
+  // Estados para el modal de Gestión de Requerimientos
+  const [modalGestionRequerimientosOpen, setModalGestionRequerimientosOpen] = useState(false);
+  const [formRequerimiento2, setFormRequerimiento2] = useState("");
+  const [formRequerimiento3, setFormRequerimiento3] = useState("");
+  const [formArchivo2, setFormArchivo2] = useState(null);
+  const [formArchivo3, setFormArchivo3] = useState(null);
+  const [mostrarRespuesta3, setMostrarRespuesta3] = useState(false);
+  const [guardandoRequerimientos, setGuardandoRequerimientos] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -226,6 +250,21 @@ export default function SolicitudesIncidenciasAdministracionPage() {
     setModalHistorialReqExtraOpen(true);
   };
 
+  const abrirModalGestionRequerimientos = (solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    
+    // Cargar datos existentes
+    setFormRequerimiento2(solicitud.REQUERIMIENTO_2 || solicitud.requerimiento_2 || "");
+    setFormRequerimiento3(solicitud.REQUERIMIENTO_3 || solicitud.requerimiento_3 || "");
+    setFormArchivo2(null);
+    setFormArchivo3(null);
+    
+    // Mostrar Respuesta 3 si ya tiene datos
+    setMostrarRespuesta3(!!(solicitud.REQUERIMIENTO_3 || solicitud.requerimiento_3 || solicitud.INFORME_3 || solicitud.informe3));
+    
+    setModalGestionRequerimientosOpen(true);
+  };
+
   const abrirModalEditar = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     
@@ -260,6 +299,24 @@ export default function SolicitudesIncidenciasAdministracionPage() {
       solicitud.FECHA_REPROGRAMACION || solicitud.RESPUESTA_REPROGRAMACION
     );
     setModalEditarOpen(true);
+  };
+
+  const descargarPDF = (url, nombreArchivo) => {
+    try {
+      // Usar window.open para evitar problemas de CORS
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = nombreArchivo || 'informe.pdf';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error al descargar PDF:', error);
+      // Si falla, intentar abrir directamente
+      window.open(url, '_blank');
+    }
   };
 
   const handleGuardarEdicion = async () => {
@@ -455,13 +512,13 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Listado de Solicitudes/Incidencias</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Ver y gestionar Solicitudes/Incidencias
                     </p>
                   </div>
                 </div>
-                <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
+                <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
                   loadingData 
                     ? 'bg-yellow-50 border border-yellow-200' 
                     : errorAPI 
@@ -471,21 +528,21 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                   {loadingData ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                      <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                      <span className="text-sm font-semibold text-yellow-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando...</span>
                     </>
                   ) : errorAPI ? (
                     <>
-                      <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-xs font-semibold text-red-700">Error</span>
+                      <span className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>Error</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-xs font-semibold text-green-700">API Conectada</span>
+                      <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                     </>
                   )}
                 </div>
@@ -495,9 +552,10 @@ export default function SolicitudesIncidenciasAdministracionPage() {
               <div className="mb-6 flex items-center gap-3 flex-wrap">
                 <button 
                   onClick={() => setModalProcedimientosOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Procedimientos
@@ -505,7 +563,8 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                 
                 <button 
                   onClick={handleExportarPDF}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md text-sm ml-auto"
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs ml-auto"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -547,17 +606,22 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                   <select
                     value={areaEmision}
                     onChange={(e) => setAreaEmision(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 font-medium transition-all duration-200 hover:border-blue-300 bg-white cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%231E63F7%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E')] bg-no-repeat bg-right pr-10 shadow-sm"
+                    style={{
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundSize: '1.25rem 1.25rem',
+                      paddingRight: '2.5rem'
+                    }}
                   >
-                    <option value="">Todas las áreas</option>
-                    <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="MARKETING">MARKETING</option>
-                    <option value="VENTAS">VENTAS</option>
-                    <option value="FACTURACION">FACTURACIÓN</option>
-                    <option value="IMPORTACION">IMPORTACIÓN</option>
-                    <option value="ADMINISTRACION">ADMINISTRACION</option>
-                    <option value="SISTEMAS">SISTEMAS</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                    <option value="" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">Todas las áreas</option>
+                    <option value="LOGISTICA" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">LOGISTICA</option>
+                    <option value="MARKETING" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">MARKETING</option>
+                    <option value="VENTAS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">VENTAS</option>
+                    <option value="FACTURACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">FACTURACIÓN</option>
+                    <option value="IMPORTACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">ADMINISTRACION</option>
+                    <option value="SISTEMAS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS" className="py-2 px-3 text-gray-900 font-medium bg-white hover:bg-blue-50">RECURSOS HUMANOS</option>
                   </select>
                 </div>
 
@@ -643,20 +707,20 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                   <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Consulta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Solicitud</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Envio</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Con Incidencia</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Informe</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Recepción</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Respuesta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Respondido Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Respuesta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Con Reprogramación / Más Respuestas</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -668,20 +732,21 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                           const tieneReqExtra = solicitud.REQUERIMIENTO_2 || solicitud.REQUERIMIENTO_3 || solicitud.INFORME_2 || solicitud.INFORME_3;
                           
                           return (
-                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_CONSULTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.NUMERO_SOLICITUD || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.REGISTRADO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RES_INCIDENCIA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(solicitud.FECHA_CONSULTA)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.NUMERO_SOLICITUD || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.REGISTRADO_POR || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.AREA || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.RES_INCIDENCIA || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => mostrarTextoEnModal(solicitud.REQUERIMIENTOS || 'No especificado.', 'Requerimientos')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver Requerimientos"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
@@ -691,49 +756,52 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                                       href={solicitud.INFORME_SOLICITUD}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-red-500 to-red-600 text-white"
+                                      title="Ver archivo PDF"
                                     >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
                                         <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                       </svg>
-                                      Ver archivo
+                                      <span style={{pointerEvents: 'none'}}>PDF</span>
                                     </a>
                                   ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <button className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold cursor-not-allowed opacity-50 bg-gray-400 text-white">
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
                                         <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                       </svg>
-                                      Sin archivo
+                                      <span style={{pointerEvents: 'none'}}>PDF</span>
                                     </button>
                                   )}
                                   {tieneReqExtra && (
                                     <button
                                       onClick={() => verHistorialReqExtra(solicitud)}
-                                      className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                      className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Ver respuestas adicionales"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
-                                      <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                       </svg>
                                     </button>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA_RECEPCION || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RESPONDIDO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.AREA_RECEPCION || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.RESPONDIDO_POR || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => mostrarTextoEnModal(solicitud.RESPUESTA_R || solicitud.RESPUESTA || 'No especificado.', 'Respuesta')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver Respuesta"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
@@ -743,63 +811,80 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                                       href={solicitud.INFORME_RESPUESTA}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-red-500 to-red-600 text-white"
+                                      title="Ver archivo PDF"
                                     >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
                                         <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                       </svg>
-                                      Ver archivo
+                                      <span style={{pointerEvents: 'none'}}>PDF</span>
                                     </a>
                                   ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <button className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold cursor-not-allowed opacity-50 bg-gray-400 text-white">
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
                                         <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                       </svg>
-                                      Sin archivo
+                                      <span style={{pointerEvents: 'none'}}>PDF</span>
                                     </button>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${getEstadoBadge(solicitud.ESTADO)}`}>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
+                                  solicitud.ESTADO === 'pendiente' || solicitud.ESTADO === 'PENDIENTE' 
+                                    ? 'bg-gradient-to-br from-yellow-500 to-yellow-600'
+                                    : solicitud.ESTADO === 'en revisión' || solicitud.ESTADO === 'en revision' || solicitud.ESTADO === 'EN REVISIÓN' || solicitud.ESTADO === 'EN REVISION'
+                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600'
+                                    : solicitud.ESTADO === 'en proceso' || solicitud.ESTADO === 'EN PROCESO'
+                                    ? 'bg-gradient-to-br from-blue-600 to-blue-700'
+                                    : solicitud.ESTADO === 'completado' || solicitud.ESTADO === 'COMPLETADO'
+                                    ? 'bg-gradient-to-br from-green-600 to-green-700'
+                                    : solicitud.ESTADO === 'requiere info' || solicitud.ESTADO === 'REQUIERE INFO'
+                                    ? 'bg-gradient-to-br from-cyan-500 to-cyan-600'
+                                    : solicitud.ESTADO === 'rechazada' || solicitud.ESTADO === 'RECHAZADA'
+                                    ? 'bg-gradient-to-br from-red-600 to-red-700'
+                                    : 'bg-gradient-to-br from-gray-500 to-gray-600'
+                                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                   {solicitud.ESTADO || 'Pendiente'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 {tieneReprogramaciones ? (
                                   <div className="flex items-center gap-2 justify-center text-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 bg-gradient-to-br from-green-600 to-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                       SI
                                     </span>
                                     <button
                                       onClick={() => verReprogramaciones(solicitud)}
-                                      className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
+                                      className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Ver reprogramaciones"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
-                                      <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                       </svg>
                                     </button>
                                   </div>
                                 ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-red-600 border-red-700 text-white">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 bg-gradient-to-br from-red-600 to-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     NO
                                   </span>
                                 )}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <button 
-                                  onClick={() => abrirModalEditar(solicitud)}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                  onClick={() => abrirModalGestionRequerimientos(solicitud)}
+                                  className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Gestionar requerimientos"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                   </svg>
-                                  <span>Editar</span>
                                 </button>
                               </td>
                             </tr>
@@ -810,35 +895,39 @@ export default function SolicitudesIncidenciasAdministracionPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
                     </span>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>
@@ -1414,6 +1503,403 @@ export default function SolicitudesIncidenciasAdministracionPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal de Gestión de Requerimientos */}
+      <Modal
+        isOpen={modalGestionRequerimientosOpen}
+        onClose={() => {
+          setModalGestionRequerimientosOpen(false);
+          setSolicitudSeleccionada(null);
+          setFormRequerimiento2("");
+          setFormRequerimiento3("");
+          setFormArchivo2(null);
+          setFormArchivo3(null);
+          setMostrarRespuesta3(false);
+        }}
+        title="Gestión de Requerimientos"
+        size="lg"
+      >
+        {solicitudSeleccionada && (
+          <div className="space-y-5">
+            {/* Requerimiento inicial */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-900">Requerimiento Inicial</h3>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                  {solicitudSeleccionada.REQUERIMIENTOS || solicitudSeleccionada.requerimientos || "No especificado."}
+                </div>
+              </div>
+            </div>
+
+            {/* Respuesta 2 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-900">Respuesta 2</h3>
+                </div>
+              </div>
+              
+              <div className="p-4 space-y-4">
+                {/* Texto */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Texto
+                  </label>
+                  <textarea
+                    value={formRequerimiento2}
+                    onChange={(e) => setFormRequerimiento2(e.target.value)}
+                    rows={4}
+                    placeholder="Ingrese el detalle de la respuesta 2..."
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
+                  />
+                  {/* Fecha de registro/actualización del requerimiento */}
+                  {solicitudSeleccionada.FECHA_REQUERIMIENTO_2 && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_2)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Archivo */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Archivo (opcional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="flex-shrink-0">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png,.zip,.rar"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFormArchivo2(file);
+                          }
+                        }}
+                        className="hidden"
+                        id="archivo2-input"
+                      />
+                      <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Seleccionar archivo
+                      </span>
+                    </label>
+                    <span className="text-xs text-gray-600 flex-1">
+                      {formArchivo2 ? (
+                        <span className="text-[#1E63F7] font-medium">{formArchivo2.name}</span>
+                      ) : (
+                        "Ningún archivo seleccionado"
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Exportar archivo actual - SOLO si existe */}
+                <div>
+                  {(solicitudSeleccionada.INFORME_2 || solicitudSeleccionada.informe2) ? (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => descargarPDF(solicitudSeleccionada.INFORME_2 || solicitudSeleccionada.informe2, 'informe_respuesta_2.pdf')}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:opacity-90 text-white rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md active:scale-[0.95]"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 1V6H18" />
+                          <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                        </svg>
+                        Exportar a PDF
+                      </button>
+                      {solicitudSeleccionada.FECHA_INFORME_2 && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_INFORME_2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      disabled
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-500 rounded-lg text-xs font-semibold cursor-not-allowed opacity-50"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 1V6H18" />
+                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                      </svg>
+                      Exportar a PDF
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Respuesta 3 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-900">Respuesta 3</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarRespuesta3(!mostrarRespuesta3)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold transition-all shadow-sm border border-gray-300"
+                >
+                  {mostrarRespuesta3 ? (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                      </svg>
+                      Ocultar
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Añadir Respuesta 3
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {mostrarRespuesta3 && (
+                <div className="p-4 space-y-4">
+                  {/* Texto */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      Texto
+                    </label>
+                    <textarea
+                      value={formRequerimiento3}
+                      onChange={(e) => setFormRequerimiento3(e.target.value)}
+                      rows={4}
+                      placeholder="Ingrese el detalle de la respuesta 3..."
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
+                    />
+                    {/* Fecha de registro/actualización del requerimiento */}
+                    {solicitudSeleccionada.FECHA_REQUERIMIENTO_3 && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_3)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Archivo */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      Archivo (opcional)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex-shrink-0">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png,.zip,.rar"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setFormArchivo3(file);
+                            }
+                          }}
+                          className="hidden"
+                          id="archivo3-input"
+                        />
+                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          Seleccionar archivo
+                        </span>
+                      </label>
+                      <span className="text-xs text-gray-600 flex-1">
+                        {formArchivo3 ? (
+                          <span className="text-[#1E63F7] font-medium">{formArchivo3.name}</span>
+                        ) : (
+                          "Ningún archivo seleccionado"
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Exportar archivo actual - SOLO si existe */}
+                  <div>
+                    {(solicitudSeleccionada.INFORME_3 || solicitudSeleccionada.informe3) ? (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => descargarPDF(solicitudSeleccionada.INFORME_3 || solicitudSeleccionada.informe3, 'informe_respuesta_3.pdf')}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:opacity-90 text-white rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md active:scale-[0.95]"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 1V6H18" />
+                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                          </svg>
+                          Exportar a PDF
+                        </button>
+                        {solicitudSeleccionada.FECHA_INFORME_3 && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_INFORME_3)}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        disabled
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-500 rounded-lg text-xs font-semibold cursor-not-allowed opacity-50"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 1V6H18" />
+                          <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                        </svg>
+                        Exportar a PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200/60">
+              <button
+                onClick={() => {
+                  setModalGestionRequerimientosOpen(false);
+                  setSolicitudSeleccionada(null);
+                  setFormRequerimiento2("");
+                  setFormRequerimiento3("");
+                  setFormArchivo2(null);
+                  setFormArchivo3(null);
+                  setMostrarRespuesta3(false);
+                }}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!solicitudSeleccionada) return;
+
+                  try {
+                    setGuardandoRequerimientos(true);
+                    const token = localStorage.getItem("token");
+                    const idSolicitud = solicitudSeleccionada.ID_SOLICITUD || solicitudSeleccionada.id || solicitudSeleccionada.ID;
+
+                    if (!idSolicitud) {
+                      alert("No se encontró el ID de la solicitud.");
+                      return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('ID_SOLICITUD', idSolicitud);
+                    
+                    if (formRequerimiento2.trim()) {
+                      formData.append('REQUERIMIENTO_2', formRequerimiento2.trim());
+                    }
+                    if (formArchivo2) {
+                      formData.append('informe2', formArchivo2);
+                    }
+                    
+                    if (mostrarRespuesta3) {
+                      if (formRequerimiento3.trim()) {
+                        formData.append('REQUERIMIENTO_3', formRequerimiento3.trim());
+                      }
+                      if (formArchivo3) {
+                        formData.append('informe3', formArchivo3);
+                      }
+                    }
+
+                    const response = await fetch(
+                      `https://registrosolicitudeseincidencias-2946605267.us-central1.run.app?accion=requerimiento`,
+                      {
+                        method: 'PUT',
+                        headers: {
+                          ...(token && { 'Authorization': `Bearer ${token}` })
+                        },
+                        body: formData
+                      }
+                    );
+
+                    if (!response.ok) {
+                      const errorText = await response.text();
+                      throw new Error(errorText || `Error ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log("Respuesta de actualización:", data);
+
+                    // Recargar solicitudes para obtener los datos actualizados
+                    await cargarSolicitudes();
+
+                    // Cerrar modal
+                    setModalGestionRequerimientosOpen(false);
+                    setSolicitudSeleccionada(null);
+                    setFormRequerimiento2("");
+                    setFormRequerimiento3("");
+                    setFormArchivo2(null);
+                    setFormArchivo3(null);
+                    setMostrarRespuesta3(false);
+
+                    alert("Requerimientos guardados correctamente.");
+                  } catch (error) {
+                    console.error("Error al guardar requerimientos:", error);
+                    alert(`Error al guardar: ${error.message}`);
+                  } finally {
+                    setGuardandoRequerimientos(false);
+                  }
+                }}
+                disabled={guardandoRequerimientos}
+                className="px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {guardandoRequerimientos ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Guardar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
