@@ -55,7 +55,7 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
   return (
     <div className="relative" ref={selectRef}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-900 mb-2">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
           {label}
         </label>
       )}
@@ -70,6 +70,7 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
             ? 'bg-blue-700 text-white border-blue-700'
             : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        style={{ fontFamily: 'var(--font-poppins)' }}
       >
         <span className="whitespace-nowrap overflow-hidden text-ellipsis">
           {selectedOption ? selectedOption.label : placeholder}
@@ -99,6 +100,7 @@ const CustomCombobox = ({ value, onChange, options, placeholder, disabled = fals
                 ? 'bg-blue-700 text-white font-semibold'
                 : 'text-gray-900 hover:bg-blue-50'
                 } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               {option.label}
             </button>
@@ -467,10 +469,13 @@ export default function RegistroImportacionesPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">REGISTRO DE IMPORTACIONES</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>REGISTRO DE IMPORTACIONES</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Gestión y control de importaciones de productos
+                    </p>
                   </div>
                 </div>
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm">
+                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -481,7 +486,7 @@ export default function RegistroImportacionesPage() {
               <div className="space-y-6">
                 {/* Información General */}
                 <div className="bg-white rounded-xl border-2 border-gray-200 p-4 shadow-sm">
-                  <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                     <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">i</span>
                     </div>
@@ -489,7 +494,7 @@ export default function RegistroImportacionesPage() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                         Fecha de Registro <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
@@ -497,7 +502,8 @@ export default function RegistroImportacionesPage() {
                           type="date"
                           value={formData.fechaRegistro}
                           onChange={(e) => setFormData({ ...formData, fechaRegistro: e.target.value })}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                           required
                         />
                         <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -506,14 +512,15 @@ export default function RegistroImportacionesPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                         N° de Despacho <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.numeroDespacho}
                         onChange={(e) => setFormData({ ...formData, numeroDespacho: e.target.value })}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                         required
                       />
                     </div>
@@ -530,7 +537,7 @@ export default function RegistroImportacionesPage() {
                       ]}
                     />
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                         Fecha de Llegada <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
@@ -538,7 +545,8 @@ export default function RegistroImportacionesPage() {
                           type="date"
                           value={formData.fechaLlegada}
                           onChange={(e) => setFormData({ ...formData, fechaLlegada: e.target.value })}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                           required
                         />
                         <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -574,7 +582,7 @@ export default function RegistroImportacionesPage() {
                     />
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Descripción General de Productos <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -582,15 +590,61 @@ export default function RegistroImportacionesPage() {
                       onChange={(e) => setFormData({ ...formData, descripcionGeneral: e.target.value })}
                       placeholder="Describa brevemente los productos que contiene esta importación..."
                       rows={3}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white resize-y"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white resize-y transition-all duration-200 hover:border-blue-300"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       required
                     />
                   </div>
                 </div>
 
+                {/* Header con API Conectada y Ver procedimiento */}
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de incidencias y actas</h2>
+                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Control de incidencias asociadas a proformas y actas administrativas
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                    </div>
+                    <button
+                      onClick={() => {}}
+                      className="inline-flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <span>Ver procedimiento</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Detalle de Productos */}
                 <div className="bg-white rounded-xl border-2 border-gray-200 p-4 shadow-sm">
-                  <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
@@ -598,7 +652,7 @@ export default function RegistroImportacionesPage() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="relative">
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Producto:</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Producto:</label>
                       <input
                         ref={productoInputRef}
                         type="text"
@@ -606,7 +660,8 @@ export default function RegistroImportacionesPage() {
                         onChange={handleProductoBusquedaChange}
                         onFocus={handleProductoFocus}
                         placeholder="Buscar producto..."
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                       {buscandoProductos && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -624,6 +679,7 @@ export default function RegistroImportacionesPage() {
                               type="button"
                               onClick={() => seleccionarProducto(prod)}
                               className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                             >
                               <div className="text-sm font-medium text-gray-900">
                                 {prod.NOMBRE || prod.nombre}
@@ -637,12 +693,13 @@ export default function RegistroImportacionesPage() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Código:</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Código:</label>
                       <input
                         type="text"
                         value={codigoProducto}
                         readOnly
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-900 cursor-not-allowed"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     </div>
                     <CustomCombobox
@@ -659,24 +716,26 @@ export default function RegistroImportacionesPage() {
                       ]}
                     />
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad:</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Cantidad:</label>
                       <input
                         type="number"
                         value={detalleProducto.cantidad}
                         onChange={(e) => setDetalleProducto({ ...detalleProducto, cantidad: e.target.value })}
                         min="1"
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad en Caja:</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Cantidad en Caja:</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
                           value={detalleProducto.cantidadCaja}
                           onChange={(e) => setDetalleProducto({ ...detalleProducto, cantidadCaja: e.target.value })}
                           min="0"
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                         />
                       </div>
                     </div>
@@ -684,7 +743,8 @@ export default function RegistroImportacionesPage() {
                       <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ color: 'transparent' }}>.</label>
                       <button
                         onClick={agregarProductoALista}
-                        className="flex items-center space-x-1.5 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                        className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -747,7 +807,8 @@ export default function RegistroImportacionesPage() {
                 <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
                     onClick={registrarImportacion}
-                    className="flex items-center space-x-1.5 px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                    className="flex items-center space-x-1.5 px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

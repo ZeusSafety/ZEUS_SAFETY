@@ -216,21 +216,21 @@ export default function ListadoImportacionesPage() {
 
   const getEstadoBadge = (estado) => {
     const estados = {
-      TRANSITO: "bg-yellow-500 border-2 border-yellow-600 text-white",
-      ETA: "bg-green-600 border-2 border-green-700 text-white",
-      RECIBIDO: "bg-blue-700 border-2 border-blue-800 text-white",
+      TRANSITO: "bg-gradient-to-br from-yellow-500 to-yellow-600",
+      ETA: "bg-gradient-to-br from-green-600 to-green-700",
+      RECIBIDO: "bg-gradient-to-br from-blue-600 to-blue-700",
     };
-    return estados[estado] || "bg-gray-500 border-2 border-gray-600 text-white";
+    return estados[estado] || "bg-gradient-to-br from-gray-500 to-gray-600";
   };
 
   const getCanalBadge = (canal) => {
     if (!canal) return "";
     const canales = {
-      ROJO: "bg-red-600 border-2 border-red-700 text-white",
-      AMARILLO: "bg-yellow-500 border-2 border-yellow-600 text-white",
-      VERDE: "bg-green-600 border-2 border-green-700 text-white",
+      ROJO: "bg-gradient-to-br from-red-600 to-red-700",
+      AMARILLO: "bg-gradient-to-br from-yellow-500 to-yellow-600",
+      VERDE: "bg-gradient-to-br from-green-600 to-green-700",
     };
-    return canales[canal] || "bg-gray-500 border-2 border-gray-600 text-white";
+    return canales[canal] || "bg-gradient-to-br from-gray-500 to-gray-600";
   };
 
   return (
@@ -261,58 +261,99 @@ export default function ListadoImportacionesPage() {
             {/* Card contenedor blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
-              <div className="mb-4 flex items-center justify-start">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
-                  <h1 className="text-xl font-bold text-gray-900">Listado de Importaciones</h1>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Importaciones</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Consulta y gestión de todas las importaciones registradas
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                  </div>
+                  <button
+                    onClick={() => {}}
+                    className="inline-flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span>Ver procedimiento</span>
+                  </button>
                 </div>
               </div>
 
               {/* Filtros */}
               <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Fecha Inicio</label>
+                  <label className="block text-xs font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Inicio</label>
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="dd/mm/aaaa"
                       value={fechaInicio}
                       onChange={(e) => setFechaInicio(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400 text-gray-900"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
-                    <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                 </div>
                 <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Fecha Final</label>
+                  <label className="block text-xs font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Final</label>
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="dd/mm/aaaa"
                       value={fechaFinal}
                       onChange={(e) => setFechaFinal(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400 text-gray-900"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
-                    <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                 </div>
                 <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">N° de Despacho</label>
-                  <input
-                    type="text"
-                    placeholder="Buscar..."
-                    value={numeroDespacho}
-                    onChange={(e) => setNumeroDespacho(e.target.value)}
-                    className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
-                  />
+                  <label className="block text-xs font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>N° de Despacho</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar..."
+                      value={numeroDespacho}
+                      onChange={(e) => setNumeroDespacho(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400 text-gray-900"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    />
+                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
@@ -390,25 +431,25 @@ export default function ListadoImportacionesPage() {
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaAlmacen || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {importacion.estado && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoBadge(importacion.estado)}`}>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(importacion.estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {importacion.estado}
                               </span>
                             )}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {importacion.canal && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getCanalBadge(importacion.canal)}`}>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getCanalBadge(importacion.canal)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {importacion.canal}
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaRecepcion || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{importacion.fechaRecepcion || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
                               importacion.incidencias 
-                                ? "bg-red-600 border-red-700 text-white" 
-                                : "bg-green-600 border-green-700 text-white"
-                            }`}>
+                                ? "bg-gradient-to-br from-red-600 to-red-700" 
+                                : "bg-gradient-to-br from-green-600 to-green-700"
+                            }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                               {importacion.incidencias ? "SI" : "NO"}
                             </span>
                           </td>
@@ -424,12 +465,13 @@ export default function ListadoImportacionesPage() {
                                 });
                                 setIsUpdateModalOpen(true);
                               }}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                              title="Actualizar importación"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
-                              <span>Actualizar</span>
                             </button>
                           </td>
                         </tr>
@@ -495,13 +537,14 @@ export default function ListadoImportacionesPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Estado
             </label>
             <select
               value={updateForm.estado}
               onChange={(e) => setUpdateForm({ ...updateForm, estado: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <option value="">Seleccionar estado</option>
               <option value="TRANSITO">TRANSITO</option>
@@ -511,39 +554,42 @@ export default function ListadoImportacionesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Fecha de Almacén
             </label>
             <input
               type="date"
               value={updateForm.fechaAlmacen}
               onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Fecha de Recepción
             </label>
             <input
               type="date"
               value={updateForm.fechaRecepcion}
               onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Observaciones
             </label>
             <textarea
               value={updateForm.observaciones}
               onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white resize-none transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400"
               placeholder="Ingrese observaciones..."
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
@@ -559,7 +605,8 @@ export default function ListadoImportacionesPage() {
                   fechaRecepcion: "",
                 });
               }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Cancelar
             </button>
@@ -570,7 +617,8 @@ export default function ListadoImportacionesPage() {
                 alert("Funcionalidad de guardado pendiente de implementar");
                 setIsUpdateModalOpen(false);
               }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 hover:shadow-md hover:scale-105 active:scale-[0.98] rounded-lg transition-all duration-200 shadow-sm"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Guardar Cambios
             </button>
