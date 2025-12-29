@@ -212,10 +212,10 @@ export default function IncidenciasPage() {
       return;
     }
 
-    // Validar que al menos un item de error tenga datos
-    const itemsConDatos = itemsError.filter(item => item.detalle.trim() || item.debeSer.trim());
+    // Validar que al menos un item de error tenga ambos campos completos
+    const itemsConDatos = itemsError.filter(item => item.detalle.trim() && item.debeSer.trim());
     if (itemsConDatos.length === 0) {
-      alert("Por favor ingrese al menos un item de error");
+      alert("Por favor ingrese al menos un item de error completo (tanto el detalle como la solución)");
       return;
     }
 
@@ -226,30 +226,53 @@ export default function IncidenciasPage() {
         return;
       }
 
+      // Preparar el array de detalle con el formato correcto
+      const detalle = itemsConDatos.map(item => ({
+        error: item.detalle.trim(),
+        solucion: item.debeSer.trim()
+      }));
+
+      // Preparar los datos según el formato del endpoint
       const data = {
-        encargado_comprobante: encargadoComprobante,
         fecha_emision: fechaEmision,
-        responsable_incidencia: responsableIncidencia === "OTROS" ? responsableIncidenciaOtros : responsableIncidencia,
-        area: area,
-        numero_proforma: numeroProforma,
-        numero_comprobante: numeroComprobante,
-        items_error: itemsConDatos,
+        encargado_comprobante: encargadoComprobante,
+        responsable_incidencia: responsableIncidencia === "OTROS" ? responsableIncidenciaOtros.trim() : responsableIncidencia,
+        area: area.toUpperCase(),
+        numero_proforma: numeroProforma.trim(),
+        numero_comprobante: numeroComprobante.trim(),
         tipo_incidencia: tipoIncidencia,
-        observacion_detallada: tipoIncidencia === "OTROS" ? observacionDetallada : "",
-        registrado_por: registradoPor === "OTROS" ? registradoPorOtros : registradoPor,
+        observacion: tipoIncidencia === "OTROS" ? observacionDetallada.trim() : "",
+        registrado_por: registradoPor === "OTROS" ? registradoPorOtros.trim() : registradoPor,
+        detalle: detalle
       };
 
-      // Aquí iría la llamada a la API
-      // const response = await fetch("/api/incidencias", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Authorization": `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify(data)
-      // });
+      // Llamada al endpoint a través de la ruta API local (proxy)
+      const response = await fetch("/api/incidencias-proformas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
 
-      // Por ahora simulamos el guardado
+      // Verificar si la respuesta es exitosa
+      if (!response.ok) {
+        // Si el token está caducado (401), redirigir al login
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          router.push("/login");
+          throw new Error("Token expirado. Por favor, inicie sesión nuevamente.");
+        }
+
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Mostrar mensaje de éxito
       alert("Incidencia guardada exitosamente");
 
       // Limpiar formulario
@@ -266,60 +289,97 @@ export default function IncidenciasPage() {
       setRegistradoPor("");
       setRegistradoPorOtros("");
 
-      // Recargar lista
-      // cargarIncidencias();
+      // Recargar lista de incidencias
+      cargarIncidencias();
     } catch (error) {
       console.error("Error al guardar incidencia:", error);
-      alert("Error al guardar la incidencia");
+      alert(`Error al guardar la incidencia: ${error.message}`);
     }
   };
 
-  // Cargar incidencias (simulado)
-  useEffect(() => {
-    // Aquí iría la llamada a la API
-    // const cargarIncidencias = async () => {
-    //   try {
-    //     const token = localStorage.getItem("token") || "";
-    //     const response = await fetch("/api/incidencias", {
-    //       headers: {
-    //         "Authorization": `Bearer ${token}`
-    //       }
-    //     });
-    //     const data = await response.json();
-    //     setIncidencias(data);
-    //   } catch (error) {
-    //     console.error("Error al cargar incidencias:", error);
-    //   }
-    // };
-    // cargarIncidencias();
+  // Función para mapear los nombres de meses
+  const getNombreMes = (numeroMes) => {
+    const meses = [
+      "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ];
+    return meses[numeroMes - 1] || numeroMes;
+  };
 
-    // Datos de ejemplo
-    setIncidencias([
-      {
-        id: 1,
-        fecha_registro: "2024-01-15",
-        registrado_por: "JOSEPH",
-        mes: "ENERO",
-        encargado_comprobante: "HERVIN",
-        fecha_emision: "2024-01-10",
-        numero_proforma: "PROF-001",
-        numero_comprobante: "COMP-001",
-        items_error: [{ detalle: "Error en color", debeSer: "Debe ser azul" }],
-        responsable: "KIMBERLY",
-        area: "Ventas",
-        tipo_incidencia: "ERROR DE COLOR",
-        fecha_notificacion: "2024-01-16",
-        solucion: "Corregido",
-        obs_adicionales: "Observación adicional",
-        revisado_por: "MANUEL",
-        estado_verificacion: "COMPLETADO",
-        fecha_envio_archivo: "2024-01-17",
-        archivo_solucion: "archivo.pdf",
-        comentario_solucion: "Comentario de solución",
-        fecha_concluyente: "2024-01-18"
+  // Función para mapear campos de la API a campos de la tabla
+  const mapearIncidencia = (incidencia) => {
+    return {
+      id: incidencia.ID,
+      fecha_registro: incidencia.FECHA_REGISTRO ? incidencia.FECHA_REGISTRO.split(' ')[0] : null,
+      registrado_por: incidencia.REGISTRADO_POR,
+      mes: getNombreMes(incidencia.MES_EMISION),
+      encargado_comprobante: incidencia.ENCARGADO_COMPROBANTE,
+      fecha_emision: incidencia.FECHA_EMISION_CORTO,
+      numero_proforma: incidencia.NUMERO_PROFORMA,
+      numero_comprobante: incidencia.NUMERO_COMPROBANTE,
+      responsable: incidencia.RESPONSABLE_INCIDENCIA,
+      area: incidencia.AREA,
+      tipo_incidencia: incidencia.TIPO_INCIDENCIA,
+      fecha_notificacion: incidencia.FECHA_NOTIFICACION ? incidencia.FECHA_NOTIFICACION.split(' ')[0] : null,
+      solucion: incidencia.SOLUCION,
+      obs_adicionales: incidencia.OBSERVACION_ADICIONAL_CORRECION,
+      revisado_por: incidencia.REVISADO_POR,
+      estado_verificacion: incidencia.ESTADO_INCIDENCIA,
+      fecha_envio_archivo: incidencia.FECHA_ENVIO_ARCHIVO ? incidencia.FECHA_ENVIO_ARCHIVO.split(' ')[0] : null,
+      archivo_solucion: incidencia.ARCHIVO_SOLUCION_PDF,
+      comentario_solucion: incidencia.TEXTO_SOLUCION_PDF,
+      culminado: incidencia.CULMINADO,
+      fecha_concluyente: incidencia.FECHA_CONCLUYENTE ? incidencia.FECHA_CONCLUYENTE.split(' ')[0] : null,
+      // Guardar el ID original para cargar items de error
+      id_original: incidencia.ID
+    };
+  };
+
+  // Cargar incidencias
+  const cargarIncidencias = async () => {
+    try {
+      const token = localStorage.getItem("token") || "";
+      if (!token) {
+        console.error("No se encontró token de autenticación");
+        return;
       }
-    ]);
-  }, []);
+
+      const response = await fetch("/api/incidencias-proformas?tipo=registro", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Mapear las incidencias al formato de la tabla
+      const incidenciasMapeadas = Array.isArray(data) ? data.map(mapearIncidencia) : [];
+      setIncidencias(incidenciasMapeadas);
+    } catch (error) {
+      console.error("Error al cargar incidencias:", error);
+      alert(`Error al cargar incidencias: ${error.message}`);
+    }
+  };
+
+  // Cargar incidencias al montar el componente
+  useEffect(() => {
+    if (user && !loading) {
+      cargarIncidencias();
+    }
+  }, [user, loading]);
 
   // Filtrar incidencias
   const incidenciasFiltradas = incidencias.filter(incidencia => {
@@ -358,14 +418,74 @@ export default function IncidenciasPage() {
     setCurrentPage(1);
   };
 
+  // Cargar items de error desde el API
+  const cargarItemsError = async (idIncidencia) => {
+    try {
+      const token = localStorage.getItem("token") || "";
+      if (!token) {
+        alert("Error de autenticación. Inicie sesión.");
+        return null;
+      }
+
+      const response = await fetch(`/api/incidencias-proformas?tipo=error_solucion&id=${idIncidencia}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          router.push("/login");
+          return null;
+        }
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || errorData.message || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Mapear los items al formato del modal
+      const itemsMapeados = Array.isArray(data) ? data.map(item => ({
+        detalle: item.ERROR_ || "",
+        debeSer: item.SOLUCION || ""
+      })) : [];
+      
+      return itemsMapeados;
+    } catch (error) {
+      console.error("Error al cargar items de error:", error);
+      alert(`Error al cargar items de error: ${error.message}`);
+      return null;
+    }
+  };
+
   // Abrir modal de items de error
-  const handleVerItemsError = (items) => {
-    setModalItemsErrorData(items);
+  const handleVerItemsError = async (idIncidencia) => {
     setModalItemsError(true);
+    setModalItemsErrorData([]); // Limpiar datos previos
+    
+    // Mostrar loading
+    const items = await cargarItemsError(idIncidencia);
+    if (items) {
+      setModalItemsErrorData(items);
+    } else {
+      setModalItemsError(false);
+    }
   };
 
   // Generar PDF de items de error
-  const handleGenerarPDFItems = (items) => {
+  const handleGenerarPDFItems = async (idIncidencia) => {
+    // Cargar items desde el API
+    const items = await cargarItemsError(idIncidencia);
+    
+    if (!items || items.length === 0) {
+      alert("No hay items de error para generar el PDF");
+      return;
+    }
+
     import("jspdf").then(({ jsPDF }) => {
       const doc = new jsPDF();
       doc.setFontSize(16);
@@ -381,9 +501,15 @@ export default function IncidenciasPage() {
         y += 7;
         doc.text(`Debe Ser: ${item.debeSer || "-"}`, 20, y);
         y += 10;
+        
+        // Verificar si necesitamos una nueva página
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
       });
 
-      doc.save("Items_Error.pdf");
+      doc.save(`Items_Error_${idIncidencia}.pdf`);
     });
   };
 
@@ -407,28 +533,99 @@ export default function IncidenciasPage() {
 
     try {
       const token = localStorage.getItem("token") || "";
-      const formData = new FormData();
-      formData.append("id_incidencia", modalArchivoSolucionData.id);
-      formData.append("comentario_solucion", comentarioSolucion);
-      if (archivoSolucion) {
-        formData.append("archivo", archivoSolucion);
+      if (!token) {
+        alert("Error de autenticación. Inicie sesión.");
+        return;
       }
 
-      // Aquí iría la llamada a la API
-      // const response = await fetch("/api/incidencias/archivo-solucion", {
-      //   method: "POST",
-      //   headers: {
-      //     "Authorization": `Bearer ${token}`
-      //   },
-      //   body: formData
-      // });
+      const idIncidencia = modalArchivoSolucionData.id_original || modalArchivoSolucionData.id;
+
+      // Guardar comentario de solución si existe
+      if (comentarioSolucion.trim()) {
+        const responseTexto = await fetch(`/api/incidencias-proformas?metodo=solucion_texto`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: idIncidencia,
+            texto_solucion_pdf: comentarioSolucion.trim()
+          })
+        });
+
+        if (!responseTexto.ok) {
+          if (responseTexto.status === 401 || responseTexto.status === 403) {
+            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
+            router.push("/login");
+            return;
+          }
+          const errorData = await responseTexto.json().catch(() => ({ error: "Error desconocido" }));
+          throw new Error(errorData.error || errorData.message || `Error ${responseTexto.status}`);
+        }
+      }
+
+      // Subir archivo si existe
+      if (archivoSolucion) {
+        // Primero subir el archivo a la API de almacenamiento
+        const formData = new FormData();
+        formData.append('file', archivoSolucion);
+
+        const uploadResponse = await fetch(
+          `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_sistema&folder_bucket=incidencias&method=no_encriptar`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Error al subir el archivo: ${uploadResponse.status}`);
+        }
+
+        const uploadData = await uploadResponse.json();
+        const archivoUrl = uploadData.url;
+
+        if (!archivoUrl) {
+          throw new Error("La API no devolvió la URL del archivo");
+        }
+
+        // Guardar la URL del archivo en la base de datos
+        const responseArchivo = await fetch(`/api/incidencias-proformas?metodo=solucion_pdf`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: idIncidencia,
+            archivo_solucion_pdf: archivoUrl
+          })
+        });
+
+        if (!responseArchivo.ok) {
+          if (responseArchivo.status === 401 || responseArchivo.status === 403) {
+            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
+            router.push("/login");
+            return;
+          }
+          const errorData = await responseArchivo.json().catch(() => ({ error: "Error desconocido" }));
+          throw new Error(errorData.error || errorData.message || `Error ${responseArchivo.status}`);
+        }
+      }
 
       alert("Archivo de solución guardado exitosamente");
       setModalArchivoSolucion(false);
+      setComentarioSolucion("");
+      setArchivoSolucion(null);
+      
       // Recargar incidencias
+      cargarIncidencias();
     } catch (error) {
       console.error("Error al guardar archivo:", error);
-      alert("Error al guardar el archivo de solución");
+      alert(`Error al guardar el archivo de solución: ${error.message}`);
     }
   };
 
@@ -439,9 +636,9 @@ export default function IncidenciasPage() {
 
   // Abrir archivo
   const handleAbrirArchivo = (incidencia) => {
-    if (incidencia.archivo_solucion) {
-      // Aquí iría la lógica para abrir el archivo
-      window.open(`/api/incidencias/archivo/${incidencia.id}`, "_blank");
+    if (incidencia && incidencia.archivo_solucion) {
+      // Abrir la URL del archivo en una nueva pestaña
+      window.open(incidencia.archivo_solucion, "_blank");
     }
   };
 
@@ -457,7 +654,7 @@ export default function IncidenciasPage() {
       "ID", "Fecha Registro", "Registrado Por", "Mes", "Encargado Comprobante",
       "Fecha Emisión", "N° Proforma/Acta", "N° Comprobante", "Responsable",
       "Área", "Tipo Incidencia", "Fecha Notificación", "Solución",
-      "Revisado Por", "Estado Verificación", "Fecha Envio Archivo", "Fecha Concluyente"
+      "Revisado Por", "Estado Verificación", "Fecha Envio Archivo", "Culminado","Fecha Concluyente"
     ];
 
     const rows = incidenciasFiltradas.map(inc => [
@@ -477,6 +674,7 @@ export default function IncidenciasPage() {
       inc.revisado_por || "",
       inc.estado_verificacion || "",
       inc.fecha_envio_archivo || "",
+      inc.culminado || "",
       inc.fecha_concluyente || ""
     ]);
 
@@ -523,6 +721,7 @@ export default function IncidenciasPage() {
         inc.revisado_por || "-",
         inc.estado_verificacion || "-",
         inc.fecha_envio_archivo || "-",
+        inc.culminado || "-",
         inc.fecha_concluyente || "-"
       ]);
 
@@ -530,7 +729,7 @@ export default function IncidenciasPage() {
         "ID", "Fecha Registro", "Registrado Por", "Mes", "Encargado Comprobante",
         "Fecha Emisión", "N° Proforma/Acta", "N° Comprobante", "Responsable",
         "Área", "Tipo Incidencia", "Fecha Notificación", "Solución",
-        "Revisado Por", "Estado Verificación", "Fecha Envio Archivo", "Fecha Concluyente"
+        "Revisado Por", "Estado Verificación", "Fecha Envio Archivo", "Culminado", "Fecha Concluyente"
       ];
 
       autoTable(doc, {
@@ -569,6 +768,8 @@ export default function IncidenciasPage() {
         return "bg-blue-200 text-blue-800";
       case "MODIFICADO":
         return "bg-gray-600 text-white";
+      case "PENDIENTE":
+        return "bg-yellow-200 text-yellow-800";
       default:
         return "bg-gray-200 text-gray-800";
     }
@@ -830,8 +1031,8 @@ export default function IncidenciasPage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleGuardarIncidencia}
-                    className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-                  >
+                    className="px-6 py-2 bg-green-500 hover:bg-green-300 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+>
                     Guardar Incidencia
                   </button>
                 </div>
@@ -855,8 +1056,9 @@ export default function IncidenciasPage() {
                         placeholder="Seleccione estado"
                         options={[
                           { value: "TODOS", label: "TODOS" },
-                          { value: "NOTIFICADO", label: "NOTIFICADO" },
+                          { value: "PENDIENTE", label: "PENDIENTE" },
                           { value: "COMPLETADO", label: "COMPLETADO" },
+                          { value: "NOTIFICADO", label: "NOTIFICADO" },
                           { value: "MODIFICADO", label: "MODIFICADO" }
                         ]}
                       />
@@ -946,6 +1148,7 @@ export default function IncidenciasPage() {
                           <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado Verificación</th>
                           <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Envio Archivo</th>
                           <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Archivo Solución</th>
+                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Culminado</th>
                           <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Concluyente</th>
                         </tr>
                       </thead>
@@ -970,7 +1173,7 @@ export default function IncidenciasPage() {
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
-                                    onClick={() => handleVerItemsError(incidencia.items_error)}
+                                    onClick={() => handleVerItemsError(incidencia.id_original || incidencia.id)}
                                     className="p-1 text-blue-600 hover:text-blue-800"
                                     title="Ver items de error"
                                   >
@@ -979,17 +1182,15 @@ export default function IncidenciasPage() {
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                   </button>
-                                  {incidencia.items_error && incidencia.items_error.length > 0 && (
-                                    <button
-                                      onClick={() => handleGenerarPDFItems(incidencia.items_error)}
-                                      className="p-1 text-red-600 hover:text-red-800"
-                                      title="Generar PDF"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                      </svg>
-                                    </button>
-                                  )}
+                                  <button
+                                    onClick={() => handleGenerarPDFItems(incidencia.id_original || incidencia.id)}
+                                    className="p-1 text-red-600 hover:text-red-800"
+                                    title="Generar PDF"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                  </button>
                                 </div>
                               </td>
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.responsable}</td>
@@ -1058,6 +1259,7 @@ export default function IncidenciasPage() {
                                   )}
                                 </div>
                               </td>
+                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.culminado}</td>
                               <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_concluyente)}</td>
                             </tr>
                           ))
@@ -1175,7 +1377,7 @@ export default function IncidenciasPage() {
               onClick={handleGuardarArchivoSolucion}
               className="flex-1 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
             >
-              Guardar Archivo
+              Guardar
             </button>
             <button
               onClick={() => handleAbrirArchivo(modalArchivoSolucionData)}

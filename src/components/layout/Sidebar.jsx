@@ -266,6 +266,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "proformas", name: "Proformas", icon: "document" },
+
       ],
     },
     {
@@ -864,7 +865,7 @@ export function Sidebar({ isOpen, onClose }) {
     }
 
     if (itemId === "proformas") {
-      router.push("/logistica/proformas");
+      router.push("/logistica/incidencias");
       setSelectedItem(itemId);
       return;
     }
@@ -1047,7 +1048,7 @@ export function Sidebar({ isOpen, onClose }) {
       setSelectedItem(itemId);
       return;
     }
-    
+     
     // Navegación para Permisos/Solicitudes e Incidencias
     if (itemId === "registro-solicitudes-incidencias") {
       router.push("/permisos?section=registro-solicitudes-incidencias");
@@ -1055,8 +1056,8 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
-    if (itemId === "registro-permisos" || itemId === "mis-solicitudes-incidencias") {
-      router.push("/permisos");
+    if (itemId === "mis-solicitudes-incidencias") {
+      router.push("/permisos?section=mis-solicitudes-incidencias  ");
       setSelectedItem(itemId);
       return;
     }

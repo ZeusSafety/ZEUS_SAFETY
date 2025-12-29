@@ -20,9 +20,12 @@ export default function SolicitudesIncidenciasImportacionPage() {
   
   // Filtros - Iniciar con IMPORTACION seleccionado por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("IMPORTACION");
+
+  // Filtros adicionales
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
+  const [areaEmision, setAreaEmision] = useState("");
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -137,12 +140,21 @@ export default function SolicitudesIncidenciasImportacionPage() {
   const solicitudesFiltradas = useMemo(() => {
     let filtered = [...solicitudes];
 
-    // Filtrar por área de recepción (solo si hay un valor seleccionado)
+    // Filtrar por área de recepción (incialmente IMPORTACION)
     if (areaRecepcion && areaRecepcion.trim() !== "") {
       filtered = filtered.filter(s => {
         // Buscar el área en múltiples campos posibles
         const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
         return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
+      });
+    }
+
+    // Filtrar por área de emisión (solo si hay un valor seleccionado)
+    if (areaEmision && areaEmision.trim() !== "") {
+      filtered = filtered.filter(s => {
+        // Buscar el área en múltiples campos posibles
+        const area = s.AREA_EMISION || s.area_emision || s.AREA_EMISION || s.AREA || s.area || "";
+        return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
       });
     }
 
@@ -178,7 +190,7 @@ export default function SolicitudesIncidenciasImportacionPage() {
     }
 
     return filtered;
-  }, [solicitudes, areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [solicitudes, areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Calcular paginación
   const totalPages = Math.ceil(solicitudesFiltradas.length / itemsPerPage);
@@ -452,13 +464,34 @@ export default function SolicitudesIncidenciasImportacionPage() {
               {/* Filtros */}
               <div className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
+                <div hidden>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Área de Recepción
                   </label>
                   <select
                     value={areaRecepcion}
                     onChange={(e) => setAreaRecepcion(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                  >
+                    <option value="">Todas las áreas</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="VENTAS">VENTAS</option>
+                    <option value="FACTURACION">FACTURACIÓN</option>
+                    <option value="IMPORTACION">IMPORTACIÓN</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Área de Emisión
+                  </label>
+                  <select
+                    value={areaEmision}
+                    onChange={(e) => setAreaEmision(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
                   >
                     <option value="">Todas las áreas</option>
