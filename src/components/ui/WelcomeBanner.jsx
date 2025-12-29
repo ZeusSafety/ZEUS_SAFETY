@@ -6,13 +6,13 @@ export function WelcomeBanner({ userName, onClose }) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Auto-cerrar después de 4 segundos
+    // Auto-cerrar después de 3.5 segundos
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => {
         if (onClose) onClose();
-      }, 300); // Esperar a que termine la animación
-    }, 4000);
+      }, 250); // Esperar a que termine la animación de salida
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [onClose]);
@@ -23,21 +23,27 @@ export function WelcomeBanner({ userName, onClose }) {
 
   return (
     <div
-      className={`fixed top-24 right-4 z-50 transition-all duration-300 max-w-sm ${
-        isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
+      className={`fixed top-24 right-4 z-50 max-w-sm transition-all duration-300 ease-out ${
+        isVisible 
+          ? "opacity-100 translate-x-0" 
+          : "opacity-0 translate-x-full pointer-events-none"
       }`}
+      style={{
+        transitionTimingFunction: isVisible ? 'cubic-bezier(0.16, 1, 0.3, 1)' : 'cubic-bezier(0.4, 0, 1, 1)',
+        transitionDuration: isVisible ? '300ms' : '250ms'
+      }}
     >
-      <div className="bg-green-50 border-l-4 border-green-500 rounded-lg shadow-lg px-4 py-3 flex items-start space-x-3 relative overflow-hidden">
-        {/* Punto verde animado */}
-        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 animate-pulse mt-1.5"></div>
+      <div className="bg-[#F0FDF4] border-l-4 border-[#22C55E] rounded-xl px-4 py-3 flex items-start space-x-2.5 relative overflow-hidden" style={{ boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04)' }}>
+        {/* Punto verde animado - pequeño y discreto */}
+        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse mt-2"></div>
 
         {/* Mensaje de bienvenida */}
         <div className="flex-1 min-w-0">
-          <p className="text-gray-800 font-medium text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Sesión iniciada con éxito
+          <p className="text-[#1F2937] font-semibold text-base leading-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
+            ¡Bienvenido, {userName}!
           </p>
-          <p className="text-gray-800 font-medium text-sm mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Bienvenido, {userName}!
+          <p className="text-[#1F2937] text-xs mt-1 font-normal leading-relaxed opacity-70" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Sesión iniciada correctamente
           </p>
         </div>
 
@@ -47,9 +53,9 @@ export function WelcomeBanner({ userName, onClose }) {
             setIsVisible(false);
             setTimeout(() => {
               if (onClose) onClose();
-            }, 300);
+            }, 250);
           }}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100"
+          className="flex-shrink-0 text-[#1F2937] hover:text-[#1F2937] opacity-40 hover:opacity-60 transition-opacity p-1 rounded hover:bg-white/50"
           aria-label="Cerrar"
         >
           <svg
