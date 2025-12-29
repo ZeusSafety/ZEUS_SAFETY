@@ -5,90 +5,42 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import Modal from "../ui/Modal";
 
-// Usar el proxy de Next.js para evitar problemas de CORS
-const API_URL = "/api/solicitudes-incidencias";
+// API de permisos laborales (usando proxy de Next.js)
+const API_PERMISOS_URL = "/api/permisos-laborales";
 
-export default function SolicitudesIncidenciasGerenciaPage() {
+export default function MisSolicitudes({ onBack }) {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [solicitudes, setSolicitudes] = useState([]);
+  const [permisos, setPermisos] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  // 1. mapeo de usuarios
-  const userMapping = {
-    'hervinzeus': 'HERVIN',
-    'kimberly': 'KIMBERLY',
-    'evelyn': 'EVELYN',
-    'joseph': 'JOSEPH',
-    'alvaro': 'ALVARO',
-    'victorzeus': 'VICTOR',
-    'manuel': 'MANUEL',
-    'eliaszeus': 'ELIAS',
-    'sebastianzeus': 'SEBASTIAN',
-    'sandrazeus': 'SANDRA',
-    'joaquinzeus': 'JOAQUIN',
-    'edgarzeus': 'EDGAR',
-    'dayanaZeus': 'DAYANA',
-    'yeimiZeus': 'YEIMI',
-    'joseZeus': 'JOSE',
-    'lizethZeus': 'LIZETH',
-    'laritzaZeus': 'LARITZA'
-  };
+  console.log("🔵 MisSolicitudes component renderizado. User:", user);
 
-  // 2. Modificar el estado inicial de colaborador
-  // Inicialmente vacío para evitar errores de renderizado hidratado
-  const [colaborador, setColaborador] = useState("");
-
-  // 3. Efecto para inicializar el filtro según el usuario logeado
-  useEffect(() => {
-    if (user) {
-      // Según tu consola, la propiedad es 'id' o 'name'
-      const cuentaDetectada = user.id || user.name;
-
-      if (cuentaDetectada) {
-        const usuarioLogeado = String(cuentaDetectada).toLowerCase();
-        const nombreReal = userMapping[usuarioLogeado];
-
-        if (nombreReal) {
-          console.log("✅ Match encontrado. Aplicando filtro para:", nombreReal);
-          setColaborador(nombreReal);
-        } else {
-          console.log("❌ El usuario", usuarioLogeado, "no está en el userMapping");
-        }
-      }
-    }
-  }, [user]);
-
-  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("");
+  // Filtros
+  const [tipoPermiso, setTipoPermiso] = useState("");
   const [estado, setEstado] = useState("");
-  const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(13);
+  const [itemsPerPage] = useState(10);
 
   // Modales
-  const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
-  const [modalRespuestasOpen, setModalRespuestasOpen] = useState(false);
-  const [modalReprogramacionesOpen, setModalReprogramacionesOpen] = useState(false);
-  const [modalHistorialReqExtraOpen, setModalHistorialReqExtraOpen] = useState(false);
+  const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
+  const [permisoSeleccionado, setPermisoSeleccionado] = useState(null);
   const [modalProcedimientosOpen, setModalProcedimientosOpen] = useState(false);
   const [modalEditarOpen, setModalEditarOpen] = useState(false);
-  const [textoModal, setTextoModal] = useState("");
-  const [tituloModal, setTituloModal] = useState("");
-  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
-
-  // Estados para el formulario de edición
-  const [formFechaRespuesta, setFormFechaRespuesta] = useState("");
-  const [formRespondidoPor, setFormRespondidoPor] = useState("");
-  const [formNombrePersona, setFormNombrePersona] = useState("");
-  const [formRespuesta, setFormRespuesta] = useState("");
-  const [formArchivoInforme, setFormArchivoInforme] = useState(null);
-  const [formArchivoNombre, setFormArchivoNombre] = useState("");
-  const [formEstado, setFormEstado] = useState("");
-  const [formReprogramacion, setFormReprogramacion] = useState(false);
+  const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
+  const [editandoPermiso, setEditandoPermiso] = useState(null);
+  const [formEditar, setFormEditar] = useState({
+    estado_solicitud: '',
+    horas_cumplidas: '',
+    estado_completado: ''
+  });
+  const [formRespuesta, setFormRespuesta] = useState({
+    respuesta: ''
+  });
+  const [loadingEditar, setLoadingEditar] = useState(false);
+  const [loadingRespuesta, setLoadingRespuesta] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -96,238 +48,257 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     }
   }, [user, loading, router]);
 
-  // Detectar si es desktop y abrir sidebar automáticamente
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Cargar solicitudes desde la API
+  // Cargar permisos desde la API
   useEffect(() => {
     if (user) {
-      cargarSolicitudes();
+      cargarPermisos();
     }
   }, [user]);
 
-  const cargarSolicitudes = async () => {
+  const cargarPermisos = async () => {
     try {
       setLoadingData(true);
-      const token = localStorage.getItem("token");
+      
+      // Obtener el ID del usuario logueado
+      // El user.id es el username (ej: "eliaszeus")
+      const usuarioId = user?.id || user?.name || "";
+      
+      if (!usuarioId) {
+        console.error("No se pudo obtener el ID del usuario. User object:", user);
+        setPermisos([]);
+        return;
+      }
 
-      // Obtener todas las solicitudes de todas las áreas
-      // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
-      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+      console.log("Cargando permisos para usuario:", usuarioId);
 
-      // Hacer llamadas en paralelo para obtener todas las solicitudes
-      const promesas = areas.map(async (area) => {
+      // Obtener el token de autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No se encontró el token de autenticación");
+        setPermisos([]);
+        return;
+      }
+
+      // Llamar a la API de permisos laborales a través del proxy
+      const url = `${API_PERMISOS_URL}?id=${encodeURIComponent(usuarioId)}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Permisos recibidos de la API:', data);
+        console.log('Tipo de datos:', typeof data, 'Es array?', Array.isArray(data));
+        
+        // Asegurar que sea un array
+        if (Array.isArray(data)) {
+          console.log(`✅ Se encontraron ${data.length} permisos`);
+          setPermisos(data);
+        } else if (data && typeof data === 'object') {
+          // Si viene como objeto, intentar extraer un array
+          const arrayData = data.data || data.permisos || data.result || [];
+          console.log('Datos extraídos del objeto:', arrayData);
+          setPermisos(Array.isArray(arrayData) ? arrayData : []);
+        } else {
+          console.warn('⚠️ La respuesta no es un array ni un objeto con array:', data);
+          setPermisos([]);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("❌ Error al obtener permisos:", response.status, response.statusText);
+        console.error("Respuesta de error:", errorText);
         try {
-          const response = await fetch(`${API_URL}?listado=${area}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { 'Authorization': `Bearer ${token}` })
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) {
-              return data;
-            }
-          }
-          return [];
-        } catch (error) {
-          console.error(`Error al obtener solicitudes de ${area}:`, error);
-          return [];
+          const errorJson = JSON.parse(errorText);
+          console.error("Error JSON:", errorJson);
+        } catch (e) {
+          console.error("Error como texto:", errorText);
         }
-      });
-
-      const resultados = await Promise.all(promesas);
-      // Combinar todas las solicitudes y eliminar duplicados por ID
-      const solicitudesUnicas = new Map();
-      resultados.flat().forEach(solicitud => {
-        const id = solicitud.ID_SOLICITUD || solicitud.id || solicitud.ID || solicitud.NUMERO_SOLICITUD;
-        if (id && !solicitudesUnicas.has(id)) {
-          solicitudesUnicas.set(id, solicitud);
-        }
-      });
-
-      const data = Array.from(solicitudesUnicas.values());
-      console.log('Datos recibidos de la API (todas las áreas):', data);
-
-      setSolicitudes(data);
+        setPermisos([]);
+      }
     } catch (error) {
-      console.error("Error al obtener datos:", error);
-      setSolicitudes([]);
+      console.error("Error al obtener permisos:", error);
+      setPermisos([]);
     } finally {
       setLoadingData(false);
     }
   };
 
-  // Filtrar solicitudes dinámicamente
-  const solicitudesFiltradas = useMemo(() => {
-    let filtered = [...solicitudes];
+  // Filtrar permisos dinámicamente
+  const permisosFiltrados = useMemo(() => {
+    let filtered = [...permisos];
 
-    // Filtrar por área de recepción (solo si hay un valor seleccionado)
-    if (areaRecepcion && areaRecepcion.trim() !== "") {
-      filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
-        return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
-      });
-    }
-
-    // Filtrar por colaborador
-    if (colaborador.trim()) {
-      const term = colaborador.toLowerCase().trim();
-      filtered = filtered.filter(s => {
-        const registradoPor = (s.REGISTRADO_POR || s.registrado_por || "").toLowerCase().trim();
-        return registradoPor.includes(term);
+    // Filtrar por tipo de permiso
+    if (tipoPermiso && tipoPermiso.trim() !== "") {
+      filtered = filtered.filter(p => {
+        const tipo = p.TIPO_PERMISO || p.tipo_permiso || "";
+        return tipo && tipo.trim() !== "" && tipo.toUpperCase() === tipoPermiso.toUpperCase();
       });
     }
 
     // Filtrar por estado
-    if (estado) {
-      filtered = filtered.filter(s => {
-        const estadoSolicitud = s.ESTADO || s.estado || "";
-        return estadoSolicitud === estado;
-      });
-    }
-
-    // Filtrar incidencias
-    if (!mostrarIncidencias) {
-      filtered = filtered.filter(s => {
-        const incidencia = s.RES_INCIDENCIA || s.res_incidencia || "";
-        return !incidencia || incidencia.trim() === "" || incidencia === "-";
-      });
-    } else {
-      // Si mostrarIncidencias está activo, mostrar solo las que tienen incidencia
-      filtered = filtered.filter(s => {
-        const incidencia = s.RES_INCIDENCIA || s.res_incidencia || "";
-        return incidencia && incidencia.trim() !== "" && incidencia !== "-";
+    if (estado && estado.trim() !== "") {
+      filtered = filtered.filter(p => {
+        const estadoPermiso = p.ESTADO_SOLICITUD || p.estado_solicitud || "";
+        return estadoPermiso && estadoPermiso.toUpperCase() === estado.toUpperCase();
       });
     }
 
     return filtered;
-  }, [solicitudes, areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [permisos, tipoPermiso, estado]);
 
   // Calcular paginación
-  const totalPages = Math.ceil(solicitudesFiltradas.length / itemsPerPage);
+  const totalPages = Math.ceil(permisosFiltrados.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const solicitudesPaginadas = solicitudesFiltradas.slice(startIndex, endIndex);
+  const permisosPaginados = permisosFiltrados.slice(startIndex, endIndex);
 
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [tipoPermiso, estado]);
 
   // Funciones para modales
-  const mostrarTextoEnModal = (texto, titulo) => {
-    setTextoModal(texto || "No especificado.");
-    setTituloModal(titulo);
-    if (titulo === "Requerimientos") {
-      setModalRequerimientosOpen(true);
-    } else if (titulo === "Respuesta") {
-      setModalRespuestasOpen(true);
-    }
+  const verDetallePermiso = (permiso) => {
+    setPermisoSeleccionado(permiso);
+    setModalDetalleOpen(true);
   };
 
-  const verReprogramaciones = (solicitud) => {
-    setSolicitudSeleccionada(solicitud);
-    setModalReprogramacionesOpen(true);
-  };
-
-  const verHistorialReqExtra = (solicitud) => {
-    setSolicitudSeleccionada(solicitud);
-    setModalHistorialReqExtraOpen(true);
-  };
-
-  const abrirModalEditar = (solicitud) => {
-    setSolicitudSeleccionada(solicitud);
-
-    // Formatear fecha para el input datetime-local
-    let fechaFormateada = "";
-    if (solicitud.FECHA_RESPUESTA) {
-      try {
-        const fecha = new Date(solicitud.FECHA_RESPUESTA);
-        if (!isNaN(fecha.getTime())) {
-          const year = fecha.getFullYear();
-          const month = String(fecha.getMonth() + 1).padStart(2, '0');
-          const day = String(fecha.getDate()).padStart(2, '0');
-          const hours = String(fecha.getHours()).padStart(2, '0');
-          const minutes = String(fecha.getMinutes()).padStart(2, '0');
-          const seconds = String(fecha.getSeconds()).padStart(2, '0');
-          fechaFormateada = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-        }
-      } catch (e) {
-        console.error("Error al formatear fecha:", e);
-      }
-    }
-
-    setFormFechaRespuesta(fechaFormateada);
-    setFormRespondidoPor(solicitud.RESPONDIDO_POR || "");
-    setFormNombrePersona(solicitud.RESPONDIDO_POR || "");
-    setFormRespuesta(solicitud.RESPUESTA_R || solicitud.RESPUESTA || "");
-    setFormArchivoInforme(null);
-    setFormArchivoNombre(solicitud.INFORME_RESPUESTA ? "Archivo existente" : "");
-    setFormEstado(solicitud.ESTADO || "Pendiente");
-    setFormReprogramacion(
-      solicitud.REPROGRAMACIONES && Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0 ||
-      solicitud.FECHA_REPROGRAMACION || solicitud.RESPUESTA_REPROGRAMACION
-    );
+  const abrirModalEditar = (permiso) => {
+    setEditandoPermiso(permiso);
+    setFormEditar({
+      estado_solicitud: permiso.ESTADO_SOLICITUD || 'PENDIENTE',
+      horas_cumplidas: permiso.HORAS_CUMPLIDAS || '',
+      estado_completado: ''
+    });
     setModalEditarOpen(true);
   };
 
-  const handleGuardarEdicion = async () => {
-    if (!solicitudSeleccionada) return;
+  const abrirModalRespuesta = (permiso) => {
+    setEditandoPermiso(permiso);
+    setFormRespuesta({ respuesta: '' });
+    setModalRespuestaOpen(true);
+  };
 
+  // Función para actualizar permiso
+  const handleActualizarPermiso = async () => {
+    if (!editandoPermiso || !editandoPermiso.ID) {
+      setError('No se pudo identificar el permiso a actualizar');
+      return;
+    }
+
+    setLoadingEditar(true);
     try {
-      const token = localStorage.getItem("token");
-
-      // Preparar datos para enviar
-      const formData = new FormData();
-      formData.append('id', solicitudSeleccionada.ID_SOLICITUD || solicitudSeleccionada.id || solicitudSeleccionada.ID);
-      formData.append('fecha_respuesta', formFechaRespuesta);
-      formData.append('respondido_por', formRespondidoPor);
-      formData.append('nombre_persona', formNombrePersona);
-      formData.append('respuesta', formRespuesta);
-      formData.append('estado', formEstado);
-      formData.append('reprogramacion', formReprogramacion ? '1' : '0');
-
-      if (formArchivoInforme) {
-        formData.append('informe', formArchivoInforme);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
       }
 
-      // Aquí harías la llamada a la API para actualizar
-      const response = await fetch(`${API_URL}`, {
+      const body = {
+        id_permiso: editandoPermiso.ID,
+      };
+
+      // Solo agregar campos que tengan valor
+      if (formEditar.estado_solicitud) {
+        body.estado_solicitud = formEditar.estado_solicitud;
+      }
+      if (formEditar.horas_cumplidas) {
+        body.horas_cumplidas = parseFloat(formEditar.horas_cumplidas);
+      }
+      if (formEditar.estado_completado) {
+        body.estado_completado = formEditar.estado_completado;
+      }
+
+      const response = await fetch('/api/permisos-laborales-crud', {
         method: 'PUT',
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
+          'Content-Type': 'application/json',
+          'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
         },
-        body: formData
+        body: JSON.stringify(body)
       });
 
-      if (response.ok) {
-        // Recargar solicitudes
-        await cargarSolicitudes();
-        setModalEditarOpen(false);
-        alert("Respuesta actualizada correctamente");
-      } else {
-        alert("Error al actualizar la respuesta");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
+
+      // Recargar permisos después de actualizar
+      await cargarPermisos();
+      setModalEditarOpen(false);
+      setEditandoPermiso(null);
+      alert('Permiso actualizado correctamente');
     } catch (error) {
-      console.error("Error al guardar:", error);
-      alert("Error al guardar los cambios");
+      console.error('Error al actualizar permiso:', error);
+      alert(`Error al actualizar permiso: ${error.message}`);
+    } finally {
+      setLoadingEditar(false);
+    }
+  };
+
+  // Función para agregar respuesta
+  const handleAgregarRespuesta = async () => {
+    if (!editandoPermiso || !editandoPermiso.ID) {
+      alert('No se pudo identificar el permiso');
+      return;
+    }
+
+    if (!formRespuesta.respuesta || formRespuesta.respuesta.trim() === '') {
+      alert('Debe ingresar una respuesta');
+      return;
+    }
+
+    setLoadingRespuesta(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      // Obtener el ID del usuario actual (id_respondido_por)
+      const usuarioId = user?.id || user?.name || '';
+      if (!usuarioId) {
+        throw new Error('No se pudo obtener el ID del usuario');
+      }
+
+      // TODO: Obtener el ID numérico real del colaborador desde la API
+      const idRespondidoPor = 10; // Valor temporal, debería obtenerse de la API de colaboradores
+
+      const body = {
+        id_permiso: editandoPermiso.ID,
+        respuesta: formRespuesta.respuesta.trim(),
+        id_respondido_por: idRespondidoPor
+      };
+
+      const response = await fetch('/api/permisos-laborales-crud?metodo=agregar_respuesta', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      // Recargar permisos después de agregar respuesta
+      await cargarPermisos();
+      setModalRespuestaOpen(false);
+      setEditandoPermiso(null);
+      setFormRespuesta({ respuesta: '' });
+      alert('Respuesta agregada correctamente');
+    } catch (error) {
+      console.error('Error al agregar respuesta:', error);
+      alert(`Error al agregar respuesta: ${error.message}`);
+    } finally {
+      setLoadingRespuesta(false);
     }
   };
 
@@ -365,18 +336,26 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
   // Función para obtener badge de estado
   const getEstadoBadge = (estado) => {
-    if (!estado) return "bg-gray-500 border-gray-600 text-white";
+    if (!estado) return "bg-gradient-to-br from-gray-500 to-gray-600";
     const estadoStr = String(estado).toLowerCase();
     const estados = {
-      "pendiente": "bg-yellow-500 border-yellow-600 text-white",
-      "en revisión": "bg-orange-500 border-orange-600 text-white",
-      "en revision": "bg-orange-500 border-orange-600 text-white",
-      "en proceso": "bg-blue-600 border-blue-700 text-white",
-      "completado": "bg-green-600 border-green-700 text-white",
-      "requiere info": "bg-cyan-500 border-cyan-600 text-white",
-      "rechazada": "bg-red-600 border-red-700 text-white",
+      "pendiente": "bg-gradient-to-br from-yellow-500 to-yellow-600",
+      "aprobado": "bg-gradient-to-br from-green-600 to-green-700",
+      "rechazado": "bg-gradient-to-br from-red-600 to-red-700",
+      "en proceso": "bg-gradient-to-br from-blue-600 to-blue-700",
     };
-    return estados[estadoStr] || "bg-gray-500 border-gray-600 text-white";
+    return estados[estadoStr] || "bg-gradient-to-br from-gray-500 to-gray-600";
+  };
+
+  // Función para parsear archivos JSON
+  const parseArchivos = (archivosStr) => {
+    if (!archivosStr) return [];
+    try {
+      const parsed = JSON.parse(archivosStr);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
   };
 
   // Función para exportar PDF
@@ -389,34 +368,32 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
       // Título
       doc.setFontSize(14);
-      doc.text("Reporte de Solicitudes e Incidencias - GERENCIA - Zeus Safety", 14, 15);
+      doc.text("Reporte de Permisos Laborales - Zeus Safety", 14, 15);
 
       // Preparar datos para exportar
-      const dataExport = solicitudesFiltradas.map(solicitud => [
-        formatFecha(solicitud.FECHA_CONSULTA) || "-",
-        solicitud.NUMERO_SOLICITUD || "-",
-        solicitud.REGISTRADO_POR || "-",
-        solicitud.AREA || "-",
-        solicitud.RES_INCIDENCIA || "-",
-        solicitud.AREA_RECEPCION || "-",
-        formatFecha(solicitud.FECHA_RESPUESTA) || "-",
-        solicitud.RESPONDIDO_POR || "-",
-        solicitud.ESTADO || "-",
-        solicitud.REPROGRAMACIONES && Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0 ? "SI" : "NO"
+      const dataExport = permisosFiltrados.map(permiso => [
+        formatFecha(permiso.FECHA_REGISTRO) || "-",
+        permiso.NOMBRE || "-",
+        formatFecha(permiso.FECHA_INICIO) || "-",
+        formatFecha(permiso.FECHA_FIN) || "-",
+        permiso.TIPO_PERMISO || "-",
+        permiso.ESTADO_SOLICITUD || "PENDIENTE",
+        permiso.HORAS_SOLICITADAS || "-",
+        permiso.HORAS_CUMPLIDAS || "-",
+        permiso.HORAS_FALTANTESS || "-"
       ]);
 
       // Columnas
       const headers = [
-        "Fecha Consulta",
-        "N° Solicitud",
-        "Registrado Por",
-        "Área de Envio",
-        "Con Incidencia",
-        "Área de Recepción",
-        "Fecha Respuesta",
-        "Respondido Por",
+        "Fecha Registro",
+        "Nombre",
+        "Fecha Inicio",
+        "Fecha Fin",
+        "Tipo Permiso",
         "Estado",
-        "Reprogramación"
+        "Horas Solicitadas",
+        "Horas Cumplidas",
+        "Horas Faltantes"
       ];
 
       // Insertar tabla
@@ -430,7 +407,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       });
 
       // Guardar PDF
-      doc.save("Reporte_Mis_Solicitudes.pdf");
+      doc.save("Reporte_Mis_Permisos.pdf");
     } catch (error) {
       console.error("Error al exportar PDF:", error);
       alert("Error al exportar PDF. Asegúrate de tener conexión a internet.");
@@ -453,265 +430,194 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className={`flex-1 flex flex-col overflow-hidden transition-all`}>
         <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
-          <div className="max-w-[100%] mx-auto px-4 py-4">
-            {/* Header con botones */}
-            <div className="mb-3 flex justify-end items-center gap-1 flex-wrap">
-              <button
-                onClick={() => setModalProcedimientosOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Procedimientos
-              </button>
-
-              <button
-                onClick={handleExportarPDF}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                </svg>
-                Exportar a PDF
-              </button>
-            </div>
-
-            {/* Filtros */}
+          <div className="max-w-[95%] mx-auto px-4 py-4">
+            {/* Contenedor principal con fondo blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Área de Recepción
-                  </label>
-                  <select
-                    value={areaRecepcion}
-                    onChange={(e) => setAreaRecepcion(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
-                  >
-                    <option value="">Todas las áreas</option>
-                    <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="MARKETING">MARKETING</option>
-                    <option value="VENTAS">VENTAS</option>
-                    <option value="FACTURACION">FACTURACIÓN</option>
-                    <option value="IMPORTACION">IMPORTACIÓN</option>
-                    <option value="ADMINISTRACION">ADMINISTRACION</option>
-                    <option value="SISTEMAS">SISTEMAS</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
-                    <option value="GERENCIA">GERENCIA</option>
-                  </select>
+              {/* Título con icono y API Conectada */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Mis Permisos Laborales</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Consulta y gestión de tus permisos laborales
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Estado
-                  </label>
-                  <select
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Proceso">En Proceso</option>
-                    <option value="En Revisión">En Revisión</option>
-                    <option value="Requiere Info">Requiere Info</option>
-                    <option value="Rechazada">Rechazada</option>
-                    <option value="Completado">Completado</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center mt-6">
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={mostrarIncidencias}
-                      onChange={(e) => setMostrarIncidencias(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-semibold text-gray-700">Mostrar Incidencias</span>
-                  </label>
+                <div className="flex items-center space-x-1.5 rounded-lg px-2.5 py-1 bg-green-50 border border-green-200">
+                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                 </div>
               </div>
-            </div>
 
-            {/* Tabla */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mb-6">
+              {/* Botones de acción */}
+              <div className="mb-6 flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => setModalProcedimientosOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Procedimientos
+                </button>
+
+                <button
+                  onClick={handleExportarPDF}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs ml-auto"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                  </svg>
+                  Exportar a PDF
+                </button>
+              </div>
+
+              {/* Filtros */}
+              <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Tipo de Permiso
+                    </label>
+                    <select
+                      value={tipoPermiso}
+                      onChange={(e) => setTipoPermiso(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <option value="">Todos los tipos</option>
+                      <option value="Asuntos Personales">Asuntos Personales</option>
+                      <option value="Estudio ó Capacitación">Estudio ó Capacitación</option>
+                      <option value="Salud">Salud</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Estado
+                    </label>
+                    <select
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <option value="">Todos los estados</option>
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="APROBADO">Aprobado</option>
+                      <option value="RECHAZADO">Rechazado</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mt-6">
               {loadingData ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-                  <span className="ml-3 text-gray-600">Cargando datos...</span>
+                  <span className="ml-3 text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando permisos...</span>
                 </div>
-              ) : solicitudesFiltradas.length === 0 ? (
+              ) : permisosFiltrados.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 mb-2">No hay solicitudes disponibles.</p>
-                  <p className="text-xs text-gray-400">Verifica los filtros o contacta al administrador.</p>
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 mb-2 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisos.length === 0 
+                      ? "No hay permisos registrados para tu usuario." 
+                      : "No hay permisos que coincidan con los filtros aplicados."}
+                  </p>
+                  <p className="text-xs text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisos.length === 0 
+                      ? "Si crees que esto es un error, contacta al administrador." 
+                      : "Intenta ajustar los filtros para ver más resultados."}
+                  </p>
                 </div>
               ) : (
                 <>
                   <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Registro</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Nombre</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Inicio</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Fin</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo Permiso</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Solicitadas</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Cumplidas</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Faltantes</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {solicitudesPaginadas.map((solicitud, index) => {
-                          const tieneReprogramaciones = solicitud.REPROGRAMACIONES &&
-                            (Array.isArray(solicitud.REPROGRAMACIONES) ? solicitud.REPROGRAMACIONES.length > 0 :
-                              (typeof solicitud.REPROGRAMACIONES === 'string' ? JSON.parse(solicitud.REPROGRAMACIONES || '[]').length > 0 : false));
-
-                          const tieneReqExtra = solicitud.REQUERIMIENTO_2 || solicitud.REQUERIMIENTO_3 || solicitud.INFORME_2 || solicitud.INFORME_3;
-
+                        {permisosPaginados.map((permiso, index) => {
+                          const archivos = parseArchivos(permiso.ARCHIVOS);
+                          
                           return (
-                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_CONSULTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.NUMERO_SOLICITUD || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.REGISTRADO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RES_INCIDENCIA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => mostrarTextoEnModal(solicitud.REQUERIMIENTOS || 'No especificado.', 'Requerimientos')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    title="Ver Requerimientos"
-                                  >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                  {solicitud.INFORME_SOLICITUD ? (
-                                    <a
-                                      href={solicitud.INFORME_SOLICITUD}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Ver archivo
-                                    </a>
-                                  ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Sin archivo
-                                    </button>
-                                  )}
-                                  {tieneReqExtra && (
-                                    <button
-                                      onClick={() => verHistorialReqExtra(solicitud)}
-                                      className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                      title="Ver respuestas adicionales"
-                                    >
-                                      <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA_RECEPCION || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RESPONDIDO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => mostrarTextoEnModal(solicitud.RESPUESTA_R || solicitud.RESPUESTA || 'No especificado.', 'Respuesta')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    title="Ver Respuesta"
-                                  >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                  {solicitud.INFORME_RESPUESTA ? (
-                                    <a
-                                      href={solicitud.INFORME_RESPUESTA}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Ver archivo
-                                    </a>
-                                  ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Sin archivo
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${getEstadoBadge(solicitud.ESTADO)}`}>
-                                  {solicitud.ESTADO || 'Pendiente'}
+                            <tr key={permiso.ID || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_REGISTRO)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.NOMBRE || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_INICIO)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_FIN)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.TIPO_PERMISO || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {permiso.ESTADO_SOLICITUD || 'PENDIENTE'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                {tieneReprogramaciones ? (
-                                  <div className="flex items-center gap-2 justify-center text-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
-                                      SI
-                                    </span>
-                                    <button
-                                      onClick={() => verReprogramaciones(solicitud)}
-                                      className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                      title="Ver reprogramaciones"
-                                    >
-                                      <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-red-600 border-red-700 text-white">
-                                    NO
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
-                                <button
-                                  onClick={() => abrirModalEditar(solicitud)}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                  </svg>
-                                  <span>Editar</span>
-                                </button>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.HORAS_SOLICITADAS !== null && permiso.HORAS_SOLICITADAS !== undefined ? `${permiso.HORAS_SOLICITADAS}h` : '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.HORAS_CUMPLIDAS !== null && permiso.HORAS_CUMPLIDAS !== undefined ? `${permiso.HORAS_CUMPLIDAS}h` : '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.HORAS_FALTANTESS !== null && permiso.HORAS_FALTANTESS !== undefined ? `${permiso.HORAS_FALTANTESS}h` : '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => verDetallePermiso(permiso)}
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    title="Ver detalle"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => abrirModalEditar(permiso)}
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    title="Editar permiso"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => abrirModalRespuesta(permiso)}
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    title="Agregar respuesta"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -721,351 +627,137 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
                     </span>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>
                   </div>
                 </>
               )}
+              </div>
             </div>
           </div>
         </main>
       </div>
 
-      {/* Modal para ver Requerimientos/Respuestas */}
+      {/* Modal para ver Detalle del Permiso */}
       <Modal
-        isOpen={modalRequerimientosOpen || modalRespuestasOpen}
+        isOpen={modalDetalleOpen}
         onClose={() => {
-          setModalRequerimientosOpen(false);
-          setModalRespuestasOpen(false);
+          setModalDetalleOpen(false);
+          setPermisoSeleccionado(null);
         }}
-        title={tituloModal}
-        size="md"
-      >
-        <div className="p-6">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-gray-900 whitespace-pre-wrap leading-relaxed text-sm font-normal">{textoModal}</p>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal para ver Reprogramaciones */}
-      <Modal
-        isOpen={modalReprogramacionesOpen}
-        onClose={() => {
-          setModalReprogramacionesOpen(false);
-          setSolicitudSeleccionada(null);
-        }}
-        title="Reprogramaciones / Más Respuestas"
+        title="Detalle del Permiso"
         size="lg"
       >
-        <div className="p-4 space-y-4">
-          {solicitudSeleccionada && (() => {
-            let reprogramaciones = [];
-
-            if (solicitudSeleccionada.REPROGRAMACIONES) {
-              if (Array.isArray(solicitudSeleccionada.REPROGRAMACIONES)) {
-                reprogramaciones = solicitudSeleccionada.REPROGRAMACIONES;
-              } else if (typeof solicitudSeleccionada.REPROGRAMACIONES === 'string') {
-                try {
-                  reprogramaciones = JSON.parse(solicitudSeleccionada.REPROGRAMACIONES);
-                } catch (e) {
-                  reprogramaciones = [];
-                }
-              }
-            }
-
-            // Si no hay array, intentar con campos planos
-            if (reprogramaciones.length === 0) {
-              const reprog1 = solicitudSeleccionada.FECHA_REPROGRAMACION || solicitudSeleccionada.RESPUESTA_REPROGRAMACION || solicitudSeleccionada.INFORME_REPROGRAMACION;
-              const reprog2 = solicitudSeleccionada.FECHA_REPROGRAMACION_2 || solicitudSeleccionada.RESPUESTA_2 || solicitudSeleccionada.INFORME_2;
-              const reprog3 = solicitudSeleccionada.FECHA_REPROGRAMACION_3 || solicitudSeleccionada.RESPUESTA_3 || solicitudSeleccionada.INFORME_3;
-
-              if (reprog1) reprogramaciones.push({
-                titulo: '1ra Reprogramación',
-                fecha: solicitudSeleccionada.FECHA_REPROGRAMACION,
-                respuesta: solicitudSeleccionada.RESPUESTA_REPROGRAMACION || solicitudSeleccionada.RESPUESTA_REPROG,
-                informe: solicitudSeleccionada.INFORME_REPROGRAMACION || solicitudSeleccionada.INFORME_REPROG
-              });
-              if (reprog2) reprogramaciones.push({
-                titulo: '2da Reprogramación',
-                fecha: solicitudSeleccionada.FECHA_REPROGRAMACION_2,
-                respuesta: solicitudSeleccionada.RESPUESTA_2 || solicitudSeleccionada.RESPUESTA_REPROG_2,
-                informe: solicitudSeleccionada.INFORME_2 || solicitudSeleccionada.INFORME_REPROG_2
-              });
-              if (reprog3) reprogramaciones.push({
-                titulo: '3ra Reprogramación',
-                fecha: solicitudSeleccionada.FECHA_REPROGRAMACION_3,
-                respuesta: solicitudSeleccionada.RESPUESTA_3 || solicitudSeleccionada.RESPUESTA_REPROG_3,
-                informe: solicitudSeleccionada.INFORME_3 || solicitudSeleccionada.INFORME_REPROG_3
-              });
-            }
-
-            if (reprogramaciones.length === 0) {
-              return (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-600 font-medium">No hay reprogramaciones registradas.</p>
+        <div className="p-6 space-y-4">
+          {permisoSeleccionado && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha de Registro</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permisoSeleccionado.FECHA_REGISTRO)}</p>
                 </div>
-              );
-            }
-
-            return reprogramaciones.map((reprog, idx) => (
-              <div key={idx} className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{idx + 1}</span>
-                  </div>
-                  <h6 className="font-bold text-blue-800 text-base">
-                    {reprog.titulo || `Reprogramación ${idx + 1}`}
-                  </h6>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Nombre</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{permisoSeleccionado.NOMBRE || '-'}</p>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Fecha</p>
-                      <p className="text-sm font-medium text-gray-900">{formatFecha(reprog.FECHA_REPROGRAMACION || reprog.fecha)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Motivo</p>
-                      <p className="text-sm text-gray-900 leading-relaxed bg-white rounded-lg p-3 border border-gray-200">
-                        {reprog.RESPUESTA_REPROG || reprog.RESPUESTA || reprog.respuesta || 'No registrada'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 mt-0.5 flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Informe</p>
-                      {reprog.INFORME_REPROG || reprog.INFORME || reprog.informe ? (
-                        <a
-                          href={reprog.INFORME_REPROG || reprog.INFORME || reprog.informe}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Ver archivo
-                        </a>
-                      ) : (
-                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          No disponible
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Inicio</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permisoSeleccionado.FECHA_INICIO)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Fin</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permisoSeleccionado.FECHA_FIN)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo de Permiso</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{permisoSeleccionado.TIPO_PERMISO || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</p>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permisoSeleccionado.ESTADO_SOLICITUD)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisoSeleccionado.ESTADO_SOLICITUD || 'PENDIENTE'}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Solicitadas</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{permisoSeleccionado.HORAS_SOLICITADAS !== null && permisoSeleccionado.HORAS_SOLICITADAS !== undefined ? `${permisoSeleccionado.HORAS_SOLICITADAS}h` : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Cumplidas</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{permisoSeleccionado.HORAS_CUMPLIDAS !== null && permisoSeleccionado.HORAS_CUMPLIDAS !== undefined ? `${permisoSeleccionado.HORAS_CUMPLIDAS}h` : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Faltantes</p>
+                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{permisoSeleccionado.HORAS_FALTANTESS !== null && permisoSeleccionado.HORAS_FALTANTESS !== undefined ? `${permisoSeleccionado.HORAS_FALTANTESS}h` : '-'}</p>
                 </div>
               </div>
-            ));
-          })()}
-        </div>
-      </Modal>
+              
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Motivo</p>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-gray-900 whitespace-pre-wrap leading-relaxed text-sm font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisoSeleccionado.MOTIVO || 'No especificado.'}
+                  </p>
+                </div>
+              </div>
 
-      {/* Modal para ver Historial de Requerimientos Extra */}
-      <Modal
-        isOpen={modalHistorialReqExtraOpen}
-        onClose={() => {
-          setModalHistorialReqExtraOpen(false);
-          setSolicitudSeleccionada(null);
-        }}
-        title="Detalle de Respuestas adicionales"
-        size="lg"
-      >
-        <div className="p-4 space-y-4">
-          {solicitudSeleccionada && (
-            <>
-              {(solicitudSeleccionada.REQUERIMIENTO_2 || solicitudSeleccionada.INFORME_2) && (
-                <div className="mb-6 border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">2</span>
-                    </div>
-                    <h6 className="font-bold text-blue-800 text-base">Respuesta 2</h6>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Contenido</p>
-                      <textarea
-                        className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"
-                        rows="4"
-                        readOnly
-                        value={solicitudSeleccionada.REQUERIMIENTO_2 || 'No registrado'}
-                      />
-                    </div>
-                    {solicitudSeleccionada.FECHA_REQUERIMIENTO_2 && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              {permisoSeleccionado.ARCHIVOS && parseArchivos(permisoSeleccionado.ARCHIVOS).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Archivos</p>
+                  <div className="space-y-2">
+                    {parseArchivos(permisoSeleccionado.ARCHIVOS).map((archivo, idx) => (
+                      <a
+                        key={idx}
+                        href={archivo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        <span className="text-gray-700 font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_2)}</span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Archivo</p>
-                      {solicitudSeleccionada.INFORME_2 ? (
-                        <a
-                          href={solicitudSeleccionada.INFORME_2}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Ver archivo
-                        </a>
-                      ) : (
-                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          No registrado
-                        </span>
-                      )}
-                    </div>
-                    {solicitudSeleccionada.FECHA_INFORME_2 && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-700 font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_INFORME_2)}</span>
-                      </div>
-                    )}
+                        Ver archivo {idx + 1}
+                      </a>
+                    ))}
                   </div>
                 </div>
               )}
-
-              {(solicitudSeleccionada.REQUERIMIENTO_3 || solicitudSeleccionada.INFORME_3) && (
-                <div className="mb-6 border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">3</span>
-                    </div>
-                    <h6 className="font-bold text-blue-800 text-base">Respuesta 3</h6>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Contenido</p>
-                      <textarea
-                        className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"
-                        rows="4"
-                        readOnly
-                        value={solicitudSeleccionada.REQUERIMIENTO_3 || 'No registrado'}
-                      />
-                    </div>
-                    {solicitudSeleccionada.FECHA_REQUERIMIENTO_3 && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-700 font-medium">Registrado: {formatFecha(solicitudSeleccionada.FECHA_REQUERIMIENTO_3)}</span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Archivo</p>
-                      {solicitudSeleccionada.INFORME_3 ? (
-                        <a
-                          href={solicitudSeleccionada.INFORME_3}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Ver archivo
-                        </a>
-                      ) : (
-                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          No registrado
-                        </span>
-                      )}
-                    </div>
-                    {solicitudSeleccionada.FECHA_INFORME_3 && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-700 font-medium">Última actualización: {formatFecha(solicitudSeleccionada.FECHA_INFORME_3)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!solicitudSeleccionada.REQUERIMIENTO_2 && !solicitudSeleccionada.REQUERIMIENTO_3 &&
-                !solicitudSeleccionada.INFORME_2 && !solicitudSeleccionada.INFORME_3 && (
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-gray-600 font-medium">No hay respuestas adicionales registradas.</p>
-                  </div>
-                )}
             </>
           )}
         </div>
@@ -1080,7 +772,9 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       >
         <div className="p-6 space-y-6">
           <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-600">
-            <p className="text-gray-900 font-medium leading-relaxed">Este sistema permite gestionar y dar seguimiento a las solicitudes de manera rápida y organizada. A continuación, se detalla su funcionamiento:</p>
+            <p className="text-gray-900 font-medium leading-relaxed" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Este sistema permite consultar y gestionar tus permisos laborales de manera rápida y organizada. A continuación, se detalla su funcionamiento:
+            </p>
           </div>
 
           <div className="border border-gray-200 rounded-lg p-4 bg-white">
@@ -1090,49 +784,12 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
               </div>
-              <h6 className="font-bold text-gray-900 text-base">🔎 Filtros</h6>
+              <h6 className="font-bold text-gray-900 text-base" style={{ fontFamily: 'var(--font-poppins)' }}>🔎 Filtros</h6>
             </div>
-            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
-              <li>Filtra las solicitudes por <strong className="text-gray-900">Área</strong>, <strong className="text-gray-900">Colaborador</strong>, <strong className="text-gray-900">Estado</strong> y <strong className="text-gray-900">Incidencia</strong>.</li>
-              <li>El filtro de <strong className="text-gray-900">Colaborador</strong> funciona en tiempo real mientras escribes.</li>
-              <li>Se permite hacer <strong className="text-gray-900">Filtros Combinados</strong> funciona en tiempo real.</li>
-            </ul>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4 bg-white">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <h6 className="font-bold text-gray-900 text-base">✍️ Responder Solicitudes</h6>
-            </div>
-            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
-              <li>En la columna <strong className="text-gray-900">Acciones</strong> podrás abrir el formulario de respuesta.</li>
-              <li>Completa los campos de <em className="text-gray-900">Respondido por</em>, <em className="text-gray-900">Respuesta</em> e <em className="text-gray-900">Informe (opcional)</em>.</li>
-              <li>Puedes adjuntar un archivo PDF y luego visualizarlo con el botón <strong className="text-gray-900">Ver archivo</strong>.</li>
-            </ul>
-            <div className="mt-3 bg-red-50 border-l-4 border-red-600 p-3 rounded">
-              <p className="text-sm text-red-800 font-semibold">🚨 IMPORTANTE: SOLO TIENEN MÁXIMO 48 HORAS PARA RESPONDER O ATENDER UNA SOLICITUD/INCIDENCIA</p>
-            </div>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4 bg-white">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </div>
-              <h6 className="font-bold text-gray-900 text-base">🔄 Reprogramaciones</h6>
-            </div>
-            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
-              <li>Si es necesario reprogramar, activa el <strong className="text-gray-900">checkbox de Reprogramación</strong>.</li>
-              <li>Se permite máximo <strong className="text-gray-900">1 reprogramación</strong>.</li>
-              <li>Si se trata de un caso complicado, se permite un máximo de <strong className="text-gray-900">3 reprogramaciones</strong>.</li>
-              <li>Para agregar una nueva reprogramación, usa el <strong className="text-gray-900">botón verde ➕</strong> en la primera o segunda reprogramación.</li>
-              <li>En los campos de reprogramación se puede escribir el <em className="text-gray-900">motivo</em> y opcionalmente un <em className="text-gray-900">link a documentos</em>.</li>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <li>Filtra tus permisos por <strong className="text-gray-900">Tipo de Permiso</strong> (Asuntos Personales, Estudio ó Capacitación, Salud).</li>
+              <li>Filtra por <strong className="text-gray-900">Estado</strong> (Pendiente, Aprobado, Rechazado).</li>
+              <li>Puedes combinar ambos filtros para una búsqueda más específica.</li>
             </ul>
           </div>
 
@@ -1144,187 +801,180 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
               </div>
-              <h6 className="font-bold text-gray-900 text-base">📑 Visualización</h6>
+              <h6 className="font-bold text-gray-900 text-base" style={{ fontFamily: 'var(--font-poppins)' }}>📑 Visualización de Permisos</h6>
             </div>
-            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc">
-              <li>Si una solicitud tiene reprogramaciones, en la columna <strong className="text-gray-900">Con reprogramación / Más Respuestas</strong> se mostrará <strong className="text-gray-900">SI</strong>.</li>
-              <li>Al lado aparecerá un botón para abrir el detalle de todas las reprogramaciones registradas.</li>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <li>En la tabla podrás ver todos tus permisos con sus detalles: fechas, tipo, estado, horas solicitadas, cumplidas y faltantes.</li>
+              <li>Haz clic en el botón <strong className="text-gray-900">Ver detalle</strong> en la columna Acciones para ver toda la información completa del permiso.</li>
+              <li>En el detalle podrás ver el motivo y los archivos adjuntos (si los hay).</li>
+            </ul>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h6 className="font-bold text-gray-900 text-base" style={{ fontFamily: 'var(--font-poppins)' }}>📊 Exportar a PDF</h6>
+            </div>
+            <ul className="text-sm text-gray-800 space-y-2 ml-10 list-disc" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <li>Puedes exportar el listado de tus permisos a PDF usando el botón <strong className="text-gray-900">Exportar a PDF</strong>.</li>
+              <li>El PDF incluirá todos los permisos visibles según los filtros aplicados.</li>
             </ul>
           </div>
         </div>
       </Modal>
 
-      {/* Modal de Editar Respuesta */}
+      {/* Modal para Editar Permiso */}
       <Modal
         isOpen={modalEditarOpen}
         onClose={() => {
           setModalEditarOpen(false);
-          setSolicitudSeleccionada(null);
-          setFormArchivoInforme(null);
-          setFormArchivoNombre("");
+          setEditandoPermiso(null);
         }}
-        title="Actualizar Respuesta"
-        size="lg"
+        title="Editar Permiso Laboral"
+        size="md"
       >
-        <div className="p-6 space-y-6">
-          {/* Datos de la respuesta */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-lg font-bold text-gray-900">Datos de la respuesta</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-6 space-y-4">
+          {editandoPermiso && (
+            <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Fecha y Hora Respuesta
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formFechaRespuesta}
-                  onChange={(e) => setFormFechaRespuesta(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Respondido Por
+                <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Estado de la Solicitud
                 </label>
                 <select
-                  value={formRespondidoPor}
-                  onChange={(e) => {
-                    setFormRespondidoPor(e.target.value);
-                    if (e.target.value !== "OTROS") {
-                      setFormNombrePersona(e.target.value);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
+                  value={formEditar.estado_solicitud}
+                  onChange={(e) => setFormEditar(prev => ({ ...prev, estado_solicitud: e.target.value }))}
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
-                  <option value="">Seleccionar...</option>
-                  <option value="JOSEPH">JOSEPH</option>
-                  <option value="JOSELYN">JOSELYN</option>
-                  <option value="OTROS">OTROS</option>
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="APROBADO">Aprobado</option>
+                  <option value="RECHAZADO">Rechazado</option>
                 </select>
               </div>
-            </div>
 
-            {formRespondidoPor === "OTROS" && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nombre de la persona
+                <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Horas Cumplidas
                 </label>
                 <input
-                  type="text"
-                  value={formNombrePersona}
-                  onChange={(e) => setFormNombrePersona(e.target.value)}
-                  placeholder="Escribe el nombre..."
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
+                  type="number"
+                  value={formEditar.horas_cumplidas}
+                  onChange={(e) => setFormEditar(prev => ({ ...prev, horas_cumplidas: e.target.value }))}
+                  step="0.5"
+                  min="0"
+                  placeholder="0.0"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
-            )}
-          </div>
 
-          {/* Respuesta */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Respuesta
-            </label>
-            <textarea
-              value={formRespuesta}
-              onChange={(e) => setFormRespuesta(e.target.value)}
-              rows={4}
-              placeholder="Escribe la respuesta..."
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white resize-y"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Estado Completado (Opcional)
+                </label>
+                <select
+                  value={formEditar.estado_completado}
+                  onChange={(e) => setFormEditar(prev => ({ ...prev, estado_completado: e.target.value }))}
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="COMPLETADO">Completado</option>
+                  <option value="EN_PROCESO">En Proceso</option>
+                  <option value="CANCELADO">Cancelado</option>
+                </select>
+              </div>
 
-          {/* Informe */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Informe (Archivos PDF, rar, zip)
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="flex-shrink-0">
-                <input
-                  type="file"
-                  accept=".pdf,.rar,.zip"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setFormArchivoInforme(file);
-                      setFormArchivoNombre(file.name);
-                    }
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setModalEditarOpen(false);
+                    setEditandoPermiso(null);
                   }}
-                  className="hidden"
-                />
-                <span className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold cursor-pointer transition-colors shadow-sm hover:shadow-md">
-                  Seleccionar archivo
-                </span>
-              </label>
-              <span className="text-sm text-gray-600 flex-1">
-                {formArchivoNombre || "Ningún archivo seleccionado"}
-              </span>
-            </div>
-          </div>
-
-          {/* Estado */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Estado
-            </label>
-            <select
-              value={formEstado}
-              onChange={(e) => setFormEstado(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-            >
-              <option value="Pendiente">Pendiente</option>
-              <option value="En Revisión">En Revisión</option>
-              <option value="En Proceso">En Proceso</option>
-              <option value="Completado">Completado</option>
-              <option value="Requiere Info">Requiere Info</option>
-              <option value="Rechazada">Rechazada</option>
-            </select>
-          </div>
-
-          {/* Reprogramación */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="reprogramacion"
-              checked={formReprogramacion}
-              onChange={(e) => setFormReprogramacion(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <label htmlFor="reprogramacion" className="text-sm font-semibold text-gray-700 cursor-pointer">
-              Reprogramación / Más Respuestas
-            </label>
-          </div>
-
-          {/* Botones */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setModalEditarOpen(false);
-                setSolicitudSeleccionada(null);
-                setFormArchivoInforme(null);
-                setFormArchivoNombre("");
-              }}
-              className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleGuardarEdicion}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md"
-            >
-              Guardar
-            </button>
-          </div>
+                  className="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleActualizarPermiso}
+                  disabled={loadingEditar}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold rounded-lg hover:shadow-md transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  {loadingEditar ? 'Actualizando...' : 'Actualizar'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
+
+      {/* Modal para Agregar Respuesta */}
+      <Modal
+        isOpen={modalRespuestaOpen}
+        onClose={() => {
+          setModalRespuestaOpen(false);
+          setEditandoPermiso(null);
+          setFormRespuesta({ respuesta: '' });
+        }}
+        title="Agregar Respuesta al Permiso"
+        size="md"
+      >
+        <div className="p-6 space-y-4">
+          {editandoPermiso && (
+            <>
+              <div>
+                <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Permiso: <span className="font-semibold">{editandoPermiso.TIPO_PERMISO || 'N/A'}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Respuesta <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={formRespuesta.respuesta}
+                  onChange={(e) => setFormRespuesta(prev => ({ ...prev, respuesta: e.target.value }))}
+                  rows={5}
+                  required
+                  placeholder="Escribe tu respuesta aquí..."
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 resize-none"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setModalRespuestaOpen(false);
+                    setEditandoPermiso(null);
+                    setFormRespuesta({ respuesta: '' });
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAgregarRespuesta}
+                  disabled={loadingRespuesta || !formRespuesta.respuesta.trim()}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg hover:shadow-md transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  {loadingRespuesta ? 'Agregando...' : 'Agregar Respuesta'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
     </div>
   );
 }
