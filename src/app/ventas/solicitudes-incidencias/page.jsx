@@ -44,7 +44,7 @@ export default function SolicitudesIncidenciasVentasPage() {
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage] = useState(10);
   
   // Modales
   const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
@@ -420,8 +420,8 @@ export default function SolicitudesIncidenciasVentasPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Listado de Solicitudes/Incidencias</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Ver y gestionar Solicitudes/Incidencias
                     </p>
                   </div>

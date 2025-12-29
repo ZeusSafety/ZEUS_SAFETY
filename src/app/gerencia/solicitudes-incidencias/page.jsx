@@ -42,7 +42,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage] = useState(10);
   
   // Modales
   const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
@@ -395,18 +395,18 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
   // Función para obtener badge de estado
   const getEstadoBadge = (estado) => {
-    if (!estado) return "bg-gray-500 border-gray-600 text-white";
+    if (!estado) return "bg-gradient-to-br from-gray-500 to-gray-600 text-white shadow-sm";
     const estadoStr = String(estado).toLowerCase();
     const estados = {
-      "pendiente": "bg-yellow-500 border-yellow-600 text-white",
-      "en revisión": "bg-orange-500 border-orange-600 text-white",
-      "en revision": "bg-orange-500 border-orange-600 text-white",
-      "en proceso": "bg-blue-600 border-blue-700 text-white",
-      "completado": "bg-green-600 border-green-700 text-white",
-      "requiere info": "bg-cyan-500 border-cyan-600 text-white",
-      "rechazada": "bg-red-600 border-red-700 text-white",
+      "pendiente": "bg-gradient-to-br from-yellow-500 to-yellow-600 text-white shadow-sm",
+      "en revisión": "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm",
+      "en revision": "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm",
+      "en proceso": "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-sm",
+      "completado": "bg-gradient-to-br from-green-600 to-green-700 text-white shadow-sm",
+      "requiere info": "bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-sm",
+      "rechazada": "bg-gradient-to-br from-red-600 to-red-700 text-white shadow-sm",
     };
-    return estados[estadoStr] || "bg-gray-500 border-gray-600 text-white";
+    return estados[estadoStr] || "bg-gradient-to-br from-gray-500 to-gray-600 text-white shadow-sm";
   };
 
   // Función para exportar PDF
@@ -511,8 +511,8 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Listado de Solicitudes/Incidencias</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Ver y gestionar Solicitudes/Incidencias
                     </p>
                   </div>
@@ -551,9 +551,10 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               <div className="mb-6 flex items-center gap-3 flex-wrap">
                 <button 
                   onClick={() => setModalProcedimientosOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Procedimientos
@@ -561,7 +562,8 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                 
                 <button 
                   onClick={handleExportarPDF}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md text-sm ml-auto"
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs ml-auto"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -705,20 +707,20 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Consulta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Solicitud</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Envio</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Incidencia</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Informe</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área de Recepción</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respondido Por</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Respuesta</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado</th>
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Con Reprogramación / Más Respuestas</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Consulta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Solicitud</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Envio</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Con Incidencia</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Informe</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Recepción</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Respuesta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Respondido Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Respuesta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Con Reprogramación / Más Respuestas</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -730,24 +732,24 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                           const tieneReqExtra = solicitud.REQUERIMIENTO_2 || solicitud.REQUERIMIENTO_3 || solicitud.INFORME_2 || solicitud.INFORME_3;
                           
                           return (
-                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_CONSULTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.NUMERO_SOLICITUD || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.REGISTRADO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RES_INCIDENCIA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(solicitud.FECHA_CONSULTA)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.NUMERO_SOLICITUD || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.REGISTRADO_POR || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.AREA || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.RES_INCIDENCIA || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => mostrarTextoEnModal(solicitud.REQUERIMIENTOS || 'No especificado.', 'Requerimientos')}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver Requerimientos"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
-                                    <span style={{pointerEvents: 'none'}}>Ver</span>
                                   </button>
                                   {solicitud.INFORME_SOLICITUD ? (
                                     <a
@@ -777,32 +779,32 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                                   {tieneReqExtra && (
                                     <button
                                       onClick={() => verHistorialReqExtra(solicitud)}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Ver respuestas adicionales"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                       </svg>
-                                      <span style={{pointerEvents: 'none'}}>Extra</span>
                                     </button>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA_RECEPCION || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RESPONDIDO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.AREA_RECEPCION || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{solicitud.RESPONDIDO_POR || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => mostrarTextoEnModal(solicitud.RESPUESTA_R || solicitud.RESPUESTA || 'No especificado.', 'Respuesta')}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver Respuesta"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
-                                    <span style={{pointerEvents: 'none'}}>Ver</span>
                                   </button>
                                   {solicitud.INFORME_RESPUESTA ? (
                                     <a
@@ -831,44 +833,44 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${getEstadoBadge(solicitud.ESTADO)}`}>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold ${getEstadoBadge(solicitud.ESTADO)} transition-all duration-200`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                   {solicitud.ESTADO || 'Pendiente'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 {tieneReprogramaciones ? (
                                   <div className="flex items-center gap-2 justify-center text-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold bg-gradient-to-br from-green-600 to-green-700 text-white shadow-sm transition-all duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>
                                       SI
                                     </span>
                                     <button
                                       onClick={() => verReprogramaciones(solicitud)}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Ver reprogramaciones"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                       </svg>
-                                      <span style={{pointerEvents: 'none'}}>Ver</span>
                                     </button>
                                   </div>
                                 ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-red-600 border-red-700 text-white">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold bg-gradient-to-br from-red-600 to-red-700 text-white shadow-sm transition-all duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     NO
                                   </span>
                                 )}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <button 
                                   onClick={() => abrirModalGestionRequerimientos(solicitud)}
-                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                   title="Gestionar requerimientos"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                   </svg>
-                                  <span style={{pointerEvents: 'none'}}>Editar</span>
                                 </button>
                               </td>
                             </tr>
@@ -879,35 +881,39 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
                     </span>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>

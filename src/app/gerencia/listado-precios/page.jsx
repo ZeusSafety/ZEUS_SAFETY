@@ -17,7 +17,7 @@ export default function ListadoPreciosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20; // 20 elementos por página fijos
+  const itemsPerPage = 10; // 10 elementos por página
   const [tablasDisponibles, setTablasDisponibles] = useState([
     { value: "MALVINAS", label: "Malvinas", disponible: true },
     { value: "PROVINCIA", label: "Provincia", disponible: true },
@@ -466,8 +466,8 @@ export default function ListadoPreciosPage() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Listado de Precios</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                  <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Precios</h1>
+                  <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                     Consulta y gestiona los precios de productos por clasificación.
                   </p>
                 </div>
@@ -494,18 +494,19 @@ export default function ListadoPreciosPage() {
                         className={`
                           px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200
                           ${isActive 
-                            ? "bg-blue-700 text-white shadow-md" 
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg" 
                             : isDisabled
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                             : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-sm"
                           }
                           ${!isDisabled && !isActive ? "hover:border-blue-300" : ""}
                         `}
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       >
                         <div className="flex items-center gap-2">
                           <span>{tabla.label}</span>
                           {hasData && !isActive && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                               {preciosData[tabla.value].length}
                             </span>
                           )}
@@ -531,7 +532,7 @@ export default function ListadoPreciosPage() {
                 </div>
               ) : precios.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No hay datos disponibles para esta clasificación.</p>
+                  <p className="text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>No hay datos disponibles para esta clasificación.</p>
                 </div>
               ) : (
                 <>
@@ -543,13 +544,15 @@ export default function ListadoPreciosPage() {
                         placeholder="Buscar por código o nombre de producto..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                        className="w-full px-4 py-2.5 pl-11 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-gradient-to-br from-gray-50 to-white shadow-sm font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                       <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                        className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        strokeWidth={2.5}
                       >
                         <path
                           strokeLinecap="round"
@@ -581,7 +584,7 @@ export default function ListadoPreciosPage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between">
                       {searchTerm && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
                           Mostrando {preciosFiltrados.length} de {precios.length} productos
                         </p>
                       )}
@@ -590,35 +593,36 @@ export default function ListadoPreciosPage() {
 
                   {preciosFiltrados.length === 0 ? (
                     <div className="text-center py-12">
-                      <p className="text-gray-500">No se encontraron productos que coincidan con "{searchTerm}"</p>
+                      <p className="text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>No se encontraron productos que coincidan con "{searchTerm}"</p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mb-6">
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="bg-blue-700 border-b-2 border-blue-800">
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                            <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 CÓDIGO
                               </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 PRODUCTO
                               </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 CANTIDAD EN CAJA
                               </th>
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 FICHA TÉCNICA
                               </th>
                               {getPriceColumns.map((columna) => (
                                 <th 
                                   key={columna}
-                                  className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                                  className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
                                   {columna.replace(/_/g, ' ')}
                                 </th>
                               ))}
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 ACCIONES
                               </th>
                             </tr>
@@ -686,14 +690,14 @@ export default function ListadoPreciosPage() {
                           const textoCopiar = getField(["TEXTO_COPIAR", "texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
 
                           return (
-                            <tr key={globalIndex} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                            <tr key={globalIndex} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {codigo || "-"}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {producto || "-"}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 {cantidadCaja || "-"}
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -703,8 +707,9 @@ export default function ListadoPreciosPage() {
                                       href={fichaTecnica}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Abrir ficha técnica en nueva pestaña"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
                                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
                                         <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
@@ -715,9 +720,10 @@ export default function ListadoPreciosPage() {
                                     </a>
                                   ) : (
                                     <button
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Sin ficha técnica"
                                       disabled
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
                                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
                                         <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
@@ -734,7 +740,8 @@ export default function ListadoPreciosPage() {
                                 return (
                                   <td 
                                     key={columna}
-                                    className={`px-3 py-2 whitespace-nowrap text-[10px] ${precioValue.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}
+                                    className={`px-4 py-3 whitespace-nowrap text-[10px] ${precioValue.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
                                     {precioValue.text}
                                   </td>
@@ -744,12 +751,13 @@ export default function ListadoPreciosPage() {
                                 {textoCopiar ? (
                                   <button
                                     onClick={() => copyToClipboard(textoCopiar, globalIndex)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${
-                                      copiedIndex === index
-                                        ? "bg-green-600 hover:bg-green-700 text-white"
-                                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] ${
+                                      copiedIndex === globalIndex
+                                        ? "bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                                        : "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                                     }`}
                                     title="Copiar texto al portapapeles"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
                                     {copiedIndex === globalIndex ? (
                                       <>
@@ -797,39 +805,43 @@ export default function ListadoPreciosPage() {
                       </div>
                       
                       {/* Controles de Paginación */}
-                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                         <button
                           onClick={() => setCurrentPage(1)}
                           disabled={currentPage === 1 || totalPages === 0}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                           aria-label="Primera página"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           «
                         </button>
                         <button
                           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                           disabled={currentPage === 1 || totalPages === 0}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                           aria-label="Página anterior"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           &lt;
                         </button>
-                        <span className="text-[10px] text-gray-700 font-medium">
+                        <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                           Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
                         </span>
                         <button
                           onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                           disabled={currentPage === totalPages || totalPages === 0}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                           aria-label="Página siguiente"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           &gt;
                         </button>
                         <button
                           onClick={() => setCurrentPage(totalPages)}
                           disabled={currentPage === totalPages || totalPages === 0}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                           aria-label="Última página"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         >
                           »
                         </button>
