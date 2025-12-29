@@ -135,8 +135,30 @@ function PermisosContent() {
                   </div>
                 </div>
 
-                {/* Formulario de Registro de Solicitudes */}
-                <FormularioRegistroSolicitudes onBack={() => router.push("/perfil")} />
+                {/* Cards de la Sección */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  {options.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={option.onClick}
+                      className="group text-left p-5 bg-white rounded-xl border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                      style={{ 
+                        boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-start space-x-3 mb-2">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110 flex-shrink-0">
+                            {option.icon}
+                          </div>
+                          <h3 className="text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors duration-200">{option.title}</h3>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
