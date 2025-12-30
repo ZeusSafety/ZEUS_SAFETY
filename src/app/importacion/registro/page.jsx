@@ -378,31 +378,14 @@ export default function RegistroImportacionesPage() {
     });
   };
 
-  // Función para formatear fecha sin problemas de zona horaria
-  const formatearFecha = (fechaString) => {
-    if (!fechaString) return "";
-    // Si la fecha viene en formato YYYY-MM-DD, extraer directamente sin conversión de zona horaria
-    const partes = fechaString.split('-');
-    if (partes.length === 3) {
-      const [anio, mes, dia] = partes;
-      return `${dia}/${mes}/${anio}`;
-    }
-    // Si viene en otro formato, intentar parsear
-    const fecha = new Date(fechaString + 'T12:00:00'); // Usar mediodía para evitar problemas de zona horaria
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = fecha.getFullYear();
-    return `${dia}/${mes}/${anio}`;
-  };
-
   // Función para generar el HTML de la plantilla con los datos
   const generarHTMLPlantilla = (logoBase64 = null) => {
     const fechaRegistro = formData.fechaRegistro 
-      ? formatearFecha(formData.fechaRegistro)
-      : formatearFecha(new Date().toISOString().split('T')[0]);
+      ? new Date(formData.fechaRegistro).toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      : new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
     
     const fechaLlegada = formData.fechaLlegada 
-      ? formatearFecha(formData.fechaLlegada)
+      ? new Date(formData.fechaLlegada).toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' })
       : "";
 
     // Generar filas de la tabla de productos
@@ -452,10 +435,10 @@ export default function RegistroImportacionesPage() {
     <title>Ficha de Importación - Zeus Safety</title>
     <style>
         :root {
-            --zeus-blue-light: #d9e9f9;
-            --zeus-blue-header: #9bc2e6;
-            --zeus-border: #8497b0;
-            --text-color: #333;
+            --zeus-blue-light: #14171aff;
+            --zeus-blue-header: #3689d6ff;
+            --zeus-border: #204575ff;
+            --text-color: #000000ff;
         }
 
         body {
@@ -465,7 +448,6 @@ export default function RegistroImportacionesPage() {
             padding: 20px;
             display: flex;
             justify-content: center;
-            color: #000000;
         }
 
         .document-page {
@@ -489,7 +471,6 @@ export default function RegistroImportacionesPage() {
             font-size: 12px;
             font-weight: bold;
             line-height: 1.4;
-            color: #000000;
         }
 
         .logo-container img {
@@ -503,7 +484,6 @@ export default function RegistroImportacionesPage() {
             width: 100%;
             margin-bottom: 10px;
             font-weight: bold;
-            color: #000000;
         }
 
         .main-title {
@@ -515,7 +495,6 @@ export default function RegistroImportacionesPage() {
             font-size: 18px;
             margin-bottom: 20px;
             letter-spacing: 1px;
-            color: #000000;
         }
 
         .top-fields {
@@ -536,7 +515,6 @@ export default function RegistroImportacionesPage() {
             font-size: 11px;
             font-weight: bold;
             width: 120px;
-            color: #000000;
         }
 
         .field-input {
@@ -546,8 +524,6 @@ export default function RegistroImportacionesPage() {
             outline: none;
             font-size: 13px;
             padding: 2px 5px;
-            color: #000000;
-            background-color: transparent;
         }
 
         .import-table {
@@ -562,14 +538,12 @@ export default function RegistroImportacionesPage() {
             font-size: 10px;
             padding: 6px 2px;
             text-transform: uppercase;
-            color: #000000;
         }
 
         .import-table td {
             border: 1px solid var(--zeus-border);
             height: 22px;
             padding: 0;
-            color: #000000;
         }
 
         .import-table input {
@@ -581,7 +555,6 @@ export default function RegistroImportacionesPage() {
             box-sizing: border-box;
             font-size: 11px;
             background-color: transparent;
-            color: #000000;
         }
 
         .import-table tr:nth-child(even) td {
@@ -607,18 +580,12 @@ export default function RegistroImportacionesPage() {
             padding: 5px 15px;
             flex-grow: 1;
             text-align: right;
-            color: #000000;
         }
 
         .total-value {
             background-color: var(--zeus-blue-light);
             width: 80px;
             padding: 5px;
-            color: #000000;
-        }
-
-        .total-value input {
-            color: #000000;
         }
 
         @media print {
@@ -848,7 +815,26 @@ export default function RegistroImportacionesPage() {
         return;
       }
 
-      const { blob } = pdfResult;
+      const { blob, url } = pdfResult;
+
+      // Usar la URL del blob directamente para el campo archivo_pdf
+      // Nota: Esta es una URL temporal (blob URL). En producción, deberías subir el PDF
+      // a un servidor (Firebase Storage, AWS S3, etc.) y obtener una URL pública permanente
+      const archivoPDF = url;
+      
+      // Guardar solo una referencia en localStorage (no el PDF completo)
+      // Esto es solo para referencia local, el PDF real se guarda en el servidor
+      try {
+        const pdfKey = `pdf_ref_${Date.now()}`;
+        localStorage.setItem(pdfKey, JSON.stringify({
+          url: url,
+          timestamp: Date.now(),
+          numeroDespacho: formData.numeroDespacho
+        }));
+      } catch (e) {
+        console.warn("No se pudo guardar la referencia en localStorage:", e);
+        // Continuar de todas formas, no es crítico
+      }
 
       const token = getAuthToken();
       if (!token) {
@@ -857,73 +843,46 @@ export default function RegistroImportacionesPage() {
         return;
       }
 
-      // Crear FormData para enviar el archivo PDF
-      const formDataToSend = new FormData();
-      
-      // Agregar el archivo PDF
-      const nombreArchivo = `Ficha_Importacion_${formData.numeroDespacho}_${Date.now()}.pdf`;
-      const archivoPDF = new File([blob], nombreArchivo, { type: 'application/pdf' });
-      formDataToSend.append('archivo_pdf', archivoPDF);
-      
-      // Agregar los demás campos como texto
-      formDataToSend.append('numero_despacho', formData.numeroDespacho);
-      formDataToSend.append('tipo_carga', formData.tipoCarga);
-      formDataToSend.append('responsable', formData.responsable);
-      // Enviar fecha sin agregar hora para evitar problemas de zona horaria
-      formDataToSend.append('fecha_registro', formData.fechaRegistro);
-      formDataToSend.append('fecha_llegada_productos', formData.fechaLlegada);
-      formDataToSend.append('estado_importacion', formData.estado);
-      formDataToSend.append('productos', formData.descripcionGeneral);
-      
-      // Agregar detalles como JSON string
-      const detalles = listaProductos.map((prod, index) => ({
-        item: index + 1,
-        producto: prod.producto,
-        codigo: prod.codigo,
-        unidad_medida: prod.unidadMedida,
-        cantidad: parseInt(prod.cantidad)
-      }));
-      formDataToSend.append('detalles', JSON.stringify(detalles));
-
-      // Guardar referencia en localStorage (solo metadata, no el archivo)
-      try {
-        const pdfKey = `pdf_ref_${Date.now()}`;
-        localStorage.setItem(pdfKey, JSON.stringify({
-          numeroDespacho: formData.numeroDespacho,
-          timestamp: Date.now(),
-          nombreArchivo: nombreArchivo
-        }));
-      } catch (e) {
-        console.warn("No se pudo guardar la referencia en localStorage:", e);
-        // Continuar de todas formas, no es crítico
-      }
+      // 2. Mapeo de datos al formato del Backend
+      const payload = {
+        numero_despacho: formData.numeroDespacho,
+        tipo_carga: formData.tipoCarga,
+        responsable: formData.responsable,
+        fecha_registro: formData.fechaRegistro + " 10:30:00",
+        fecha_llegada_productos: formData.fechaLlegada,
+        estado_importacion: formData.estado,
+        productos: formData.descripcionGeneral,
+        archivo_pdf: archivoPDF,
+        detalles: listaProductos.map((prod, index) => ({
+          item: index + 1,
+          producto: prod.producto,
+          codigo: prod.codigo,
+          unidad_medida: prod.unidadMedida,
+          cantidad: parseInt(prod.cantidad)
+        }))
+      };
 
       try {
-        // 3. Petición a la API con FormData
+        // 3. Petición a la API
         const apiUrl = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
         
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-            // NO incluir 'Content-Type': el navegador lo establecerá automáticamente con el boundary para FormData
           },
-          body: formDataToSend
+          body: JSON.stringify(payload)
         });
 
         const result = await response.json();
 
-        if (response.ok) {
-          // El backend devuelve {"message": "Registro exitoso", "url_archivo": "..."}
-          if (result.message === "Registro exitoso" || result.status === "success") {
-            alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.\nURL del PDF: " + (result.url_archivo || "N/A"));
-            setMostrarModalPreview(false);
-            router.push("/importacion");
-          } else {
-            throw new Error(result.error || result.message || "Error desconocido en el servidor");
-          }
+        if (response.ok && result.status === "success") {
+          alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.");
+          setMostrarModalPreview(false);
+          router.push("/importacion");
         } else {
-          throw new Error(result.error || result.message || `Error ${response.status}: ${response.statusText}`);
+          throw new Error(result.error || "Error desconocido en el servidor");
         }
       } catch (error) {
         console.error("Error al registrar:", error);
