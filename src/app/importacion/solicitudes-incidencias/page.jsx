@@ -21,7 +21,7 @@ export default function SolicitudesIncidenciasImportacionPage() {
   // Filtros - Iniciar con IMPORTACION seleccionado por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("IMPORTACION");
 
-  // Filtros adicionales
+  // Filtros adicionales *
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
@@ -188,6 +188,22 @@ export default function SolicitudesIncidenciasImportacionPage() {
         return incidencia && incidencia.trim() !== "" && incidencia !== "-";
       });
     }
+
+    // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
+    filtered.sort((a, b) => {
+      const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
+      const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
+      
+      if (!fechaA && !fechaB) return 0;
+      if (!fechaA) return 1; // Sin fecha al final
+      if (!fechaB) return -1; // Sin fecha al final
+      
+      const dateA = new Date(fechaA);
+      const dateB = new Date(fechaB);
+      
+      // Orden descendente: más recientes primero
+      return dateB.getTime() - dateA.getTime();
+    });
 
     return filtered;
   }, [solicitudes, areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);

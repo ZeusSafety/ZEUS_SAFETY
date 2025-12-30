@@ -229,15 +229,183 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const accion = searchParams.get("accion");
 
     const body = await request.formData();
-    return fetchFromAPI("POST", request, body, {});
+    
+    // Si hay acción, construir la URL con el parámetro
+    const authHeader = request.headers.get("authorization");
+    let apiUrl = "https://api-incidencias-solicitudes-2946605267.us-central1.run.app";
+    
+    // Agregar parámetro accion si existe
+    if (accion) {
+      apiUrl += `?accion=${encodeURIComponent(accion)}`;
+    }
+
+    const headers = {
+      "Accept": "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    };
+
+    // Incluir token si está disponible
+    if (authHeader && authHeader.trim() !== "") {
+      headers["Authorization"] = authHeader;
+    }
+
+    // NO incluir Content-Type para FormData (el navegador/Node lo configura automáticamente)
+    const fetchOptions = {
+      method: "POST",
+      headers: headers,
+      body: body
+    };
+
+    const response = await fetch(apiUrl, fetchOptions);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return NextResponse.json(
+          {
+            error: "token expirado",
+            message: "El token de autenticación ha expirado o es inválido.",
+            status: 401
+          },
+          { status: 401 }
+        );
+      }
+
+      const errorText = await response.text().catch(() => "");
+      let errorJson = null;
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        // No es JSON
+      }
+
+      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: errorText,
+          status: response.status
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: 200 });
 
   } catch (error) {
     console.error("Error en POST/route.js:", error.message);
     return NextResponse.json(
-      { error: "Error al procesar el cuerpo de la petición (POST)" },
-      { status: 400 }
+      { error: error.message || "Error al procesar el cuerpo de la petición (POST)" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const accion = searchParams.get("accion");
+
+    let body = null;
+    let contentType = request.headers.get("content-type");
+
+    // Si es multipart/form-data (contiene archivos)
+    if (contentType && contentType.includes("multipart/form-data")) {
+      body = await request.formData();
+    } else {
+      // Si es JSON
+      body = await request.json();
+      body = JSON.stringify(body);
+    }
+
+    // Construir parámetros para la API externa
+    const params = {};
+    if (accion) {
+      params.accion = accion;
+    }
+
+    // Hacer la petición a la API externa
+    const authHeader = request.headers.get("authorization");
+    let apiUrl = "https://api-incidencias-solicitudes-2946605267.us-central1.run.app";
+
+    // Agregar parámetro accion si existe
+    if (accion) {
+      apiUrl += `?accion=${encodeURIComponent(accion)}`;
+    }
+
+    const headers = {
+      "Accept": "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    };
+
+    // Incluir token si está disponible
+    if (authHeader && authHeader.trim() !== "") {
+      headers["Authorization"] = authHeader;
+    }
+
+    // Si NO es FormData, agregar Content-Type
+    if (!(body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const fetchOptions = {
+      method: "PUT",
+      headers: headers,
+      body: body
+    };
+
+    // NO incluir Content-Type si es FormData (el navegador/Node lo configura automáticamente)
+    if (body instanceof FormData) {
+      delete fetchOptions.headers['Content-Type'];
+    }
+
+    const response = await fetch(apiUrl, fetchOptions);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return NextResponse.json(
+          {
+            error: "token expirado",
+            message: "El token de autenticación ha expirado o es inválido.",
+            status: 401
+          },
+          { status: 401 }
+        );
+      }
+
+      const errorText = await response.text().catch(() => "");
+      let errorJson = null;
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        // No es JSON
+      }
+
+      const errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: errorText,
+          status: response.status
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: 200 });
+
+  } catch (error) {
+    console.error("Error en PUT/route.js:", error.message);
+    return NextResponse.json(
+      { error: error.message || "Error al procesar la petición PUT" },
+      { status: 500 }
     );
   }
 }
