@@ -18,9 +18,23 @@ export default function SolicitudesIncidenciasPage() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
-
-  // Filtros - Iniciar con FACTURACION seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("FACTURACION");
+  
+  // Mapeo de módulos a áreas de emisión
+  const getAreaEmisionByModule = (path) => {
+    if (path.includes("/gerencia/")) return ""; // Todas las áreas
+    if (path.includes("/logistica/")) return "LOGISTICA";
+    if (path.includes("/marketing/")) return "MARKETING";
+    if (path.includes("/ventas/")) return "VENTAS";
+    if (path.includes("/facturacion/")) return "FACTURACION";
+    if (path.includes("/importacion/")) return "IMPORTACION";
+    if (path.includes("/administracion/")) return "ADMINISTRACION";
+    if (path.includes("/sistemas/")) return "SISTEMAS";
+    if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
+    return ""; // Por defecto todas las áreas
+  };
+  
+  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("");
 
   // Filtros adicionales
   const [colaborador, setColaborador] = useState("");
@@ -147,8 +161,8 @@ export default function SolicitudesIncidenciasPage() {
     // Filtrar por área de Emision (solo si hay un valor seleccionado)
     if (areaEmision && areaEmision.trim() !== "") {
       filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_EMISION || s.area_emision || s.AREA || s.area || "";
+        // Buscar el área en el campo AREA (que es el área de envío/emisión)
+        const area = s.AREA || s.area || "";
         return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
       });
     }
@@ -212,7 +226,7 @@ export default function SolicitudesIncidenciasPage() {
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Funciones para modales
   const mostrarTextoEnModal = (texto, titulo) => {

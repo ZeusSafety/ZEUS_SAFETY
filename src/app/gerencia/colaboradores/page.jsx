@@ -2082,6 +2082,8 @@ export default function ColaboradoresPage() {
                     <option value="LOGISTICA">LOGISTICA</option>
                     <option value="GERENCIA">GERENCIA</option>
                     <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                    <option value="FACTURACION">FACTURACION</option>
+                    <option value="VENTAS">VENTAS</option>
                   </select>
                 </div>
                 <div>

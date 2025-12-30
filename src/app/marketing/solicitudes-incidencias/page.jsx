@@ -18,7 +18,21 @@ export default function SolicitudesIncidenciasPage() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
-
+  
+  // Mapeo de módulos a áreas de emisión
+  const getAreaEmisionByModule = (path) => {
+    if (path.includes("/gerencia/")) return ""; // Todas las áreas
+    if (path.includes("/logistica/")) return "LOGISTICA";
+    if (path.includes("/marketing/")) return "MARKETING";
+    if (path.includes("/ventas/")) return "VENTAS";
+    if (path.includes("/facturacion/")) return "FACTURACIÓN";
+    if (path.includes("/importacion/")) return "IMPORTACIÓN";
+    if (path.includes("/administracion/")) return "ADMINISTRACION";
+    if (path.includes("/sistemas/")) return "SISTEMAS";
+    if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
+    return ""; // Por defecto todas las áreas
+  };
+  
   // Filtros - Iniciar con MARKETING seleccionado por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("MARKETING");
 
@@ -147,8 +161,8 @@ export default function SolicitudesIncidenciasPage() {
     // Filtrar por área de Emision (solo si hay un valor seleccionado)
     if (areaEmision && areaEmision.trim() !== "") {
       filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_EMISION || s.area_emision || s.AREA || s.area || "";
+        // Buscar el área en el campo AREA (que es el área de envío/emisión)
+        const area = s.AREA || s.area || "";
         return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
       });
     }
