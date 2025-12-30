@@ -5,7 +5,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     
     // Obtener parámetros de la query
-    const idColaborador = searchParams.get("id_colaborador");
+    let idColaborador = searchParams.get("id_colaborador");
     const limit = searchParams.get("limit") || "60";
     const offset = searchParams.get("offset") || "0";
 
@@ -17,6 +17,13 @@ export async function GET(request) {
         },
         { status: 400 }
       );
+    }
+
+    // Validar y truncar id_colaborador si es demasiado largo (máximo 50 caracteres)
+    // Esto previene el error "Data too long for column 'P_ID_GENERAL'" en el backend
+    if (idColaborador.length > 50) {
+      console.warn(`id_colaborador truncado de ${idColaborador.length} a 50 caracteres:`, idColaborador);
+      idColaborador = idColaborador.substring(0, 50);
     }
 
     // Obtener el token de los headers de la petición

@@ -61,7 +61,14 @@ export default function RegistroActividadPage() {
       setErrorAPI(null);
       
       // Obtener el id_colaborador del usuario (puede ser user.usuario, user.name, etc.)
-      const idColaborador = user?.usuario || user?.name || user?.email || "hervinzeus";
+      let idColaborador = user?.usuario || user?.name || user?.email || "hervinzeus";
+      
+      // Validar y truncar id_colaborador si es demasiado largo (máximo 50 caracteres)
+      // Esto previene el error "Data too long for column 'P_ID_GENERAL'"
+      if (idColaborador && idColaborador.length > 50) {
+        console.warn(`id_colaborador truncado de ${idColaborador.length} a 50 caracteres:`, idColaborador);
+        idColaborador = idColaborador.substring(0, 50);
+      }
       
       // Obtener el token de autenticación
       const token = localStorage.getItem("token");
