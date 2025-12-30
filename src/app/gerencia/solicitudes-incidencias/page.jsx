@@ -1806,9 +1806,8 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="ELIAS">ELIAS</option>
-                  <option value="EDGAR">EDGAR</option>
-                  <option value="DHILSEN">DHILSEN</option>
+                  <option value="HERVIN">HERVIN</option>
+                  <option value="KIMBERLY">KIMBERLY</option>
                   <option value="OTROS">OTROS</option>
                 </select>
               </div>

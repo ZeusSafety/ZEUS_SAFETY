@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 import { color } from "framer-motion";
 import { form } from "framer-motion/client";
 
@@ -148,6 +149,11 @@ export default function RegistroImportacionesPage() {
 
   // Lista de productos agregados
   const [listaProductos, setListaProductos] = useState([]);
+
+  // Estados para el modal de previsualización del PDF
+  const [mostrarModalPreview, setMostrarModalPreview] = useState(false);
+  const [previewHTML, setPreviewHTML] = useState("");
+  const [generandoPDF, setGenerandoPDF] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -335,8 +341,428 @@ export default function RegistroImportacionesPage() {
     setListaProductos(listaProductos.filter(p => p.id !== id));
   };
 
-  // Registrar importación unificada
-  const registrarImportacion = async () => {
+  // Función para convertir imagen a base64
+  const convertirImagenABase64 = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      // Timeout para evitar esperas infinitas
+      const timeout = setTimeout(() => {
+        resolve(null);
+      }, 5000);
+      
+      img.onload = () => {
+        clearTimeout(timeout);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL('image/png');
+          resolve(dataURL);
+        } catch (e) {
+          console.warn("Error al convertir imagen a base64:", e);
+          resolve(null);
+        }
+      };
+      
+      img.onerror = () => {
+        clearTimeout(timeout);
+        console.warn("Error al cargar imagen:", url);
+        resolve(null);
+      };
+      
+      img.src = url;
+    });
+  };
+
+  // Función para generar el HTML de la plantilla con los datos
+  const generarHTMLPlantilla = (logoBase64 = null) => {
+    const fechaRegistro = formData.fechaRegistro 
+      ? new Date(formData.fechaRegistro).toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      : new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    
+    const fechaLlegada = formData.fechaLlegada 
+      ? new Date(formData.fechaLlegada).toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      : "";
+
+    // Generar filas de la tabla de productos
+    let filasProductos = "";
+    const totalFilas = Math.max(32, listaProductos.length);
+    let totalCantidad = 0;
+
+    for (let i = 0; i < totalFilas; i++) {
+      const producto = listaProductos[i];
+      if (producto) {
+        const cantidad = parseInt(producto.cantidad) || 0;
+        totalCantidad += cantidad;
+        filasProductos += `
+          <tr>
+            <td><input type="text" value="${i + 1}" readonly></td>
+            <td><input type="text" value="${producto.producto || ""}" readonly></td>
+            <td><input type="text" value="${producto.codigo || ""}" readonly></td>
+            <td><input type="text" value="${producto.unidadMedida || ""}" readonly></td>
+            <td><input type="text" value="${producto.cantidad || ""}" readonly></td>
+            <td><input type="text" value="${producto.cantidadCaja || ""}" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+          </tr>
+        `;
+      } else {
+        filasProductos += `
+          <tr>
+            <td><input type="text" value="${i + 1}" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+            <td><input type="text" value="" readonly></td>
+          </tr>
+        `;
+      }
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Importación - Zeus Safety</title>
+    <style>
+        :root {
+            --zeus-blue-light: #14171aff;
+            --zeus-blue-header: #3689d6ff;
+            --zeus-border: #204575ff;
+            --text-color: #000000ff;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .document-page {
+            background-color: white;
+            width: 850px;
+            min-height: 1100px;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .company-info {
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .logo-container img {
+            width: 200px;
+            height: auto;
+        }
+
+        .registration-date {
+            text-align: center;
+            font-size: 11px;
+            width: 100%;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .main-title {
+            background-color: var(--zeus-blue-light);
+            border: 1.5px solid var(--zeus-border);
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .top-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1.5px solid var(--zeus-border);
+            margin-bottom: 20px;
+        }
+
+        .field-group {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 0.5px solid var(--zeus-border);
+        }
+
+        .field-label {
+            font-size: 11px;
+            font-weight: bold;
+            width: 120px;
+        }
+
+        .field-input {
+            border: none;
+            border-bottom: 1px solid var(--zeus-border);
+            flex-grow: 1;
+            outline: none;
+            font-size: 13px;
+            padding: 2px 5px;
+        }
+
+        .import-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .import-table th {
+            background-color: var(--zeus-blue-header);
+            border: 1px solid var(--zeus-border);
+            font-size: 10px;
+            padding: 6px 2px;
+            text-transform: uppercase;
+        }
+
+        .import-table td {
+            border: 1px solid var(--zeus-border);
+            height: 22px;
+            padding: 0;
+        }
+
+        .import-table input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 0 5px;
+            box-sizing: border-box;
+            font-size: 11px;
+            background-color: transparent;
+        }
+
+        .import-table tr:nth-child(even) td {
+            background-color: #f9fbff;
+        }
+
+        .footer-total {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .total-box {
+            display: flex;
+            width: 300px;
+            border: 1px solid var(--zeus-border);
+        }
+
+        .total-label {
+            background-color: var(--zeus-blue-header);
+            font-weight: bold;
+            font-size: 12px;
+            padding: 5px 15px;
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        .total-value {
+            background-color: var(--zeus-blue-light);
+            width: 80px;
+            padding: 5px;
+        }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .document-page { box-shadow: none; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="document-page">
+    <div class="registration-date">Fecha Registro: ${fechaRegistro}</div>
+
+    <div class="header-top">
+        <div class="company-info">
+            BUSINESS OF IMPORT ZEUS S.A.C<br>
+            AV. GUILLERMO DANSEY NRO. 401<br>
+            LIMA - LIMA - LIMA<br>
+            TELEFONO: 944767397
+        </div>
+        <div class="logo-container">
+            ${logoBase64 ? `<img src="${logoBase64}" alt="Zeus Safety Logo">` : '<div style="width: 200px; height: 60px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">LOGO ZEUS</div>'}
+        </div>
+    </div>
+
+    <div class="main-title">FICHA DE IMPORTACIÓN</div>
+
+    <div class="top-fields">
+        <div class="field-group">
+            <span class="field-label">N° DESPACHO :</span>
+            <input type="text" class="field-input" value="${formData.numeroDespacho || ""}" readonly>
+        </div>
+        <div class="field-group">
+            <span class="field-label">GENERADO POR :</span>
+            <input type="text" class="field-input" value="${formData.responsable || ""}" readonly>
+        </div>
+        <div class="field-group">
+            <span class="field-label">TIPO DE CARGA :</span>
+            <input type="text" class="field-input" value="${formData.tipoCarga || ""}" readonly>
+        </div>
+        <div class="field-group">
+            <span class="field-label">FECHA LLEGADA :</span>
+            <input type="text" class="field-input" value="${fechaLlegada}" readonly>
+        </div>
+    </div>
+
+    <table class="import-table" id="itemsTable">
+        <thead>
+            <tr>
+                <th style="width: 30px;">N°</th>
+                <th style="width: 180px;">PRODUCTO</th>
+                <th style="width: 80px;">CODIGO</th>
+                <th style="width: 70px;">UNI. MEDIDA</th>
+                <th style="width: 70px;">CANTIDAD</th>
+                <th style="width: 80px;">CANT. EN CAJA</th>
+                <th style="width: 80px;">VERIFICACIÓN</th>
+                <th>OBSERVACIONES</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            ${filasProductos}
+        </tbody>
+    </table>
+
+    <div class="footer-total">
+        <div class="total-box">
+            <div class="total-label">TOTAL :</div>
+            <div class="total-value"><input type="text" value="${totalCantidad}" style="width:100%; border:none; background:transparent; outline:none;" readonly></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+    `;
+    return html;
+  };
+
+  // Función para generar el PDF desde el HTML
+  const generarPDF = async () => {
+    try {
+      setGenerandoPDF(true);
+      
+      // Convertir el logo a base64 antes de generar el HTML
+      const logoUrl = "https://system-integration-rosy.vercel.app/Logo%20de%20Zeus.png";
+      let logoBase64 = null;
+      try {
+        logoBase64 = await convertirImagenABase64(logoUrl);
+      } catch (error) {
+        console.warn("No se pudo cargar el logo, se usará un placeholder:", error);
+      }
+      
+      const html = generarHTMLPlantilla(logoBase64);
+      
+      // Crear un elemento temporal para renderizar el HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '850px';
+      tempDiv.style.backgroundColor = 'white';
+      tempDiv.innerHTML = html;
+      document.body.appendChild(tempDiv);
+
+      // Esperar a que las imágenes se carguen (con timeout para evitar esperas infinitas)
+      const images = tempDiv.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => { 
+          const timeout = setTimeout(() => resolve(), 3000); // Timeout de 3 segundos
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(); // Continuar aunque falle la imagen
+          };
+        });
+      }));
+
+      // Esperar un poco más para que todo se renderice
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Importar html2canvas y jsPDF dinámicamente
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      // Convertir el HTML a canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 850,
+        height: tempDiv.scrollHeight,
+        logging: false, // Desactivar logs de html2canvas
+        onclone: (clonedDoc) => {
+          // Asegurar que las imágenes se muestren correctamente en el clon
+          const clonedImages = clonedDoc.querySelectorAll('img');
+          clonedImages.forEach(img => {
+            if (!img.complete || img.naturalWidth === 0) {
+              // Si la imagen no se cargó, ocultarla o usar placeholder
+              img.style.display = 'none';
+            }
+          });
+        }
+      });
+
+      // Crear el PDF
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pxToMm = 25.4 / 96;
+      const imgWidthMm = (canvas.width * pxToMm) / 2;
+      const imgHeightMm = (canvas.height * pxToMm) / 2;
+      const ratio = Math.min((pdfWidth - 20) / imgWidthMm, (pdfHeight - 20) / imgHeightMm);
+
+      pdf.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', (pdfWidth - (imgWidthMm * ratio)) / 2, 10, imgWidthMm * ratio, imgHeightMm * ratio);
+
+      // Generar blob y URL
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+
+      // Limpiar el elemento temporal
+      document.body.removeChild(tempDiv);
+
+      setGenerandoPDF(false);
+      return { blob, url };
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+      setGenerandoPDF(false);
+      alert("Error al generar el PDF: " + error.message);
+      return null;
+    }
+  };
+
+  // Mostrar modal de previsualización
+  const mostrarPrevisualizacion = () => {
     // 1. Validaciones previas
     if (
       !formData.numeroDespacho ||
@@ -355,55 +781,119 @@ export default function RegistroImportacionesPage() {
       return;
     }
 
-    const token = getAuthToken();
-    if (!token) {
-      alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
-      return;
-    }
-
-    // 2. Mapeo de datos al formato del Backend
-    const payload = {
-      numero_despacho: formData.numeroDespacho,
-      tipo_carga: formData.tipoCarga,
-      responsable: formData.responsable,
-      fecha_registro: formData.fechaRegistro + " 10:30:00", // Agregamos hora si el backend lo requiere como DATETIME
-      fecha_llegada_productos: formData.fechaLlegada,
-      estado_importacion: formData.estado,
-      productos: formData.descripcionGeneral, // Equivale a descripción general
-      archivo_pdf: formData.archivoPDF || "",
-      detalles: listaProductos.map((prod, index) => ({
-        item: index + 1,
-        producto: prod.producto,
-        codigo: prod.codigo,
-        unidad_medida: prod.unidadMedida,
-        cantidad: parseInt(prod.cantidad)
-      }))
+    // Generar el HTML de la plantilla para previsualización
+    // Intentar cargar el logo, pero si falla, continuar sin él
+    const cargarPreview = async () => {
+      try {
+        const logoUrl = "https://system-integration-rosy.vercel.app/Logo%20de%20Zeus.png";
+        const logoBase64 = await convertirImagenABase64(logoUrl);
+        const html = generarHTMLPlantilla(logoBase64);
+        setPreviewHTML(html);
+        setMostrarModalPreview(true);
+      } catch (error) {
+        // Si falla, generar sin logo
+        const html = generarHTMLPlantilla(null);
+        setPreviewHTML(html);
+        setMostrarModalPreview(true);
+      }
     };
+    
+    cargarPreview();
+  };
 
+  // Registrar importación después de generar el PDF
+  const registrarImportacionConPDF = async () => {
     try {
-      // 3. Petición a la API
-      const url = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
+      setGenerandoPDF(true);
+
+      // Generar el PDF
+      const pdfResult = await generarPDF();
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      if (!pdfResult) {
+        alert("Error al generar el PDF. Por favor, intente nuevamente.");
+        setGenerandoPDF(false);
+        return;
+      }
 
-      const result = await response.json();
+      const { blob, url } = pdfResult;
 
-      if (response.ok && result.status === "success") {
-        alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.");
-        router.push("/importacion");
-      } else {
-        throw new Error(result.error || "Error desconocido en el servidor");
+      // Usar la URL del blob directamente para el campo archivo_pdf
+      // Nota: Esta es una URL temporal (blob URL). En producción, deberías subir el PDF
+      // a un servidor (Firebase Storage, AWS S3, etc.) y obtener una URL pública permanente
+      const archivoPDF = url;
+      
+      // Guardar solo una referencia en localStorage (no el PDF completo)
+      // Esto es solo para referencia local, el PDF real se guarda en el servidor
+      try {
+        const pdfKey = `pdf_ref_${Date.now()}`;
+        localStorage.setItem(pdfKey, JSON.stringify({
+          url: url,
+          timestamp: Date.now(),
+          numeroDespacho: formData.numeroDespacho
+        }));
+      } catch (e) {
+        console.warn("No se pudo guardar la referencia en localStorage:", e);
+        // Continuar de todas formas, no es crítico
+      }
+
+      const token = getAuthToken();
+      if (!token) {
+        alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        setGenerandoPDF(false);
+        return;
+      }
+
+      // 2. Mapeo de datos al formato del Backend
+      const payload = {
+        numero_despacho: formData.numeroDespacho,
+        tipo_carga: formData.tipoCarga,
+        responsable: formData.responsable,
+        fecha_registro: formData.fechaRegistro + " 10:30:00",
+        fecha_llegada_productos: formData.fechaLlegada,
+        estado_importacion: formData.estado,
+        productos: formData.descripcionGeneral,
+        archivo_pdf: archivoPDF,
+        detalles: listaProductos.map((prod, index) => ({
+          item: index + 1,
+          producto: prod.producto,
+          codigo: prod.codigo,
+          unidad_medida: prod.unidadMedida,
+          cantidad: parseInt(prod.cantidad)
+        }))
+      };
+
+      try {
+        // 3. Petición a la API
+        const apiUrl = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.");
+          setMostrarModalPreview(false);
+          router.push("/importacion");
+        } else {
+          throw new Error(result.error || "Error desconocido en el servidor");
+        }
+      } catch (error) {
+        console.error("Error al registrar:", error);
+        alert("❌ Error al registrar importación: " + error.message);
+      } finally {
+        setGenerandoPDF(false);
       }
     } catch (error) {
-      console.error("Error al registrar:", error);
-      alert("❌ Error al registrar importación: " + error.message);
+      console.error("Error al generar PDF:", error);
+      alert("Error al generar el PDF: " + error.message);
+      setGenerandoPDF(false);
     }
   };
 
@@ -806,7 +1296,7 @@ export default function RegistroImportacionesPage() {
                 {/* Botón Registrar */}
                 <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
-                    onClick={registrarImportacion}
+                    onClick={mostrarPrevisualizacion}
                     className="flex items-center space-x-1.5 px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
@@ -821,6 +1311,44 @@ export default function RegistroImportacionesPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Previsualización del PDF */}
+      <Modal
+        isOpen={mostrarModalPreview}
+        onClose={() => setMostrarModalPreview(false)}
+        title="Previsualización de Ficha de Importación"
+        size="full"
+        primaryButtonText={generandoPDF ? "Generando PDF..." : "Registrar"}
+        secondaryButtonText="Cancelar"
+        onPrimaryButtonClick={registrarImportacionConPDF}
+        onSecondaryButtonClick={() => setMostrarModalPreview(false)}
+        hideFooter={false}
+      >
+        <div className="w-full h-full flex flex-col">
+          <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center">
+            {previewHTML && (
+              <iframe
+                srcDoc={previewHTML}
+                className="bg-white shadow-lg border border-gray-300"
+                style={{
+                  width: '850px',
+                  minHeight: '1100px',
+                  transform: 'scale(0.75)',
+                  transformOrigin: 'top center',
+                  border: 'none'
+                }}
+                title="Previsualización PDF"
+              />
+            )}
+          </div>
+          <div className="bg-blue-50 border-t border-blue-200 p-4">
+            <p className="text-sm text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <strong>Nota:</strong> Esta es una previsualización del PDF que se generará. 
+              Al hacer clic en "Registrar", se generará el PDF y se guardará la importación en la base de datos.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
