@@ -25,16 +25,16 @@ export default function SolicitudesIncidenciasFacturacionPage() {
     if (path.includes("/logistica/")) return "LOGISTICA";
     if (path.includes("/marketing/")) return "MARKETING";
     if (path.includes("/ventas/")) return "VENTAS";
-    if (path.includes("/facturacion/")) return "FACTURACIÓN";
-    if (path.includes("/importacion/")) return "IMPORTACIÓN";
+    if (path.includes("/facturacion/")) return "FACTURACION";
+    if (path.includes("/importacion/")) return "IMPORTACION";
     if (path.includes("/administracion/")) return "ADMINISTRACION";
     if (path.includes("/sistemas/")) return "SISTEMAS";
     if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
     return ""; // Por defecto todas las áreas
   };
   
-  // Filtros - Iniciar con FACTURACION seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("FACTURACION");
+  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("");
 
   // FILTROS ADICIONALES
   const [areaEmision, setAreaEmision] = useState(() => getAreaEmisionByModule(pathname || ""));
@@ -167,8 +167,8 @@ export default function SolicitudesIncidenciasFacturacionPage() {
      // Filtrar por área de Emision (solo si hay un valor seleccionado)
     if (areaEmision && areaEmision.trim() !== "") {
       filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_EMISION || s.area_emision || s.AREA || s.area || "";
+        // Buscar el área en el campo AREA (que es el área de envío/emisión)
+        const area = s.AREA || s.area || "";
         return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
       });
     }
@@ -216,7 +216,7 @@ export default function SolicitudesIncidenciasFacturacionPage() {
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Funciones para modales
   const mostrarTextoEnModal = (texto, titulo) => {

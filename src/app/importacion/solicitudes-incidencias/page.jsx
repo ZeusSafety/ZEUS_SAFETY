@@ -12,20 +12,35 @@ const API_URL = "/api/solicitudes-incidencias";
 
 export default function SolicitudesIncidenciasImportacionPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
   
-  // Filtros - Iniciar con IMPORTACION seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("IMPORTACION");
+  // Mapeo de módulos a áreas de emisión
+  const getAreaEmisionByModule = (path) => {
+    if (path.includes("/gerencia/")) return ""; // Todas las áreas
+    if (path.includes("/logistica/")) return "LOGISTICA";
+    if (path.includes("/marketing/")) return "MARKETING";
+    if (path.includes("/ventas/")) return "VENTAS";
+    if (path.includes("/facturacion/")) return "FACTURACION";
+    if (path.includes("/importacion/")) return "IMPORTACION";
+    if (path.includes("/administracion/")) return "ADMINISTRACION";
+    if (path.includes("/sistemas/")) return "SISTEMAS";
+    if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
+    return ""; // Por defecto todas las áreas
+  };
+  
+  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("");
 
   // Filtros adicionales
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
-  const [areaEmision, setAreaEmision] = useState("");
+  const [areaEmision, setAreaEmision] = useState(() => getAreaEmisionByModule(pathname || ""));
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,6 +85,16 @@ export default function SolicitudesIncidenciasImportacionPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Actualizar área de emisión cuando el pathname esté disponible
+  useEffect(() => {
+    if (pathname) {
+      const area = getAreaEmisionByModule(pathname);
+      if (area !== areaEmision) {
+        setAreaEmision(area);
+      }
+    }
+  }, [pathname]);
 
   // Cargar solicitudes desde la API
   useEffect(() => {
@@ -152,9 +177,12 @@ export default function SolicitudesIncidenciasImportacionPage() {
     // Filtrar por área de emisión (solo si hay un valor seleccionado)
     if (areaEmision && areaEmision.trim() !== "") {
       filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_EMISION || s.area_emision || s.AREA_EMISION || s.AREA || s.area || "";
-        return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
+        // Buscar el área en el campo AREA (que es el área de envío/emisión)
+        const area = s.AREA || s.area || "";
+        const areaUpper = area ? area.toString().trim().toUpperCase() : "";
+        const filterUpper = areaEmision.toString().trim().toUpperCase();
+        const matches = areaUpper === filterUpper;
+        return matches;
       });
     }
 
@@ -201,7 +229,7 @@ export default function SolicitudesIncidenciasImportacionPage() {
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [areaRecepcion, areaEmision, colaborador, estado, mostrarIncidencias]);
 
   // Funciones para modales
   const mostrarTextoEnModal = (texto, titulo) => {

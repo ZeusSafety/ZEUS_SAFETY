@@ -78,12 +78,19 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
     // Intentar parsear como fecha si tiene formato reconocible
     try {
       if (trimmed.includes("/") || trimmed.includes("-") || trimmed.includes(".")) {
-        const date = new Date(trimmed);
-        if (!isNaN(date.getTime())) {
-          const año = date.getFullYear();
-          const mes = String(date.getMonth() + 1).padStart(2, "0");
-          const dia = String(date.getDate()).padStart(2, "0");
+        // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          const [año, mes, dia] = trimmed.split("-");
           return `${dia}/${mes}/${año}`;
+        } else {
+          // Para otros formatos, usar Date
+          const date = new Date(trimmed);
+          if (!isNaN(date.getTime())) {
+            const año = date.getFullYear();
+            const mes = String(date.getMonth() + 1).padStart(2, "0");
+            const dia = String(date.getDate()).padStart(2, "0");
+            return `${dia}/${mes}/${año}`;
+          }
         }
       }
     } catch (e) {}
@@ -92,19 +99,53 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
   }, []);
   
   // Formatear fecha mientras se escribe (solo números)
-  const formatDateInput = useCallback((val) => {
+  const formatDateInput = useCallback((val, cursorPos) => {
+    // Remover todo excepto números
     const numbers = val.replace(/\D/g, "");
     const limited = numbers.slice(0, 8);
-    if (limited.length <= 2) return limited;
-    if (limited.length <= 4) return `${limited.slice(0, 2)}/${limited.slice(2)}`;
-    return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    
+    // Si está vacío, retornar vacío
+    if (limited.length === 0) return "";
+    
+    // Formatear según la cantidad de dígitos
+    let formatted = "";
+    if (limited.length <= 2) {
+      formatted = limited;
+    } else if (limited.length <= 4) {
+      formatted = `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    } else {
+      formatted = `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    }
+    
+    return formatted;
   }, []);
   
-  // Valor inicial formateado
+  // Convertir fecha DD/MM/YYYY a YYYY-MM-DD para input type="date"
+  const convertToDateInputFormat = useCallback((val) => {
+    if (!val || val === "No disponible" || val === "-") return "";
+    // Si ya está en formato YYYY-MM-DD, retornarlo
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    // Si está en formato DD/MM/YYYY, convertirlo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+      const [dia, mes, año] = val.split("/");
+      return `${año}-${mes}-${dia}`;
+    }
+    // Si está en formato YYYY-MM-DD con hora, tomar solo la fecha
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+      return val.split(" ")[0].split("T")[0];
+    }
+    return "";
+  }, []);
+
+  // Valor inicial formateado para input type="date"
   const getInitialValue = useCallback(() => {
+    if (type === "date") {
+      const val = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
+      return convertToDateInputFormat(val);
+    }
     const val = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
     return formatDateForDisplay(val);
-  }, [initialValue, formatDateForDisplay]);
+  }, [initialValue, formatDateForDisplay, type, convertToDateInputFormat]);
   
   // Handler onPaste - Para pegar fechas completas
   const handlePaste = useCallback((e) => {
@@ -132,19 +173,74 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
     
     if (type === "date" && inputRef.current) {
       const currentValue = e.target.value;
+      const cursorPos = e.target.selectionStart || 0;
       
-      if (currentValue.length < 10) {
-        const formatted = formatDateInput(currentValue);
-        if (formatted !== currentValue) {
-          const cursorPos = inputRef.current.selectionStart || 0;
-          inputRef.current.value = formatted;
-          setTimeout(() => {
-            if (inputRef.current) {
-              const newPos = Math.min(cursorPos + (formatted.length - currentValue.length), formatted.length);
-              inputRef.current.setSelectionRange(newPos, newPos);
+      // Extraer solo números del valor actual
+      const numbers = currentValue.replace(/\D/g, "");
+      
+      // Si no hay números, limpiar el campo
+      if (numbers.length === 0) {
+        inputRef.current.value = "";
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.setSelectionRange(0, 0);
+          }
+        }, 0);
+        return;
+      }
+      
+      // Contar cuántos números hay antes del cursor
+      const beforeCursor = currentValue.slice(0, cursorPos);
+      const numbersBeforeCursor = beforeCursor.replace(/\D/g, "").length;
+      
+      // Formatear el valor
+      const formatted = formatDateInput(numbers, cursorPos);
+      
+      if (formatted !== currentValue) {
+        inputRef.current.value = formatted;
+        
+        // Calcular nueva posición del cursor
+        let newCursorPos = 0;
+        let numbersCount = 0;
+        
+        // Buscar la posición donde debería estar el cursor
+        for (let i = 0; i < formatted.length; i++) {
+          if (/\d/.test(formatted[i])) {
+            numbersCount++;
+            // Si hemos pasado el número donde estaba el cursor, colocar el cursor aquí
+            if (numbersCount > numbersBeforeCursor) {
+              newCursorPos = i + 1;
+              // Si el siguiente carácter es un separador, saltarlo automáticamente
+              if (i + 1 < formatted.length && formatted[i + 1] === "/") {
+                newCursorPos = i + 2;
+              }
+              break;
             }
-          }, 0);
+            // Si estamos en el último número antes del cursor, colocar después
+            if (numbersCount === numbersBeforeCursor) {
+              newCursorPos = i + 1;
+              // Si el siguiente carácter es un separador, saltarlo
+              if (i + 1 < formatted.length && formatted[i + 1] === "/") {
+                newCursorPos = i + 2;
+              }
+            }
+          }
         }
+        
+        // Si no encontramos posición, poner al final
+        if (newCursorPos === 0 || numbersCount < numbersBeforeCursor) {
+          newCursorPos = formatted.length;
+        }
+        
+        // Asegurar que la posición no exceda la longitud
+        newCursorPos = Math.min(newCursorPos, formatted.length);
+        
+        // Restaurar posición del cursor
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+          }
+        }, 0);
       }
     }
   }, [type, formatDateInput]);
@@ -158,10 +254,16 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
     if (type === "date") {
       finalValue = finalValue.trim();
       if (finalValue && finalValue.length > 0) {
-        const formatted = formatCompleteDate(finalValue);
-        if (formatted !== finalValue && formatted.length === 10) {
-          inputRef.current.value = formatted;
-          finalValue = formatted;
+        // Si viene en formato YYYY-MM-DD (del input date), convertir a DD/MM/YYYY
+        if (/^\d{4}-\d{2}-\d{2}$/.test(finalValue)) {
+          const [año, mes, dia] = finalValue.split("-");
+          finalValue = `${dia}/${mes}/${año}`;
+        } else {
+          // Si está en otro formato, intentar formatearlo
+          const formatted = formatCompleteDate(finalValue);
+          if (formatted && formatted.length === 10) {
+            finalValue = formatted;
+          }
         }
       }
     } else if (type === "number") {
@@ -223,16 +325,16 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
           <input
             key={inputKey}
             ref={inputRef}
-            type={type === "date" ? "text" : type}
+            type={type === "date" ? "date" : type}
             defaultValue={getInitialValue()}
             onBlur={handleBlur}
-            onChange={handleChange}
-            onPaste={handlePaste}
+            onChange={type === "date" ? undefined : handleChange}
+            onPaste={type === "date" ? undefined : handlePaste}
             disabled={disabled}
             className={`text-sm px-3 py-2 rounded-lg border border-blue-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full ${disabled ? "opacity-50 cursor-not-allowed bg-gray-100" : ""}`}
-            placeholder={type === "date" ? "DD/MM/YYYY o pegar fecha completa" : label}
+            placeholder={type === "date" ? "" : label}
             min={type === "number" ? "0" : undefined}
-            maxLength={type === "date" ? 20 : undefined}
+            maxLength={type === "date" ? undefined : undefined}
           />
         )
       ) : (
@@ -347,16 +449,25 @@ function GestionColaboradoresContent() {
     if (!dateString || dateString === "" || dateString === "No disponible" || dateString === "-") {
       return null;
     }
-    // Si ya está en formato YYYY-MM-DD, retornarlo
+    // Si ya está en formato YYYY-MM-DD, retornarlo tal cual
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return dateString;
     }
-    // Si está en formato DD/MM/YYYY, convertirlo
+    // Si está en formato DD/MM/YYYY, convertirlo manualmente (sin usar Date para evitar problemas de zona horaria)
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
       const [dia, mes, año] = dateString.split("/");
       return `${año}-${mes}-${dia}`;
     }
-    // Intentar parsear como Date
+    // Si tiene formato de fecha con números (DDMMYYYY o similar), intentar parsear manualmente
+    const numbers = dateString.replace(/\D/g, "");
+    if (numbers.length === 8) {
+      // Asumir formato DDMMYYYY
+      const dia = numbers.slice(0, 2);
+      const mes = numbers.slice(2, 4);
+      const año = numbers.slice(4, 8);
+      return `${año}-${mes}-${dia}`;
+    }
+    // Solo como último recurso, intentar con Date (pero esto puede tener problemas de zona horaria)
     try {
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
@@ -992,14 +1103,24 @@ function GestionColaboradoresContent() {
         let fechaFormateada = "";
         if (fechaNac) {
           try {
-            const fecha = new Date(fechaNac);
-            if (!isNaN(fecha.getTime())) {
-              const dia = String(fecha.getDate()).padStart(2, "0");
-              const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-              const año = fecha.getFullYear();
+            // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
+            if (/^\d{4}-\d{2}-\d{2}$/.test(fechaNac)) {
+              const [año, mes, dia] = fechaNac.split("-");
               fechaFormateada = `${dia}/${mes}/${año}`;
-            } else {
+            } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaNac)) {
+              // Ya está en formato DD/MM/YYYY
               fechaFormateada = fechaNac;
+            } else {
+              // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+              const fecha = new Date(fechaNac);
+              if (!isNaN(fecha.getTime())) {
+                const dia = String(fecha.getDate()).padStart(2, "0");
+                const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+                const año = fecha.getFullYear();
+                fechaFormateada = `${dia}/${mes}/${año}`;
+              } else {
+                fechaFormateada = fechaNac;
+              }
             }
           } catch (e) {
             fechaFormateada = fechaNac;
@@ -2000,7 +2121,6 @@ function GestionColaboradoresContent() {
                 { id: "ubicacion", label: "Ubicación" },
                 { id: "informacion-laboral", label: "Información Laboral" },
                 { id: "seguros", label: "Seguros" },
-                { id: "datos", label: "Datos" },
                 { id: "correo", label: "Correo" },
               ].map((tab) => (
                 <button
@@ -2042,12 +2162,22 @@ function GestionColaboradoresContent() {
               const formatDate = (dateValue) => {
                 if (!dateValue) return "No disponible";
                 try {
-                  const date = new Date(dateValue);
-                  if (!isNaN(date.getTime())) {
-                    const dia = String(date.getDate()).padStart(2, "0");
-                    const mes = String(date.getMonth() + 1).padStart(2, "0");
-                    const año = date.getFullYear();
+                  // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+                    const [año, mes, dia] = dateValue.split("-");
                     return `${dia}/${mes}/${año}`;
+                  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+                    // Ya está en formato DD/MM/YYYY
+                    return dateValue;
+                  } else {
+                    // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                      const dia = String(date.getDate()).padStart(2, "0");
+                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      const año = date.getFullYear();
+                      return `${dia}/${mes}/${año}`;
+                    }
                   }
                   return dateValue;
                 } catch (e) {
@@ -2072,12 +2202,19 @@ function GestionColaboradoresContent() {
                 }
                 // Intentar parsear como fecha
                 try {
-                  const date = new Date(value);
-                  if (!isNaN(date.getTime())) {
-                    const dia = String(date.getDate()).padStart(2, "0");
-                    const mes = String(date.getMonth() + 1).padStart(2, "0");
-                    const año = date.getFullYear();
+                  // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                    const [año, mes, dia] = value.split("-");
                     return `${dia}/${mes}/${año}`;
+                  } else {
+                    // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                      const dia = String(date.getDate()).padStart(2, "0");
+                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      const año = date.getFullYear();
+                      return `${dia}/${mes}/${año}`;
+                    }
                   }
                 } catch (e) {
                   // Si no es fecha, retornar el valor original

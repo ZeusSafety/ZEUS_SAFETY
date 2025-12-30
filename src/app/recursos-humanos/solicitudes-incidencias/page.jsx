@@ -18,8 +18,8 @@ export default function SolicitudesIncidenciasRecursosHumanosPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
   
-  // Filtros - Iniciar con RECURSOS HUMANOS seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("RECURSOS HUMANOS");
+  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("");
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
