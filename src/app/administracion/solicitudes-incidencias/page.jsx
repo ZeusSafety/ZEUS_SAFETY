@@ -219,19 +219,16 @@ export default function SolicitudesIncidenciasPage() {
       });
     }
 
-    // Filtrar incidencias
-    if (!mostrarIncidencias) {
-      filtered = filtered.filter(s => {
-        const incidencia = s.RES_INCIDENCIA || s.res_incidencia || "";
-        return !incidencia || incidencia.trim() === "" || incidencia === "-";
-      });
-    } else {
+    // Filtrar incidencias (solo si el checkbox está activo, mostrar solo las que tienen incidencia)
+    // Si el checkbox está desactivado, mostrar TODAS las solicitudes (con y sin incidencias)
+    if (mostrarIncidencias) {
       // Si mostrarIncidencias está activo, mostrar solo las que tienen incidencia
       filtered = filtered.filter(s => {
         const incidencia = s.RES_INCIDENCIA || s.res_incidencia || "";
         return incidencia && incidencia.trim() !== "" && incidencia !== "-";
       });
     }
+    // Si mostrarIncidencias está desactivado, no filtrar (mostrar todas)
 
     // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
     filtered.sort((a, b) => {

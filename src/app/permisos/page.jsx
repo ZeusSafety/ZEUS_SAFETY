@@ -7,6 +7,8 @@ import { Sidebar } from "../../components/layout/Sidebar";
 import { useAuth } from "../../components/context/AuthContext";
 import FormularioRegistroSolicitudes from "../../components/permisos/FormularioRegistroSolicitudes";
 import MisSolicitudes from "../../components/permisos/MisSolicitudes";
+import FormularioRegistroPermisos from "../../components/permisos/FormularioRegistroPermisos";
+import MisPermisos from "../../components/permisos/MisPermisos";
 
 function PermisosContent() {
   const router = useRouter();
@@ -31,6 +33,12 @@ function PermisosContent() {
     } else if (section === 'mis-solicitudes-incidencias') {
       console.log("✅ Mostrando listado de permisos");
       setActiveTab("listado");
+    } else if (section === 'registro-permisos') {
+      console.log("✅ Mostrando formulario de registro de permisos");
+      setActiveTab("permisos");
+    } else if (section === 'mis-permisos') {
+      console.log("✅ Mostrando listado de mis permisos");
+      setActiveTab("listado-permisos");
     } else {
       console.log("ℹ️ Mostrando menú principal (sin sección en URL)");
       setActiveTab("menu");
@@ -64,6 +72,14 @@ function PermisosContent() {
     return null;
   }
 
+  // Función para actualizar la URL y el estado
+  const navigateToSection = (section, tab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('section', section);
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
+
   const options = [
     {
       id: "registro-solicitudes-incidencias",
@@ -73,7 +89,7 @@ function PermisosContent() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       ),
-      onClick: () => setActiveTab("registro"),
+      onClick: () => navigateToSection("registro-solicitudes-incidencias", "registro"),
     },
     {
       id: "mis-solicitudes-incidencias",
@@ -83,8 +99,28 @@ function PermisosContent() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
-      onClick: () => setActiveTab("listado"),
+      onClick: () => navigateToSection("mis-solicitudes-incidencias", "listado"),
     },
+    {
+      id: "registro-permisos",
+      title: "Registro de Permisos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      ),
+      onClick: () => navigateToSection("registro-permisos", "permisos"),
+    },
+    {
+      id: "mis-permisos",
+      title: "Mis Permisos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+      onClick: () => navigateToSection("mis-permisos", "listado-permisos"),
+    }
   ];
 
   return (
@@ -103,6 +139,9 @@ function PermisosContent() {
             <button
               onClick={() => {
                 if (activeTab !== "menu") {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('section');
+                  router.replace(url.pathname, { scroll: false });
                   setActiveTab("menu");
                 } else {
                   router.push("/menu");
@@ -117,11 +156,39 @@ function PermisosContent() {
             </button>
 
             {activeTab === "registro" && (
-              <FormularioRegistroSolicitudes onBack={() => setActiveTab("menu")} />
+              <FormularioRegistroSolicitudes onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
             )}
 
             {activeTab === "listado" && (
-              <MisSolicitudes onBack={() => setActiveTab("menu")} />
+              <MisSolicitudes onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
+            )}
+
+            {activeTab === "permisos" && (
+              <FormularioRegistroPermisos onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
+            )}
+
+            {activeTab === "listado-permisos" && (
+              <MisPermisos onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
             )}
 
             {activeTab === "menu" && (

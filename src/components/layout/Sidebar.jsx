@@ -577,6 +577,12 @@ export function Sidebar({ isOpen, onClose }) {
       icon: "home",
       hasSubmenu: false,
     },
+    { 
+      id: "mis-permisos",
+      name: "Mis Permisos",
+      icon: "list",
+      hasSubmenu: false,
+    },
     {
       id: "registro-solicitudes-incidencias",
       name: "Registro de Solicitudes e Incidencias",
@@ -1097,6 +1103,17 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
 
+    if (itemId === "registro-permisos") {
+      router.push("/permisos?section=registro-permisos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "mis-permisos") {
+      router.push("/permisos?section=mis-permisos");
+      setSelectedItem(itemId);
+      return;
+    }
     
     // Aquí iría la navegación real para otros items
     setSelectedItem(itemId);
