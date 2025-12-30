@@ -4,72 +4,30 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import Modal from "../ui/Modal";
+import { div } from "framer-motion/client";
 
-// Usar el proxy de Next.js para evitar problemas de CORS
-const API_URL = "/api/solicitudes-incidencias";
+// API de permisos laborales (usando proxy de Next.js)
+const API_PERMISOS_URL = "/api/permisos-laborales";
 
-export default function SolicitudesIncidenciasGerenciaPage() {
+export default function MisSolicitudes({ onBack }) {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [solicitudes, setSolicitudes] = useState([]);
+  const [permisos, setPermisos] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  // 1. mapeo de usuarios
-  const userMapping = {
-    'hervinzeus': 'HERVIN',
-    'kimberly': 'KIMBERLY',
-    'evelyn': 'EVELYN',
-    'joseph': 'JOSEPH',
-    'alvaro': 'ALVARO',
-    'victorzeus': 'VICTOR',
-    'manuel': 'MANUEL',
-    'eliaszeus': 'ELIAS',
-    'sebastianzeus': 'SEBASTIAN',
-    'sandrazeus': 'SANDRA',
-    'joaquinzeus': 'JOAQUIN',
-    'edgarzeus': 'EDGAR',
-    'dayanaZeus': 'DAYANA',
-    'yeimiZeus': 'YEIMI',
-    'joseZeus': 'JOSE',
-    'lizethZeus': 'LIZETH',
-    'laritzaZeus': 'LARITZA'
-  };
+  console.log("🔵 MisSolicitudes component renderizado. User:", user);
 
-  // 2. Modificar el estado inicial de colaborador
-  // Inicialmente vacío para evitar errores de renderizado hidratado
-  const [colaborador, setColaborador] = useState("");
-
-  // 3. Efecto para inicializar el filtro según el usuario logeado
-  useEffect(() => {
-    if (user) {
-      // Según tu consola, la propiedad es 'id' o 'name'
-      const cuentaDetectada = user.id || user.name;
-
-      if (cuentaDetectada) {
-        const usuarioLogeado = String(cuentaDetectada).toLowerCase();
-        const nombreReal = userMapping[usuarioLogeado];
-
-        if (nombreReal) {
-          console.log("✅ Match encontrado. Aplicando filtro para:", nombreReal);
-          setColaborador(nombreReal);
-        } else {
-          console.log("❌ El usuario", usuarioLogeado, "no está en el userMapping");
-        }
-      }
-    }
-  }, [user]);
-
-  // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("");
+  // Filtros
+  const [tipoPermiso, setTipoPermiso] = useState("");
   const [estado, setEstado] = useState("");
-  const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(13);
+  const [itemsPerPage] = useState(10);
 
   // Modales
+  const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
+  const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
   const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
   const [modalRespuestasOpen, setModalRespuestasOpen] = useState(false);
   const [modalReprogramacionesOpen, setModalReprogramacionesOpen] = useState(false);
@@ -78,6 +36,10 @@ export default function SolicitudesIncidenciasGerenciaPage() {
   const [textoModal, setTextoModal] = useState("");
   const [tituloModal, setTituloModal] = useState("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [permisoSeleccionado, setPermisoSeleccionado] = useState(null);
+  const [editandoPermiso, setEditandoPermiso] = useState(null);
+  const [formRespuesta, setFormRespuesta] = useState({ respuesta: '' });
+  const [loadingRespuesta, setLoadingRespuesta] = useState(false);
 
   // Estados para el modal de Gestión de Requerimientos
   const [modalGestionRequerimientosOpen, setModalGestionRequerimientosOpen] = useState(false);
@@ -94,180 +56,124 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     }
   }, [user, loading, router]);
 
-  // Detectar si es desktop y abrir sidebar automáticamente
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Cargar solicitudes desde la API
+  // Cargar permisos desde la API
   useEffect(() => {
     if (user) {
-      cargarSolicitudes();
+      cargarPermisos();
     }
   }, [user]);
 
-  const cargarSolicitudes = async () => {
+  const cargarPermisos = async () => {
     try {
       setLoadingData(true);
-      const token = localStorage.getItem("token");
+      
+      // Obtener el ID del usuario logueado
+      // El user.id es el username (ej: "eliaszeus")
+      const usuarioId = user?.id || user?.name || "";
+      
+      if (!usuarioId) {
+        console.error("No se pudo obtener el ID del usuario. User object:", user);
+        setPermisos([]);
+        return;
+      }
 
-      // Obtener todas las solicitudes de todas las áreas
-      // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
-      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+      console.log("Cargando permisos para usuario:", usuarioId);
 
-      // Hacer llamadas en paralelo para obtener todas las solicitudes
-      const promesas = areas.map(async (area) => {
+      // Obtener el token de autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No se encontró el token de autenticación");
+        setPermisos([]);
+        return;
+      }
+
+      // Llamar a la API de permisos laborales a través del proxy
+      const url = `${API_PERMISOS_URL}?id=${encodeURIComponent(usuarioId)}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Permisos recibidos de la API:', data);
+        console.log('Tipo de datos:', typeof data, 'Es array?', Array.isArray(data));
+        
+        // Asegurar que sea un array
+        if (Array.isArray(data)) {
+          console.log(`✅ Se encontraron ${data.length} permisos`);
+          setPermisos(data);
+        } else if (data && typeof data === 'object') {
+          // Si viene como objeto, intentar extraer un array
+          const arrayData = data.data || data.permisos || data.result || [];
+          console.log('Datos extraídos del objeto:', arrayData);
+          setPermisos(Array.isArray(arrayData) ? arrayData : []);
+        } else {
+          console.warn('⚠️ La respuesta no es un array ni un objeto con array:', data);
+          setPermisos([]);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("❌ Error al obtener permisos:", response.status, response.statusText);
+        console.error("Respuesta de error:", errorText);
         try {
-          const response = await fetch(`${API_URL}?listado=${area}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { 'Authorization': `Bearer ${token}` })
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) {
-              return data;
-            }
-          }
-          return [];
-        } catch (error) {
-          console.error(`Error al obtener solicitudes de ${area}:`, error);
-          return [];
+          const errorJson = JSON.parse(errorText);
+          console.error("Error JSON:", errorJson);
+        } catch (e) {
+          console.error("Error como texto:", errorText);
         }
-      });
-
-      const resultados = await Promise.all(promesas);
-      // Combinar todas las solicitudes y eliminar duplicados por ID
-      const solicitudesUnicas = new Map();
-      resultados.flat().forEach(solicitud => {
-        const id = solicitud.ID_SOLICITUD || solicitud.id || solicitud.ID || solicitud.NUMERO_SOLICITUD;
-        if (id && !solicitudesUnicas.has(id)) {
-          solicitudesUnicas.set(id, solicitud);
-        }
-      });
-
-      let data = Array.from(solicitudesUnicas.values());
-      
-      // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
-      data.sort((a, b) => {
-        const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
-        const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
-        
-        if (!fechaA && !fechaB) return 0;
-        if (!fechaA) return 1; // Sin fecha al final
-        if (!fechaB) return -1; // Sin fecha al final
-        
-        const dateA = new Date(fechaA);
-        const dateB = new Date(fechaB);
-        
-        // Orden descendente: más recientes primero
-        return dateB.getTime() - dateA.getTime();
-      });
-      
-      console.log('Datos recibidos de la API (todas las áreas):', data);
-
-      setSolicitudes(data);
+        setPermisos([]);
+      }
     } catch (error) {
-      console.error("Error al obtener datos:", error);
-      setSolicitudes([]);
+      console.error("Error al obtener permisos:", error);
+      setPermisos([]);
     } finally {
       setLoadingData(false);
     }
   };
 
-  // Filtrar solicitudes dinámicamente
-  const solicitudesFiltradas = useMemo(() => {
-    let filtered = [...solicitudes];
+  // Filtrar permisos dinámicamente
+  const permisosFiltrados = useMemo(() => {
+    let filtered = [...permisos];
 
-    // Filtrar por área de recepción (solo si hay un valor seleccionado)
-    if (areaRecepcion && areaRecepcion.trim() !== "") {
-      filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
-        return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
-      });
-    }
-
-    // Filtrar por colaborador
-    if (colaborador.trim()) {
-      const term = colaborador.toLowerCase().trim();
-      filtered = filtered.filter(s => {
-        const registradoPor = (s.REGISTRADO_POR || s.registrado_por || "").toLowerCase().trim();
-        return registradoPor.includes(term);
+    // Filtrar por tipo de permiso
+    if (tipoPermiso && tipoPermiso.trim() !== "") {
+      filtered = filtered.filter(p => {
+        const tipo = p.TIPO_PERMISO || p.tipo_permiso || "";
+        return tipo && tipo.trim() !== "" && tipo.toUpperCase() === tipoPermiso.toUpperCase();
       });
     }
 
     // Filtrar por estado
-    if (estado) {
-      filtered = filtered.filter(s => {
-        const estadoSolicitud = s.ESTADO || s.estado || "";
-        return estadoSolicitud === estado;
+    if (estado && estado.trim() !== "") {
+      filtered = filtered.filter(p => {
+        const estadoPermiso = p.ESTADO_SOLICITUD || p.estado_solicitud || "";
+        return estadoPermiso && estadoPermiso.toUpperCase() === estado.toUpperCase();
       });
     }
-
-    // Filtrar incidencias (solo si el checkbox está activo, mostrar solo las que tienen incidencia)
-    // Si el checkbox está desactivado, mostrar TODAS las solicitudes (con y sin incidencias)
-    if (mostrarIncidencias) {
-      // Si mostrarIncidencias está activo, mostrar solo las que tienen incidencia
-      filtered = filtered.filter(s => {
-        const incidencia = s.RES_INCIDENCIA || s.res_incidencia || "";
-        return incidencia && incidencia.trim() !== "" && incidencia !== "-";
-      });
-    }
-    // Si mostrarIncidencias está desactivado, no filtrar (mostrar todas)
-
-    // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
-    filtered.sort((a, b) => {
-      const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
-      const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
-      
-      if (!fechaA && !fechaB) return 0;
-      if (!fechaA) return 1; // Sin fecha al final
-      if (!fechaB) return -1; // Sin fecha al final
-      
-      const dateA = new Date(fechaA);
-      const dateB = new Date(fechaB);
-      
-      // Orden descendente: más recientes primero
-      return dateB.getTime() - dateA.getTime();
-    });
 
     return filtered;
-  }, [solicitudes, areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [permisos, tipoPermiso, estado]);
 
   // Calcular paginación
-  const totalPages = Math.ceil(solicitudesFiltradas.length / itemsPerPage);
+  const totalPages = Math.ceil(permisosFiltrados.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const solicitudesPaginadas = solicitudesFiltradas.slice(startIndex, endIndex);
+  const permisosPaginados = permisosFiltrados.slice(startIndex, endIndex);
 
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [areaRecepcion, colaborador, estado, mostrarIncidencias]);
+  }, [tipoPermiso, estado]);
 
   // Funciones para modales
-  const mostrarTextoEnModal = (texto, titulo) => {
-    setTextoModal(texto || "No especificado.");
-    setTituloModal(titulo);
-    if (titulo === "Requerimientos") {
-      setModalRequerimientosOpen(true);
-    } else if (titulo === "Respuesta") {
-      setModalRespuestasOpen(true);
-    }
+  const verDetallePermiso = (permiso) => {
+    setPermisoSeleccionado(permiso);
+    setModalDetalleOpen(true);
   };
 
   const verReprogramaciones = (solicitud) => {
@@ -324,37 +230,25 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
   // Función para obtener badge de estado
   const getEstadoBadge = (estado) => {
-    if (!estado) return "bg-gray-500 border-gray-600 text-white";
+    if (!estado) return "bg-gradient-to-br from-gray-500 to-gray-600";
     const estadoStr = String(estado).toLowerCase();
     const estados = {
-      "pendiente": "bg-yellow-500 border-yellow-600 text-white",
-      "en revisión": "bg-orange-500 border-orange-600 text-white",
-      "en revision": "bg-orange-500 border-orange-600 text-white",
-      "en proceso": "bg-blue-600 border-blue-700 text-white",
-      "completado": "bg-green-600 border-green-700 text-white",
-      "requiere info": "bg-cyan-500 border-cyan-600 text-white",
-      "rechazada": "bg-red-600 border-red-700 text-white",
+      "pendiente": "bg-gradient-to-br from-yellow-500 to-yellow-600",
+      "aprobado": "bg-gradient-to-br from-green-600 to-green-700",
+      "rechazado": "bg-gradient-to-br from-red-600 to-red-700",
+      "en proceso": "bg-gradient-to-br from-blue-600 to-blue-700",
     };
-    return estados[estadoStr] || "bg-gray-500 border-gray-600 text-white";
+    return estados[estadoStr] || "bg-gradient-to-br from-gray-500 to-gray-600";
   };
 
-  // Función para descargar PDF
-  const descargarPDF = (url, nombreArchivo) => {
-    if (!url) {
-      alert("No hay archivo disponible para descargar.");
-      return;
-    }
+  // Función para parsear archivos JSON
+  const parseArchivos = (archivosStr) => {
+    if (!archivosStr) return [];
     try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = nombreArchivo || 'archivo.pdf';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Error al descargar PDF:", error);
-      alert("Error al descargar el archivo.");
+      const parsed = JSON.parse(archivosStr);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
     }
   };
 
@@ -368,34 +262,32 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
       // Título
       doc.setFontSize(14);
-      doc.text("Reporte de Solicitudes e Incidencias - GERENCIA - Zeus Safety", 14, 15);
+      doc.text("Reporte de Permisos Laborales - Zeus Safety", 14, 15);
 
       // Preparar datos para exportar
-      const dataExport = solicitudesFiltradas.map(solicitud => [
-        formatFecha(solicitud.FECHA_CONSULTA) || "-",
-        solicitud.NUMERO_SOLICITUD || "-",
-        solicitud.REGISTRADO_POR || "-",
-        solicitud.AREA || "-",
-        solicitud.RES_INCIDENCIA || "-",
-        solicitud.AREA_RECEPCION || "-",
-        formatFecha(solicitud.FECHA_RESPUESTA) || "-",
-        solicitud.RESPONDIDO_POR || "-",
-        solicitud.ESTADO || "-",
-        solicitud.REPROGRAMACIONES && Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0 ? "SI" : "NO"
+      const dataExport = permisosFiltrados.map(permiso => [
+        formatFecha(permiso.FECHA_REGISTRO) || "-",
+        permiso.NOMBRE || "-",
+        formatFecha(permiso.FECHA_INICIO) || "-",
+        formatFecha(permiso.FECHA_FIN) || "-",
+        permiso.TIPO_PERMISO || "-",
+        permiso.ESTADO_SOLICITUD || "PENDIENTE",
+        permiso.HORAS_SOLICITADAS || "-",
+        permiso.HORAS_CUMPLIDAS || "-",
+        permiso.HORAS_FALTANTESS || "-"
       ]);
 
       // Columnas
       const headers = [
-        "Fecha Consulta",
-        "N° Solicitud",
-        "Registrado Por",
-        "Área de Envio",
-        "Con Incidencia",
-        "Área de Recepción",
-        "Fecha Respuesta",
-        "Respondido Por",
+        "Fecha Registro",
+        "Nombre",
+        "Fecha Inicio",
+        "Fecha Fin",
+        "Tipo Permiso",
         "Estado",
-        "Reprogramación"
+        "Horas Solicitadas",
+        "Horas Cumplidas",
+        "Horas Faltantes"
       ];
 
       // Insertar tabla
@@ -409,7 +301,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       });
 
       // Guardar PDF
-      doc.save("Reporte_Mis_Solicitudes.pdf");
+      doc.save("Reporte_Mis_Permisos.pdf");
     } catch (error) {
       console.error("Error al exportar PDF:", error);
       alert("Error al exportar PDF. Asegúrate de tener conexión a internet.");
@@ -432,101 +324,122 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className={`flex-1 flex flex-col overflow-hidden transition-all`}>
         <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
-          <div className="max-w-[100%] mx-auto px-4 py-4">
-            {/* Header con botones */}
-            <div className="mb-3 flex justify-end items-center gap-1 flex-wrap">
-              <button
-                onClick={() => setModalProcedimientosOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Procedimientos
-              </button>
-
-              <button
-                onClick={handleExportarPDF}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                </svg>
-                Exportar a PDF
-              </button>
-            </div>
-
-            {/* Filtros */}
+          <div className="max-w-[95%] mx-auto px-4 py-4">
+            {/* Contenedor principal con fondo blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Área de Recepción
-                  </label>
-                  <select
-                    value={areaRecepcion}
-                    onChange={(e) => setAreaRecepcion(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
-                  >
-                    <option value="">Todas las áreas</option>
-                    <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="MARKETING">MARKETING</option>
-                    <option value="VENTAS">VENTAS</option>
-                    <option value="FACTURACION">FACTURACIÓN</option>
-                    <option value="IMPORTACION">IMPORTACIÓN</option>
-                    <option value="ADMINISTRACION">ADMINISTRACION</option>
-                    <option value="SISTEMAS">SISTEMAS</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
-                    <option value="GERENCIA">GERENCIA</option>
-                  </select>
+              {/* Título con icono y API Conectada */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Mis Permisos Laborales</h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Consulta y gestión de tus permisos laborales
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Estado
-                  </label>
-                  <select
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Proceso">En Proceso</option>
-                    <option value="En Revisión">En Revisión</option>
-                    <option value="Requiere Info">Requiere Info</option>
-                    <option value="Rechazada">Rechazada</option>
-                    <option value="Completado">Completado</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center mt-6">
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={mostrarIncidencias}
-                      onChange={(e) => setMostrarIncidencias(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-semibold text-gray-700">Mostrar Incidencias</span>
-                  </label>
+                <div className="flex items-center space-x-1.5 rounded-lg px-2.5 py-1 bg-green-50 border border-green-200">
+                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                 </div>
               </div>
-            </div>
 
-            {/* Tabla */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mb-6">
+              {/* Botones de acción */}
+              <div className="mb-6 flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => setModalProcedimientosOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Procedimientos
+                </button>
+
+                <button
+                  onClick={handleExportarPDF}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs ml-auto"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                  </svg>
+                  Exportar a PDF
+                </button>
+              </div>
+
+              {/* Filtros */}
+              <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Tipo de Permiso
+                    </label>
+                    <select
+                      value={tipoPermiso}
+                      onChange={(e) => setTipoPermiso(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <option value="">Todos los tipos</option>
+                      <option value="Asuntos Personales">Asuntos Personales</option>
+                      <option value="Estudio ó Capacitación">Estudio ó Capacitación</option>
+                      <option value="Salud">Salud</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Estado
+                    </label>
+                    <select
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <option value="">Todos los estados</option>
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="APROBADO">Aprobado</option>
+                      <option value="RECHAZADO">Rechazado</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mt-6">
               {loadingData ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-                  <span className="ml-3 text-gray-600">Cargando datos...</span>
+                  <span className="ml-3 text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando permisos...</span>
                 </div>
-              ) : solicitudesFiltradas.length === 0 ? (
+              ) : permisosFiltrados.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 mb-2">No hay solicitudes disponibles.</p>
-                  <p className="text-xs text-gray-400">Verifica los filtros o contacta al administrador.</p>
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 mb-2 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisos.length === 0 
+                      ? "No hay permisos registrados para tu usuario." 
+                      : "No hay permisos que coincidan con los filtros aplicados."}
+                  </p>
+                  <p className="text-xs text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    {permisos.length === 0 
+                      ? "Si crees que esto es un error, contacta al administrador." 
+                      : "Intenta ajustar los filtros para ver más resultados."}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -550,113 +463,20 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {solicitudesPaginadas.map((solicitud, index) => {
-                          const tieneReprogramaciones = solicitud.REPROGRAMACIONES &&
-                            (Array.isArray(solicitud.REPROGRAMACIONES) ? solicitud.REPROGRAMACIONES.length > 0 :
-                              (typeof solicitud.REPROGRAMACIONES === 'string' ? JSON.parse(solicitud.REPROGRAMACIONES || '[]').length > 0 : false));
-
-                          const tieneReqExtra = solicitud.REQUERIMIENTO_2 || solicitud.REQUERIMIENTO_3 || solicitud.INFORME_2 || solicitud.INFORME_3;
-
+                        {permisosPaginados.map((permiso, index) => {
+                          const archivos = parseArchivos(permiso.ARCHIVOS);
+                          const tieneReprogramaciones = !!(permiso.REPROGRAMACIONES || permiso.FECHA_REPROGRAMACION);
+                          
                           return (
-                            <tr key={solicitud.ID_SOLICITUD || solicitud.id || index} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_CONSULTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{solicitud.NUMERO_SOLICITUD || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.REGISTRADO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RES_INCIDENCIA || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => mostrarTextoEnModal(solicitud.REQUERIMIENTOS || 'No especificado.', 'Requerimientos')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    title="Ver Requerimientos"
-                                  >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                  {solicitud.INFORME_SOLICITUD ? (
-                                    <a
-                                      href={solicitud.INFORME_SOLICITUD}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Ver archivo
-                                    </a>
-                                  ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Sin archivo
-                                    </button>
-                                  )}
-                                  {tieneReqExtra && (
-                                    <button
-                                      onClick={() => verHistorialReqExtra(solicitud)}
-                                      className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                      title="Ver respuestas adicionales"
-                                    >
-                                      <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.AREA_RECEPCION || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatFecha(solicitud.FECHA_RESPUESTA)}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{solicitud.RESPONDIDO_POR || '-'}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => mostrarTextoEnModal(solicitud.RESPUESTA_R || solicitud.RESPUESTA || 'No especificado.', 'Respuesta')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    title="Ver Respuesta"
-                                  >
-                                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                  {solicitud.INFORME_RESPUESTA ? (
-                                    <a
-                                      href={solicitud.INFORME_RESPUESTA}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-semibold transition-colors"
-                                    >
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Ver archivo
-                                    </a>
-                                  ) : (
-                                    <button className="px-2 py-1 bg-gray-400 text-white rounded text-[10px] font-semibold cursor-not-allowed">
-                                      <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      Sin archivo
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${getEstadoBadge(solicitud.ESTADO)}`}>
-                                  {solicitud.ESTADO || 'Pendiente'}
+                            <tr key={permiso.ID || index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_REGISTRO)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.NOMBRE || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_INICIO)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_FIN)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.TIPO_PERMISO || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {permiso.ESTADO_SOLICITUD || 'PENDIENTE'}
                                 </span>
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
@@ -666,7 +486,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                                       SI
                                     </span>
                                     <button
-                                      onClick={() => verReprogramaciones(solicitud)}
+                                      onClick={() => verReprogramaciones(permiso)}
                                       className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-[10px] font-semibold transition-colors"
                                       title="Ver reprogramaciones"
                                     >
@@ -683,7 +503,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap justify-center text-center">
                                 <button
-                                  onClick={() => abrirModalGestionRequerimientos(solicitud)}
+                                  onClick={() => abrirModalGestionRequerimientos(permiso)}
                                   className="space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                                 >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -699,52 +519,57 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   </div>
 
                   {/* Paginación */}
-                  <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1 || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &lt;
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
                     </span>
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       &gt;
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     >
                       »
                     </button>
                   </div>
                 </>
               )}
+              </div>
             </div>
           </div>
         </main>
       </div>
 
-      {/* Modal para ver Requerimientos/Respuestas */}
+      {/* Modal para ver Detalle del Permiso */}
       <Modal
-        isOpen={modalRequerimientosOpen || modalRespuestasOpen}
+        isOpen={modalDetalleOpen}
         onClose={() => {
-          setModalRequerimientosOpen(false);
-          setModalRespuestasOpen(false);
+          setModalDetalleOpen(false);
+          setPermisoSeleccionado(null);
         }}
         title={tituloModal}
         size="md"
@@ -830,7 +655,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                 </div>
               </div>
             ));
-          })()}
+          })}
         </div>
       </Modal>
 
@@ -1317,27 +1142,67 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         )}
       </Modal>
 
-      {/* Modal de Procedimientos */}
+      {/* Modal para Agregar Respuesta */}
       <Modal
-        isOpen={modalProcedimientosOpen}
-        onClose={() => setModalProcedimientosOpen(false)}
-        title="Procedimientos"
-        size="lg"
+        isOpen={modalRespuestaOpen}
+        onClose={() => {
+          setModalRespuestaOpen(false);
+          setEditandoPermiso(null);
+          setFormRespuesta({ respuesta: '' });
+        }}
+        title="Agregar Respuesta al Permiso"
+        size="md"
       >
-        <div className="p-4">
-          <div className="space-y-4">
-            <p className="text-gray-700 text-sm leading-relaxed">
-              Aquí se mostrarán los procedimientos para el manejo de solicitudes e incidencias.
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h4 className="font-semibold text-gray-900 mb-2">Información</h4>
-              <p className="text-sm text-gray-600">
-                Los procedimientos detallados estarán disponibles próximamente.
-              </p>
-            </div>
-          </div>
+        <div className="p-6 space-y-4">
+          {editandoPermiso && (
+            <>
+              <div>
+                <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Permiso: <span className="font-semibold">{editandoPermiso.TIPO_PERMISO || 'N/A'}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Respuesta <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={formRespuesta.respuesta}
+                  onChange={(e) => setFormRespuesta(prev => ({ ...prev, respuesta: e.target.value }))}
+                  rows={5}
+                  required
+                  placeholder="Escribe tu respuesta aquí..."
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 resize-none"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setModalRespuestaOpen(false);
+                    setEditandoPermiso(null);
+                    setFormRespuesta({ respuesta: '' });
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAgregarRespuesta}
+                  disabled={loadingRespuesta || !formRespuesta.respuesta.trim()}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg hover:shadow-md transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  {loadingRespuesta ? 'Agregando...' : 'Agregar Respuesta'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
+
     </div>
   );
 }

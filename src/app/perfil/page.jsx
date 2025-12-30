@@ -113,7 +113,7 @@ export default function PerfilPage() {
     {
       id: "permisos",
       iconName: "permisos",
-      title: "Permisos asignados",
+      title: "Permisos y Solicitudes",
       route: "/permisos",
     },
   ];

@@ -7,6 +7,8 @@ import { Sidebar } from "../../components/layout/Sidebar";
 import { useAuth } from "../../components/context/AuthContext";
 import FormularioRegistroSolicitudes from "../../components/permisos/FormularioRegistroSolicitudes";
 import MisSolicitudes from "../../components/permisos/MisSolicitudes";
+import FormularioRegistroPermisos from "../../components/permisos/FormularioRegistroPermisos";
+import MisPermisos from "../../components/permisos/MisPermisos";
 
 function PermisosContent() {
   const router = useRouter();
@@ -24,10 +26,22 @@ function PermisosContent() {
   // Detectar si se debe mostrar el formulario desde la URL o sidebar
   useEffect(() => {
     const section = searchParams?.get('section');
+    console.log("🔍 Sección detectada en URL:", section);
     if (section === 'registro-solicitudes-incidencias') {
+      console.log("✅ Mostrando formulario de registro");
       setActiveTab("registro");
     } else if (section === 'mis-solicitudes-incidencias') {
+      console.log("✅ Mostrando listado de permisos");
       setActiveTab("listado");
+    } else if (section === 'registro-permisos') {
+      console.log("✅ Mostrando formulario de registro de permisos");
+      setActiveTab("permisos");
+    } else if (section === 'mis-permisos') {
+      console.log("✅ Mostrando listado de mis permisos");
+      setActiveTab("listado-permisos");
+    } else {
+      console.log("ℹ️ Mostrando menú principal (sin sección en URL)");
+      setActiveTab("menu");
     }
   }, [searchParams]);
 
@@ -58,6 +72,14 @@ function PermisosContent() {
     return null;
   }
 
+  // Función para actualizar la URL y el estado
+  const navigateToSection = (section, tab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('section', section);
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
+
   const options = [
     {
       id: "registro-solicitudes-incidencias",
@@ -67,7 +89,7 @@ function PermisosContent() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       ),
-      onClick: () => setActiveTab("registro"),
+      onClick: () => navigateToSection("registro-solicitudes-incidencias", "registro"),
     },
     {
       id: "mis-solicitudes-incidencias",
@@ -77,8 +99,28 @@ function PermisosContent() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
-      onClick: () => setActiveTab("listado"),
+      onClick: () => navigateToSection("mis-solicitudes-incidencias", "listado"),
     },
+    {
+      id: "registro-permisos",
+      title: "Registro de Permisos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      ),
+      onClick: () => navigateToSection("registro-permisos", "permisos"),
+    },
+    {
+      id: "mis-permisos",
+      title: "Mis Permisos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+      onClick: () => navigateToSection("mis-permisos", "listado-permisos"),
+    }
   ];
 
   return (
@@ -97,6 +139,9 @@ function PermisosContent() {
             <button
               onClick={() => {
                 if (activeTab !== "menu") {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('section');
+                  router.replace(url.pathname, { scroll: false });
                   setActiveTab("menu");
                 } else {
                   router.push("/menu");
@@ -111,11 +156,39 @@ function PermisosContent() {
             </button>
 
             {activeTab === "registro" && (
-              <FormularioRegistroSolicitudes onBack={() => setActiveTab("menu")} />
+              <FormularioRegistroSolicitudes onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
             )}
 
             {activeTab === "listado" && (
-              <MisSolicitudes onBack={() => setActiveTab("menu")} />
+              <MisSolicitudes onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
+            )}
+
+            {activeTab === "permisos" && (
+              <FormularioRegistroPermisos onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
+            )}
+
+            {activeTab === "listado-permisos" && (
+              <MisPermisos onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('section');
+                router.replace(url.pathname, { scroll: false });
+                setActiveTab("menu");
+              }} />
             )}
 
             {activeTab === "menu" && (
@@ -135,8 +208,30 @@ function PermisosContent() {
                   </div>
                 </div>
 
-                {/* Formulario de Registro de Solicitudes */}
-                <FormularioRegistroSolicitudes onBack={() => router.push("/perfil")} />
+                {/* Cards de la Sección */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  {options.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={option.onClick}
+                      className="group text-left p-5 bg-white rounded-xl border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                      style={{ 
+                        boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-start space-x-3 mb-2">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110 flex-shrink-0">
+                            {option.icon}
+                          </div>
+                          <h3 className="text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors duration-200">{option.title}</h3>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

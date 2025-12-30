@@ -371,7 +371,7 @@ export default function FacturacionPage() {
                   {/* Cards de la Sección */}
                   {expandedSections[section.id] && (
                     <div className={section.id === "solicitudes-incidencias" ? "p-3 bg-gradient-to-br from-slate-50 to-slate-100" : "p-3 bg-white"}>
-                      <div className={`grid ${section.id === "solicitudes-incidencias" ? "gap-2.5 grid-cols-1" : `gap-2.5 ${section.cards.length === 1 ? "grid-cols-1 max-w-md mx-auto" : "grid-cols-1 md:grid-cols-2"}`}`}>
+                      <div className={`grid ${section.id === "solicitudes-incidencias" ? "gap-2.5 grid-cols-1" : `gap-2.5 ${section.cards.length === 1 ? "grid-cols-1 max-w-6xl mx-auto" : "grid-cols-1 md:grid-cols-2"}`}`}>
                         {section.cards.map((card) => {
                           return (
                             <div

@@ -37,11 +37,19 @@ export function Sidebar({ isOpen, onClose }) {
   // Si no es admin pero tiene módulos, filtrar
   // Si no es admin y no tiene módulos, no mostrar ninguno (array vacío)
   // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
-  const modules = (isAdmin 
+  let modules = (isAdmin 
     ? allModules 
     : userModules.length > 0
     ? allModules.filter((module) => userModules.includes(module.id))
     : []).filter((module) => module.id !== "seguimiento-monitoreo");
+  
+  // Asegurar que "boletin-informativo" siempre esté disponible para todos los usuarios
+  if (!modules.some(m => m.id === "boletin-informativo")) {
+    const boletinModule = allModules.find(m => m.id === "boletin-informativo");
+    if (boletinModule) {
+      modules = [...modules, boletinModule];
+    }
+  }
   
   // Mapeo COMPLETO de nombres de sub_vistas (de la API) a IDs de items del sidebar
   // Este mapeo conecta los nombres que vienen de la API con los IDs usados en el sidebar
@@ -98,6 +106,11 @@ export function Sidebar({ isOpen, onClose }) {
     // Si es admin, permitir todo
     if (isAdmin) return true;
     
+    // Items del boletín informativo siempre están permitidos para todos
+    if (itemId === "dashboard-boletin" || itemId === "calendario-cumpleanos") {
+      return true;
+    }
+    
     // Si no hay sub_vistas asignadas, no permitir nada (array vacío = sin acceso)
     if (userSubVistas.length === 0) return false;
     
@@ -131,9 +144,37 @@ export function Sidebar({ isOpen, onClose }) {
       return hasAccess;
     }
     
-    // Para items que NO están en el mapeo (como dashboards), permitir solo si el usuario tiene acceso al módulo
-    // Los dashboards se permiten si el usuario tiene el módulo, independientemente de sub_vistas
-    return true; // Dashboards y items generales se permiten si el módulo está disponible
+    // Para dashboards, verificar si el usuario tiene acceso al módulo correspondiente
+    const dashboardModuleMap = {
+      "dashboard": "gerencia",
+      "dashboard-admin": "administracion",
+      "dashboard-import": "importacion",
+      "dashboard-importacion": "importacion",
+      "dashboard-log": "logistica",
+      "dashboard-logistica": "logistica",
+      "dashboard-ventas": "ventas",
+      "dashboard-marketing": "marketing",
+      "dashboard-sistemas": "sistemas",
+      "dashboard-rh": "recursos-humanos",
+      "dashboard-recursos-humanos": "recursos-humanos",
+      "dashboard-facturacion": "facturacion",
+      "dashboard-permisos": "permisos",
+    };
+    
+    if (dashboardModuleMap[itemId]) {
+      // Si es un dashboard, permitir solo si el usuario tiene acceso al módulo
+      return userModules.includes(dashboardModuleMap[itemId]);
+    }
+    
+    // Para otros items que NO están en el mapeo, NO permitir por defecto
+    // Solo se permiten si están explícitamente mapeados o son dashboards
+    return false;
+  };
+
+  // Función helper para verificar si un item con submenú tiene al menos un subItem permitido
+  const hasAllowedSubItems = (item) => {
+    if (!item.hasSubmenu || !item.subItems) return false;
+    return item.subItems.some(subItem => isItemAllowed(subItem.id));
   };
 
   // Submenús de Gerencia
@@ -266,6 +307,7 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "proformas", name: "Proformas", icon: "document" },
+
       ],
     },
     {
@@ -434,15 +476,13 @@ export function Sidebar({ isOpen, onClose }) {
       id: "gestion-colaboradores",
       name: "Gestión de Colaboradores",
       icon: "users",
-      hasSubmenu: true,
-      subItems: [
-        { id: "control-asistencia", name: "Control de Asistencia", icon: "clock" },
-        { id: "gestion-permisos", name: "Gestión de Permisos", icon: "check" },
-        { id: "gestion-vacaciones", name: "Gestión de Vacaciones", icon: "calendar" },
-        { id: "control-documentos", name: "Control de Documentos Laborales", icon: "document" },
-        { id: "gestion-remuneraciones", name: "Gestión de Remuneraciones", icon: "money" },
-        { id: "auto-servicio", name: "Auto-Servicio del Colaborador (ESS)", icon: "user" },
-      ],
+      hasSubmenu: false,
+    },
+    {
+      id: "solicitudes-incidencias",
+      name: "Solicitudes/Incidencias",
+      icon: "check",
+      hasSubmenu: false,
     },
   ];
 
@@ -535,6 +575,12 @@ export function Sidebar({ isOpen, onClose }) {
       id: "registro-permisos",
       name: "Registro de Permisos",
       icon: "home",
+      hasSubmenu: false,
+    },
+    { 
+      id: "mis-permisos",
+      name: "Mis Permisos",
+      icon: "list",
       hasSubmenu: false,
     },
     {
@@ -820,18 +866,14 @@ export function Sidebar({ isOpen, onClose }) {
     }
     
     // Navegación para secciones de Recursos Humanos
-    const recursosHumanosSections = [
-      "gestion-colaboradores",
-      "control-asistencia",
-      "gestion-permisos",
-      "gestion-vacaciones",
-      "control-documentos",
-      "gestion-remuneraciones",
-      "auto-servicio",
-    ];
+    if (itemId === "gestion-colaboradores") {
+      router.push("/recursos-humanos/gestion-colaboradores");
+      setSelectedItem(itemId);
+      return;
+    }
     
-    if (recursosHumanosSections.includes(itemId)) {
-      router.push(`/recursos-humanos?section=${itemId}`);
+    if (itemId === "solicitudes-incidencias") {
+      router.push("/recursos-humanos/solicitudes-incidencias");
       setSelectedItem(itemId);
       return;
     }
@@ -864,7 +906,7 @@ export function Sidebar({ isOpen, onClose }) {
     }
 
     if (itemId === "proformas") {
-      router.push("/logistica/proformas");
+      router.push("/logistica/incidencias");
       setSelectedItem(itemId);
       return;
     }
@@ -1047,7 +1089,7 @@ export function Sidebar({ isOpen, onClose }) {
       setSelectedItem(itemId);
       return;
     }
-    
+     
     // Navegación para Permisos/Solicitudes e Incidencias
     if (itemId === "registro-solicitudes-incidencias") {
       router.push("/permisos?section=registro-solicitudes-incidencias");
@@ -1055,12 +1097,23 @@ export function Sidebar({ isOpen, onClose }) {
       return;
     }
     
-    if (itemId === "registro-permisos" || itemId === "mis-solicitudes-incidencias") {
-      router.push("/permisos");
+    if (itemId === "mis-solicitudes-incidencias") {
+      router.push("/permisos?section=mis-solicitudes-incidencias  ");
       setSelectedItem(itemId);
       return;
     }
 
+    if (itemId === "registro-permisos") {
+      router.push("/permisos?section=registro-permisos");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "mis-permisos") {
+      router.push("/permisos?section=mis-permisos");
+      setSelectedItem(itemId);
+      return;
+    }
     
     // Aquí iría la navegación real para otros items
     setSelectedItem(itemId);
@@ -1181,18 +1234,21 @@ export function Sidebar({ isOpen, onClose }) {
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     {/* Items del submenú */}
                     <div className="space-y-0.5">
-                      {gerenciaSubmenu.map((item) => (
+                      {gerenciaSubmenu.filter(item => {
+                        // Si no tiene submenú, verificar directamente
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        // Si tiene submenú, verificar si tiene al menos un subItem permitido
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1251,18 +1307,21 @@ export function Sidebar({ isOpen, onClose }) {
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     {/* Items del submenú */}
                     <div className="space-y-0.5">
-                      {administracionSubmenu.map((item) => (
+                      {administracionSubmenu.filter(item => {
+                        // Si no tiene submenú, verificar directamente
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        // Si tiene submenú, verificar si tiene al menos un subItem permitido
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1320,18 +1379,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "importacion" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {importacionSubmenu.map((item) => (
+                      {importacionSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1389,18 +1449,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "logistica" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {logisticaSubmenu.map((item) => (
+                      {logisticaSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1458,18 +1519,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "ventas" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {ventasSubmenu.map((item) => (
+                      {ventasSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1527,18 +1589,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "marketing" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {marketingSubmenu.map((item) => (
+                      {marketingSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1596,18 +1659,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "sistemas" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {sistemasSubmenu.map((item) => (
+                      {sistemasSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1665,18 +1729,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "recursos-humanos" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {recursosHumanosSubmenu.map((item) => (
+                      {recursosHumanosSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
@@ -1735,12 +1800,8 @@ export function Sidebar({ isOpen, onClose }) {
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
                       {facturacionSubmenu.filter(item => {
-                        // Para items con submenú, verificar si tiene al menos un subItem permitido
-                        if (item.hasSubmenu && item.subItems) {
-                          return item.subItems.some(subItem => isItemAllowed(subItem.id));
-                        }
-                        // Para items sin submenú, verificar directamente
-                        return isItemAllowed(item.id);
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
                       }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
@@ -1877,18 +1938,19 @@ export function Sidebar({ isOpen, onClose }) {
                 {module.id === "permisos" && expandedModules[module.id] && (
                   <div className="mt-1 ml-2 space-y-0.5 bg-gray-100 rounded-lg py-1.5 border border-gray-100">
                     <div className="space-y-0.5">
-                      {permisosSubmenu.map((item) => (
+                      {permisosSubmenu.filter(item => {
+                        if (!item.hasSubmenu) return isItemAllowed(item.id);
+                        return hasAllowedSubItems(item);
+                      }).map((item) => (
                         <div key={item.id}>
                           {!item.hasSubmenu ? (
-                            isItemAllowed(item.id) && (
-                              <button
-                                onClick={() => handleSubmenuClick(item.id, module.id)}
-                                className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
-                              >
-                                <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
-                                <span className="text-left">{item.name}</span>
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleSubmenuClick(item.id, module.id)}
+                              className="w-full flex items-center space-x-2 pl-2 pr-3 py-2 rounded-md text-gray-700 hover:bg-[#E8EFFF] hover:text-[#0B327B] transition-all duration-200 text-xs font-medium border-l-4 border-transparent hover:border-[#1E63F7]"
+                            >
+                              <span className="text-gray-500 group-hover:text-white flex-shrink-0">{getIcon(item.icon)}</span>
+                              <span className="text-left">{item.name}</span>
+                            </button>
                           ) : (
                             <>
                               <button
