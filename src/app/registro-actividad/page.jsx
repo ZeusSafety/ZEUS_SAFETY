@@ -60,15 +60,23 @@ export default function RegistroActividadPage() {
       setLoadingData(true);
       setErrorAPI(null);
       
-      // Obtener el id_colaborador del usuario (puede ser user.usuario, user.name, etc.)
-      let idColaborador = user?.usuario || user?.name || user?.email || "hervinzeus";
+      // Obtener el id_colaborador del usuario
+      // Usar el email o name del usuario (que es lo que se usa para identificar al colaborador)
+      // El error "Data too long for column 'P_ID_GENERAL'" probablemente viene del backend,
+      // no del parámetro id_colaborador que enviamos. La API route.js ya trunca a 50 caracteres.
+      let idColaborador = user?.email || user?.name || user?.id || "hervinzeus";
       
-      // Validar y truncar id_colaborador si es demasiado largo (máximo 50 caracteres)
-      // Esto previene el error "Data too long for column 'P_ID_GENERAL'"
-      if (idColaborador && idColaborador.length > 50) {
-        console.warn(`id_colaborador truncado de ${idColaborador.length} a 50 caracteres:`, idColaborador);
-        idColaborador = idColaborador.substring(0, 50);
+      // Convertir a string y asegurar que no esté vacío
+      idColaborador = String(idColaborador).trim();
+      
+      if (!idColaborador || idColaborador === "") {
+        console.error("No se pudo obtener id_colaborador del usuario");
+        setErrorAPI("Error: No se pudo identificar al usuario");
+        setLoadingData(false);
+        return;
       }
+      
+      console.log("Buscando logs para id_colaborador:", idColaborador);
       
       // Obtener el token de autenticación
       const token = localStorage.getItem("token");
@@ -89,8 +97,20 @@ export default function RegistroActividadPage() {
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || `Error HTTP: ${response.status}`;
+        let errorMessage = `Error HTTP: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // Si no se puede parsear el JSON, usar el texto de la respuesta
+          try {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          } catch (textError) {
+            // Si tampoco se puede leer el texto, usar el mensaje por defecto
+            console.error("Error al leer respuesta:", textError);
+          }
+        }
         throw new Error(errorMessage);
       }
 
