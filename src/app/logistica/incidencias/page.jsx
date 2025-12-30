@@ -57,12 +57,13 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between transition-all ${isOpen
+              className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between transition-all ${isOpen
           ? 'border-blue-500 shadow-md'
-          : 'border-gray-300 hover:border-blue-300'
+          : 'border-gray-200 hover:border-blue-300'
           } ${disabled ? 'border-gray-200' : ''}`}
+          style={{ fontFamily: 'var(--font-poppins)' }}
       >
-        <span className={`${selectedOption ? "text-gray-900 font-medium" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis uppercase`}>
+        <span className={`${selectedOption ? "text-gray-900 font-medium" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis uppercase`} style={{ fontFamily: 'var(--font-poppins)' }}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
@@ -90,6 +91,7 @@ const CompactSelect = ({ value, onChange, options, placeholder, disabled = false
                 ? 'bg-blue-600 text-white font-semibold'
                 : 'text-gray-900 hover:bg-blue-50'
                 } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <span className={value === option.value ? 'uppercase' : ''}>
                 {option.label}
@@ -763,15 +765,15 @@ export default function IncidenciasPage() {
   const getEstadoColor = (estado) => {
     switch (estado) {
       case "COMPLETADO":
-        return "bg-green-200 text-green-800";
+        return "bg-gradient-to-br from-green-600 to-green-700";
       case "NOTIFICADO":
-        return "bg-blue-200 text-blue-800";
+        return "bg-gradient-to-br from-blue-600 to-blue-700";
       case "MODIFICADO":
-        return "bg-gray-600 text-white";
+        return "bg-gradient-to-br from-gray-600 to-gray-700";
       case "PENDIENTE":
-        return "bg-yellow-200 text-yellow-800";
+        return "bg-gradient-to-br from-yellow-500 to-yellow-600";
       default:
-        return "bg-gray-200 text-gray-800";
+        return "bg-gradient-to-br from-gray-500 to-gray-600";
     }
   };
 
@@ -803,27 +805,38 @@ export default function IncidenciasPage() {
             <div className="mb-4 flex items-start justify-start max-w-[96rem] mx-auto">
               <button
                 onClick={() => router.push("/logistica")}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+                style={{ fontFamily: 'var(--font-poppins)' }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
-                <span>Volver</span>
+                <span>Volver a Logística</span>
               </button>
             </div>
 
             {/* Contenedor General */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-2 lg:p-2.5 max-w-[96rem] mx-auto">
-              {/* Título */}
-              <div className="mb-4 pb-4 border-b border-gray-300 mt-4">
-                <h1 className="text-xl font-bold text-gray-900">Registrar una nueva incidencia</h1>
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 max-w-[96rem] mx-auto">
+              {/* Título con icono y subtítulo */}
+              <div className="mb-6 flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Registrar una nueva incidencia</h1>
+                  <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    Gestionar y registrar nuevas incidencias de logística
+                  </p>
+                </div>
               </div>
 
               {/* Formulario */}
               <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Encargado Comprobante</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Encargado Comprobante</label>
                     <CompactSelect
                       value={encargadoComprobante}
                       onChange={(e) => setEncargadoComprobante(e.target.value)}
@@ -843,17 +856,18 @@ export default function IncidenciasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Fecha de Emisión</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha de Emisión</label>
                     <input
                       type="date"
                       value={fechaEmision}
                       onChange={(e) => setFechaEmision(e.target.value)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Responsable Incidencia</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Responsable Incidencia</label>
                     <CompactSelect
                       value={responsableIncidencia}
                       onChange={(e) => setResponsableIncidencia(e.target.value)}
@@ -879,13 +893,14 @@ export default function IncidenciasPage() {
                         value={responsableIncidenciaOtros}
                         onChange={(e) => setResponsableIncidenciaOtros(e.target.value)}
                         placeholder="Ingrese nombre del responsable"
-                        className="w-full mt-2 px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full mt-2 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Área</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Área</label>
                     <CompactSelect
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
@@ -900,57 +915,62 @@ export default function IncidenciasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">N° de Proforma o acta</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>N° de Proforma o acta</label>
                     <input
                       type="text"
                       value={numeroProforma}
                       onChange={(e) => setNumeroProforma(e.target.value)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
                       placeholder="Ingrese número de proforma o acta"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">N° de comprobante</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>N° de comprobante</label>
                     <input
                       type="text"
                       value={numeroComprobante}
                       onChange={(e) => setNumeroComprobante(e.target.value)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
                       placeholder="Ingrese número de comprobante"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                     />
                   </div>
                 </div>
 
                 {/* Items de Error */}
                 <div className="border-t border-gray-300 pt-4">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3">Item de error (Detalle / debe ser)</h3>
+                  <h3 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-poppins)' }}>Item de error (Detalle / debe ser)</h3>
                   {itemsError.map((item, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Detalle</label>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Detalle</label>
                         <input
                           type="text"
                           value={item.detalle}
                           onChange={(e) => handleUpdateItem(index, "detalle", e.target.value)}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
                           placeholder="Detalle del error"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Debe Ser</label>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Debe Ser</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={item.debeSer}
                             onChange={(e) => handleUpdateItem(index, "debeSer", e.target.value)}
-                            className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                            className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
                             placeholder="Cómo debería ser"
+                            style={{ fontFamily: 'var(--font-poppins)' }}
                           />
                           {itemsError.length > 1 && (
                             <button
                               onClick={() => handleEliminarItem(index)}
                               className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                              style={{ fontFamily: 'var(--font-poppins)' }}
                             >
                               Eliminar
                             </button>
@@ -961,18 +981,19 @@ export default function IncidenciasPage() {
                   ))}
                   <button
                     onClick={handleAgregarItem}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-xs"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    Agregar Item
+                    + Agregar Item
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Tipo incidencia</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo incidencia</label>
                     <CompactSelect
                       value={tipoIncidencia}
                       onChange={(e) => setTipoIncidencia(e.target.value)}
@@ -990,20 +1011,21 @@ export default function IncidenciasPage() {
                     />
                     {tipoIncidencia === "OTROS" && (
                       <div className="mt-2">
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Observación detallada</label>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Observación detallada</label>
                         <textarea
                           value={observacionDetallada}
                           onChange={(e) => setObservacionDetallada(e.target.value)}
                           rows={3}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
                           placeholder="Ingrese observación detallada"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         />
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Registrado Por</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</label>
                     <CompactSelect
                       value={registradoPor}
                       onChange={(e) => setRegistradoPor(e.target.value)}
@@ -1021,7 +1043,8 @@ export default function IncidenciasPage() {
                         value={registradoPorOtros}
                         onChange={(e) => setRegistradoPorOtros(e.target.value)}
                         placeholder="Ingrese nombre"
-                        className="w-full mt-2 px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full mt-2 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-300 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     )}
                   </div>
@@ -1031,8 +1054,12 @@ export default function IncidenciasPage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleGuardarIncidencia}
-                    className="px-6 py-2 bg-green-500 hover:bg-green-300 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
->
+                    className="px-6 py-2.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     Guardar Incidencia
                   </button>
                 </div>
@@ -1043,13 +1070,13 @@ export default function IncidenciasPage() {
 
               {/* Listado de Incidencias */}
               <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Listado de Incidencias</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Incidencias</h2>
 
                 {/* Filtros */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Filtro por verificación</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Filtro por verificación</label>
                       <CompactSelect
                         value={filtroVerificacion}
                         onChange={(e) => setFiltroVerificacion(e.target.value)}
@@ -1064,21 +1091,23 @@ export default function IncidenciasPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Fecha desde</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha desde</label>
                       <input
                         type="date"
                         value={filtroFechaDesde}
                         onChange={(e) => setFiltroFechaDesde(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Fecha hasta</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha hasta</label>
                       <input
                         type="date"
                         value={filtroFechaHasta}
                         onChange={(e) => setFiltroFechaHasta(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 hover:border-blue-300 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     </div>
                     <div className="flex items-end gap-2">
@@ -1088,71 +1117,75 @@ export default function IncidenciasPage() {
                 </div>
 
                 {/* Botones de exportación */}
-                <div className="flex gap-2 mb-4">
-
+                <div className="flex gap-3 mb-6 flex-wrap">
                   <button
                     onClick={handleAplicarFiltros}
-                    className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                    className="px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     Aplicar filtros
                   </button>
                   <button
                     onClick={handleLimpiarFiltros}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+                    className="px-3 py-2 bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     Limpiar
                   </button>
-
                   <button
                     onClick={handleExportarCSV}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center gap-2"
+                    className="px-3 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs flex items-center gap-2"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Exportar CSV
                   </button>
                   <button
                     onClick={handleGenerarReporte}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center gap-2"
+                    className="px-3 py-2 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs flex items-center gap-2"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                     </svg>
                     Generar reporte
                   </button>
                 </div>
 
                 {/* Tabla */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  <div className="overflow-x-auto">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mt-6">
+                  <div className="overflow-x-auto justify-center text-center">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Registro</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Registrado Por</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Mes</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Encargado Comprobante</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Emisión</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Proforma/Acta</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° Comprobante</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Item de error</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Responsable</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Área</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Tipo Incidencia</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Notificación</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Solución</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Obs. adicionales</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Revisado Por</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Estado Verificación</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Envio Archivo</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Archivo Solución</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Culminado</th>
-                          <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha Concluyente</th>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ID</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Registro</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Mes</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Encargado Comprobante</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Emisión</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Proforma/Acta</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Comprobante</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Item de error</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Responsable</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo Incidencia</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Notificación</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Solución</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Obs. adicionales</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Revisado Por</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado Verificación</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Envio Archivo</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Archivo Solución</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Culminado</th>
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Concluyente</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-gray-100 text-center justify-center">
                         {incidenciasPaginadas.length === 0 ? (
                           <tr>
                             <td colSpan={19} className="px-3 py-4 text-center text-sm text-gray-500">
@@ -1161,95 +1194,105 @@ export default function IncidenciasPage() {
                           </tr>
                         ) : (
                           incidenciasPaginadas.map((incidencia) => (
-                            <tr key={incidencia.id} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] font-medium text-gray-900">{incidencia.id}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_registro)}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.registrado_por}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.mes}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.encargado_comprobante}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_emision)}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.numero_proforma}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.numero_comprobante}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">
+                            <tr key={incidencia.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.id}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(incidencia.fecha_registro)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.registrado_por}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.mes}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.encargado_comprobante}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(incidencia.fecha_emision)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.numero_proforma}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.numero_comprobante}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleVerItemsError(incidencia.id_original || incidencia.id)}
-                                    className="p-1 text-blue-600 hover:text-blue-800"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver items de error"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                   </button>
                                   <button
                                     onClick={() => handleGenerarPDFItems(incidencia.id_original || incidencia.id)}
-                                    className="p-1 text-red-600 hover:text-red-800"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Generar PDF"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                     </svg>
                                   </button>
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.responsable}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.area}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.tipo_incidencia}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_notificacion)}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.solucion || "-"}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.responsable}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.area}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.tipo_incidencia}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(incidencia.fecha_notificacion)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.solucion || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 {incidencia.obs_adicionales ? (
                                   <button
                                     onClick={() => handleVerObsAdicionales(incidencia.obs_adicionales)}
-                                    className="p-1 text-blue-600 hover:text-blue-800"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Ver observaciones adicionales"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                   </button>
                                 ) : (
-                                  "-"
+                                  <span style={{ fontFamily: 'var(--font-poppins)' }}>-</span>
                                 )}
                               </td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.revisado_por || "-"}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">
-                                <span className={`px-2 py-1 rounded text-[10px] font-semibold ${getEstadoColor(incidencia.estado_verificacion)}`}>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.revisado_por || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoColor(incidencia.estado_verificacion)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
                                   {incidencia.estado_verificacion || "-"}
                                 </span>
                               </td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_envio_archivo)}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(incidencia.fecha_envio_archivo)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleEditarArchivoSolucion(incidencia)}
-                                    className="p-1 text-blue-600 hover:text-blue-800"
+                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                     title="Editar archivo solución"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                   </button>
                                   {incidencia.archivo_solucion && (
                                     <>
                                       <button
                                         onClick={() => handleAbrirArchivo(incidencia)}
-                                        className="p-1 text-red-600 hover:text-red-800"
+                                        className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                         title="Abrir archivo PDF"
+                                        style={{ fontFamily: 'var(--font-poppins)' }}
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{pointerEvents: 'none'}}>
+                                          <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                          <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                                          <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
                                         </svg>
                                       </button>
                                       {incidencia.comentario_solucion && (
                                         <button
                                           onClick={() => handleVerComentarioSolucion(incidencia.comentario_solucion)}
-                                          className="p-1 text-green-600 hover:text-green-800"
+                                          className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                           title="Ver comentario"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
                                         >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{pointerEvents: 'none'}}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                           </svg>
@@ -1259,8 +1302,8 @@ export default function IncidenciasPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{incidencia.culminado}</td>
-                              <td className="px-3 py-2.5 whitespace-nowrap text-[11px] text-gray-700">{formatFecha(incidencia.fecha_concluyente)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{incidencia.culminado}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(incidencia.fecha_concluyente)}</td>
                             </tr>
                           ))
                         )}
