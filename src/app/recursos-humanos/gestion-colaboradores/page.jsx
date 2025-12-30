@@ -28,16 +28,27 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
     if (type === "date") {
       if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
       if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-        const [año, mes, dia] = val.split("-");
-        return `${dia}/${mes}/${año}`;
+        // Parsear manualmente para evitar problemas de timezone
+        const [año, mes, dia] = val.split("-").map(Number);
+        return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
       }
       try {
+        // Si viene en formato YYYY-MM-DD, parsear manualmente
+        if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+          const match = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            const [, año, mes, dia] = match.map(Number);
+            return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
+          }
+        }
+        // Para otros formatos, intentar parsear pero extraer componentes manualmente
         const date = new Date(val);
         if (!isNaN(date.getTime())) {
+          // Extraer componentes directamente para evitar timezone issues
           const año = date.getFullYear();
-          const mes = String(date.getMonth() + 1).padStart(2, "0");
-          const dia = String(date.getDate()).padStart(2, "0");
-          return `${dia}/${mes}/${año}`;
+          const mes = date.getMonth() + 1;
+          const dia = date.getDate();
+          return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
         }
       } catch (e) {}
     }
@@ -77,20 +88,32 @@ const EditableField = memo(({ label, initialValue, fieldKey, sectionKey, isEditi
     
     // Intentar parsear como fecha si tiene formato reconocible
     try {
+      // Si es YYYY-MM-DD, parsear manualmente
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+          const [, año, mes, dia] = match.map(Number);
+          return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
+        }
+      }
+      // Para otros formatos con separadores
       if (trimmed.includes("/") || trimmed.includes("-") || trimmed.includes(".")) {
-        // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
-        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-          const [año, mes, dia] = trimmed.split("-");
-          return `${dia}/${mes}/${año}`;
-        } else {
-          // Para otros formatos, usar Date
-          const date = new Date(trimmed);
-          if (!isNaN(date.getTime())) {
-            const año = date.getFullYear();
-            const mes = String(date.getMonth() + 1).padStart(2, "0");
-            const dia = String(date.getDate()).padStart(2, "0");
-            return `${dia}/${mes}/${año}`;
+        // Si es YYYY-MM-DD, parsear manualmente para evitar timezone issues
+        if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+          const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            const [, año, mes, dia] = match.map(Number);
+            return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
           }
+        }
+        // Para otros formatos, usar Date pero extraer componentes directamente
+        const date = new Date(trimmed);
+        if (!isNaN(date.getTime())) {
+          // Extraer componentes directamente para evitar timezone issues
+          const año = date.getFullYear();
+          const mes = date.getMonth() + 1;
+          const dia = date.getDate();
+          return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
         }
       }
     } catch (e) {}
@@ -1103,21 +1126,27 @@ function GestionColaboradoresContent() {
         let fechaFormateada = "";
         if (fechaNac) {
           try {
-            // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
-            if (/^\d{4}-\d{2}-\d{2}$/.test(fechaNac)) {
-              const [año, mes, dia] = fechaNac.split("-");
-              fechaFormateada = `${dia}/${mes}/${año}`;
+            // Si es YYYY-MM-DD, parsear manualmente para evitar timezone issues
+            if (/^\d{4}-\d{2}-\d{2}/.test(fechaNac)) {
+              const match = String(fechaNac).match(/^(\d{4})-(\d{2})-(\d{2})/);
+              if (match) {
+                const [, año, mes, dia] = match.map(Number);
+                fechaFormateada = `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
+              } else {
+                fechaFormateada = fechaNac;
+              }
             } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaNac)) {
               // Ya está en formato DD/MM/YYYY
               fechaFormateada = fechaNac;
             } else {
-              // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+              // Intentar parsear con Date para otros formatos
               const fecha = new Date(fechaNac);
               if (!isNaN(fecha.getTime())) {
-                const dia = String(fecha.getDate()).padStart(2, "0");
-                const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+                // Extraer componentes directamente para evitar timezone issues
                 const año = fecha.getFullYear();
-                fechaFormateada = `${dia}/${mes}/${año}`;
+                const mes = fecha.getMonth() + 1;
+                const dia = fecha.getDate();
+                fechaFormateada = `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
               } else {
                 fechaFormateada = fechaNac;
               }
@@ -2162,21 +2191,25 @@ function GestionColaboradoresContent() {
               const formatDate = (dateValue) => {
                 if (!dateValue) return "No disponible";
                 try {
-                  // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-                    const [año, mes, dia] = dateValue.split("-");
-                    return `${dia}/${mes}/${año}`;
+                  // Si es YYYY-MM-DD, parsear manualmente para evitar timezone issues
+                  if (/^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+                    const match = String(dateValue).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                      const [, año, mes, dia] = match.map(Number);
+                      return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
+                    }
                   } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
                     // Ya está en formato DD/MM/YYYY
                     return dateValue;
                   } else {
-                    // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+                    // Intentar parsear con Date para otros formatos
                     const date = new Date(dateValue);
                     if (!isNaN(date.getTime())) {
-                      const dia = String(date.getDate()).padStart(2, "0");
-                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      // Extraer componentes directamente para evitar timezone issues
                       const año = date.getFullYear();
-                      return `${dia}/${mes}/${año}`;
+                      const mes = date.getMonth() + 1;
+                      const dia = date.getDate();
+                      return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
                     }
                   }
                   return dateValue;
@@ -2202,18 +2235,22 @@ function GestionColaboradoresContent() {
                 }
                 // Intentar parsear como fecha
                 try {
-                  // Si viene en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-                    const [año, mes, dia] = value.split("-");
-                    return `${dia}/${mes}/${año}`;
+                  // Si es YYYY-MM-DD, parsear manualmente para evitar timezone issues
+                  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+                    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                      const [, año, mes, dia] = match.map(Number);
+                      return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
+                    }
                   } else {
-                    // Intentar parsear con Date solo si no es formato YYYY-MM-DD
+                    // Intentar parsear con Date para otros formatos
                     const date = new Date(value);
                     if (!isNaN(date.getTime())) {
-                      const dia = String(date.getDate()).padStart(2, "0");
-                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      // Extraer componentes directamente para evitar timezone issues
                       const año = date.getFullYear();
-                      return `${dia}/${mes}/${año}`;
+                      const mes = date.getMonth() + 1;
+                      const dia = date.getDate();
+                      return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${año}`;
                     }
                   }
                 } catch (e) {

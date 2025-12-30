@@ -128,19 +128,28 @@ export default function CalendarioCumpleanosPage() {
         // Extraer fecha de cumpleaños - puede venir en diferentes formatos
         const fechaRaw = getValue(item, "FECHA_NACIMIENTO", "fecha_nacimiento", "FECHA_NAC", "fechaNacimiento", "fecha", "FECHA_NACIMIENTO");
         
-        // Parsear la fecha
+        // Parsear la fecha manualmente para evitar problemas de timezone
         let fechaNacimiento = null;
         if (fechaRaw) {
           // Intentar diferentes formatos
           if (fechaRaw.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            // YYYY-MM-DD
-            fechaNacimiento = new Date(fechaRaw);
+            // YYYY-MM-DD - parsear manualmente para evitar timezone issues
+            const [year, month, day] = fechaRaw.split('-').map(Number);
+            fechaNacimiento = new Date(year, month - 1, day); // month - 1 porque Date usa 0-11 para meses
           } else if (fechaRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-            // DD/MM/YYYY
-            const [day, month, year] = fechaRaw.split('/');
-            fechaNacimiento = new Date(`${year}-${month}-${day}`);
+            // DD/MM/YYYY - parsear manualmente
+            const [day, month, year] = fechaRaw.split('/').map(Number);
+            fechaNacimiento = new Date(year, month - 1, day);
           } else {
-            fechaNacimiento = new Date(fechaRaw);
+            // Intentar parsear como fecha ISO o cualquier otro formato
+            const parsed = new Date(fechaRaw);
+            if (!isNaN(parsed.getTime())) {
+              // Si es válida, extraer componentes para evitar timezone issues
+              const year = parsed.getFullYear();
+              const month = parsed.getMonth();
+              const day = parsed.getDate();
+              fechaNacimiento = new Date(year, month, day);
+            }
           }
         }
         
