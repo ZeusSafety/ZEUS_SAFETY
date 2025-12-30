@@ -19,8 +19,8 @@ export default function SolicitudesIncidenciasPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
 
-  // Filtros - Iniciar con SISTEMAS seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("SISTEMAS");
+  // Filtros - Iniciar con MARKETING seleccionado por defecto
+  const [areaRecepcion, setAreaRecepcion] = useState("MARKETING");
 
   // Filtros adicionales
   const [colaborador, setColaborador] = useState("");
@@ -101,7 +101,7 @@ export default function SolicitudesIncidenciasPage() {
 
       // Usar el proxy de Next.js que maneja CORS y autenticación
       // El parámetro listado se pasa como query param
-      const response = await fetch(`${API_URL}?listado=sistemas`, {
+      const response = await fetch(`${API_URL}?listado=marketing`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -763,7 +763,7 @@ export default function SolicitudesIncidenciasPage() {
 
       // Título
       doc.setFontSize(14);
-      doc.text("Reporte de Solicitudes e Incidencias - SISTEMAS - Zeus Safety", 14, 15);
+      doc.text("Reporte de Solicitudes e Incidencias - MARKETING - Zeus Safety", 14, 15);
 
       // Preparar datos para exportar
       const dataExport = solicitudesFiltradas.map(solicitud => [
@@ -804,7 +804,7 @@ export default function SolicitudesIncidenciasPage() {
       });
 
       // Guardar PDF
-      doc.save("Reporte_Solicitudes_SISTEMAS.pdf");
+      doc.save("Reporte_Solicitudes_MARKETING.pdf");
     } catch (error) {
       console.error("Error al exportar PDF:", error);
       alert("Error al exportar PDF. Asegúrate de tener conexión a internet.");
@@ -847,14 +847,14 @@ export default function SolicitudesIncidenciasPage() {
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
-              onClick={() => router.push("/sistemas")}
+              onClick={() => router.push("/marketing")}
               className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Volver a Sistemas</span>
+              <span>Volver a Marketing</span>
             </button>
 
             {/* Contenedor principal con fondo blanco */}
