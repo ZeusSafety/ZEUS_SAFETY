@@ -24,10 +24,16 @@ function PermisosContent() {
   // Detectar si se debe mostrar el formulario desde la URL o sidebar
   useEffect(() => {
     const section = searchParams?.get('section');
+    console.log("🔍 Sección detectada en URL:", section);
     if (section === 'registro-solicitudes-incidencias') {
+      console.log("✅ Mostrando formulario de registro");
       setActiveTab("registro");
     } else if (section === 'mis-solicitudes-incidencias') {
+      console.log("✅ Mostrando listado de permisos");
       setActiveTab("listado");
+    } else {
+      console.log("ℹ️ Mostrando menú principal (sin sección en URL)");
+      setActiveTab("menu");
     }
   }, [searchParams]);
 
