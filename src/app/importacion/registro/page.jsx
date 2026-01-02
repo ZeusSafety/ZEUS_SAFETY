@@ -198,7 +198,8 @@ export default function RegistroImportacionesPage() {
 
     setBuscandoProductos(true);
     try {
-      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      // Usar el proxy de Next.js para evitar problemas de CORS
+      const url = `/api/productos?method=BUSQUEDA_PRODUCTO`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -208,7 +209,8 @@ export default function RegistroImportacionesPage() {
       });
 
       if (!response.ok) {
-        console.error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Error ${response.status}: ${response.statusText}`, errorText);
         setBuscandoProductos(false);
         return;
       }
@@ -866,6 +868,11 @@ export default function RegistroImportacionesPage() {
         // 3. Petición a la API
         const apiUrl = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
         
+        console.log("Enviando datos a la API:", {
+          url: apiUrl,
+          payload: payload
+        });
+        
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -875,18 +882,55 @@ export default function RegistroImportacionesPage() {
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        console.log("Respuesta de la API:", {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
 
-        if (response.ok && result.status === "success") {
-          alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.");
+        let result;
+        try {
+          const responseText = await response.text();
+          console.log("Texto de respuesta:", responseText);
+          
+          if (responseText) {
+            result = JSON.parse(responseText);
+          } else {
+            result = {};
+          }
+        } catch (parseError) {
+          console.error("Error al parsear respuesta:", parseError);
+          throw new Error(`Error al procesar respuesta del servidor: ${response.status} ${response.statusText}`);
+        }
+
+        console.log("Resultado parseado:", result);
+
+        // Verificar si la respuesta es exitosa
+        // El servidor puede retornar éxito de diferentes formas:
+        // - result.status === "success"
+        // - result.message/msg contiene "exitoso" o "success"
+        // - response.ok es true y no hay error
+        const isSuccess = response.ok && (
+          result.status === "success" ||
+          (result.message && (result.message.toLowerCase().includes("exitoso") || result.message.toLowerCase().includes("success"))) ||
+          (result.msg && (result.msg.toLowerCase().includes("exitoso") || result.msg.toLowerCase().includes("success"))) ||
+          (!result.error && !result.status)
+        );
+
+        if (isSuccess) {
+          const successMessage = result.message || result.msg || "Registro exitoso: Ficha e Importación guardadas correctamente.";
+          alert(`✅ ${successMessage}`);
           setMostrarModalPreview(false);
           router.push("/importacion");
         } else {
-          throw new Error(result.error || "Error desconocido en el servidor");
+          const errorMessage = result.error || result.message || result.msg || `Error ${response.status}: ${response.statusText}`;
+          console.error("Error del servidor:", errorMessage, result);
+          throw new Error(errorMessage);
         }
       } catch (error) {
         console.error("Error al registrar:", error);
-        alert("❌ Error al registrar importación: " + error.message);
+        const errorMessage = error.message || "Error desconocido en el servidor";
+        alert("❌ Error al registrar importación: " + errorMessage);
       } finally {
         setGenerandoPDF(false);
       }
