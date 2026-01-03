@@ -198,7 +198,8 @@ export default function RegistroImportacionesPage() {
 
     setBuscandoProductos(true);
     try {
-      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      // Usar el proxy de Next.js para evitar problemas de CORS
+      const url = `/api/productos?method=BUSQUEDA_PRODUCTO`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -208,7 +209,8 @@ export default function RegistroImportacionesPage() {
       });
 
       if (!response.ok) {
-        console.error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Error ${response.status}: ${response.statusText}`, errorText);
         setBuscandoProductos(false);
         return;
       }
@@ -903,6 +905,11 @@ export default function RegistroImportacionesPage() {
         // 3. Petición a la API con FormData
         const apiUrl = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
         
+        console.log("Enviando datos a la API:", {
+          url: apiUrl,
+          payload: payload
+        });
+        
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -928,7 +935,8 @@ export default function RegistroImportacionesPage() {
         }
       } catch (error) {
         console.error("Error al registrar:", error);
-        alert("❌ Error al registrar importación: " + error.message);
+        const errorMessage = error.message || "Error desconocido en el servidor";
+        alert("❌ Error al registrar importación: " + errorMessage);
       } finally {
         setGenerandoPDF(false);
       }

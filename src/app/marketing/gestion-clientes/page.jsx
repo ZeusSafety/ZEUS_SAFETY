@@ -25,6 +25,7 @@ export default function GestionClientesMarketingPage() {
     tipo: "",
     origen: "",
   });
+  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   // Datos ficticios de clientes
   const [clientes] = useState([
@@ -138,6 +139,16 @@ export default function GestionClientesMarketingPage() {
     setIsHistorialModalOpen(true);
   };
 
+  // Función para obtener el color del badge según el origen
+  const getOrigenBadge = (origen) => {
+    if (!origen) return "bg-gray-100 text-gray-700";
+    const origenes = {
+      "WHATSAPP": "bg-green-100 text-green-800 border border-green-300",
+      "META ADS": "bg-blue-100 text-blue-800 border border-blue-300",
+    };
+    return origenes[origen.toUpperCase()] || "bg-gray-100 text-gray-700 border border-gray-300";
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -176,145 +187,327 @@ export default function GestionClientesMarketingPage() {
             </button>
 
             {/* Dashboard Container */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               {/* Header de la página */}
-              <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Listado de Clientes por Asesor
                     </h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Consulta y gestión de todos los clientes registrados por asesor
+                    </p>
                   </div>
-                  
-                  {apiConnected && (
-                    <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-50 border border-green-300 rounded-lg">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-xs sm:text-sm font-semibold text-green-700">API Conectada</span>
-                    </div>
-                  )}
                 </div>
+                
+                {apiConnected && (
+                  <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                  </div>
+                )}
               </div>
               {/* Dashboard - Ventas por Mes */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Ventas por Mes</h2>
+                    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Ventas por Mes</h2>
                   </div>
-                  <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-50 border border-green-300 rounded-lg">
+                  <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-xs sm:text-sm font-semibold text-green-700">Cargado</span>
+                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargado</span>
                   </div>
                 </div>
                 
-                {/* Gráfico de líneas */}
-                <div className="relative h-64 sm:h-80">
-                  <svg className="w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
-                    {/* Grid lines */}
-                    <defs>
-                      <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
-                      </linearGradient>
-                    </defs>
-                    
-                    {/* Grid horizontal lines */}
-                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                {/* Gráfico de líneas mejorado */}
+                <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 sm:p-6 border border-gray-200">
+                  <div className="relative h-72 sm:h-96">
+                    <svg className="w-full h-full" viewBox="0 0 800 350" preserveAspectRatio="xMidYMid meet">
+                      <defs>
+                        {/* Gradiente mejorado para el área */}
+                        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#1E63F7" stopOpacity="0.25" />
+                          <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.05" />
+                        </linearGradient>
+                        
+                        {/* Gradiente para la línea */}
+                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#1E63F6" />
+                          <stop offset="50%" stopColor="#3B82F6" />
+                          <stop offset="100%" stopColor="#60A5FA" />
+                        </linearGradient>
+                        
+                        {/* Sombra para la línea */}
+                        <filter id="lineShadow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                          <feOffset dx="0" dy="2" result="offsetblur"/>
+                          <feComponentTransfer>
+                            <feFuncA type="linear" slope="0.3"/>
+                          </feComponentTransfer>
+                          <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
+                        
+                        {/* Sombra para los puntos */}
+                        <filter id="pointShadow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                          <feOffset dx="0" dy="2" result="offsetblur"/>
+                          <feComponentTransfer>
+                            <feFuncA type="linear" slope="0.4"/>
+                          </feComponentTransfer>
+                          <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
+                      </defs>
+                      
+                      {/* Grid horizontal lines mejoradas */}
+                      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                        <g key={`grid-h-${i}`}>
+                          <line
+                            x1="70"
+                            y1={60 + i * 45}
+                            x2="750"
+                            y2={60 + i * 45}
+                            stroke={i === 0 ? "#D1D5DB" : "#E5E7EB"}
+                            strokeWidth={i === 0 ? "1.5" : "1"}
+                            strokeDasharray={i === 0 ? "0" : "4,4"}
+                          />
+                        </g>
+                      ))}
+                      
+                      {/* Línea vertical del eje Y */}
                       <line
-                        key={`grid-h-${i}`}
-                        x1="60"
-                        y1={50 + i * 40}
-                        x2="740"
-                        y2={50 + i * 40}
-                        stroke="#E5E7EB"
-                        strokeWidth="1"
-                      />
-                    ))}
-                    
-                    {/* Y-axis labels */}
-                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                      <text
-                        key={`y-label-${i}`}
-                        x="50"
-                        y={55 + i * 40}
-                        textAnchor="end"
-                        className="text-xs fill-gray-600"
-                        fontSize="12"
-                      >
-                        S/ {30000 - i * 5000}
-                      </text>
-                    ))}
-                    
-                    {/* X-axis labels */}
-                    {["Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"].map((month, i) => (
-                      <text
-                        key={`x-label-${i}`}
-                        x={80 + i * 70}
-                        y="280"
-                        textAnchor="middle"
-                        className="text-xs fill-gray-600"
-                        fontSize="11"
-                      >
-                        {month.substring(0, 3)}
-                      </text>
-                    ))}
-                    
-                    {/* Data points and line */}
-                    <path
-                      d="M 80,250 L 150,220 L 220,240 L 290,230 L 360,200 L 430,60 L 500,200 L 570,200 L 640,180 L 710,200"
-                      fill="none"
-                      stroke="#3B82F6"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    
-                    {/* Area fill */}
-                    <path
-                      d="M 80,250 L 150,220 L 220,240 L 290,230 L 360,200 L 430,60 L 500,200 L 570,200 L 640,180 L 710,200 L 710,250 L 80,250 Z"
-                      fill="url(#areaGradient)"
-                    />
-                    
-                    {/* Data points */}
-                    {[
-                      { x: 80, y: 250 },
-                      { x: 150, y: 220 },
-                      { x: 220, y: 240 },
-                      { x: 290, y: 230 },
-                      { x: 360, y: 200 },
-                      { x: 430, y: 60 },
-                      { x: 500, y: 200 },
-                      { x: 570, y: 200 },
-                      { x: 640, y: 180 },
-                      { x: 710, y: 200 },
-                    ].map((point, i) => (
-                      <circle
-                        key={`point-${i}`}
-                        cx={point.x}
-                        cy={point.y}
-                        r="5"
-                        fill="#3B82F6"
-                        stroke="white"
+                        x1="70"
+                        y1="60"
+                        x2="70"
+                        y2="330"
+                        stroke="#D1D5DB"
                         strokeWidth="2"
                       />
-                    ))}
-                  </svg>
+                      
+                      {/* Línea horizontal del eje X */}
+                      <line
+                        x1="70"
+                        y1="330"
+                        x2="750"
+                        y2="330"
+                        stroke="#D1D5DB"
+                        strokeWidth="2"
+                      />
+                      
+                      {/* Y-axis labels mejorados */}
+                      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                        <g key={`y-label-${i}`}>
+                          <text
+                            x="65"
+                            y={65 + i * 45}
+                            textAnchor="end"
+                            className="fill-gray-700 font-semibold"
+                            fontSize="11"
+                            fontFamily="system-ui, -apple-system, sans-serif"
+                          >
+                            S/ {(30000 - i * 5000).toLocaleString('es-PE')}
+                          </text>
+                        </g>
+                      ))}
+                      
+                      {/* X-axis labels mejorados */}
+                      {["Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"].map((month, i) => (
+                        <g key={`x-label-${i}`}>
+                          <text
+                            x={90 + i * 68}
+                            y="345"
+                            textAnchor="middle"
+                            className="fill-gray-700 font-medium"
+                            fontSize="11"
+                            fontFamily="system-ui, -apple-system, sans-serif"
+                          >
+                            {month.substring(0, 3)}
+                          </text>
+                        </g>
+                      ))}
+                      
+                      {/* Área bajo la curva con animación */}
+                      <path
+                        d="M 90,270 L 158,240 L 226,255 L 294,245 L 362,215 L 430,75 L 498,215 L 566,215 L 634,195 L 702,215 L 702,330 L 90,330 Z"
+                        fill="url(#areaGradient)"
+                        className="transition-opacity duration-500"
+                      />
+                      
+                      {/* Línea principal con gradiente y sombra */}
+                      <path
+                        d="M 90,270 L 158,240 L 226,255 L 294,245 L 362,215 L 430,75 L 498,215 L 566,215 L 634,195 L 702,215"
+                        fill="none"
+                        stroke="url(#lineGradient)"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        filter="url(#lineShadow)"
+                        className="transition-all duration-500"
+                      />
+                      
+                      {/* Puntos de datos mejorados con hover */}
+                      {[
+                        { x: 90, y: 270, value: 5000, month: "Febrero" },
+                        { x: 158, y: 240, value: 10000, month: "Marzo" },
+                        { x: 226, y: 255, value: 6000, month: "Abril" },
+                        { x: 294, y: 245, value: 8000, month: "Mayo" },
+                        { x: 362, y: 215, value: 12000, month: "Junio" },
+                        { x: 430, y: 75, value: 28000, month: "Julio" },
+                        { x: 498, y: 215, value: 11000, month: "Agosto" },
+                        { x: 566, y: 215, value: 11000, month: "Septiembre" },
+                        { x: 634, y: 195, value: 14000, month: "Octubre" },
+                        { x: 702, y: 215, value: 11000, month: "Noviembre" },
+                      ].map((point, i) => (
+                        <g 
+                          key={`point-${i}`} 
+                          className="group cursor-pointer"
+                          onMouseEnter={() => setHoveredPoint(i)}
+                          onMouseLeave={() => setHoveredPoint(null)}
+                        >
+                          {/* Área de interacción más grande */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r="15"
+                            fill="transparent"
+                            className="cursor-pointer"
+                          />
+                          {/* Círculo exterior animado */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={hoveredPoint === i ? "12" : "8"}
+                            fill="#1E63F7"
+                            fillOpacity={hoveredPoint === i ? "0.3" : "0.2"}
+                            className="transition-all duration-300"
+                          />
+                          {/* Punto principal */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={hoveredPoint === i ? "8" : "6"}
+                            fill="white"
+                            stroke="#1E63F7"
+                            strokeWidth={hoveredPoint === i ? "4" : "3"}
+                            filter="url(#pointShadow)"
+                            className="transition-all duration-300"
+                          />
+                          {/* Punto interior */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={hoveredPoint === i ? "4" : "3"}
+                            fill="#1E63F7"
+                            className="transition-all duration-300"
+                          />
+                          
+                          {/* Tooltip */}
+                          {hoveredPoint === i && (
+                            <g>
+                              {/* Fondo del tooltip */}
+                              <rect
+                                x={point.x - 55}
+                                y={point.y - 50}
+                                width="110"
+                                height="40"
+                                rx="8"
+                                fill="rgba(30, 41, 59, 0.95)"
+                                className="backdrop-blur-sm"
+                              />
+                              {/* Borde del tooltip */}
+                              <rect
+                                x={point.x - 55}
+                                y={point.y - 50}
+                                width="110"
+                                height="40"
+                                rx="8"
+                                fill="none"
+                                stroke="#1E63F7"
+                                strokeWidth="1.5"
+                              />
+                              {/* Texto del mes */}
+                              <text
+                                x={point.x}
+                                y={point.y - 32}
+                                textAnchor="middle"
+                                className="fill-white font-semibold"
+                                fontSize="11"
+                                fontFamily="system-ui, -apple-system, sans-serif"
+                              >
+                                {point.month}
+                              </text>
+                              {/* Texto del valor */}
+                              <text
+                                x={point.x}
+                                y={point.y - 15}
+                                textAnchor="middle"
+                                className="fill-blue-300 font-bold"
+                                fontSize="12"
+                                fontFamily="system-ui, -apple-system, sans-serif"
+                              >
+                                S/ {point.value.toLocaleString('es-PE')}
+                              </text>
+                              {/* Flecha del tooltip */}
+                              <polygon
+                                points={`${point.x - 8},${point.y - 10} ${point.x + 8},${point.y - 10} ${point.x},${point.y}`}
+                                fill="rgba(30, 41, 59, 0.95)"
+                              />
+                            </g>
+                          )}
+                        </g>
+                      ))}
+                    </svg>
+                    
+                    {/* Leyenda mejorada */}
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-1 bg-gradient-to-r from-[#1E63F7] to-[#60A5FA] rounded-full"></div>
+                        <span className="text-xs text-gray-700 font-semibold">Ventas (S/)</span>
+                      </div>
+                    </div>
+                  </div>
                   
-                  {/* Legend */}
-                  <div className="absolute top-2 right-4 flex items-center space-x-2">
-                    <div className="w-4 h-0.5 bg-blue-600"></div>
-                    <span className="text-xs text-gray-600 font-medium">Ventas (S/)</span>
+                  {/* Información adicional debajo del gráfico */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-3 h-3 rounded-full bg-[#1E63F7] shadow-sm"></div>
+                        <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Promedio mensual: <strong className="text-gray-900 font-bold">S/ 11,000</strong>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                        <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Mejor mes: <strong className="text-gray-900 font-bold">Julio (S/ 28,000)</strong>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-3 h-3 rounded-full bg-orange-500 shadow-sm"></div>
+                        <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Tendencia: <strong className="text-gray-900 font-bold">Estable</strong>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -326,41 +519,53 @@ export default function GestionClientesMarketingPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">Métricas y Comisiones</h2>
+                  <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Métricas y Comisiones</h2>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Card: Ventas Totales */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md border border-gray-200 p-3 sm:p-4 relative">
+                  <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-200 p-3 relative">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500 mb-1.5">Ventas Totales</p>
-                        <p className="text-xl sm:text-2xl font-bold text-blue-900 mb-1">S/ 100,986.90</p>
-                        <p className="text-[10px] sm:text-xs text-gray-500">Año actual</p>
+                        <p className="text-xs text-gray-500 mb-1 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Ventas Totales
+                        </p>
+                        <p className="text-xl font-bold text-[#1E63F7] mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          S/ 100,986.90
+                        </p>
+                        <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Año actual
+                        </p>
                       </div>
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                        <span className="text-xl sm:text-2xl font-bold">$</span>
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                        <span className="text-lg font-bold">$</span>
                       </div>
                     </div>
                   </div>
                   
                   {/* Card: Meta Mensual */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md border border-gray-200 p-3 sm:p-4 relative">
+                  <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-200 p-3 relative">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500 mb-1.5">Meta Mensual</p>
-                        <p className="text-xl sm:text-2xl font-bold text-blue-900 mb-1">S/ 10,000</p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 mb-1.5">Progreso: 83.3%</p>
+                        <p className="text-xs text-gray-500 mb-1 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Meta Mensual
+                        </p>
+                        <p className="text-xl font-bold text-[#1E63F7] mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          S/ 10,000
+                        </p>
+                        <p className="text-xs text-gray-500 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Progreso: 83.3%
+                        </p>
                         {/* Progress bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
                           <div 
-                            className="bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-green-500 h-2 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-green-500 h-1.5 rounded-full transition-all duration-300"
                             style={{ width: '83.3%' }}
                           ></div>
                         </div>
                       </div>
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                        <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
@@ -371,9 +576,9 @@ export default function GestionClientesMarketingPage() {
             </div>
 
             {/* Contenedor de Tabla de Clientes */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Barra de búsqueda */}
-              <div className="mb-4 sm:mb-6">
+              <div className="mb-4">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -388,7 +593,8 @@ export default function GestionClientesMarketingPage() {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400 text-gray-900"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
                   />
                 </div>
               </div>
@@ -399,19 +605,19 @@ export default function GestionClientesMarketingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-blue-700 border-b-2 border-blue-800">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                           ID CLIENTE
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                           CLIENTE
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                           TIPO CLIENTE
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                           ORIGEN
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                           ACCIONES
                         </th>
                       </tr>
@@ -420,56 +626,60 @@ export default function GestionClientesMarketingPage() {
                       {currentClientes.length > 0 ? (
                         currentClientes.map((cliente, index) => (
                           <tr key={cliente.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                               {cliente.id}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                               {cliente.nombre}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {cliente.tipo}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              {cliente.origen}
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-100 text-blue-800" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                {cliente.tipo}
+                              </span>
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap">
-                              <div className="flex items-center space-x-1 flex-wrap gap-1">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold ${getOrigenBadge(cliente.origen)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                {cliente.origen}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <div className="flex items-center space-x-1">
                                 <button
                                   onClick={() => handleVer(cliente.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  title="Ver cliente"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
-                                  <span>Ver</span>
                                 </button>
                                 <button
                                   onClick={() => handleEditar(cliente.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  title="Editar cliente"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
-                                  <span>Editar</span>
                                 </button>
                                 <button
                                   onClick={() => handleEliminar(cliente.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  title="Eliminar cliente"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
-                                  <span>Eliminar</span>
                                 </button>
                                 <button
                                   onClick={() => handleHistorial(cliente.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-purple-600 border-2 border-purple-700 hover:bg-purple-700 hover:border-purple-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  title="Historial del cliente"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  <span>Historial</span>
                                 </button>
                               </div>
                             </td>
@@ -477,7 +687,7 @@ export default function GestionClientesMarketingPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="5" className="px-3 py-8 text-center text-[10px] text-gray-500">
+                          <td colSpan="5" className="px-3 py-8 text-center text-[10px] text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
                             No se encontraron clientes
                           </td>
                         </tr>
@@ -493,6 +703,7 @@ export default function GestionClientesMarketingPage() {
                       onClick={handleFirstPage}
                       disabled={currentPage === 1}
                       className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       aria-label="Primera página"
                     >
                       «
@@ -502,12 +713,13 @@ export default function GestionClientesMarketingPage() {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                       className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       aria-label="Página anterior"
                     >
                       &lt;
                     </button>
                     
-                    <span className="text-[10px] text-gray-700 font-medium">
+                    <span className="text-[10px] text-gray-700 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Página {currentPage} de {totalPages}
                     </span>
                     
@@ -515,6 +727,7 @@ export default function GestionClientesMarketingPage() {
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                       className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       aria-label="Página siguiente"
                     >
                       &gt;
@@ -524,6 +737,7 @@ export default function GestionClientesMarketingPage() {
                       onClick={handleLastPage}
                       disabled={currentPage === totalPages}
                       className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
                       aria-label="Última página"
                     >
                       »

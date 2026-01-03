@@ -13,6 +13,7 @@ export default function LogisticaPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     "ver-listados": false,
+    "descuento-cajas-malvinas": false,
     "solicitudes-incidencias": false,
   });
 
@@ -128,6 +129,51 @@ export default function LogisticaPage() {
           title: "Listado de Importaciones",
           description: "Ver las importaciones",
           buttonText: "Ver Listado",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
+      id: "descuento-cajas-malvinas",
+      title: "Descuento por Ventas Cajas Malvinas",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "gestion-cajas-malvinas",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          ),
+          title: "Gestión de Cajas para Venta Malvinas",
+          description: "Ver y Gestionar Cajas para Venta Malvinas",
+          buttonText: "Acceder",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "historial-cajas-malvinas",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          title: "Historial de Gestión de Cajas para Venta Malvinas",
+          description: "Supervisar la gestion de cajas",
+          buttonText: "Acceder",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -286,6 +332,10 @@ export default function LogisticaPage() {
                                     router.push("/logistica/solicitudes-incidencias");
                                   } else if (card.id === "proformas") {
                                     router.push("/logistica/incidencias");
+                                  } else if (card.id === "gestion-cajas-malvinas") {
+                                    router.push("/logistica/gestion-cajas-malvinas");
+                                  } else if (card.id === "historial-cajas-malvinas") {
+                                    router.push("/logistica/historial-cajas-malvinas");
                                   }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"

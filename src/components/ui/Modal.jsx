@@ -29,9 +29,12 @@ export default function Modal({
 
   const sizeClasses = {
     sm: "max-w-md",
+    small: "max-w-md",
     md: "max-w-lg",
+    medium: "max-w-2xl",
     lg: "max-w-2xl",
-    xl: "max-w-4xl",
+    xl: "max-w-xl",
+    "xl-small": "max-w-xl",
     full: "max-w-7xl",
   };
 
@@ -43,7 +46,7 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden flex flex-col`}
+        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[98vh] h-[98vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[85vh] h-[85vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -60,7 +63,7 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-4 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'pt-4 pb-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-4 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-4 max-h-[calc(85vh-140px)]' : size === 'md' ? 'py-4 max-h-[calc(60vh-140px)]' : 'py-4'}`}>{children}</div>
 
         {/* Footer opcional con botones de acción */}
         {showFooter && (
