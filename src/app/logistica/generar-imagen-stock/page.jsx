@@ -120,7 +120,17 @@ export default function GenerarImagenStockPage() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/productos/pdf');
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/productos-pdf', {
+        method: 'GET',
+        headers: headers
+      });
       const data = await response.json();
 
       let productosArray = [];
@@ -218,6 +228,38 @@ export default function GenerarImagenStockPage() {
         throw new Error('No se encontró el elemento a capturar. Por favor, recargue la página.');
       }
 
+      // Guardar estilos originales
+      const originalPaddingRight = element.style.paddingRight;
+      const originalWidth = element.style.width;
+      const originalMaxWidth = element.style.maxWidth;
+      
+      // Encontrar el elemento de la tabla para obtener su ancho real
+      // Buscar el div con border que contiene la tabla
+      const tablaContainer = element.querySelector('div[style*="borderColor"]') || 
+                            element.querySelector('.grid') ||
+                            Array.from(element.querySelectorAll('div')).find(div => 
+                              div.style.borderColor && div.style.borderColor.includes('#002c59')
+                            );
+      
+      let contenidoWidth = element.scrollWidth;
+      if (tablaContainer) {
+        // Usar el ancho del contenido real más un pequeño margen
+        const tablaWidth = tablaContainer.scrollWidth || tablaContainer.offsetWidth || tablaContainer.clientWidth;
+        contenidoWidth = tablaWidth + 20; // Agregar margen para evitar cortes
+      } else {
+        // Si no encontramos la tabla, usar el ancho del header como referencia
+        const header = element.querySelector('h1');
+        if (header) {
+          const headerWidth = header.scrollWidth || header.offsetWidth;
+          contenidoWidth = Math.max(headerWidth + 40, contenidoWidth);
+        }
+      }
+      
+      // Ajustar el ancho del contenedor al ancho real del contenido
+      element.style.width = `${contenidoWidth}px`;
+      element.style.maxWidth = `${contenidoWidth}px`;
+      element.style.overflow = 'hidden';
+
       // Ocultar botones temporalmente
       const botones = document.querySelectorAll('button');
       const botonesOcultos = [];
@@ -230,8 +272,8 @@ export default function GenerarImagenStockPage() {
         }
       });
 
-      // Esperar un momento para que los botones se oculten
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Esperar un momento para que los cambios se apliquen
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Importar html2canvas dinámicamente
       let html2canvas;
@@ -264,29 +306,58 @@ export default function GenerarImagenStockPage() {
       };
 
       try {
-        // Capturar la imagen ignorando errores de parsing de colores
+        // Calcular el tamaño del elemento (usar el ancho ajustado)
+        const elementWidth = Math.min(element.scrollWidth, contenidoWidth);
+        const elementHeight = element.scrollHeight;
+        
+        // Calcular escala óptima considerando límites del navegador
+        // Los navegadores tienen límites de tamaño de canvas (típicamente 16,384px)
+        const maxCanvasSize = 16384;
+        const baseScale = 6; // Escala base alta pero manejable
+        const calculatedScale = Math.min(
+          baseScale,
+          Math.floor(maxCanvasSize / Math.max(elementWidth, elementHeight))
+        );
+        const finalScale = Math.max(calculatedScale, 4); // Mínimo 4x para buena calidad
+        
+        // Capturar la imagen con alta resolución y máxima calidad
         const canvas = await html2canvas(element, {
-          scale: 2,
+          scale: finalScale, // Escala optimizada para máxima calidad sin exceder límites
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: element.scrollWidth,
-          height: element.scrollHeight,
-          windowWidth: element.scrollWidth,
-          windowHeight: element.scrollHeight,
+          width: elementWidth,
+          height: elementHeight,
+          windowWidth: elementWidth,
+          windowHeight: elementHeight,
           allowTaint: false,
           foreignObjectRendering: false,
-          ignoreElements: (element) => {
-            // No ignorar ningún elemento, solo suprimir los errores
-            return false;
-          },
+          removeContainer: true,
+          imageTimeout: 20000, // Más tiempo para cargar imágenes
+          pixelRatio: Math.max(window.devicePixelRatio || 1, 2), // Mínimo 2x pixel ratio
+          letterRendering: true, // Mejor renderizado de texto
           onclone: (clonedDoc) => {
-            // Intentar convertir gradientes problemáticos a colores sólidos en el clon
+            // Mejorar la calidad de renderizado en el clon
             const allElements = clonedDoc.querySelectorAll('*');
             allElements.forEach((el) => {
               try {
                 const style = window.getComputedStyle(el);
                 const bgImage = style.backgroundImage;
+                
+                // Mejorar el renderizado de texto en todos los elementos de texto
+                if (el.tagName === 'TD' || el.tagName === 'TH' || el.tagName === 'P' || 
+                    el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'H1' || 
+                    el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4') {
+                  el.style.webkitFontSmoothing = 'antialiased';
+                  el.style.mozOsxFontSmoothing = 'grayscale';
+                  el.style.textRendering = 'optimizeLegibility';
+                  el.style.imageRendering = 'crisp-edges';
+                }
+                
+                // Mejorar renderizado de bordes y líneas
+                if (el.tagName === 'TABLE' || el.tagName === 'TR' || el.tagName === 'TD' || el.tagName === 'TH') {
+                  el.style.imageRendering = 'crisp-edges';
+                }
                 
                 // Si tiene un gradiente, intentar reemplazarlo
                 if (bgImage && bgImage !== 'none' && bgImage.includes('gradient')) {
@@ -301,8 +372,17 @@ export default function GenerarImagenStockPage() {
                 // Ignorar errores
               }
             });
+          },
+          ignoreElements: (element) => {
+            // No ignorar ningún elemento, solo suprimir los errores
+            return false;
           }
         });
+
+        // Validar que el canvas se haya creado correctamente
+        if (!canvas || canvas.width === 0 || canvas.height === 0) {
+          throw new Error('El canvas no se generó correctamente. Por favor, intente nuevamente.');
+        }
 
         // Restaurar console.error y console.warn
         console.error = originalConsoleError;
@@ -313,8 +393,16 @@ export default function GenerarImagenStockPage() {
           btn.style.display = 'flex';
         });
 
-        // Convertir canvas a imagen
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        // Convertir canvas a imagen PNG con máxima calidad
+        // PNG preserva la calidad sin pérdida de compresión
+        let imgData;
+        try {
+          imgData = canvas.toDataURL('image/png');
+        } catch (dataUrlError) {
+          console.error('Error al convertir canvas a data URL:', dataUrlError);
+          throw new Error('Error al procesar la imagen. El archivo puede ser demasiado grande. Intente con una tabla más pequeña.');
+        }
+        
         if (!imgData || imgData === 'data:,') {
           throw new Error('No se pudo generar la imagen. Por favor, intente nuevamente.');
         }
@@ -322,7 +410,7 @@ export default function GenerarImagenStockPage() {
         // Crear enlace de descarga
         const a = document.createElement('a');
         a.href = imgData;
-        a.download = 'zeus-safety-stock-tabla.jpg';
+        a.download = 'zeus-safety-stock-tabla.png';
         document.body.appendChild(a);
         a.click();
         
@@ -330,6 +418,12 @@ export default function GenerarImagenStockPage() {
         setTimeout(() => {
           document.body.removeChild(a);
         }, 100);
+
+        // Restaurar los estilos originales
+        element.style.paddingRight = originalPaddingRight;
+        element.style.width = originalWidth;
+        element.style.maxWidth = originalMaxWidth;
+        element.style.overflow = '';
 
         setModalMensaje({
           open: true,
@@ -340,6 +434,15 @@ export default function GenerarImagenStockPage() {
         // Restaurar console.error y console.warn en caso de error
         console.error = originalConsoleError;
         console.warn = originalConsoleWarn;
+        
+        // Restaurar los estilos originales en caso de error
+        const element = document.querySelector('.container-imagen');
+        if (element) {
+          element.style.paddingRight = '';
+          element.style.width = '';
+          element.style.maxWidth = '';
+          element.style.overflow = '';
+        }
         
         // Si el error es solo de parsing de colores, intentar continuar de todas formas
         if (error.message && (error.message.includes('lab') || error.message.includes('lch') || error.message.includes('oklab') || error.message.includes('color function'))) {
@@ -352,6 +455,12 @@ export default function GenerarImagenStockPage() {
       }
     } catch (error) {
       console.error('Error al capturar y descargar la imagen:', error);
+      
+      // Restaurar el padding original en caso de error
+      const element = document.querySelector('.container-imagen');
+      if (element) {
+        element.style.paddingRight = '';
+      }
       
       // Mostrar botones nuevamente en caso de error
       const botones = document.querySelectorAll('button');
@@ -399,7 +508,7 @@ export default function GenerarImagenStockPage() {
           }
         `
       }} />
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
+    <div className="fixed inset-0 overflow-auto" style={{ backgroundColor: '#f0f0f0', padding: '10px' }}>
 
       {/* Botones flotantes - Siempre visibles */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3">
@@ -427,28 +536,33 @@ export default function GenerarImagenStockPage() {
       </div>
 
       {/* Contenido principal - Sin Header ni Sidebar */}
-      <div className="container-imagen w-full bg-white min-h-screen">
-        {/* Header mejorado */}
-        <div className="text-white py-5 px-6 text-center shadow-lg border-b-4" style={{ backgroundColor: '#1e40af', borderColor: '#1e3a8a' }}>
-          <h1 className="text-3xl font-bold tracking-wide" style={{ fontFamily: 'var(--font-poppins)' }}>
+      <div className="container-imagen w-full bg-white min-h-screen" style={{ padding: '0px', maxWidth: '100%', margin: '0 auto' }}>
+        {/* Header exacto del sistema antiguo */}
+        <div className="text-white py-3 px-3 text-center mb-1" style={{ backgroundColor: '#00254b', fontFamily: 'Arial, sans-serif' }}>
+          <h1 className="text-[26px] font-bold mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
             ZEUS SAFETY STOCK MALVINAS ( CAJAS )
           </h1>
         </div>
 
         {cargando ? (
-          <div className="text-center py-20 text-gray-600 text-xl font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+          <div className="text-center py-12 text-gray-600 text-lg font-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
             Cargando datos...
           </div>
         ) : (
-          <div className="border-[12px] shadow-2xl" style={{ borderColor: '#1e40af' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-3" style={{ backgroundColor: '#ffffff' }}>
+          <div className="border-[10px] p-0" style={{ borderColor: '#002c59' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0" style={{ backgroundColor: '#ffffff' }}>
               {/* Columna 1 */}
-              <div className="border-r-[12px] last:border-r-0" style={{ borderColor: '#1e40af' }}>
+              <div className="border-r-[10px] last:border-r-0 p-0" style={{ borderColor: '#002c59' }}>
                 {columnasDistribucion.columna1.map(categoria => {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
-                    <div key={categoria} className="border-b-[8px] last:border-b-0" style={{ borderColor: '#1e40af' }}>
-                      <div className="p-3 text-lg font-bold text-center border-b-[4px] shadow-sm" style={{ fontFamily: 'var(--font-poppins)', backgroundColor: '#dbeafe', borderColor: '#1e40af', color: '#1e3a8a' }}>
+                    <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
+                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
+                        fontFamily: 'Arial, sans-serif', 
+                        backgroundColor: '#d4daedd4', 
+                        borderColor: '#002c59',
+                        color: '#000000'
+                      }}>
                         {categoria}
                       </div>
                       <table className="w-full border-collapse">
@@ -459,14 +573,18 @@ export default function GenerarImagenStockPage() {
                               ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
                               : 'SIN STOCK';
                             return (
-                              <tr key={idx} className="border-b-2 last:border-b-0" style={{ borderColor: '#d1d5db' }}>
-                                <td className="w-[65%] text-left px-3 py-2.5 text-sm leading-snug border-r-2 font-medium" style={{ fontFamily: 'var(--font-poppins)', borderColor: '#d1d5db', color: '#111827' }}>
+                              <tr key={idx} style={{ 
+                                borderTop: '2px solid #002c59',
+                                borderLeft: '2px solid #002c59',
+                                borderRight: '2px solid #002c59',
+                                borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
+                              }}>
+                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-3 py-2.5 text-sm font-bold" style={{ 
-                                  fontFamily: 'var(--font-poppins)',
-                                  color: tieneStock ? '#15803d' : '#dc2626',
-                                  backgroundColor: tieneStock ? '#f0fdf4' : '#fef2f2'
+                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                  fontFamily: 'Arial, sans-serif',
+                                  color: tieneStock ? '#008000' : '#ff0000'
                                 }}>
                                   {stockText}
                                 </td>
@@ -481,12 +599,17 @@ export default function GenerarImagenStockPage() {
               </div>
 
               {/* Columna 2 */}
-              <div className="border-r-[12px] last:border-r-0" style={{ borderColor: '#1e40af' }}>
+              <div className="border-r-[10px] last:border-r-0 p-0" style={{ borderColor: '#002c59' }}>
                 {columnasDistribucion.columna2.map(categoria => {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
-                    <div key={categoria} className="border-b-[8px] last:border-b-0" style={{ borderColor: '#1e40af' }}>
-                      <div className="p-3 text-lg font-bold text-center border-b-[4px] shadow-sm" style={{ fontFamily: 'var(--font-poppins)', backgroundColor: '#dbeafe', borderColor: '#1e40af', color: '#1e3a8a' }}>
+                    <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
+                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
+                        fontFamily: 'Arial, sans-serif', 
+                        backgroundColor: '#d4daedd4', 
+                        borderColor: '#002c59',
+                        color: '#000000'
+                      }}>
                         {categoria}
                       </div>
                       <table className="w-full border-collapse">
@@ -497,14 +620,18 @@ export default function GenerarImagenStockPage() {
                               ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
                               : 'SIN STOCK';
                             return (
-                              <tr key={idx} className="border-b-2 last:border-b-0" style={{ borderColor: '#d1d5db' }}>
-                                <td className="w-[65%] text-left px-3 py-2.5 text-sm leading-snug border-r-2 font-medium" style={{ fontFamily: 'var(--font-poppins)', borderColor: '#d1d5db', color: '#111827' }}>
+                              <tr key={idx} style={{ 
+                                borderTop: '2px solid #002c59',
+                                borderLeft: '2px solid #002c59',
+                                borderRight: '2px solid #002c59',
+                                borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
+                              }}>
+                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-3 py-2.5 text-sm font-bold" style={{ 
-                                  fontFamily: 'var(--font-poppins)',
-                                  color: tieneStock ? '#15803d' : '#dc2626',
-                                  backgroundColor: tieneStock ? '#f0fdf4' : '#fef2f2'
+                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                  fontFamily: 'Arial, sans-serif',
+                                  color: tieneStock ? '#008000' : '#ff0000'
                                 }}>
                                   {stockText}
                                 </td>
@@ -519,12 +646,17 @@ export default function GenerarImagenStockPage() {
               </div>
 
               {/* Columna 3 */}
-              <div className="border-r-[12px] last:border-r-0" style={{ borderColor: '#1e40af' }}>
+              <div className="border-r-[10px] last:border-r-0 p-0" style={{ borderColor: '#002c59' }}>
                 {columnasDistribucion.columna3.map(categoria => {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
-                    <div key={categoria} className="border-b-[8px] last:border-b-0" style={{ borderColor: '#1e40af' }}>
-                      <div className="p-3 text-lg font-bold text-center border-b-[4px] shadow-sm" style={{ fontFamily: 'var(--font-poppins)', backgroundColor: '#dbeafe', borderColor: '#1e40af', color: '#1e3a8a' }}>
+                    <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
+                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
+                        fontFamily: 'Arial, sans-serif', 
+                        backgroundColor: '#d4daedd4', 
+                        borderColor: '#002c59',
+                        color: '#000000'
+                      }}>
                         {categoria}
                       </div>
                       <table className="w-full border-collapse">
@@ -535,14 +667,18 @@ export default function GenerarImagenStockPage() {
                               ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
                               : 'SIN STOCK';
                             return (
-                              <tr key={idx} className="border-b-2 last:border-b-0" style={{ borderColor: '#d1d5db' }}>
-                                <td className="w-[65%] text-left px-3 py-2.5 text-sm leading-snug border-r-2 font-medium" style={{ fontFamily: 'var(--font-poppins)', borderColor: '#d1d5db', color: '#111827' }}>
+                              <tr key={idx} style={{ 
+                                borderTop: '2px solid #002c59',
+                                borderLeft: '2px solid #002c59',
+                                borderRight: '2px solid #002c59',
+                                borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
+                              }}>
+                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-3 py-2.5 text-sm font-bold" style={{ 
-                                  fontFamily: 'var(--font-poppins)',
-                                  color: tieneStock ? '#15803d' : '#dc2626',
-                                  backgroundColor: tieneStock ? '#f0fdf4' : '#fef2f2'
+                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                  fontFamily: 'Arial, sans-serif',
+                                  color: tieneStock ? '#008000' : '#ff0000'
                                 }}>
                                   {stockText}
                                 </td>
