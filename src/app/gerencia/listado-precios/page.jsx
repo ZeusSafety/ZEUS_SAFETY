@@ -261,11 +261,10 @@ export default function ListadoPreciosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, fetchPrecios]);
 
-  // Obtener precios de la tabla activa
-  const precios = preciosData[activeTab] || [];
-
   // Obtener columnas de precio dinámicamente basadas en los datos reales de la API
   const getPriceColumns = useMemo(() => {
+    // Obtener precios de la tabla activa
+    const precios = preciosData[activeTab] || [];
     console.log("🔍 [FRONTEND-LISTADO] ===== DETECTANDO COLUMNAS DE PRECIO =====");
     console.log("🔍 [FRONTEND-LISTADO] Total de precios:", precios.length);
     
@@ -300,6 +299,11 @@ export default function ListadoPreciosPage() {
         const keyUpper = key.toUpperCase();
         // Excluir campos de configuración de la BD
         if (excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()))) {
+          return false;
+        }
+        
+        // Excluir columnas PAR 1, PAR 5 y PAR 10
+        if (keyUpper === 'PAR 1' || keyUpper === 'PAR 5' || keyUpper === 'PAR 10') {
           return false;
         }
         
@@ -357,7 +361,10 @@ export default function ListadoPreciosPage() {
     console.log("🔍 [FRONTEND-LISTADO] ===== FIN DETECCIÓN COLUMNAS =====");
     
     return priceColumns;
-  }, [precios]);
+  }, [preciosData, activeTab]);
+
+  // Obtener precios de la tabla activa
+  const precios = preciosData[activeTab] || [];
 
   // Función para copiar texto al portapapeles
   const copyToClipboard = async (text, index) => {
@@ -643,11 +650,12 @@ export default function ListadoPreciosPage() {
                           // Función helper para formatear precio y verificar si es 0
                           // Manejar NaN, null, undefined, y valores numéricos
                           const formatPrice = (value) => {
-                            if (value === null || value === undefined || value === "" || value === "NaN") return { text: "-", isZero: false };
-                            if (typeof value === "number" && isNaN(value)) return { text: "-", isZero: false };
+                            if (value === null || value === undefined || value === "" || value === "NaN") return { text: "", isZero: false };
+                            if (typeof value === "number" && isNaN(value)) return { text: "", isZero: false };
                             const num = parseFloat(value);
-                            if (isNaN(num)) return { text: "-", isZero: false };
-                            return { text: `S/.${num.toFixed(2)}`, isZero: num === 0 };
+                            if (isNaN(num)) return { text: "", isZero: false };
+                            if (num === 0) return { text: "", isZero: true };
+                            return { text: `S/.${num.toFixed(2)}`, isZero: false };
                           };
 
                           // Mapeo de campos según la estructura de la nueva API (franja_precios)
@@ -740,7 +748,7 @@ export default function ListadoPreciosPage() {
                                 return (
                                   <td 
                                     key={columna}
-                                    className={`px-4 py-3 whitespace-nowrap text-[10px] ${precioValue.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}
+                                    className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700"
                                     style={{ fontFamily: 'var(--font-poppins)' }}
                                   >
                                     {precioValue.text}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
@@ -17,129 +17,104 @@ export default function ListadoImportacionesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [selectedImportacion, setSelectedImportacion] = useState(null);
+  const [importaciones, setImportaciones] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState(null);
   const [updateForm, setUpdateForm] = useState({
-    observaciones: "",
-    estado: "",
+    fechaRegistro: "",
+    numeroDespacho: "",
+    redactadoPor: "",
+    fechaLlegadaProductos: "",
     fechaAlmacen: "",
-    fechaRecepcion: "",
+    productos: "",
+    tipoCarga: "",
+    estado: "",
+    canal: "",
   });
 
-  // Datos ficticios de importaciones (memoizados para evitar recreación en cada render)
-  const importaciones = useMemo(() => [
-    {
-      id: 1,
-      fechaRegistro: "2025-11-19",
-      numeroDespacho: "ZEUS50",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PETER",
-      fechaLlegada: "2025-12-29",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "",
-      estado: "TRANSITO",
-      canal: "",
-      fechaRecepcion: "",
-      incidencias: false,
-    },
-    {
-      id: 2,
-      fechaRegistro: "2025-10-10",
-      numeroDespacho: "ZEUS47",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES/PETER",
-      fechaLlegada: "2025-11-16",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "",
-      incidencias: false,
-    },
-    {
-      id: 3,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS42/ZEUS43/ZEUS49",
-      redactadoPor: "HERVIN",
-      productos: "ARNES/NITRON/CALIBRE",
-      fechaLlegada: "2025-10-20",
-      tipoCarga: "CONSOLIDADO",
-      fechaAlmacen: "2025-10-29",
-      estado: "ETA",
-      canal: "AMARILLO",
-      fechaRecepcion: "2025-10-29",
-      incidencias: true,
-    },
-    {
-      id: 4,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS44",
-      redactadoPor: "HERVIN",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-09-10",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "2025-09-19",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "2025-09-18",
-      incidencias: true,
-    },
-    {
-      id: 5,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS45",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES PITER",
-      fechaLlegada: "2025-10-15",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "2025-10-27",
-      estado: "ETA",
-      canal: "ROJO",
-      fechaRecepcion: "2025-10-27",
-      incidencias: true,
-    },
-    {
-      id: 6,
-      fechaRegistro: "2025-09-30",
-      numeroDespacho: "ZEUS46",
-      redactadoPor: "KIMBERLY",
-      productos: "GUANTES DE SEGURIDAD",
-      fechaLlegada: "2025-10-13",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "2025-10-23",
-      estado: "ETA",
-      canal: "AMARILLO",
-      fechaRecepcion: "2025-10-24",
-      incidencias: false,
-    },
-    {
-      id: 7,
-      fechaRegistro: "2025-08-15",
-      numeroDespacho: "ZEUS41",
-      redactadoPor: "HERVIN",
-      productos: "CASCO SEGURIDAD",
-      fechaLlegada: "2025-09-05",
-      tipoCarga: "1 CONTENEDOR 40 HQ",
-      fechaAlmacen: "2025-09-10",
-      estado: "ETA",
-      canal: "VERDE",
-      fechaRecepcion: "2025-09-08",
-      incidencias: true,
-    },
-    {
-      id: 8,
-      fechaRegistro: "2025-07-20",
-      numeroDespacho: "ZEUS40",
-      redactadoPor: "KIMBERLY",
-      productos: "LENTES PROTECCION",
-      fechaLlegada: "2025-08-10",
-      tipoCarga: "CONSOLIDADO",
-      fechaAlmacen: "2025-08-15",
-      estado: "ETA",
-      canal: "AMARILLO",
-      fechaRecepcion: "2025-08-12",
-      incidencias: true,
-    },
-  ], []);
+  // Cargar importaciones desde la API
+  useEffect(() => {
+    if (user && !loading) {
+      cargarImportaciones();
+    }
+  }, [user, loading]);
+
+  const cargarImportaciones = async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await fetch("/api/importaciones2026", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Mapear los datos de la API al formato esperado
+      const mappedData = Array.isArray(data) ? data.map((item) => {
+        // Normalizar estado: convertir "PRODUCCION" a "PRODUCCIÓN" si es necesario
+        let estado = item.ESTADO_IMPORTACION || "";
+        if (estado === "PRODUCCION") {
+          estado = "PRODUCCIÓN";
+        }
+        
+        // Asegurarse de que el ID sea un número y esté presente
+        const id = typeof item.ID_IMPORTACIONES === 'number' 
+          ? item.ID_IMPORTACIONES 
+          : (item.ID_IMPORTACIONES ? parseInt(item.ID_IMPORTACIONES) : null);
+        
+        return {
+          id: id, // ID de la fila seleccionada - se usará para el PUT
+          fechaRegistro: item.FECHA_REGISTRO ? item.FECHA_REGISTRO.split(' ')[0] : "",
+          numeroDespacho: item.NUMERO_DESPACHO || "",
+          redactadoPor: item.RESPONSABLE || "",
+          productos: item.PRODUCTOS || "",
+          archivoPdf: item.ARCHIVO_PDF_URL || "",
+          fechaLlegada: item.FECHA_LLEGADA_PRODUCTOS || "",
+          tipoCarga: item.TIPO_CARGA || "",
+          fechaAlmacen: item.FECHA_ALMACEN || "",
+          estado: estado,
+          canal: item.CANAL || "",
+          fechaRecepcion: item.FECHA_RECEPCION || "",
+          incidencias: item.INCIDENCIAS === "SI",
+          // Datos originales completos de la API para referencia
+          _original: item,
+        };
+      }) : [];
+
+      setImportaciones(mappedData);
+    } catch (err) {
+      console.error('Error al cargar importaciones:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar las importaciones');
+      setImportaciones([]);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
 
   // Filtrado automático
   const [filteredImportaciones, setFilteredImportaciones] = useState([]);
@@ -209,18 +184,147 @@ export default function ListadoImportacionesPage() {
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
   }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
 
+  const formatearFecha = (fechaString) => {
+    if (!fechaString || fechaString === 'null' || fechaString === 'undefined' || fechaString === '') {
+      return '-';
+    }
+    try {
+      const fecha = new Date(fechaString);
+      if (isNaN(fecha.getTime())) {
+        return fechaString;
+      }
+      return fecha.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch {
+      return fechaString;
+    }
+  };
+
+  const handleGuardarCambios = async () => {
+    try {
+      if (!selectedImportacion) {
+        setError('No se ha seleccionado una importación');
+        return;
+      }
+
+      // Obtener el ID de la importación seleccionada (de la fila de la tabla)
+      // Intentar obtener el ID de múltiples fuentes posibles
+      const importacionId = selectedImportacion.id 
+        || selectedImportacion.ID_IMPORTACIONES 
+        || selectedImportacion._original?.ID_IMPORTACIONES
+        || selectedImportacion._original?.id;
+      
+      console.log('🔍 ID obtenido de selectedImportacion:', importacionId);
+      console.log('🔍 selectedImportacion completa:', JSON.stringify(selectedImportacion, null, 2));
+      
+      if (!importacionId && importacionId !== 0) {
+        setError('No se pudo obtener el ID de la importación. Por favor, intente nuevamente.');
+        console.error('❌ selectedImportacion sin ID:', selectedImportacion);
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // Preparar el payload según la estructura esperada por la API
+      // Convertir "PRODUCCIÓN" de vuelta a "PRODUCCION" para la API
+      let estadoParaAPI = updateForm.estado;
+      if (estadoParaAPI === "PRODUCCIÓN") {
+        estadoParaAPI = "PRODUCCION";
+      }
+      
+      // Asegurarse de que el ID sea un número
+      const idNumerico = typeof importacionId === 'number' ? importacionId : parseInt(importacionId);
+      
+      if (isNaN(idNumerico)) {
+        setError('El ID de la importación no es válido.');
+        console.error('ID inválido:', importacionId);
+        return;
+      }
+      
+      // Preparar el payload según la estructura esperada por la API
+      // El backend espera:
+      // - id en la raíz del body (data["id"])
+      // - parámetro area=importacion en la URL
+      // - solo los campos que el backend espera para area=importacion
+      // - productos SIEMPRE debe estar presente (requerido por el backend)
+      const productos = updateForm.productos || selectedImportacion.productos || "";
+      
+      const payload = {
+        id: idNumerico, // ID en la raíz del body (requerido por el backend)
+        productos: productos, // SIEMPRE requerido por el backend
+        FECHA_LLEGADA_PRODUCTOS: updateForm.fechaLlegadaProductos || null,
+        FECHA_ALMACEN: updateForm.fechaAlmacen || null,
+        TIPO_CARGA: updateForm.tipoCarga || null,
+        ESTADO_IMPORTACION: estadoParaAPI || null,
+        CANAL: updateForm.canal || null,
+      };
+
+      console.log('📤 Enviando payload:', JSON.stringify(payload, null, 2));
+      console.log('📤 ID de importación (numérico):', idNumerico);
+      console.log('📤 Tipo de ID:', typeof idNumerico);
+      console.log('📤 selectedImportacion completa:', JSON.stringify(selectedImportacion, null, 2));
+
+      // Agregar parámetro area=importacion en la URL
+      const response = await fetch("/api/importaciones2026?area=importacion", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await response.json();
+        console.error('❌ Error de respuesta:', errorData);
+        throw new Error(errorData.error || errorData.ERROR || `Error ${response.status}`);
+      }
+
+      // Cerrar modal de actualización
+      setIsUpdateModalOpen(false);
+      setSelectedImportacion(null);
+      setError(null);
+      
+      // Mostrar modal de éxito
+      setIsSuccessModalOpen(true);
+      
+      // Recargar datos
+      await cargarImportaciones();
+    } catch (err) {
+      console.error('Error al guardar cambios:', err);
+      setError(err instanceof Error ? err.message : 'Error al guardar los cambios');
+    }
+  };
+
   const totalPages = Math.ceil(filteredImportaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentImportaciones = filteredImportaciones.slice(startIndex, endIndex);
 
   const getEstadoBadge = (estado) => {
+    const estadoUpper = String(estado || '').toUpperCase();
     const estados = {
+      PENDIENTE: "bg-gradient-to-br from-gray-500 to-gray-600",
+      PRODUCCION: "bg-gradient-to-br from-red-600 to-red-700",
+      "PRODUCCIÓN": "bg-gradient-to-br from-red-600 to-red-700",
       TRANSITO: "bg-gradient-to-br from-yellow-500 to-yellow-600",
       ETA: "bg-gradient-to-br from-green-600 to-green-700",
       RECIBIDO: "bg-gradient-to-br from-blue-600 to-blue-700",
     };
-    return estados[estado] || "bg-gradient-to-br from-gray-500 to-gray-600";
+    return estados[estadoUpper] || estados[estado] || "bg-gradient-to-br from-gray-500 to-gray-600";
   };
 
   const getCanalBadge = (canal) => {
@@ -379,9 +483,24 @@ export default function ListadoImportacionesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {currentImportaciones.map((importacion) => (
-                        <tr key={importacion.id} className="hover:bg-slate-200 transition-colors">
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{importacion.fechaRegistro}</td>
+                      {loadingData ? (
+                        <tr>
+                          <td colSpan={12} className="px-3 py-8 text-center">
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : filteredImportaciones.length === 0 ? (
+                        <tr>
+                          <td colSpan={12} className="px-3 py-8 text-center text-gray-500">
+                            Sin registros
+                          </td>
+                        </tr>
+                      ) : (
+                        currentImportaciones.map((importacion) => (
+                          <tr key={importacion.id} className="hover:bg-slate-200 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{formatearFecha(importacion.fechaRegistro)}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
@@ -426,9 +545,9 @@ export default function ListadoImportacionesPage() {
                               </button>
                             )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaLlegada || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.fechaAlmacen || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaLlegada)}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaAlmacen)}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {importacion.estado && (
                               <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(importacion.estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
@@ -443,7 +562,7 @@ export default function ListadoImportacionesPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{importacion.fechaRecepcion || "-"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(importacion.fechaRecepcion)}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
                               importacion.incidencias 
@@ -456,12 +575,27 @@ export default function ListadoImportacionesPage() {
                           <td className="px-3 py-2 whitespace-nowrap">
                             <button
                               onClick={() => {
-                                setSelectedImportacion(importacion);
+                                console.log('🔍 Seleccionando importación:', importacion);
+                                console.log('🔍 ID de la importación:', importacion.id);
+                                console.log('🔍 ID original:', importacion._original?.ID_IMPORTACIONES);
+                                
+                                // Guardar la importación completa para asegurar que el ID esté disponible
+                                setSelectedImportacion({
+                                  ...importacion,
+                                  // Asegurar que el ID esté presente
+                                  id: importacion.id || importacion._original?.ID_IMPORTACIONES,
+                                });
+                                
                                 setUpdateForm({
-                                  observaciones: importacion.observaciones || "",
-                                  estado: importacion.estado || "",
+                                  fechaRegistro: importacion.fechaRegistro || "",
+                                  numeroDespacho: importacion.numeroDespacho || "",
+                                  redactadoPor: importacion.redactadoPor || "",
+                                  fechaLlegadaProductos: importacion.fechaLlegada || "",
                                   fechaAlmacen: importacion.fechaAlmacen || "",
-                                  fechaRecepcion: importacion.fechaRecepcion || "",
+                                  productos: importacion.productos || "",
+                                  tipoCarga: importacion.tipoCarga || "",
+                                  estado: importacion.estado || "",
+                                  canal: importacion.canal || "",
                                 });
                                 setIsUpdateModalOpen(true);
                               }}
@@ -474,8 +608,9 @@ export default function ListadoImportacionesPage() {
                               </svg>
                             </button>
                           </td>
-                        </tr>
-                      ))}
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -526,16 +661,133 @@ export default function ListadoImportacionesPage() {
           setIsUpdateModalOpen(false);
           setSelectedImportacion(null);
           setUpdateForm({
-            observaciones: "",
-            estado: "",
+            fechaRegistro: "",
+            numeroDespacho: "",
+            redactadoPor: "",
+            fechaLlegadaProductos: "",
             fechaAlmacen: "",
-            fechaRecepcion: "",
+            productos: "",
+            tipoCarga: "",
+            estado: "",
+            canal: "",
           });
         }}
         title={`Actualizar Importación - ${selectedImportacion?.numeroDespacho || ""}`}
         size="lg"
+        hideFooter
       >
         <div className="space-y-4">
+          {/* Mensaje de error */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Fecha Registro - No editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Fecha Registro
+            </label>
+            <input
+              type="text"
+              value={formatearFecha(updateForm.fechaRegistro)}
+              disabled
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-500 bg-gray-100 cursor-not-allowed"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* N° de Despacho - No editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              N° de Despacho
+            </label>
+            <input
+              type="text"
+              value={updateForm.numeroDespacho}
+              disabled
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-500 bg-gray-100 cursor-not-allowed"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* Redactado Por - No editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Redactado Por
+            </label>
+            <input
+              type="text"
+              value={updateForm.redactadoPor}
+              disabled
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-500 bg-gray-100 cursor-not-allowed"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* Fecha Llegada de Productos - Editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Fecha Llegada de Productos
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaLlegadaProductos}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaLlegadaProductos: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* Fecha Almacén - Editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Fecha Almacén
+            </label>
+            <input
+              type="date"
+              value={updateForm.fechaAlmacen}
+              onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* Productos - Texto no editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Productos
+            </label>
+            <input
+              type="text"
+              value={updateForm.productos}
+              disabled
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-500 bg-gray-100 cursor-not-allowed"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+
+          {/* Tipo de Carga - Combo box editable */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Tipo de Carga
+            </label>
+            <select
+              value={updateForm.tipoCarga}
+              onChange={(e) => setUpdateForm({ ...updateForm, tipoCarga: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            >
+              <option value="">Seleccionar tipo de carga</option>
+              <option value="1 CONTENEDOR 40 HQ">1 CONTENEDOR 40 HQ</option>
+              <option value="1 CONTENEDOR 40 NOR">1 CONTENEDOR 40 NOR</option>
+              <option value="1 CONTENEDOR 20 ST">1 CONTENEDOR 20 ST</option>
+              <option value="CONSOLIDADO">CONSOLIDADO</option>
+            </select>
+          </div>
+
+          {/* Estado - Combo box editable */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Estado
@@ -547,63 +799,49 @@ export default function ListadoImportacionesPage() {
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <option value="">Seleccionar estado</option>
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="PRODUCCION">PRODUCCIÓN</option>
               <option value="TRANSITO">TRANSITO</option>
               <option value="ETA">ETA</option>
-              <option value="RECIBIDO">RECIBIDO</option>
             </select>
           </div>
 
+          {/* Canal - Combo box editable */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Fecha de Almacén
+              Canal
             </label>
-            <input
-              type="date"
-              value={updateForm.fechaAlmacen}
-              onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
+            <select
+              value={updateForm.canal}
+              onChange={(e) => setUpdateForm({ ...updateForm, canal: e.target.value })}
               className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
               style={{ fontFamily: 'var(--font-poppins)' }}
-            />
+            >
+              <option value="">Seleccione un Canal</option>
+              <option value="ROJO">ROJO</option>
+              <option value="VERDE">VERDE</option>
+              <option value="AMARILLO">AMARILLO</option>
+            </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Fecha de Recepción
-            </label>
-            <input
-              type="date"
-              value={updateForm.fechaRecepcion}
-              onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
-              style={{ fontFamily: 'var(--font-poppins)' }}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Observaciones
-            </label>
-            <textarea
-              value={updateForm.observaciones}
-              onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white resize-none transition-all duration-200 hover:border-blue-300 placeholder:text-gray-400"
-              placeholder="Ingrese observaciones..."
-              style={{ fontFamily: 'var(--font-poppins)' }}
-            />
-          </div>
-
+          {/* Botones */}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               onClick={() => {
                 setIsUpdateModalOpen(false);
                 setSelectedImportacion(null);
                 setUpdateForm({
-                  observaciones: "",
-                  estado: "",
+                  fechaRegistro: "",
+                  numeroDespacho: "",
+                  redactadoPor: "",
+                  fechaLlegadaProductos: "",
                   fechaAlmacen: "",
-                  fechaRecepcion: "",
+                  productos: "",
+                  tipoCarga: "",
+                  estado: "",
+                  canal: "",
                 });
+                setError(null);
               }}
               className="px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               style={{ fontFamily: 'var(--font-poppins)' }}
@@ -611,18 +849,38 @@ export default function ListadoImportacionesPage() {
               Cancelar
             </button>
             <button
-              onClick={() => {
-                // Aquí iría la lógica para guardar los cambios
-                console.log("Guardar cambios:", updateForm);
-                alert("Funcionalidad de guardado pendiente de implementar");
-                setIsUpdateModalOpen(false);
-              }}
+              onClick={handleGuardarCambios}
               className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 hover:shadow-md hover:scale-105 active:scale-[0.98] rounded-lg transition-all duration-200 shadow-sm"
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Guardar Cambios
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Éxito */}
+      <Modal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Éxito"
+        size="md"
+        primaryButtonText="Aceptar"
+        onPrimaryButtonClick={() => setIsSuccessModalOpen(false)}
+        hideFooter={false}
+      >
+        <div className="text-center py-4">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-lg font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Importación Gestionada Exitosamente
+          </p>
+          <p className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Los cambios se han guardado correctamente.
+          </p>
         </div>
       </Modal>
     </div>

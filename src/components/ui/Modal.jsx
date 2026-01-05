@@ -46,11 +46,11 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[98vh] h-[98vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[85vh] h-[85vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
+        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[85vh] h-[85vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[85vh] h-[85vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+        <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
           <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{title}</h2>
           <button
             onClick={onClose}
@@ -63,7 +63,7 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-4 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'pt-4 pb-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-4 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-4 max-h-[calc(85vh-140px)]' : size === 'md' ? 'py-4 max-h-[calc(60vh-140px)]' : 'py-4'}`}>{children}</div>
+        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-2 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-2 max-h-[calc(85vh-140px)]' : size === 'md' ? 'py-2 max-h-[calc(60vh-140px)]' : 'py-2'}`}>{children}</div>
 
         {/* Footer opcional con botones de acción */}
         {showFooter && (

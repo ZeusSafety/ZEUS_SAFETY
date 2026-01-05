@@ -24,10 +24,11 @@ export const subVistasToCardsMap = {
   "SOLICITUDES ADMIN-LOGISTICA": "listado-solicitudes",
   "LISTADO_REGISTRO_INCIDENCIA_PROFORMAS": "proformas", // Card en sección "Registrar Incidencias"
   "REGISTRO_INCIDENCIA_IMPORTACION_LOGIS": "incidencias", // Card en sección "Registrar Incidencias"
+  "REGISTRO_INCIDENCIA_IMPORTACION_IOGISTICA": "incidencias", // Variante del nombre
   // Los siguientes pueden estar en otras secciones o no implementados:
-  "LISTADO_INCIDENCIAS_IMPORTACION": "incidencias-importaciones", // Si existe el card
-  "GESTION DESCUENTO DE CAJAS MALVINAS": "gestion-descuento", // Si existe el card
-  "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS": "historial-descuento", // Si existe el card
+  "LISTADO_INCIDENCIAS_IMPORTACION": "incidencias-importaciones", // Card en sección "Ver Listados"
+  "GESTION DESCUENTO DE CAJAS MALVINAS": "gestion-cajas-malvinas", // Card en sección "Descuento por Ventas Cajas Malvinas"
+  "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS": "historial-cajas-malvinas", // Card en sección "Descuento por Ventas Cajas Malvinas"
   "INVENTARIO": "inventario", // Si existe el card
   
   // ========== FACTURACION ==========

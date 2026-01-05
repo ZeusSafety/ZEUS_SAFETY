@@ -1,6 +1,7 @@
 import { Inter, Poppins } from "next/font/google";
 import { AuthProviderWrapper } from "../components/providers/AuthProviderWrapper";
 import { ChatBotButton } from "../components/ui/ChatBotButton";
+import { TokenExpirationNotification } from "../components/ui/TokenExpirationNotification";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
         <AuthProviderWrapper>
           {children}
           <ChatBotButton />
+          <TokenExpirationNotification />
         </AuthProviderWrapper>
       </body>
     </html>

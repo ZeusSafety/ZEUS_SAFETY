@@ -10,6 +10,8 @@ export function Header({ onMenuToggle }) {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [tokenTimeRemaining, setTokenTimeRemaining] = useState(null);
+  const [showExpirationWarning, setShowExpirationWarning] = useState(false);
   const notificationCount = 15; // Contador de notificaciones no leídas
   
   // Verificar si el usuario puede ver el botón de configuración
@@ -30,6 +32,41 @@ export function Header({ onMenuToggle }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const tokenCreatedAt = localStorage.getItem("tokenCreatedAt");
+      if (!tokenCreatedAt) {
+        setTokenTimeRemaining(null);
+        setShowExpirationWarning(false);
+        return;
+      }
+
+      const createdAt = parseInt(tokenCreatedAt);
+      const now = Date.now();
+      const tokenDuration = 3 * 60 * 60 * 1000; // 3 horas
+      const expirationTime = createdAt + tokenDuration;
+      const timeUntilExpiration = expirationTime - now;
+      const fiveMinutes = 5 * 60 * 1000; // 5 minutos
+
+      if (timeUntilExpiration <= 0) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("tokenCreatedAt");
+        router.push("/login");
+        return;
+      }
+
+      const totalSeconds = Math.floor(timeUntilExpiration / 1000);
+      setTokenTimeRemaining(totalSeconds);
+      setShowExpirationWarning(timeUntilExpiration <= fiveMinutes);
+    };
+
+    checkTokenExpiration();
+    const interval = setInterval(checkTokenExpiration, 1000);
+
+    return () => clearInterval(interval);
+  }, [router]);
 
 
   return (
@@ -96,7 +133,25 @@ export function Header({ onMenuToggle }) {
               </svg>
               <span className="text-xs font-bold text-gray-800 tabular-nums">{currentTime}</span>
             </div>
+          </div>
+
+          {/* Token Expiration Counter */}
+          {tokenTimeRemaining !== null && tokenTimeRemaining > 0 && (
+            <div className={`px-3 py-1.5 rounded-lg border shadow-sm ${
+              showExpirationWarning 
+                ? "bg-gradient-to-br from-yellow-500 to-yellow-600 border-2 border-yellow-700" 
+                : "bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-300"
+            }`}>
+              <div className="flex items-center space-x-1.5">
+                <svg className={`w-3.5 h-3.5 ${showExpirationWarning ? "text-yellow-900" : "text-blue-700"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className={`text-xs font-bold tabular-nums ${showExpirationWarning ? "text-yellow-900" : "text-blue-700"}`}>
+                  {Math.floor(tokenTimeRemaining / 3600)}:{(Math.floor((tokenTimeRemaining % 3600) / 60)).toString().padStart(2, '0')}:{(tokenTimeRemaining % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
             </div>
+          )}
           </div>
         </div>
       </header>
