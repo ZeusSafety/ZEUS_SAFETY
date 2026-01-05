@@ -121,9 +121,16 @@ export default function StockPreciosMayorPage() {
 
     try {
       // Cargar productos
-      const responseProductos = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/productos', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseProductos = await fetch('/api/descuento-cajas/productos', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: headers
       });
 
       if (!responseProductos.ok) throw new Error('Error al cargar productos');
@@ -151,9 +158,16 @@ export default function StockPreciosMayorPage() {
 
     try {
       // Cargar productos reservados
-      const responseReservados = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/reservadas', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseReservados = await fetch('/api/descuento-cajas/reservadas', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: headers
       });
 
       if (!responseReservados.ok) throw new Error('Error al cargar productos reservados');
@@ -181,9 +195,16 @@ export default function StockPreciosMayorPage() {
 
     try {
       // Cargar historial general
-      const responseHistorial = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/historial/general', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseHistorial = await fetch('/api/descuento-cajas/historial-general', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: headers
       });
 
       if (responseHistorial.ok) {
@@ -197,9 +218,16 @@ export default function StockPreciosMayorPage() {
 
     try {
       // Cargar historial de reservas
-      const responseHistorialReservas = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/historial/reservas', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseHistorialReservas = await fetch('/api/descuento-cajas/historial-reservas', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: headers
       });
 
       if (responseHistorialReservas.ok) {
@@ -417,9 +445,16 @@ export default function StockPreciosMayorPage() {
     });
 
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/descuentoStockCajasVendidas', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/descuento-stock', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(movimientos)
       });
 
@@ -501,9 +536,16 @@ export default function StockPreciosMayorPage() {
     };
 
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/reservas/gestionar', {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/reservas-gestionar', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(datos)
       });
 

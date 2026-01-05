@@ -99,14 +99,16 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
   const [formData, setFormData] = useState({
     FECHA_REGISTRO: '',
     NOMBRE: '',
+    NOMBRE_APELLIDO: '',
+    DNI: '',
     FECHA_INICIO: '',
+    HORA_INICIO: '',
     FECHA_FIN: '',
+    HORA_FIN: '',
     TIPO_PERMISO: '',
     MOTIVO: '',
     ESTADO_SOLICITUD: 'PENDIENTE',
     HORAS_SOLICITADAS: '',
-    HORAS_CUMPLIDAS: '',
-    HORAS_FALTANTESS: '',
     ARCHIVOS: []
   });
 
@@ -144,17 +146,27 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
     }
   };
 
-  // Calcular horas faltantes automáticamente
+  // Calcular horas solicitadas automáticamente basándose en las fechas y horas
   useEffect(() => {
-    if (formData.HORAS_SOLICITADAS && formData.HORAS_CUMPLIDAS) {
-      const solicitadas = parseFloat(formData.HORAS_SOLICITADAS) || 0;
-      const cumplidas = parseFloat(formData.HORAS_CUMPLIDAS) || 0;
-      const faltantes = Math.max(0, solicitadas - cumplidas);
-      setFormData(prev => ({ ...prev, HORAS_FALTANTESS: faltantes.toString() }));
-    } else if (formData.HORAS_SOLICITADAS) {
-      setFormData(prev => ({ ...prev, HORAS_FALTANTESS: formData.HORAS_SOLICITADAS }));
+    if (formData.FECHA_INICIO && formData.HORA_INICIO && formData.FECHA_FIN && formData.HORA_FIN) {
+      // Combinar fecha y hora de inicio
+      const fechaHoraInicio = new Date(`${formData.FECHA_INICIO}T${formData.HORA_INICIO}`);
+      // Combinar fecha y hora de fin
+      const fechaHoraFin = new Date(`${formData.FECHA_FIN}T${formData.HORA_FIN}`);
+      
+      if (fechaHoraFin > fechaHoraInicio) {
+        // Calcular la diferencia en milisegundos
+        const diferenciaMs = fechaHoraFin - fechaHoraInicio;
+        // Convertir a horas (redondear a 1 decimal)
+        const horas = Math.round((diferenciaMs / (1000 * 60 * 60)) * 10) / 10;
+        setFormData(prev => ({ ...prev, HORAS_SOLICITADAS: horas.toString() }));
+      } else {
+        setFormData(prev => ({ ...prev, HORAS_SOLICITADAS: '0.0' }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, HORAS_SOLICITADAS: '' }));
     }
-  }, [formData.HORAS_SOLICITADAS, formData.HORAS_CUMPLIDAS]);
+  }, [formData.FECHA_INICIO, formData.HORA_INICIO, formData.FECHA_FIN, formData.HORA_FIN]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,11 +185,23 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       if (!formData.NOMBRE) {
         throw new Error('Debe seleccionar un Área (NOMBRE)');
       }
+      if (!formData.NOMBRE_APELLIDO || formData.NOMBRE_APELLIDO.trim() === '') {
+        throw new Error('Debe ingresar el Nombre y Apellido');
+      }
+      if (!formData.DNI || formData.DNI.trim() === '') {
+        throw new Error('Debe ingresar el DNI');
+      }
       if (!formData.FECHA_INICIO) {
         throw new Error('Debe seleccionar una Fecha de Inicio');
       }
+      if (!formData.HORA_INICIO) {
+        throw new Error('Debe seleccionar una Hora de Inicio');
+      }
       if (!formData.FECHA_FIN) {
         throw new Error('Debe seleccionar una Fecha de Fin');
+      }
+      if (!formData.HORA_FIN) {
+        throw new Error('Debe seleccionar una Hora de Fin');
       }
       if (!formData.TIPO_PERMISO) {
         throw new Error('Debe seleccionar un Tipo de Permiso');
@@ -185,10 +209,11 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       if (!formData.MOTIVO || formData.MOTIVO.trim() === '') {
         throw new Error('Debe ingresar un Motivo');
       }
-
-      // Validar que la fecha fin sea posterior a la fecha inicio
-      if (new Date(formData.FECHA_FIN) < new Date(formData.FECHA_INICIO)) {
-        throw new Error('La Fecha de Fin debe ser posterior a la Fecha de Inicio');
+      // Validar que la fecha y hora fin sea posterior a la fecha y hora inicio
+      const fechaHoraInicio = new Date(`${formData.FECHA_INICIO}T${formData.HORA_INICIO}`);
+      const fechaHoraFin = new Date(`${formData.FECHA_FIN}T${formData.HORA_FIN}`);
+      if (fechaHoraFin <= fechaHoraInicio) {
+        throw new Error('La Fecha y Hora de Fin debe ser posterior a la Fecha y Hora de Inicio');
       }
 
       // Obtener el ID del área (usar el mapeo o un valor por defecto)
@@ -201,9 +226,9 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       // Mapear el tipo de permiso
       const tipoPermisoAPI = TIPO_PERMISO_MAP[formData.TIPO_PERMISO] || formData.TIPO_PERMISO.toUpperCase();
       
-      // Convertir fechas al formato requerido (YYYY-MM-DD HH:mm:ss)
-      const fechaInicio = formData.FECHA_INICIO.replace('T', ' ').substring(0, 19);
-      const fechaFin = formData.FECHA_FIN.replace('T', ' ').substring(0, 19);
+      // Combinar fecha y hora para el formato requerido (YYYY-MM-DD HH:mm:ss)
+      const fechaInicio = `${formData.FECHA_INICIO} ${formData.HORA_INICIO}:00`;
+      const fechaFin = `${formData.FECHA_FIN} ${formData.HORA_FIN}:00`;
       
       // Preparar array de archivos (por ahora solo URLs, si se suben archivos reales, se procesarían primero)
       const archivosArray = [];
@@ -217,12 +242,17 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       const body = {
         id_area_recepcion: idAreaRecepcion,
         id_colaborador: idColaborador,
+        nombre_apellido: formData.NOMBRE_APELLIDO,
+        dni: formData.DNI,
         fecha_inicio: fechaInicio,
         fecha_fin: fechaFin,
         tipo_permiso: tipoPermisoAPI,
         motivo: formData.MOTIVO,
         estado_solicitud: formData.ESTADO_SOLICITUD || 'PENDIENTE',
-        horas_solicitadas: formData.HORAS_SOLICITADAS ? parseFloat(formData.HORAS_SOLICITADAS) : null,
+        horas_solicitadas: formData.HORAS_SOLICITADAS ? parseFloat(formData.HORAS_SOLICITADAS) : 0.0,
+        horas_cumplidas: 0.0,
+        horas_faltantess: formData.HORAS_SOLICITADAS ? parseFloat(formData.HORAS_SOLICITADAS) : 0.0,
+        estado_completado: 'PENDIENTE',
         archivos: archivosArray
       };
 
@@ -269,14 +299,16 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
         setFormData({
           FECHA_REGISTRO: fechaHora,
           NOMBRE: '',
+          NOMBRE_APELLIDO: '',
+          DNI: '',
           FECHA_INICIO: '',
+          HORA_INICIO: '',
           FECHA_FIN: '',
+          HORA_FIN: '',
           TIPO_PERMISO: '',
           MOTIVO: '',
           ESTADO_SOLICITUD: 'PENDIENTE',
           HORAS_SOLICITADAS: '',
-          HORAS_CUMPLIDAS: '',
-          HORAS_FALTANTESS: '',
           ARCHIVOS: []
         });
         setNumeroGenerado('');
@@ -328,7 +360,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
         {/* NOMBRE (Área) */}
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Área (NOMBRE) <span className="text-red-500">*</span>
+            Área (NOMBRE)
           </label>
           <select
             name="NOMBRE"
@@ -351,34 +383,36 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           </select>
         </div>
 
-        {/* FECHA_INICIO y FECHA_FIN en grid */}
+        {/* NOMBRE_APELLIDO y DNI en grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Fecha de Inicio <span className="text-red-500">*</span>
+              Nombre y Apellido
             </label>
             <input
-              type="datetime-local"
-              name="FECHA_INICIO"
-              value={formData.FECHA_INICIO}
+              type="text"
+              name="NOMBRE_APELLIDO"
+              value={formData.NOMBRE_APELLIDO}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
+              placeholder="Tu respuesta"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Fecha de Fin <span className="text-red-500">*</span>
+              DNI
             </label>
             <input
-              type="datetime-local"
-              name="FECHA_FIN"
-              value={formData.FECHA_FIN}
+              type="text"
+              name="DNI"
+              value={formData.DNI}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
+              placeholder="Tu respuesta"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
@@ -387,7 +421,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
         {/* TIPO_PERMISO */}
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Tipo de Permiso <span className="text-red-500">*</span>
+            Tipo de Permiso
           </label>
           <select
             name="TIPO_PERMISO"
@@ -407,7 +441,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
         {/* MOTIVO */}
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Motivo <span className="text-red-500">*</span>
+            Motivo
           </label>
           <textarea
             name="MOTIVO"
@@ -421,103 +455,247 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           />
         </div>
 
-        {/* ESTADO_SOLICITUD */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Estado de la Solicitud
-          </label>
-          <select
-            name="ESTADO_SOLICITUD"
-            value={formData.ESTADO_SOLICITUD}
-            onChange={handleChange}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
-            style={{ fontFamily: 'var(--font-poppins)' }}
-          >
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="APROBADO">Aprobado</option>
-            <option value="RECHAZADO">Rechazado</option>
-          </select>
+        {/* Cuadro de advertencia sobre horas */}
+        <div className="bg-amber-50/80 border-2 border-amber-300/60 rounded-lg p-4 mb-4 backdrop-blur-sm">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-amber-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+                ATENCIÓN CON LAS HORAS
+              </h3>
+              <p className="text-xs text-amber-800 leading-relaxed" style={{ fontFamily: 'var(--font-poppins)' }}>
+                No es lo mismo seleccionar de <span className="font-semibold">(9:00 - 1:00)</span> que <span className="font-semibold">(9:00 - 13:00)</span>, la primera opción marcará como <span className="font-semibold">13 horas</span> de permiso y la segunda como <span className="font-semibold">4 horas</span> de permiso, por favor seleccionar de forma correcta los horarios por favor.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* HORAS_SOLICITADAS, HORAS_CUMPLIDAS, HORAS_FALTANTESS en grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* FECHA_INICIO y FECHA_FIN en la primera fila */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Horas Solicitadas
+              Fecha de Inicio
             </label>
             <input
-              type="number"
-              name="HORAS_SOLICITADAS"
-              value={formData.HORAS_SOLICITADAS}
+              type="date"
+              name="FECHA_INICIO"
+              value={formData.FECHA_INICIO}
               onChange={handleChange}
-              step="0.5"
-              min="0"
-              placeholder="0.0"
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200"
+              required
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Horas Cumplidas
+              Fecha Fin
             </label>
             <input
-              type="number"
-              name="HORAS_CUMPLIDAS"
-              value={formData.HORAS_CUMPLIDAS}
+              type="date"
+              name="FECHA_FIN"
+              value={formData.FECHA_FIN}
               onChange={handleChange}
-              step="0.5"
-              min="0"
-              placeholder="0.0"
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200"
+              required
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+          </div>
+        </div>
+
+        {/* HORA_INICIO y HORA_FIN en la segunda fila */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Hora de Inicio
+            </label>
+            <input
+              type="time"
+              name="HORA_INICIO"
+              value={formData.HORA_INICIO}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              Horas Faltantes
+              Hora Fin
             </label>
             <input
-              type="number"
-              name="HORAS_FALTANTESS"
-              value={formData.HORAS_FALTANTESS}
+              type="time"
+              name="HORA_FIN"
+              value={formData.HORA_FIN}
               onChange={handleChange}
-              step="0.5"
-              min="0"
-              readOnly
-              placeholder="0.0"
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-medium cursor-not-allowed"
+              required
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
+        </div>
+
+        {/* HORAS_SOLICITADAS - Calculado automáticamente */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Horas Solicitadas
+          </label>
+          <input
+            type="number"
+            name="HORAS_SOLICITADAS"
+            value={formData.HORAS_SOLICITADAS}
+            readOnly
+            step="0.1"
+            min="0"
+            placeholder="0.0"
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-medium cursor-not-allowed"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+            title="Este campo se calcula automáticamente basándose en las fechas y horas de inicio y fin"
+          />
+          <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Calculado automáticamente
+          </p>
         </div>
 
         {/* ARCHIVOS */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-            Archivos (Opcional)
+          <label className="block text-base font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-poppins)' }}>
+            Adjuntar archivo de evidencia
           </label>
-          <input
-            type="file"
-            name="ARCHIVOS"
-            onChange={(e) => {
-              const files = Array.from(e.target.files);
-              setFormData(prev => ({ ...prev, ARCHIVOS: files }));
-            }}
-            multiple
-            accept="*/*"
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-br file:from-[#1E63F7] file:to-[#1E63F7] file:text-white hover:file:opacity-90 file:cursor-pointer"
-            style={{ fontFamily: 'var(--font-poppins)' }}
-          />
+          
+          {/* Mensajes informativos */}
+          <div className="bg-blue-50/80 border border-blue-200/60 rounded-lg p-3 mb-4">
+            <p className="text-xs text-blue-900 mb-2 leading-relaxed" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <span className="font-semibold">Se puede adjuntar como máximo 5 archivos.</span> Ejemplos de archivos de evidencia: Cita médica, Boucher, cronograma, etc.
+            </p>
+            <p className="text-xs text-blue-800 leading-relaxed" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Sube hasta 5 archivos compatibles: PDF, document o image. El tamaño máximo es de 10 MB por archivo.
+            </p>
+          </div>
+
+          {/* Input de archivos con diseño mejorado */}
+          <div className="relative">
+            <input
+              type="file"
+              name="ARCHIVOS"
+              onChange={(e) => {
+                const nuevosArchivos = Array.from(e.target.files);
+                const archivosExistentes = formData.ARCHIVOS || [];
+                
+                // Combinar archivos existentes con los nuevos
+                const todosLosArchivos = [...archivosExistentes, ...nuevosArchivos];
+                
+                // Validar máximo 5 archivos en total
+                if (todosLosArchivos.length > 5) {
+                  setError(`Solo se pueden adjuntar máximo 5 archivos. Ya tienes ${archivosExistentes.length} archivo(s) seleccionado(s).`);
+                  e.target.value = ''; // Limpiar el input
+                  return;
+                }
+                
+                // Validar tamaño máximo de 10 MB por archivo
+                const archivosInvalidos = nuevosArchivos.filter(file => file.size > 10 * 1024 * 1024);
+                if (archivosInvalidos.length > 0) {
+                  setError(`Los siguientes archivos exceden el tamaño máximo de 10 MB: ${archivosInvalidos.map(f => f.name).join(', ')}`);
+                  e.target.value = ''; // Limpiar el input
+                  return;
+                }
+                
+                // Validar que no haya archivos duplicados por nombre
+                const nombresExistentes = archivosExistentes.map(f => f.name);
+                const archivosDuplicados = nuevosArchivos.filter(f => nombresExistentes.includes(f.name));
+                if (archivosDuplicados.length > 0) {
+                  setError(`Los siguientes archivos ya están seleccionados: ${archivosDuplicados.map(f => f.name).join(', ')}`);
+                  e.target.value = ''; // Limpiar el input
+                  return;
+                }
+                
+                setFormData(prev => ({ ...prev, ARCHIVOS: todosLosArchivos }));
+                setError('');
+                e.target.value = ''; // Limpiar el input para permitir seleccionar el mismo archivo nuevamente si es necesario
+              }}
+              multiple
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.bmp,.webp"
+              disabled={(formData.ARCHIVOS?.length || 0) >= 5}
+              className="hidden"
+              id="file-input"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            />
+            <label
+              htmlFor="file-input"
+              className={`flex items-center justify-center space-x-2 w-full px-6 py-4 border-2 border-dashed rounded-lg transition-all duration-200 group ${
+                (formData.ARCHIVOS?.length || 0) >= 5
+                  ? 'border-gray-300 bg-gray-100 cursor-not-allowed opacity-60 pointer-events-none'
+                  : 'border-blue-300 bg-blue-50/30 hover:bg-blue-50/50 hover:border-blue-400 cursor-pointer'
+              }`}
+            >
+              <svg className={`w-5 h-5 transition-colors ${
+                (formData.ARCHIVOS?.length || 0) >= 5
+                  ? 'text-gray-500'
+                  : 'text-blue-600 group-hover:text-blue-700'
+              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span className={`text-sm font-semibold ${
+                (formData.ARCHIVOS?.length || 0) >= 5
+                  ? 'text-gray-600'
+                  : 'text-blue-700 group-hover:text-blue-800'
+              }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                {(formData.ARCHIVOS?.length || 0) >= 5
+                  ? 'Límite de archivos alcanzado (5/5)'
+                  : `Agregar archivo${(formData.ARCHIVOS?.length || 0) > 0 ? ` (${(formData.ARCHIVOS?.length || 0)}/5)` : ''}`
+                }
+              </span>
+            </label>
+            {(formData.ARCHIVOS?.length || 0) >= 5 && (
+              <p className="mt-2 text-xs text-gray-500 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                Has alcanzado el límite máximo de 5 archivos. Elimina un archivo para agregar otro.
+              </p>
+            )}
+          </div>
+
+          {/* Lista de archivos seleccionados */}
           {formData.ARCHIVOS && formData.ARCHIVOS.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {formData.ARCHIVOS.map((archivo, index) => (
-                <p key={index} className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
-                  Archivo {index + 1}: <span className="font-medium">{archivo.name}</span>
-                </p>
-              ))}
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                Archivos seleccionados ({formData.ARCHIVOS.length}/5):
+              </p>
+              <div className="space-y-2">
+                {formData.ARCHIVOS.map((archivo, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <svg className="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          {archivo.name}
+                        </p>
+                        <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          {(archivo.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nuevosArchivos = formData.ARCHIVOS.filter((_, i) => i !== index);
+                        setFormData(prev => ({ ...prev, ARCHIVOS: nuevosArchivos }));
+                      }}
+                      className="ml-3 p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                      title="Eliminar archivo"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

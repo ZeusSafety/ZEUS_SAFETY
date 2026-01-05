@@ -6,7 +6,7 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 
-const API_URL = 'https://descuentoventasstockcajas-2946605267.us-central1.run.app';
+const API_URL = '/api/descuento-cajas';
 const registrosPorPagina = 15;
 
 export default function HistorialCajasMalvinasPage() {
@@ -126,7 +126,17 @@ export default function HistorialCajasMalvinasPage() {
   const cargarHistorial = async () => {
     setCargandoHistorial(true);
     try {
-      const response = await fetch(`${API_URL}/historial/anidado`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/historial-anidado`, {
+        method: 'GET',
+        headers: headers
+      });
       if (!response.ok) throw new Error(`Error ${response.status}`);
       const data = await response.json();
       const historial = data.data || [];
@@ -183,7 +193,17 @@ export default function HistorialCajasMalvinasPage() {
   const cargarLogistica = async () => {
     setCargandoLogistica(true);
     try {
-      const response = await fetch(`${API_URL}/stock/logistica`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/historial-anidado`, {
+        method: 'GET',
+        headers: headers
+      });
       if (!response.ok) throw new Error(`Error ${response.status}`);
       const data = await response.json();
       const logistica = Array.isArray(data) ? data : (data.data || []);
@@ -870,8 +890,9 @@ export default function HistorialCajasMalvinasPage() {
                                                   <tbody className="divide-y divide-gray-100">
                                                     {h.movimientos.map((m, idx) => {
                                                       const tipoMov = m.tipo || (m.regreso > 0 ? 'REGRESO' : 'SALIDA');
+                                                      const movKey = m.id || m.fecha_hora || `mov-${h.id}-${idx}`;
                                                       return (
-                                                        <tr key={idx} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                                        <tr key={movKey} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
                                                           <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(m.fecha_hora)}</td>
                                                           <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{m.responsable}</td>
                                                           <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{m.salida || '-'}</td>
@@ -1104,11 +1125,13 @@ export default function HistorialCajasMalvinasPage() {
                               </td>
                             </tr>
                           ) : (
-                            registrosPaginaLogistica.map((h) => {
+                            registrosPaginaLogistica.map((h, index) => {
                               const diferencia = h.cantidad_despues_actualizar - h.cantidad_antes_actualizar;
                               const colorDif = diferencia >= 0 ? 'text-green-700' : 'text-red-700';
+                              const uniqueKey = h.id_historial_logistica || 
+                                `logistica-${h.fecha_hora_logistica}-${h.producto}-${h.responsable}-${index}`;
                               return (
-                                <tr key={h.id_historial_logistica} className="hover:bg-blue-50 transition-all duration-200 border-b border-gray-100">
+                                <tr key={uniqueKey} className="hover:bg-blue-50 transition-all duration-200 border-b border-gray-100">
                                   <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     {h.id_historial_logistica}
                                   </td>

@@ -94,7 +94,9 @@ export default function GestionCajasMalvinasPage() {
   // Función para obtener token
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
+      const token = localStorage.getItem("token");
+      // Validar que el token no esté vacío
+      return token && token.trim() !== "" ? token : null;
     }
     return null;
   };
@@ -106,11 +108,16 @@ export default function GestionCajasMalvinasPage() {
 
     try {
       // Cargar productos
-      const responseProductos = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/productos', {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseProductos = await fetch('/api/descuento-cajas/productos', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: headers
       });
 
       if (!responseProductos.ok) {
@@ -144,11 +151,16 @@ export default function GestionCajasMalvinasPage() {
 
     try {
       // Cargar productos reservados
-      const responseReservados = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/reservadas', {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const responseReservados = await fetch('/api/descuento-cajas/reservadas', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: headers
       });
 
       if (!responseReservados.ok) {
@@ -265,8 +277,9 @@ export default function GestionCajasMalvinasPage() {
     const estado = estadoFilas[id];
     if (!estado) return;
 
-    const limite = parseFloat(estado.limite);
-    const cantidad = parseFloat(estado.cantidadCajas);
+    // Manejar valores vacíos o nulos
+    const limite = estado.limite === '' || estado.limite === null || estado.limite === undefined ? 0 : parseFloat(estado.limite);
+    const cantidad = estado.cantidadCajas === '' || estado.cantidadCajas === null || estado.cantidadCajas === undefined ? 0 : parseFloat(estado.cantidadCajas);
 
     if (isNaN(limite) || isNaN(cantidad) || limite < 0 || cantidad < 0) {
       alert('Por favor, ingrese valores válidos');
@@ -382,11 +395,16 @@ export default function GestionCajasMalvinasPage() {
     };
 
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/logistica', {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/logistica', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify(payload)
       });
 
@@ -506,11 +524,16 @@ export default function GestionCajasMalvinasPage() {
     };
 
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/reservas/gestionar', {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/reservas-gestionar', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify(datos)
       });
 
@@ -537,7 +560,17 @@ export default function GestionCajasMalvinasPage() {
   const exportarExcel = async () => {
     setExportandoExcel(true);
     try {
-      const response = await fetch('https://descuentoventasstockcajas-2946605267.us-central1.run.app/productos');
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/descuento-cajas/productos', {
+        method: 'GET',
+        headers: headers
+      });
       if (!response.ok) {
         throw new Error('Error al cargar los datos del servidor');
       }
@@ -911,6 +944,34 @@ export default function GestionCajasMalvinasPage() {
                 <div className="text-center py-8 text-gray-600 p-4">Cargando stock...</div>
               ) : (
                 <>
+              {/* Botón Confirmar Todo - Solo aparece cuando hay múltiples filas editando */}
+              {(() => {
+                const filasEditando = Object.keys(estadoFilas).filter(id => estadoFilas[id].editando && !estadoFilas[id].confirmado);
+                const hayMultiplesEditando = filasEditando.length > 1;
+                
+                if (!hayMultiplesEditando) return null;
+                
+                return (
+                  <div className="px-4 py-3 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-orange-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      {filasEditando.length} producto(s) en edición
+                    </span>
+                    <button
+                      onClick={() => {
+                        filasEditando.forEach(id => confirmarEdicion(id));
+                      }}
+                      className="px-4 py-2 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] flex items-center gap-2 text-sm"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      ✓ Confirmar Todo
+                    </button>
+                  </div>
+                );
+              })()}
+
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -936,7 +997,13 @@ export default function GestionCajasMalvinasPage() {
                           return (
                             <tr
                               key={productoId}
-                              onClick={() => !editando && editarFila(productoId)}
+                              onClick={() => {
+                                if (editando) {
+                                  cancelarEdicion(productoId);
+                                } else {
+                                  editarFila(productoId);
+                                }
+                              }}
                               className={`hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${editando ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-500 shadow-sm' : ''}`}
                             >
                               <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{p.codigo}</td>
@@ -945,13 +1012,28 @@ export default function GestionCajasMalvinasPage() {
                                 {editando ? (
                                   <input
                                     type="number"
-                                    value={estado.limite ?? 0}
-                                    onChange={(e) => setEstadoFilas(prev => ({
-                                      ...prev,
-                                      [productoId]: { ...prev[productoId], limite: parseFloat(e.target.value) || 0 }
-                                    }))}
+                                    value={estado.limite !== undefined && estado.limite !== null ? estado.limite : ''}
+                                    onChange={(e) => {
+                                      const valor = e.target.value;
+                                      setEstadoFilas(prev => ({
+                                        ...prev,
+                                        [productoId]: { 
+                                          ...prev[productoId], 
+                                          limite: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
+                                        }
+                                      }));
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === '') {
+                                        setEstadoFilas(prev => ({
+                                          ...prev,
+                                          [productoId]: { ...prev[productoId], limite: 0 }
+                                        }));
+                                      }
+                                    }}
                                     className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
                                     onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
                                   />
                                 ) : (
                                   <span className="text-gray-900 font-medium flex items-center gap-1">
@@ -967,13 +1049,28 @@ export default function GestionCajasMalvinasPage() {
                                 {editando ? (
                                   <input
                                     type="number"
-                                    value={estado.cantidadCajas ?? 0}
-                                    onChange={(e) => setEstadoFilas(prev => ({
-                                      ...prev,
-                                      [productoId]: { ...prev[productoId], cantidadCajas: parseFloat(e.target.value) || 0 }
-                                    }))}
+                                    value={estado.cantidadCajas !== undefined && estado.cantidadCajas !== null ? estado.cantidadCajas : ''}
+                                    onChange={(e) => {
+                                      const valor = e.target.value;
+                                      setEstadoFilas(prev => ({
+                                        ...prev,
+                                        [productoId]: { 
+                                          ...prev[productoId], 
+                                          cantidadCajas: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
+                                        }
+                                      }));
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === '') {
+                                        setEstadoFilas(prev => ({
+                                          ...prev,
+                                          [productoId]: { ...prev[productoId], cantidadCajas: 0 }
+                                        }));
+                                      }
+                                    }}
                                     className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
                                     onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
                                   />
                                 ) : (
                                   <span className="text-gray-900">{p.cantidadCajas ?? 0}</span>
