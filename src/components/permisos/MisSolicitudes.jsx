@@ -29,11 +29,11 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     'sandrazeus': 'SANDRA',
     'joaquinzeus': 'JOAQUIN',
     'edgarzeus': 'EDGAR',
-    'dayanaZeus': 'DAYANA',
-    'yeimiZeus': 'YEIMI',
-    'joseZeus': 'JOSE',
-    'lizethZeus': 'LIZETH',
-    'laritzaZeus': 'LARITZA'
+    'dayanazeus': 'DAYANA',
+    'yeimizeus': 'YEIMI',
+    'josezeus': 'JOSE',
+    'lizethzeus': 'LIZETH',
+    'laritzazeus': 'LARITZA'
   };
 
   // 2. Modificar el estado inicial de colaborador
