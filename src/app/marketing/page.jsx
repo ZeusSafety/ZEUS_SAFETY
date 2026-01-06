@@ -17,6 +17,7 @@ export default function MarketingPage() {
     "gestion-descuento": false,
     "solicitudes-incidencias": false,
     "franja-precios": false,
+    "subida-archivos": false,
   });
 
   useEffect(() => {
@@ -258,6 +259,51 @@ export default function MarketingPage() {
         },
       ],
     },
+    {
+      id: "subida-archivos",
+      title: "Subida de Archivos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "subida-archivos",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          ),
+          title: "Subida de archivos Marketing",
+          description: "Listado de Solicitudes/Incidencias Ver y gestionar archivos en la nube",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "listado-archivos",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Listado de Archivos Subidos",
+          description: "Ver y gestionar el historial de archivos cargados en el sistema",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -391,11 +437,12 @@ export default function MarketingPage() {
                                     router.push("/marketing/solicitudes-incidencias");
                                   } else if (card.id === "listado-precios") {
                                     router.push("/gerencia/listado-precios");
+                                  } else if (card.id === "subida-archivos") {
+                                    router.push("/marketing/subida-archivos");
+                                  } else if (card.id === "listado-archivos") {
+                                    router.push("/marketing/subida-archivos");
                                   }
                                 }}
-                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
-                                style={{ fontFamily: 'var(--font-poppins)' }}
-                              >
                                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
                                 <span className="relative z-10 flex items-center space-x-1.5">
                                   {card.buttonIcon}
@@ -418,4 +465,3 @@ export default function MarketingPage() {
     </div>
   );
 }
-
