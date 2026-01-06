@@ -27,6 +27,7 @@ export default function ImportacionesLogisticaPage() {
     fechaAlmacen: "",
     fechaRecepcion: "",
   });
+  const [filteredImportaciones, setFilteredImportaciones] = useState([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -249,21 +250,6 @@ export default function ImportacionesLogisticaPage() {
     }
   }, [user, loading, fetchImportaciones]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  // Filtrado automático del lado del cliente
-  const [filteredImportaciones, setFilteredImportaciones] = useState([]);
-
   useEffect(() => {
     let filtered = [...importaciones];
 
@@ -305,6 +291,18 @@ export default function ImportacionesLogisticaPage() {
     setFilteredImportaciones(filtered);
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
   }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleProcedimiento = () => {
     console.log("Procedimiento");
@@ -537,7 +535,7 @@ export default function ImportacionesLogisticaPage() {
                                 tabIndex={0}
                                 style={{ 
                                   position: 'relative', 
-                                  zIndex: 9999, 
+                                  zIndex: 1, 
                                   pointerEvents: 'auto',
                                   userSelect: 'none',
                                   WebkitUserSelect: 'none'
@@ -693,7 +691,7 @@ export default function ImportacionesLogisticaPage() {
             <select
               value={updateForm.estado}
               onChange={(e) => setUpdateForm({ ...updateForm, estado: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             >
               <option value="">Seleccionar estado</option>
               <option value="TRANSITO">TRANSITO</option>
@@ -710,7 +708,7 @@ export default function ImportacionesLogisticaPage() {
               type="date"
               value={updateForm.fechaAlmacen}
               onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
 
@@ -722,7 +720,7 @@ export default function ImportacionesLogisticaPage() {
               type="date"
               value={updateForm.fechaRecepcion}
               onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
 
@@ -734,7 +732,7 @@ export default function ImportacionesLogisticaPage() {
               value={updateForm.observaciones}
               onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none text-gray-900"
               placeholder="Ingrese observaciones..."
             />
           </div>
