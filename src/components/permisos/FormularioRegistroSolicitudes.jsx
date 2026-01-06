@@ -18,7 +18,12 @@ const userMapping = {
   'sebastianzeus': 'SEBASTIAN',
   'sandrazeus': 'SANDRA',
   'joaquinzeus': 'JOAQUIN',
-  'edgarzeus': 'EDGAR'
+  'edgarzeus': 'EDGAR',
+  'dayanazeus': 'DAYANA',
+  'yeimizeus': 'YEIMI',
+  'josezeus': 'JOSE',
+  'lizethzeus': 'LIZETH',
+  'laritzazeus': 'LARITZA'
 };
 
 // Función para obtener el nombre completo del usuario actual
