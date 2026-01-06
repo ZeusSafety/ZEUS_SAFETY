@@ -568,10 +568,28 @@ export default function GenerarImagenStockPage() {
                       <table className="w-full border-collapse">
                         <tbody>
                           {grupos[categoria].map((producto, idx) => {
-                            const tieneStock = producto.CANTIDAD_CAJAS > 0;
-                            const stockText = tieneStock
-                              ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
-                              : 'SIN STOCK';
+                            const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
+                            const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
+                            
+                            // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
+                            let colorTexto = '#008000'; // Verde por defecto
+                            let stockText = '';
+                            
+                            if (cantidad === 0) {
+                              colorTexto = '#000000'; // Negro para Sin Stock
+                              stockText = 'Sin Stock';
+                            } else if (cantidad === limite) {
+                              colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else if (cantidad > limite) {
+                              colorTexto = '#008000'; // Verde si cantidad mayor al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else {
+                              // Si cantidad < límite, también rojo (stock bajo)
+                              colorTexto = '#ff0000';
+                              stockText = `Stock: ${cantidad}`;
+                            }
+                            
                             return (
                               <tr key={idx} style={{ 
                                 borderTop: '2px solid #002c59',
@@ -584,7 +602,7 @@ export default function GenerarImagenStockPage() {
                                 </td>
                                 <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
                                   fontFamily: 'Arial, sans-serif',
-                                  color: tieneStock ? '#008000' : '#ff0000'
+                                  color: colorTexto
                                 }}>
                                   {stockText}
                                 </td>
@@ -615,10 +633,28 @@ export default function GenerarImagenStockPage() {
                       <table className="w-full border-collapse">
                         <tbody>
                           {grupos[categoria].map((producto, idx) => {
-                            const tieneStock = producto.CANTIDAD_CAJAS > 0;
-                            const stockText = tieneStock
-                              ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
-                              : 'SIN STOCK';
+                            const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
+                            const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
+                            
+                            // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
+                            let colorTexto = '#008000'; // Verde por defecto
+                            let stockText = '';
+                            
+                            if (cantidad === 0) {
+                              colorTexto = '#000000'; // Negro para Sin Stock
+                              stockText = 'Sin Stock';
+                            } else if (cantidad === limite) {
+                              colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else if (cantidad > limite) {
+                              colorTexto = '#008000'; // Verde si cantidad mayor al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else {
+                              // Si cantidad < límite, también rojo (stock bajo)
+                              colorTexto = '#ff0000';
+                              stockText = `Stock: ${cantidad}`;
+                            }
+                            
                             return (
                               <tr key={idx} style={{ 
                                 borderTop: '2px solid #002c59',
@@ -631,7 +667,7 @@ export default function GenerarImagenStockPage() {
                                 </td>
                                 <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
                                   fontFamily: 'Arial, sans-serif',
-                                  color: tieneStock ? '#008000' : '#ff0000'
+                                  color: colorTexto
                                 }}>
                                   {stockText}
                                 </td>
@@ -662,10 +698,28 @@ export default function GenerarImagenStockPage() {
                       <table className="w-full border-collapse">
                         <tbody>
                           {grupos[categoria].map((producto, idx) => {
-                            const tieneStock = producto.CANTIDAD_CAJAS > 0;
-                            const stockText = tieneStock
-                              ? `${producto.CANTIDAD_CAJAS} ${producto.UNIDAD_MEDIDA_CAJAS || 'CAJAS'}`
-                              : 'SIN STOCK';
+                            const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
+                            const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
+                            
+                            // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
+                            let colorTexto = '#008000'; // Verde por defecto
+                            let stockText = '';
+                            
+                            if (cantidad === 0) {
+                              colorTexto = '#000000'; // Negro para Sin Stock
+                              stockText = 'Sin Stock';
+                            } else if (cantidad === limite) {
+                              colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else if (cantidad > limite) {
+                              colorTexto = '#008000'; // Verde si cantidad mayor al límite
+                              stockText = `Stock: ${cantidad}`;
+                            } else {
+                              // Si cantidad < límite, también rojo (stock bajo)
+                              colorTexto = '#ff0000';
+                              stockText = `Stock: ${cantidad}`;
+                            }
+                            
                             return (
                               <tr key={idx} style={{ 
                                 borderTop: '2px solid #002c59',
@@ -678,7 +732,7 @@ export default function GenerarImagenStockPage() {
                                 </td>
                                 <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
                                   fontFamily: 'Arial, sans-serif',
-                                  color: tieneStock ? '#008000' : '#ff0000'
+                                  color: colorTexto
                                 }}>
                                   {stockText}
                                 </td>

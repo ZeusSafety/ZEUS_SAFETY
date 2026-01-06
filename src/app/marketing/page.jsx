@@ -440,9 +440,12 @@ export default function MarketingPage() {
                                   } else if (card.id === "subida-archivos") {
                                     router.push("/marketing/subida-archivos");
                                   } else if (card.id === "listado-archivos") {
-                                    router.push("/marketing/subida-archivos");
+                                    router.push("/marketing/listado-archivos");
                                   }
                                 }}
+                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                              >
                                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
                                 <span className="relative z-10 flex items-center space-x-1.5">
                                   {card.buttonIcon}
