@@ -22,11 +22,11 @@ export default function ImportacionesLogisticaPage() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedImportacion, setSelectedImportacion] = useState(null);
   const [updateForm, setUpdateForm] = useState({
-    observaciones: "",
-    estado: "",
-    fechaAlmacen: "",
     fechaRecepcion: "",
+    incidencias: "NO",
   });
+  const [guardando, setGuardando] = useState(false);
+  const [modalMensaje, setModalMensaje] = useState({ open: false, tipo: "success", mensaje: "" });
   const [filteredImportaciones, setFilteredImportaciones] = useState([]);
 
   useEffect(() => {
@@ -209,7 +209,8 @@ export default function ImportacionesLogisticaPage() {
               })() || "";
 
             return {
-              id: item.id || item.ID || index + 1,
+              id: item.ID_IMPORTACIONES || item.id_importaciones || item.id || item.ID || index + 1,
+              ID_IMPORTACIONES: item.ID_IMPORTACIONES || item.id_importaciones || item.id || item.ID || index + 1,
               fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
               numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
               redactadoPor: redactadoPorField,
@@ -304,10 +305,6 @@ export default function ImportacionesLogisticaPage() {
     return null;
   }
 
-  const handleProcedimiento = () => {
-    console.log("Procedimiento");
-  };
-
   const totalPages = Math.ceil(filteredImportaciones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -357,74 +354,90 @@ export default function ImportacionesLogisticaPage() {
               <span>Volver a Logística</span>
             </button>
 
-            {/* Card contenedor blanco */}
+            {/* Contenedor principal */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
-              <div className="mb-4 flex items-center justify-start">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white border-2 border-blue-800 shadow-sm">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
-                  <h1 className="text-xl font-bold text-gray-900">Listado de Importaciones</h1>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Gestionar y revisar incidencias registradas</h2>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Administra y revisa tus registros de importación. en el sistema</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                 </div>
               </div>
 
-              {/* Filtros */}
-              <div className="mb-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Fecha Inicio</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="dd/mm/aaaa"
-                      value={fechaInicio}
-                      onChange={(e) => setFechaInicio(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
-                    />
-                    <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Fecha Final</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="dd/mm/aaaa"
-                      value={fechaFinal}
-                      onChange={(e) => setFechaFinal(e.target.value)}
-                      className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
-                    />
-                    <svg className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="relative">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">N° de Despacho</label>
-                  <input
-                    type="text"
-                    placeholder="Buscar..."
-                    value={numeroDespacho}
-                    onChange={(e) => setNumeroDespacho(e.target.value)}
-                    className="w-full px-0 py-2 text-sm border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500 transition-colors placeholder:text-gray-400 rounded-none"
-                  />
-                </div>
-                <div className="flex items-end gap-2">
-                  <button
-                    onClick={handleProcedimiento}
-                    className="px-4 py-2.5 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Procedimiento</span>
-                  </button>
-                </div>
-              </div>
+              {/* Filtros - Contenedor Principal */}
+<div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    {/* Fecha Inicio */}
+    <div className="relative">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Fecha Inicio
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="dd/mm/aaaa"
+          value={fechaInicio}
+          onChange={(e) => setFechaInicio(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+        />
+        <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+    </div>
+
+    {/* Fecha Final */}
+    <div className="relative">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Fecha Final
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="dd/mm/aaaa"
+          value={fechaFinal}
+          onChange={(e) => setFechaFinal(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+        />
+        <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+    </div>
+
+    {/* N° de Despacho */}
+    <div className="relative">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        N° de Despacho
+      </label>
+      <input
+        type="text"
+        placeholder="Buscar..."
+        value={numeroDespacho}
+        onChange={(e) => setNumeroDespacho(e.target.value)}
+        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+      />
+    </div>
+
+  </div>
+</div>
 
               {/* Tabla */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
@@ -605,20 +618,32 @@ export default function ImportacionesLogisticaPage() {
                             <button
                               onClick={() => {
                                 setSelectedImportacion(importacion);
+                                // Convertir fecha de formato YYYY-MM-DD a formato para el input date
+                                let fechaRecepcionFormatted = "";
+                                if (importacion.fechaRecepcion) {
+                                  // Si viene en formato YYYY-MM-DD, usarlo directamente
+                                  if (importacion.fechaRecepcion.includes("-")) {
+                                    fechaRecepcionFormatted = importacion.fechaRecepcion.split(" ")[0];
+                                  } else {
+                                    // Si viene en otro formato, intentar parsearlo
+                                    const fechaParts = importacion.fechaRecepcion.split("/");
+                                    if (fechaParts.length === 3) {
+                                      fechaRecepcionFormatted = `${fechaParts[2]}-${fechaParts[1].padStart(2, "0")}-${fechaParts[0].padStart(2, "0")}`;
+                                    }
+                                  }
+                                }
                                 setUpdateForm({
-                                  observaciones: importacion.observaciones || "",
-                                  estado: importacion.estado || "",
-                                  fechaAlmacen: importacion.fechaAlmacen || "",
-                                  fechaRecepcion: importacion.fechaRecepcion || "",
+                                  fechaRecepcion: fechaRecepcionFormatted,
+                                  incidencias: importacion.incidencias === true || importacion.incidencias === "SI" ? "SI" : "NO",
                                 });
                                 setIsUpdateModalOpen(true);
                               }}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-700 border-2 border-blue-800 hover:bg-blue-800 hover:border-blue-900 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              title="Editar"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
-                              <span>Actualizar</span>
                             </button>
                           </td>
                         </tr>
@@ -674,96 +699,193 @@ export default function ImportacionesLogisticaPage() {
           setIsUpdateModalOpen(false);
           setSelectedImportacion(null);
           setUpdateForm({
-            observaciones: "",
-            estado: "",
-            fechaAlmacen: "",
             fechaRecepcion: "",
+            incidencias: "NO",
           });
         }}
-        title={`Actualizar Importación - ${selectedImportacion?.numeroDespacho || ""}`}
-        size="lg"
+        title="Actualizar Registro"
+        size="sm"
+        hideFooter
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Fecha de Recepción */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Estado
-            </label>
-            <select
-              value={updateForm.estado}
-              onChange={(e) => setUpdateForm({ ...updateForm, estado: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-            >
-              <option value="">Seleccionar estado</option>
-              <option value="TRANSITO">TRANSITO</option>
-              <option value="ETA">ETA</option>
-              <option value="RECIBIDO">RECIBIDO</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Fecha de Almacén
-            </label>
-            <input
-              type="date"
-              value={updateForm.fechaAlmacen}
-              onChange={(e) => setUpdateForm({ ...updateForm, fechaAlmacen: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
               Fecha de Recepción
             </label>
             <input
               type="date"
               value={updateForm.fechaRecepcion}
               onChange={(e) => setUpdateForm({ ...updateForm, fechaRecepcion: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
+          {/* Incidencias */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Observaciones
+            <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Incidencias
             </label>
-            <textarea
-              value={updateForm.observaciones}
-              onChange={(e) => setUpdateForm({ ...updateForm, observaciones: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none text-gray-900"
-              placeholder="Ingrese observaciones..."
-            />
+            <select
+              value={updateForm.incidencias}
+              onChange={(e) => setUpdateForm({ ...updateForm, incidencias: e.target.value })}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            >
+              <option value="NO">NO</option>
+              <option value="SI">SI</option>
+            </select>
           </div>
 
+          {/* Botones */}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               onClick={() => {
                 setIsUpdateModalOpen(false);
                 setSelectedImportacion(null);
                 setUpdateForm({
-                  observaciones: "",
-                  estado: "",
-                  fechaAlmacen: "",
                   fechaRecepcion: "",
+                  incidencias: "NO",
                 });
               }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              Cancelar
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Cancelar</span>
             </button>
             <button
-              onClick={() => {
-                console.log("Guardar cambios:", updateForm);
-                alert("Funcionalidad de guardado pendiente de implementar");
-                setIsUpdateModalOpen(false);
+              onClick={async () => {
+                if (!selectedImportacion) return;
+                
+                setGuardando(true);
+                try {
+                  // Obtener el ID correcto - puede venir de diferentes campos
+                  const importacionId = selectedImportacion.id || selectedImportacion.ID_IMPORTACIONES || selectedImportacion.ID;
+                  
+                  if (!importacionId) {
+                    alert('Error: No se pudo identificar el registro');
+                    setGuardando(false);
+                    return;
+                  }
+
+                  // Convertir fecha de YYYY-MM-DD a formato esperado por la API (YYYY-MM-DD)
+                  const fechaRecepcionFormatted = updateForm.fechaRecepcion || null;
+
+                  const api = "https://importacionesvr01crud-2946605267.us-central1.run.app";
+                  const parametro = "logistica";
+                  const url = `${api}?area=${parametro}`;
+
+                  const body = {
+                    id: String(importacionId),
+                    fecha_recepcion: fechaRecepcionFormatted,
+                    incidencias: updateForm.incidencias || null
+                  };
+
+                  console.log("Enviando actualización:", body);
+                  console.log("URL:", url);
+
+                  const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body),
+                  });
+
+                  if (response.status === 200) {
+                    const result = await response.json();
+                    console.log("Respuesta de actualización:", result);
+
+                    // Recargar los datos
+                    await fetchImportaciones();
+
+                    setIsUpdateModalOpen(false);
+                    setSelectedImportacion(null);
+                    setUpdateForm({
+                      fechaRecepcion: "",
+                      incidencias: "NO",
+                    });
+
+                    setModalMensaje({
+                      open: true,
+                      tipo: "success",
+                      mensaje: "Importación actualizada exitosamente"
+                    });
+                  } else {
+                    const errorData = await response.text();
+                    setModalMensaje({
+                      open: true,
+                      tipo: "error",
+                      mensaje: `ERROR: ${errorData || "No se pudo actualizar la importación"}`
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error al actualizar:", error);
+                  setModalMensaje({
+                    open: true,
+                    tipo: "error",
+                    mensaje: `Error al actualizar el registro: ${error.message || "Error desconocido"}`
+                  });
+                } finally {
+                  setGuardando(false);
+                }
               }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+              disabled={guardando}
+              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              Guardar Cambios
+              {guardando ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Guardar</span>
+                </>
+              )}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Mensaje */}
+      <Modal
+        isOpen={modalMensaje.open}
+        onClose={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+        title={modalMensaje.tipo === "success" ? "Éxito" : "Error"}
+        size="sm"
+        primaryButtonText="Aceptar"
+        onPrimaryButtonClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-center mb-2">
+            {modalMensaje.tipo === "success" ? (
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            )}
+          </div>
+          <p className={`text-center text-sm ${
+            modalMensaje.tipo === "success" ? "text-green-700" : "text-red-700"
+          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+            {modalMensaje.mensaje}
+          </p>
         </div>
       </Modal>
     </div>

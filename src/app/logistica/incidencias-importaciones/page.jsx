@@ -28,7 +28,6 @@ export default function IncidenciasImportacionesPage() {
   // Modales
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
   const [isActualizarModalOpen, setIsActualizarModalOpen] = useState(false);
-  const [isProcedimientosModalOpen, setIsProcedimientosModalOpen] = useState(false);
   const [isEditProductoModalOpen, setIsEditProductoModalOpen] = useState(false);
   
   // Datos de incidencia seleccionada
@@ -728,69 +727,99 @@ export default function IncidenciasImportacionesPage() {
   };
 
   const generarPDF = async () => {
-    if (!currentIncidenciaId) {
+    if (!currentIncidenciaId || !selectedIncidencia) {
       setError('No se ha seleccionado una incidencia');
       return;
     }
 
     try {
-      const incidencia = incidencias.find(inc => String(inc.ID_INCIDENCIA) === String(currentIncidenciaId));
-      if (!incidencia) {
-        setError('No se encontró la incidencia');
+      const incidencia = selectedIncidencia;
+      
+      // Usar los productos que se muestran en el modal
+      const productosPDF = productosDetalle.length > 0 ? productosDetalle : [];
+      
+      if (productosPDF.length === 0) {
+        setError('No hay productos para generar el PDF');
         return;
       }
 
-      // Cargar productos para el PDF
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/incidencias-logisticas?id=${currentIncidenciaId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-
-      let productosPDF = [];
-      if (response.ok) {
-        const data = await response.json();
+      // Obtener datos de la importación para tipoCarga y fechaLlegada
+      let tipoCarga = "";
+      let fechaLlegada = "";
+      const numeroDespacho = incidencia.NUMERO_DESPACHO;
+      
+      if (numeroDespacho) {
         try {
-          productosPDF = typeof data === 'string' ? JSON.parse(data) : data;
-        } catch (e) {
-          productosPDF = Array.isArray(data) ? data : [];
+          const token = localStorage.getItem("token");
+          const importResponse = await fetch(`/api/importaciones-vr01?despacho=${encodeURIComponent(numeroDespacho)}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          if (importResponse.ok) {
+            const importData = await importResponse.json();
+            // La API puede devolver un objeto con detalles o directamente un array
+            let importacion = null;
+            if (importData && importData.detalles && Array.isArray(importData.detalles) && importData.detalles.length > 0) {
+              importacion = importData.detalles[0];
+            } else if (Array.isArray(importData) && importData.length > 0) {
+              importacion = importData[0];
+            } else if (importData && typeof importData === 'object') {
+              importacion = importData;
+            }
+            
+            if (importacion) {
+              tipoCarga = importacion.TIPO_CARGA || importacion.tipo_carga || importacion.Tipo_Carga || "";
+              fechaLlegada = importacion.FECHA_LLEGADA || importacion.fecha_llegada || importacion.Fecha_Llegada || "";
+            }
+          }
+        } catch (error) {
+          console.warn('No se pudo obtener datos de importación:', error);
         }
-        
-        if (productosPDF && typeof productosPDF === 'object' && !Array.isArray(productosPDF)) {
-          productosPDF = [productosPDF];
-        }
-        productosPDF = Array.isArray(productosPDF) ? productosPDF : [];
       }
 
       // Preparar datos para el PDF según el formato del sistema antiguo (FICHA DE INCIDENCIA)
+      const fechaRegistro = new Date().toISOString().split('T')[0];
+      const fecha = incidencia.FECHA_CORRECCION ? incidencia.FECHA_CORRECCION.split(' ')[0] : fechaRegistro;
+      const fechaLlegadaFormatted = fechaLlegada || fecha;
+
+      // Preparar payload para la API según el formato del sistema antiguo
       const payload = {
-        numero_despacho: incidencia.NUMERO_DESPACHO || "N/A",
+        numero_despacho: numeroDespacho || "N/A",
         generado_por: incidencia.RESPONDIDO_POR || "SISTEMA",
-        fecha: incidencia.FECHA_CORRECCION ? incidencia.FECHA_CORRECCION.split(' ')[0] : new Date().toISOString().split('T')[0],
-        tipo_carga: incidencia.TIPO_CARGA || "",
+        fecha: fechaLlegadaFormatted,
+        tipo_carga: tipoCarga || "",
         detalle: productosPDF.map((producto, index) => {
-          const cantidadInicial = parseFloat(producto.CANTIDAD_INICIAL || 0);
-          const cantidadRecibida = parseFloat(producto.CANTIDAD_RECIBIDA || 0);
-          const diferencia = cantidadInicial - cantidadRecibida;
+          // EXACTAMENTE como en el sistema antiguo:
+          // item: producto.ITEM || String(index + 1) - siempre STRING
+          // cantidad_inicial: producto.CANTIDAD_INICIAL || "0" - siempre STRING "0"
+          // cantidad_recibida: producto.CANTIDAD_RECIBIDA || "0" - siempre STRING "0"
           
-          return {
-            numero: producto.ITEM || String(index + 1),
+          const itemData = {
+            item: producto.ITEM || String(index + 1),
             producto: producto.PRODUCTO || "N/A",
             codigo: producto.CODIGO || "N/A",
             unidad_medida: producto.UNIDAD_MEDIDA || "N/A",
-            cantidad_inicial: cantidadInicial,
-            cantidad_recibida: cantidadRecibida,
-            motivo: producto.MOTIVO || "Sin motivo especificado",
-            diferencia: diferencia,
+            cantidad_inicial: producto.CANTIDAD_INICIAL || "0",
+            cantidad_recibida: producto.CANTIDAD_RECIBIDA || "0",
+            motivo: producto.MOTIVO || "Sin motivo especificado"
           };
+          
+          console.log(`Item ${index + 1}:`, itemData);
+          
+          return itemData;
         }),
       };
 
-      const pdfResponse = await fetch("/api/generar-pdf-incidencias", {
+      console.log('📤 Enviando datos para generar PDF:', payload);
+
+      // Llamar a la API para generar PDF en Google Drive
+      const token = localStorage.getItem("token");
+      const pdfResponse = await fetch("/api/generar-pdf-incidencias?metodo=ficha_incidencia", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -804,21 +833,52 @@ export default function IncidenciasImportacionesPage() {
         const result = await pdfResponse.json();
         const pdfUrl = result.result;
         
-        if (pdfUrl && pdfUrl.startsWith('http')) {
-          window.open(pdfUrl, '_blank');
-        } else if (pdfUrl && typeof pdfUrl === 'string') {
-          // Intentar extraer URL del texto
-          const urlMatch = pdfUrl.match(/(https?:\/\/[^\s]+)/);
-          if (urlMatch) {
-            window.open(urlMatch[1], '_blank');
+        console.log('✅ PDF generado exitosamente:', pdfUrl);
+        
+        // Verificar si la respuesta contiene una URL
+        if (pdfUrl && pdfUrl.trim() !== '') {
+          // Intentar extraer URL de diferentes formatos de respuesta
+          let urlFinal = null;
+          
+          // Si la respuesta es directamente una URL
+          if (typeof pdfUrl === 'string' && pdfUrl.startsWith('http')) {
+            urlFinal = pdfUrl;
+          }
+          // Si la respuesta es JSON con URL
+          else if (typeof pdfUrl === 'string' && (pdfUrl.includes('"url"') || pdfUrl.includes('"link"') || pdfUrl.includes('"pdf"'))) {
+            try {
+              const jsonResponse = JSON.parse(pdfUrl);
+              urlFinal = jsonResponse.url || jsonResponse.link || jsonResponse.pdf || jsonResponse.download_url;
+            } catch (e) {
+              console.log('No se pudo parsear como JSON:', e);
+            }
+          }
+          // Si la respuesta contiene una URL en el texto
+          else if (typeof pdfUrl === 'string') {
+            const urlMatch = pdfUrl.match(/(https?:\/\/[^\s]+)/);
+            if (urlMatch) {
+              urlFinal = urlMatch[1];
+            }
+          }
+          // Si es un objeto con propiedades
+          else if (typeof pdfUrl === 'object') {
+            urlFinal = pdfUrl.url || pdfUrl.link || pdfUrl.pdf || pdfUrl.download_url || pdfUrl;
+          }
+          
+          // Si encontramos una URL, abrirla en Google Drive
+          if (urlFinal && urlFinal.startsWith('http')) {
+            console.log('🔗 Abriendo PDF en Google Drive:', urlFinal);
+            window.open(urlFinal, '_blank');
+            setError(null);
           } else {
-            setError('PDF generado exitosamente. Respuesta: ' + pdfUrl);
+            console.log('📄 Respuesta del servidor (sin URL válida):', pdfUrl);
+            setError('PDF generado exitosamente, pero no se pudo obtener la URL. Respuesta: ' + JSON.stringify(pdfUrl));
           }
         } else {
-          setError('PDF generado exitosamente.');
+          setError('PDF generado exitosamente, pero la respuesta está vacía.');
         }
       } else {
-        const errorData = await pdfResponse.json();
+        const errorData = await pdfResponse.json().catch(() => ({ error: 'Error desconocido' }));
         setError(errorData.error || 'Error al generar el PDF');
       }
     } catch (error) {
@@ -869,7 +929,7 @@ export default function IncidenciasImportacionesPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Gestionar y revisar incidencias registradas</h2>
+                    <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de importaciones con incidencias</h2>
                     <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Revisa y gestiona todas las incidencias registradas en el sistema</p>
                   </div>
                 </div>
@@ -888,70 +948,69 @@ export default function IncidenciasImportacionesPage() {
                 </div>
               )}
 
-              {/* Filtros */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Fecha Desde:
-                    </label>
-                    <input
-                      type="date"
-                      value={fechaDesde}
-                      onChange={(e) => setFechaDesde(e.target.value)}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Fecha Hasta:
-                    </label>
-                    <input
-                      type="date"
-                      value={fechaHasta}
-                      onChange={(e) => setFechaHasta(e.target.value)}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Número de Despacho:
-                    </label>
-                    <input
-                      type="text"
-                      value={buscarDespacho}
-                      onChange={(e) => setBuscarDespacho(e.target.value)}
-                      placeholder="Buscar por número de despacho"
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    />
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <button
-                      onClick={filtrarIncencias}
-                      className="px-4 py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-1.5"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      Buscar
-                    </button>
-                    <button
-                      onClick={() => setIsProcedimientosModalOpen(true)}
-                      className="px-4 py-2.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-1.5"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      Procedimientos
-                    </button>
-                  </div>
-                </div>
-              </div>
+{/* Filtros */}
+<div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
+  {/* Cambiamos a 6 columnas para tener más control del ancho */}
+  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+    
+    {/* Fecha Desde - Ocupa 1 columna */}
+    <div className="md:col-span-1">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Fecha Desde:
+      </label>
+      <input
+        type="date"
+        value={fechaDesde}
+        onChange={(e) => setFechaDesde(e.target.value)}
+        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+      />
+    </div>
+
+    {/* Fecha Hasta - Ocupa 1 columna */}
+    <div className="md:col-span-1">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Fecha Hasta:
+      </label>
+      <input
+        type="date"
+        value={fechaHasta}
+        onChange={(e) => setFechaHasta(e.target.value)}
+        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+      />
+    </div>
+
+    {/* Número de Despacho - AHORA MÁS ANCHO (Ocupa 3 columnas) */}
+    <div className="md:col-span-3">
+      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Número de Despacho:
+      </label>
+      <input
+        type="text"
+        value={buscarDespacho}
+        onChange={(e) => setBuscarDespacho(e.target.value)}
+        placeholder="Buscar por número de despacho"
+        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+      />
+    </div>
+
+    {/* Botón Buscar - AHORA MÁS ANCHO (Ocupa 1 columna pero se siente más integrado) */}
+    <div className="flex items-end md:col-span-1">
+      <button
+        onClick={filtrarIncencias}
+        className="w-full py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-1.5"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Buscar
+      </button>
+    </div>
+  </div>
+</div>
 
               {/* Tabla de Incidencias */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
@@ -1140,14 +1199,22 @@ export default function IncidenciasImportacionesPage() {
         hideFooter
       >
         <div className="space-y-4 py-2">
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Productos Afectados
+            </h4>
             <button
               onClick={generarPDF}
-              className="px-3 py-1.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1.5"
+              className="px-4 py-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="white"></path>
+                <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                <text x="12" y="15" fontSize="6" fill="#dc2626" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
               </svg>
               Generar PDF
             </button>
@@ -1198,7 +1265,7 @@ export default function IncidenciasImportacionesPage() {
             <textarea
               value={observacionesDetalle}
               readOnly
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-gray-50 min-h-[120px]"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-gray-50 min-h-[250px] resize-y"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
@@ -1584,44 +1651,6 @@ export default function IncidenciasImportacionesPage() {
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
-        </div>
-      </Modal>
-
-      {/* Modal de Procedimientos */}
-      <Modal
-        isOpen={isProcedimientosModalOpen}
-        onClose={() => setIsProcedimientosModalOpen(false)}
-        title="Procedimientos - Listado de Incidencias Logísticas"
-        size="full"
-        hideFooter
-      >
-        <div className="space-y-6">
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Instrucciones Generales
-            </h4>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
-                <strong>Bienvenido al sistema de gestión de incidencias logísticas.</strong> Esta página le permite revisar y gestionar todas las incidencias registradas en el sistema.
-              </p>
-              <h5 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Funcionalidades Principales:
-              </h5>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
-                <li><strong>Filtros de Búsqueda:</strong> Permite filtrar incidencias por fecha y número de despacho</li>
-                <li><strong>Vista de Detalles:</strong> Acceso completo a la información de cada incidencia</li>
-                <li><strong>Actualización de Datos:</strong> Posibilidad de actualizar información de incidencias</li>
-                <li><strong>Visualización de PDFs:</strong> Acceso directo a documentos relacionados</li>
-              </ul>
-            </div>
-          </div>
-          {/* Más contenido de procedimientos puede agregarse aquí */}
         </div>
       </Modal>
     </div>

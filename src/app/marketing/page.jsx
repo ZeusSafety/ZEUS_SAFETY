@@ -276,7 +276,7 @@ export default function MarketingPage() {
             </svg>
           ),
           title: "Subida de archivos Marketing",
-          description: "Listado de Solicitudes/Incidencias Ver y gestionar archivos en la nube",
+          description: "Ver y gestionar archivos en la nube",
           buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -293,7 +293,7 @@ export default function MarketingPage() {
             </svg>
           ),
           title: "Listado de Archivos Subidos",
-          description: "Ver y gestionar el historial de archivos cargados en el sistema",
+          description: "Ver historial de archivos cargados en el sistema",
           buttonText: "Ver",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
