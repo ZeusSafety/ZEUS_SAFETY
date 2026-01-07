@@ -183,10 +183,10 @@ export default function ListadoArchivosPage() {
                               <td className="px-3 py-2 whitespace-nowrap">
                                 <button
                                   onClick={() => handleOpenArchivo(archivo.archivo)}
-                                  className="inline-flex items-center justify-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="inline-flex items-center justify-center px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                                   style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
-                                  PDF
+                                  Archivo
                                 </button>
                               </td>
                             </tr>
