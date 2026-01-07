@@ -907,7 +907,8 @@ export default function RegistroImportacionesPage() {
         
         console.log("Enviando datos a la API:", {
           url: apiUrl,
-          payload: payload
+          method: 'POST',
+          contentType: 'multipart/form-data (automático)'
         });
         
         const response = await fetch(apiUrl, {

@@ -444,7 +444,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h1>
+                    <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Mis Solicitudes/Incidencias</h1>
                     <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
                       Ver y gestionar Solicitudes/Incidencias
                     </p>
@@ -561,7 +561,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="w-full justify-center text-center overflow-hidden">
+                    <div className="w-full overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
                       <table className="w-full table-auto">
                       <thead>
                         <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-800">
@@ -728,7 +728,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                    </div>
 
                   {/* Paginación */}
                   <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
