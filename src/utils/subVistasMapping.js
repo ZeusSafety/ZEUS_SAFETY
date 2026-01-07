@@ -47,6 +47,7 @@ export const subVistasToCardsMap = {
   "GESTION DE CLIENTES - MARKETING": "gestion-clientes",
   "LISTADO DE VENTAS - MARKETING": "listado-ventas",
   "SUBIDA DE ARCHIVOS MARKETING": "subida-archivos",
+  "LISTADO DE ARCHIVOS SUBIDOS": "listado-archivos",
   "RECENCIA DE CLIENTES": "recencia-clientes", // Si existe el card
   "SOLICITUDES ADMIN-MARKETING": "listado-solicitudes",
   "STOCK MALVINAS POR MAYOR CAJAS": "stock-precios-mayor", // Si existe el card
