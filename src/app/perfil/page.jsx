@@ -93,12 +93,6 @@ export default function PerfilPage() {
       route: "/perfil/editar",
     },
     {
-      id: "contraseña",
-      iconName: "contraseña",
-      title: "Cambiar contraseña",
-      route: "/cambiar-password",
-    },
-    {
       id: "registro",
       iconName: "registro",
       title: "Registro de actividad (logs personales)",

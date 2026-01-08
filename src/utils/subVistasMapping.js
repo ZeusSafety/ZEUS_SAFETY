@@ -10,7 +10,7 @@ export const subVistasToCardsMap = {
   // ========== ADMINISTRACION ==========
   "LISTADO DE IMPORTACIONES": "importaciones", // En sección incidencias
   "LISTADO INCIDENCIA DE PROFORMAS": "proformas-actas", // En sección incidencias
-  "GESTION_PRODUCTOS": "gestionar-productos", // Puede estar en otra sección o no implementado aún
+  "GESTION DE PRODUCTOS": "productos", // Puede estar en otra sección o no implementado aún
   "SOLICITUDES ADMIN-ADMINISTRACION": "listado-solicitudes",
   
   // ========== IMPORTACION ==========
