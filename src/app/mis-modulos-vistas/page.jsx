@@ -13,6 +13,7 @@ export default function MisModulosVistasPage() {
   const [modulos, setModulos] = useState([]);
   const [subVistas, setSubVistas] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [selectedModule, setSelectedModule] = useState(null); // Nuevo estado para el filtro
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,7 +47,7 @@ export default function MisModulosVistasPage() {
     try {
       setLoadingData(true);
       const username = user?.name || user?.email || user?.id || "hervinzeus";
-      
+
       const response = await fetch(
         `https://api-login-accesos-2946605267.us-central1.run.app?metodo=get_permissions&user=${encodeURIComponent(username)}`,
         {
@@ -63,23 +64,52 @@ export default function MisModulosVistasPage() {
       }
 
       const data = await response.json();
-      
+
       // Mapear módulos
       const modulosData = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
         id: mod.NOMBRE || mod.nombre || mod.Nombre,
         nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
       })) : [];
-      
+
       setModulos(modulosData);
 
-      // Mapear sub_vistas
-      const subVistasData = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => ({
-        id: vista.ID_SUB_VISTAS || vista.id || vista.ID,
-        nombre: vista.NOMBRE || vista.nombre || vista.Nombre,
-        area: vista.AREA || vista.area || "",
-      })) : [];
-      
+      // Función auxiliar para adivinar el área basada en el nombre
+      const detectarModulo = (nombreVista) => {
+        const nombre = nombreVista?.toUpperCase() || "";
+
+        // Mapeo directo de palabras clave a módulos
+        if (nombre.includes("IMPORT") || nombre.includes("ADUANA")) return "IMPORTACION";
+        if (nombre.includes("LOGISTICA") || nombre.includes("ALMACEN")) return "LOGISTICA";
+        if (nombre.includes("MARKETING") || nombre.includes("CLIENTE")) return "MARKETING";
+        if (nombre.includes("GERENCIA")) return "GERENCIA";
+        if (nombre.includes("SISTEMAS") || nombre.includes("USUARIO") || nombre.includes("CONFIG")) return "SISTEMAS";
+        if (nombre.includes("FACTURACION") || nombre.includes("COBRANZA")) return "FACTURACION";
+        if (nombre.includes("ADMIN")) return "ADMINISTRACION";
+        if (nombre.includes("RRHH") || nombre.includes("PERSONAL") || nombre.includes("HUMANOS")) return "RECURSOS HUMANOS";
+        if (nombre.includes("VENTA") || nombre.includes("PROFORMA") || nombre.includes("COTIZACION") || nombre.includes("CAJA")) return "VENTAS";
+
+        return "OTROS";
+      };
+
+      // Mapear sub_vistas asignando módulo si no tienen area
+      const subVistasData = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => {
+        const nombreVista = vista.NOMBRE || vista.nombre || vista.Nombre;
+        const areaOriginal = vista.AREA || vista.area;
+        const areaDetectada = areaOriginal || detectarModulo(nombreVista);
+
+        return {
+          id: vista.ID_SUB_VISTAS || vista.id || vista.ID,
+          nombre: nombreVista,
+          area: areaDetectada,
+        };
+      }) : [];
+
       setSubVistas(subVistasData);
+
+      // No seleccionar ningún módulo por defecto para que el usuario elija
+      // if (modulosData.length > 0) {
+      //   setSelectedModule(modulosData[0]);
+      // }
     } catch (error) {
       console.error("Error al obtener módulos y vistas:", error);
       setModulos([]);
@@ -174,14 +204,13 @@ export default function MisModulosVistasPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div 
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        
+
         <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
@@ -230,15 +259,25 @@ export default function MisModulosVistasPage() {
                         {modulos.map((modulo) => (
                           <div
                             key={modulo.id}
-                            className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:border-blue-300"
+                            onClick={() => setSelectedModule(modulo)}
+                            className={`bg-white rounded-lg border p-4 cursor-pointer transition-all duration-200 ${selectedModule?.id === modulo.id
+                              ? "border-blue-500 ring-2 ring-blue-100 shadow-md transform scale-[1.02]"
+                              : "border-gray-200 hover:shadow-md hover:border-blue-300"
+                              }`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0 transition-colors duration-200 ${selectedModule?.id === modulo.id
+                                ? "bg-gradient-to-br from-blue-600 to-blue-700"
+                                : "bg-gradient-to-br from-gray-400 to-gray-500"
+                                }`}>
                                 {getIcon(getModuloIcon(modulo.nombre))}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: 'var(--font-poppins)' }}>{modulo.nombre}</h3>
-                                <p className="text-xs text-gray-500 font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>Módulo activo</p>
+                                <h3 className={`text-sm font-medium truncate ${selectedModule?.id === modulo.id ? "text-blue-900" : "text-gray-900"
+                                  }`} style={{ fontFamily: 'var(--font-poppins)' }}>{modulo.nombre}</h3>
+                                <p className="text-xs text-gray-500 font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {selectedModule?.id === modulo.id ? "Seleccionado" : "Haz clic para ver vistas"}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -250,31 +289,49 @@ export default function MisModulosVistasPage() {
                   {/* Sub Vistas */}
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>Vistas Disponibles</h2>
-                    {subVistas.length === 0 ? (
-                      <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>No tienes vistas asignadas</p>
+                    {!selectedModule ? (
+                      <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
+                        <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Selecciona un módulo arriba para ver sus vistas disponibles.
+                        </p>
+                      </div>
+                    ) : subVistas.filter(v =>
+                      (v.modulo_id && selectedModule?.id && String(v.modulo_id) === String(selectedModule.id)) ||
+                      (v.area && selectedModule?.nombre && v.area === selectedModule.nombre)
+                    ).length === 0 ? (
+                      <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
+                        <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          No hay vistas disponibles para el módulo <span className="font-semibold text-blue-700">{selectedModule?.nombre}</span>
+                        </p>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {subVistas.map((vista) => (
-                          <div
-                            key={vista.id}
-                            className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:border-green-300"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: 'var(--font-poppins)' }}>{vista.nombre}</h3>
-                                {vista.area && (
-                                  <p className="text-xs text-gray-500 font-normal truncate" style={{ fontFamily: 'var(--font-poppins)' }}>{vista.area}</p>
-                                )}
+                        {subVistas
+                          .filter(vista =>
+                            (vista.modulo_id && selectedModule?.id && String(vista.modulo_id) === String(selectedModule.id)) ||
+                            (vista.area && selectedModule?.nombre && vista.area === selectedModule.nombre)
+                          )
+                          .map((vista) => (
+                            <div
+                              key={vista.id}
+                              className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:border-green-300"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: 'var(--font-poppins)' }}>{vista.nombre}</h3>
+                                  {vista.area && (
+                                    <p className="text-xs text-gray-500 font-normal truncate" style={{ fontFamily: 'var(--font-poppins)' }}>{vista.area}</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     )}
                   </div>

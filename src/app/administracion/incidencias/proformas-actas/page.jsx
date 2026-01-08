@@ -12,7 +12,7 @@ export default function IncidenciasProformasActasPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   // Estados para datos
   const [allRecords, setAllRecords] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -27,7 +27,7 @@ export default function IncidenciasProformasActasPage() {
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7; // 7 filas visibles como en el sistema antiguo
+  const itemsPerPage = 10; // 10 filas visibles
 
   // Redirigir a login si no hay usuario
   useEffect(() => {
@@ -85,17 +85,17 @@ export default function IncidenciasProformasActasPage() {
       setLoadingData(true);
       setErrorAPI(null);
       console.log("🔄 Cargando registros desde API...");
-      
+
       const token = localStorage.getItem("token");
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
       };
-      
+
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch("/api/incidencias-proformas-actas?tipo=listado", {
         method: "GET",
         headers: headers,
@@ -114,10 +114,10 @@ export default function IncidenciasProformasActasPage() {
       console.log("📊 Tipo de datos recibidos:", typeof data);
       console.log("📊 Es array?", Array.isArray(data));
       console.log("📊 Datos completos recibidos de API:", JSON.stringify(data, null, 2));
-      
+
       // Intentar diferentes formatos de respuesta
       let records = [];
-      
+
       if (Array.isArray(data)) {
         records = data;
       } else if (data && Array.isArray(data.data)) {
@@ -149,10 +149,10 @@ export default function IncidenciasProformasActasPage() {
           records = values;
         }
       }
-      
+
       console.log("✅ Registros procesados:", records.length);
       console.log("📋 Primer registro (si existe):", records[0]);
-      
+
       setAllRecords(records);
     } catch (error) {
       console.error("❌ Error cargando registros:", error);
@@ -190,7 +190,7 @@ export default function IncidenciasProformasActasPage() {
   // Filtrar registros
   const registrosFiltrados = useMemo(() => {
     let filtered = [...allRecords];
-    
+
     // Filtrar por estado de verificación
     if (filtros.verificacion !== "TODOS") {
       filtered = filtered.filter(rec => {
@@ -198,7 +198,7 @@ export default function IncidenciasProformasActasPage() {
         return estado === filtros.verificacion;
       });
     }
-    
+
     // Filtrar por fechas
     if (filtros.fechaDesde) {
       filtered = filtered.filter(rec => {
@@ -207,7 +207,7 @@ export default function IncidenciasProformasActasPage() {
         return f >= filtros.fechaDesde;
       });
     }
-    
+
     if (filtros.fechaHasta) {
       filtered = filtered.filter(rec => {
         const fISO = rec["DATE(FECHA_EMISION)"] || "";
@@ -215,7 +215,7 @@ export default function IncidenciasProformasActasPage() {
         return f <= filtros.fechaHasta;
       });
     }
-    
+
     return filtered;
   }, [allRecords, filtros.verificacion, filtros.fechaDesde, filtros.fechaHasta]);
 
@@ -258,7 +258,7 @@ export default function IncidenciasProformasActasPage() {
   // Función para guardar verificación
   const guardarVerificacion = async () => {
     if (!selectedRecord) return;
-    
+
     try {
       const data = {
         solucion: formVerificacion.solucion || "",
@@ -323,7 +323,7 @@ export default function IncidenciasProformasActasPage() {
   // Función para guardar culminado
   const guardarCulminado = async () => {
     if (!selectedRecord) return;
-    
+
     try {
       const data = {
         culminado: formCulminado.estado === "SI" ? "Si" : "No",
@@ -363,7 +363,7 @@ export default function IncidenciasProformasActasPage() {
   const generarPDF = async (record) => {
     try {
       const errores = await cargarErroresSoluciones(record["ID"]);
-      
+
       // Cargar jsPDF dinámicamente
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
@@ -485,7 +485,7 @@ export default function IncidenciasProformasActasPage() {
     try {
       const { default: html2canvas } = await import("html2canvas");
       const { jsPDF } = await import("jspdf");
-      
+
       const table = document.getElementById("tablaAdmin");
       if (!table) {
         alert("No se encontró la tabla.");
@@ -528,11 +528,11 @@ export default function IncidenciasProformasActasPage() {
   const [modalArchivoAbierto, setModalArchivoAbierto] = useState(false);
   const [modalCulminadoAbierto, setModalCulminadoAbierto] = useState(false);
   const [modalDetallesErrorAbierto, setModalDetallesErrorAbierto] = useState(false);
-  
+
   // Estado para registro seleccionado
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [erroresSoluciones, setErroresSoluciones] = useState([]);
-  
+
   // Formulario de verificación
   const [formVerificacion, setFormVerificacion] = useState({
     solucion: "",
@@ -540,7 +540,7 @@ export default function IncidenciasProformasActasPage() {
     revisadoPor: "",
     estado: "PENDIENTE",
   });
-  
+
   // Formulario de culminado
   const [formCulminado, setFormCulminado] = useState({
     estado: "NO",
@@ -563,9 +563,8 @@ export default function IncidenciasProformasActasPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -638,7 +637,7 @@ export default function IncidenciasProformasActasPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        API Conectada ({registrosFiltrados.length} registros)
+                        API Conectada
                       </span>
                     </div>
                   )}
@@ -749,7 +748,7 @@ export default function IncidenciasProformasActasPage() {
 
               {/* Tabla principal (un solo cuadro grande) */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                <div className="overflow-x-auto" style={{ maxHeight: "calc(7 * 50px + 40px)", overflowY: "auto" }}>
+                <div className="overflow-x-auto">
                   {loadingData ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
@@ -759,307 +758,304 @@ export default function IncidenciasProformasActasPage() {
                       <p className="text-red-600">{errorAPI}</p>
                     </div>
                   ) : (
-                  <table id="tablaAdmin" className="w-full">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha de registro
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Registrado por
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Mes
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Encargado comprobante
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha emisión
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          N° proforma/acta
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          N° comprobante
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Ítems de error
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Responsable
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Área
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Tipo de incidencia
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha de notificación
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Solución
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Obs. adicionales
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Revisado por
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Estado de verificación
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha envío de archivo
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Archivo de solución
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha de corrección
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Estado de la solución
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Comprobante
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          N° de comprobante (Fact.)
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Culminado
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Fecha concluyente
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {registrosPaginados.length === 0 ? (
-                        <tr>
-                          <td colSpan={25} className="px-4 py-8 text-center text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
-                            {loadingData ? "Cargando..." : "No hay registros disponibles"}
-                          </td>
+                    <table id="tablaAdmin" className="w-full">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha de registro
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Registrado por
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Mes
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Encargado comprobante
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha emisión
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            N° proforma/acta
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            N° comprobante
+                          </th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Ítems de error
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Responsable
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Área
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Tipo de incidencia
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha de notificación
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Solución
+                          </th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Obs. adicionales
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Revisado por
+                          </th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Estado de verificación
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha envío de archivo
+                          </th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Archivo de solución
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha de corrección
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Estado de la solución
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Comprobante
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            N° de comprobante (Fact.)
+                          </th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Culminado
+                          </th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            Fecha concluyente
+                          </th>
                         </tr>
-                      ) : (
-                        registrosPaginados.map((rec) => {
-                          const solucionSinIncidencia = (rec["SOLUCION"] || "").toString().trim().toUpperCase() === "SIN INCIDENCIA";
-                          const estado = (rec["ESTADO_INCIDENCIA"] || "PENDIENTE").toString().toUpperCase();
-                          const culminado = (rec["CULMINADO"] || "NO").toUpperCase() === "SI";
-                          const tieneObs = !!(rec["OBSERVACION_ADICIONAL_CORRECION"] || "").trim();
-                          const archivoUrl = (rec["ARCHIVO_SOLUCION_PDF"] || "").trim();
-                          const tieneArchivo = !!archivoUrl;
-                          const textoArchivo = (rec["TEXTO_SOLUCION_PDF"] || "").trim();
-                          
-                          // Determinar clase de badge para estado
-                          const getEstadoBadgeClass = (est) => {
-                            if (est === "PENDIENTE") return "bg-gradient-to-br from-yellow-500 to-yellow-600";
-                            if (est === "EN REVISIÓN" || est === "EN REVISION") return "bg-gradient-to-br from-orange-500 to-orange-600";
-                            if (est === "NOTIFICADO") return "bg-gradient-to-br from-blue-500 to-blue-600";
-                            if (est === "COMPLETADO") return "bg-gradient-to-br from-green-600 to-green-700";
-                            if (est === "OBSERVADO") return "bg-gradient-to-br from-red-600 to-red-700";
-                            return "bg-gradient-to-br from-gray-500 to-gray-600";
-                          };
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {registrosPaginados.length === 0 ? (
+                          <tr>
+                            <td colSpan={25} className="px-4 py-8 text-center text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
+                              {loadingData ? "Cargando..." : "No hay registros disponibles"}
+                            </td>
+                          </tr>
+                        ) : (
+                          registrosPaginados.map((rec) => {
+                            const solucionSinIncidencia = (rec["SOLUCION"] || "").toString().trim().toUpperCase() === "SIN INCIDENCIA";
+                            const estado = (rec["ESTADO_INCIDENCIA"] || "PENDIENTE").toString().toUpperCase();
+                            const culminado = (rec["CULMINADO"] || "NO").toUpperCase() === "SI";
+                            const tieneObs = !!(rec["OBSERVACION_ADICIONAL_CORRECION"] || "").trim();
+                            const archivoUrl = (rec["ARCHIVO_SOLUCION_PDF"] || "").trim();
+                            const tieneArchivo = !!archivoUrl;
+                            const textoArchivo = (rec["TEXTO_SOLUCION_PDF"] || "").trim();
 
-                          return (
-                            <tr 
-                              key={rec["ID"] || `row-${Math.random()}`} 
-                              className="hover:bg-blue-50 transition-colors border-b border-gray-100"
-                            >
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["ID"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateDisplay(rec["FECHA_REGISTRO"]) || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["REGISTRADO_POR"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {getMonthName(rec["MONTH(FECHA_EMISION)"]) || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["ENCARGADO_COMPROBANTE"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateOnly(rec["DATE(FECHA_EMISION)"]) || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-semibold text-gray-800" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["NUMERO_PROFORMA"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-semibold text-gray-800" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["NUMERO_COMPROBANTE"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
-                                <div className="inline-flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => abrirModalDetallesError(rec)}
-                                    className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => generarPDF(rec)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
-                                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                    </svg>
-                                    <span>PDF</span>
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["RESPONSABLE_INCIDENCIA"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["AREA"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {(rec["TIPO_INCIDENCIA"] || "").toString().toUpperCase()}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateDisplay(rec["FECHA_NOTIFICACION"]) || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {(rec["SOLUCION"] || "").toString().toUpperCase()}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
-                                {tieneObs ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => abrirModalObs(rec)}
-                                    className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </button>
-                                ) : (
-                                  <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>—</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {(rec["REVISADO_POR"] || "").toString().toUpperCase()}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
-                                <div className="inline-flex items-center gap-2">
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadgeClass(estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                    {estado}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => abrirModalVerificacion(rec)}
-                                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${
-                                      estado === "PENDIENTE"
+                            // Determinar clase de badge para estado
+                            const getEstadoBadgeClass = (est) => {
+                              if (est === "PENDIENTE") return "bg-gradient-to-br from-yellow-500 to-yellow-600";
+                              if (est === "EN REVISIÓN" || est === "EN REVISION") return "bg-gradient-to-br from-orange-500 to-orange-600";
+                              if (est === "NOTIFICADO") return "bg-gradient-to-br from-blue-500 to-blue-600";
+                              if (est === "COMPLETADO") return "bg-gradient-to-br from-green-600 to-green-700";
+                              if (est === "OBSERVADO") return "bg-gradient-to-br from-red-600 to-red-700";
+                              return "bg-gradient-to-br from-gray-500 to-gray-600";
+                            };
+
+                            return (
+                              <tr
+                                key={rec["ID"] || `row-${Math.random()}`}
+                                className="hover:bg-blue-50 transition-colors border-b border-gray-100"
+                              >
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["ID"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateDisplay(rec["FECHA_REGISTRO"]) || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["REGISTRADO_POR"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {getMonthName(rec["MONTH(FECHA_EMISION)"]) || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["ENCARGADO_COMPROBANTE"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateOnly(rec["DATE(FECHA_EMISION)"]) || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-semibold text-gray-800" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["NUMERO_PROFORMA"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-semibold text-gray-800" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["NUMERO_COMPROBANTE"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
+                                  <div className="inline-flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirModalDetallesError(rec)}
+                                      className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => generarPDF(rec)}
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                      </svg>
+                                      <span>PDF</span>
+                                    </button>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["RESPONSABLE_INCIDENCIA"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["AREA"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {(rec["TIPO_INCIDENCIA"] || "").toString().toUpperCase()}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateDisplay(rec["FECHA_NOTIFICACION"]) || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {(rec["SOLUCION"] || "").toString().toUpperCase()}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
+                                  {tieneObs ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirModalObs(rec)}
+                                      className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                    </button>
+                                  ) : (
+                                    <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {(rec["REVISADO_POR"] || "").toString().toUpperCase()}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
+                                  <div className="inline-flex items-center gap-2">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadgeClass(estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                      {estado}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirModalVerificacion(rec)}
+                                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${estado === "PENDIENTE"
                                         ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
                                         : "bg-gradient-to-br from-green-600 to-green-700 text-white"
-                                    }`}
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    Editar
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateDisplay(rec["FECHA_ENVIO_ARCHIVO"] || "") || "—"}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
-                                {tieneArchivo || textoArchivo ? (
-                                  <div className="inline-flex items-center gap-1.5">
-                                    {tieneArchivo && (
-                                      <button
-                                        type="button"
-                                        onClick={() => abrirPDF(archivoUrl)}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                        style={{ fontFamily: 'var(--font-poppins)' }}
-                                      >
-                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
-                                          <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                                          <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                        </svg>
-                                        <span>PDF</span>
-                                      </button>
-                                    )}
-                                    {textoArchivo && (
-                                      <button
-                                        type="button"
-                                        onClick={() => abrirModalArchivo(rec)}
-                                        className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                        style={{ fontFamily: 'var(--font-poppins)' }}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                      </button>
-                                    )}
+                                        }`}
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      Editar
+                                    </button>
                                   </div>
-                                ) : (
-                                  <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>—</span>
-                                )}
-                              </td>
-                              <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateDisplay(rec["FECHA_CORRECION"] || "") || "—"}
-                              </td>
-                              <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["ESTADO_SOLUCION"] || ""}
-                              </td>
-                              <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center uppercase ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {(rec["COMPROBANTE"] || "").toString().toUpperCase()}
-                              </td>
-                              <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {rec["NUMERO_COMPROBANTE_SOLUCION"] || ""}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
-                                <div className="inline-flex items-center gap-2">
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
-                                    culminado
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateDisplay(rec["FECHA_ENVIO_ARCHIVO"] || "") || "—"}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
+                                  {tieneArchivo || textoArchivo ? (
+                                    <div className="inline-flex items-center gap-1.5">
+                                      {tieneArchivo && (
+                                        <button
+                                          type="button"
+                                          onClick={() => abrirPDF(archivoUrl)}
+                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                                            <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                          </svg>
+                                          <span>PDF</span>
+                                        </button>
+                                      )}
+                                      {textoArchivo && (
+                                        <button
+                                          type="button"
+                                          onClick={() => abrirModalArchivo(rec)}
+                                          className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>—</span>
+                                  )}
+                                </td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateDisplay(rec["FECHA_CORRECION"] || "") || "—"}
+                                </td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["ESTADO_SOLUCION"] || ""}
+                                </td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center uppercase ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {(rec["COMPROBANTE"] || "").toString().toUpperCase()}
+                                </td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center ${solucionSinIncidencia ? "bg-red-100" : ""}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {rec["NUMERO_COMPROBANTE_SOLUCION"] || ""}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center text-[10px]">
+                                  <div className="inline-flex items-center gap-2">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${culminado
                                       ? "bg-gradient-to-br from-green-600 to-green-700"
                                       : "bg-gradient-to-br from-red-600 to-red-700"
-                                  }`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                    {culminado ? "Sí" : "No"}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => abrirModalCulminado(rec)}
-                                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${
-                                      culminado
+                                      }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                      {culminado ? "Sí" : "No"}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirModalCulminado(rec)}
+                                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${culminado
                                         ? "bg-gradient-to-br from-green-600 to-green-700 text-white"
                                         : "bg-gradient-to-br from-red-600 to-red-700 text-white"
-                                    }`}
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    Editar
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {fmtDateDisplay(rec["FECHA_CONCLUYENTE"] || "") || "—"}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                                        }`}
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      Editar
+                                    </button>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {fmtDateDisplay(rec["FECHA_CONCLUYENTE"] || "") || "—"}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   )}
                 </div>
 
@@ -1117,7 +1113,7 @@ export default function IncidenciasProformasActasPage() {
           setSelectedRecord(null);
         }}
         title="Actualizar verificación"
-        size="md"
+        size="xl"
         primaryButtonText="Guardar"
         secondaryButtonText="Cancelar"
         onPrimaryButtonClick={guardarVerificacion}
@@ -1156,10 +1152,10 @@ export default function IncidenciasProformasActasPage() {
             <textarea
               value={formVerificacion.observacion}
               onChange={(e) => setFormVerificacion(prev => ({ ...prev, observacion: e.target.value }))}
-              rows={3}
+              rows={6}
               placeholder="Escriba observaciones"
               className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 bg-white resize-y"
-              style={{ fontFamily: 'var(--font-poppins)', minHeight: '80px' }}
+              style={{ fontFamily: 'var(--font-poppins)', minHeight: '120px' }}
             />
           </div>
           <div>
@@ -1395,7 +1391,7 @@ export default function IncidenciasProformasActasPage() {
               </div>
             </div>
           )}
-          
+
           {erroresSoluciones && erroresSoluciones.length > 0 ? (
             <div className="mt-4">
               <h4 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-poppins)' }}>
