@@ -259,11 +259,11 @@ export default function ListadoImportacionesPage() {
       const payload = {
         id: idNumerico, // ID en la raíz del body (requerido por el backend)
         productos: productos, // SIEMPRE requerido por el backend
-        FECHA_LLEGADA_PRODUCTOS: updateForm.fechaLlegadaProductos || null,
-        FECHA_ALMACEN: updateForm.fechaAlmacen || null,
-        TIPO_CARGA: updateForm.tipoCarga || null,
-        ESTADO_IMPORTACION: estadoParaAPI || null,
-        CANAL: updateForm.canal || null,
+        fecha_llegada_productos: updateForm.fechaLlegadaProductos || "",
+        fecha_almacen: updateForm.fechaAlmacen || "",
+        tipo_carga: updateForm.tipoCarga || "",
+        estado_importacion: estadoParaAPI || "",
+        canal: updateForm.canal || "",
       };
 
       console.log('📤 Enviando payload:', JSON.stringify(payload, null, 2));
@@ -754,7 +754,7 @@ export default function ListadoImportacionesPage() {
             />
           </div>
 
-          {/* Productos - Texto no editable */}
+          {/* Productos - Editable */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5" style={{ fontFamily: 'var(--font-poppins)' }}>
               Productos
@@ -762,8 +762,8 @@ export default function ListadoImportacionesPage() {
             <input
               type="text"
               value={updateForm.productos}
-              disabled
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm text-gray-500 bg-gray-100 cursor-not-allowed"
+              onChange={(e) => setUpdateForm({ ...updateForm, productos: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
               style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
