@@ -1488,10 +1488,10 @@ export default function ColaboradoresPage() {
                         </div>
                       </div>
                       <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${loadingColaboradores
-                          ? "bg-yellow-50 border border-yellow-200"
-                          : errorColaboradores
-                            ? "bg-red-50 border border-red-200"
-                            : "bg-green-50 border border-green-200"
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : errorColaboradores
+                          ? "bg-red-50 border border-red-200"
+                          : "bg-green-50 border border-green-200"
                         }`}>
                         {loadingColaboradores ? (
                           <>
@@ -1713,10 +1713,10 @@ export default function ColaboradoresPage() {
                         </div>
                       </div>
                       <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${loadingColaboradores
-                          ? "bg-yellow-50 border border-yellow-200"
-                          : errorColaboradores
-                            ? "bg-red-50 border border-red-200"
-                            : "bg-green-50 border border-green-200"
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : errorColaboradores
+                          ? "bg-red-50 border border-red-200"
+                          : "bg-green-50 border border-green-200"
                         }`}>
                         {loadingColaboradores ? (
                           <>
@@ -2071,12 +2071,14 @@ export default function ColaboradoresPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-xs text-gray-900"
                   >
                     <option value="TODAS">Todas las Áreas</option>
-                    <option value="MARKETING">MARKETING</option>
+                    <option value="GERENCIA">GERENCIA</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
                     <option value="IMPORTACION">IMPORTACION</option>
                     <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="GERENCIA">GERENCIA</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
                     <option value="FACTURACION">FACTURACION</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
                     <option value="VENTAS">VENTAS</option>
                   </select>
                 </div>
@@ -2795,12 +2797,12 @@ export default function ColaboradoresPage() {
       {notification.show && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
           <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${notification.type === "success"
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300"
-              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+            ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300"
+            : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
             } min-w-[320px] max-w-md`}>
             <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${notification.type === "success"
-                ? "bg-green-500"
-                : "bg-red-500"
+              ? "bg-green-500"
+              : "bg-red-500"
               }`}>
               {notification.type === "success" ? (
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -2814,8 +2816,8 @@ export default function ColaboradoresPage() {
             </div>
             <div className="flex-1">
               <p className={`text-sm font-semibold ${notification.type === "success"
-                  ? "text-green-800"
-                  : "text-red-800"
+                ? "text-green-800"
+                : "text-red-800"
                 }`}>
                 {notification.message}
               </p>
@@ -2823,8 +2825,8 @@ export default function ColaboradoresPage() {
             <button
               onClick={() => setNotification({ show: false, message: "", type: notification.type })}
               className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${notification.type === "success"
-                  ? "hover:text-green-600"
-                  : "hover:text-red-600"
+                ? "hover:text-green-600"
+                : "hover:text-red-600"
                 }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

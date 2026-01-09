@@ -62,23 +62,20 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
-          disabled 
-            ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed' 
-            : `border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${
-              isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
-            }`
-        }`}
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${disabled
+          ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed'
+          : `border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+          }`
+          }`}
       >
         <span className={`${value ? 'text-gray-900' : 'text-gray-500'} whitespace-nowrap overflow-hidden text-ellipsis`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform duration-200 flex-shrink-0 ml-2 ${
-            disabled 
-              ? 'text-gray-400' 
-              : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
-          }`}
+          className={`w-5 h-5 transition-transform duration-200 flex-shrink-0 ml-2 ${disabled
+            ? 'text-gray-400'
+            : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -88,11 +85,10 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
       </button>
 
       {isOpen && !disabled && (
-        <div 
-          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden mt-1 mb-1 ${
-            openUpward ? 'bottom-full' : 'top-full'
-          }`}
-          style={{ 
+        <div
+          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden mt-1 mb-1 ${openUpward ? 'bottom-full' : 'top-full'
+            }`}
+          style={{
             borderRadius: '0.5rem',
             border: '1px solid #e5e7eb',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
@@ -104,11 +100,10 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${
-                  value === option.value
-                    ? 'bg-blue-100 text-blue-700 font-semibold'
-                    : 'text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${value === option.value
+                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                  : 'text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 {option.label}
               </button>
@@ -155,19 +150,16 @@ const CategoriaAccordion = ({ value, onChange, label, required, categorias = [] 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
-          `border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${
-            isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${`border-gray-200 bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
           }`
-        }`}
+          }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {selectedCategoria ? selectedCategoria.label : "Seleccione una categoría"}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform duration-200 text-gray-400 ${
-            isOpen ? 'transform rotate-180' : ''
-          }`}
+          className={`w-5 h-5 transition-transform duration-200 text-gray-400 ${isOpen ? 'transform rotate-180' : ''
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -177,9 +169,9 @@ const CategoriaAccordion = ({ value, onChange, label, required, categorias = [] 
       </button>
 
       {isOpen && (
-        <div 
+        <div
           className="absolute z-50 w-full bg-white shadow-xl overflow-hidden mt-1 mb-1"
-          style={{ 
+          style={{
             borderRadius: '0.5rem',
             border: '1px solid #e5e7eb',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
@@ -194,11 +186,10 @@ const CategoriaAccordion = ({ value, onChange, label, required, categorias = [] 
                   onChange({ target: { name: 'categoria', value: categoria.value } });
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${
-                  value === categoria.value
-                    ? 'bg-blue-100 text-blue-700 font-semibold'
-                    : 'text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-150 rounded ${value === categoria.value
+                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                  : 'text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 {categoria.label}
               </button>
@@ -317,35 +308,35 @@ export default function ProductosPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       // Verificar que estamos en el cliente
       if (typeof window === "undefined") {
         throw new Error("Este código debe ejecutarse en el cliente");
       }
-      
+
       // Obtener el token del localStorage (opcional, puede que la API no lo requiera)
       const token = localStorage.getItem("token");
-      
+
       console.log("Fetching productos...");
-      
+
       // Usar el endpoint proxy de Next.js para evitar problemas de CORS
       const apiUrl = "/api/productos";
-      
+
       // Preparar headers - incluir Authorization solo si hay token
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
       };
-      
+
       if (token && token.trim() !== "") {
         headers["Authorization"] = `Bearer ${token}`;
         console.log("Using token:", token.substring(0, 20) + "...");
       } else {
         console.log("No token found, making request without authentication");
       }
-      
+
       console.log("API URL (proxy):", apiUrl);
-      
+
       let response;
       try {
         response = await fetch(apiUrl, {
@@ -365,9 +356,9 @@ export default function ProductosPage() {
         }
         throw fetchError;
       }
-      
+
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         // Si el token está caducado (401), redirigir al login
         if (response.status === 401 || response.status === 403) {
@@ -378,11 +369,11 @@ export default function ProductosPage() {
             return;
           }
         }
-        
+
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
       }
-      
+
       let data;
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -395,9 +386,9 @@ export default function ProductosPage() {
           throw new Error("La respuesta no es un JSON válido");
         }
       }
-      
+
       console.log("Datos recibidos de la API:", data);
-      
+
       // La API puede devolver un array o un objeto con una propiedad que contiene el array
       let productosArray = [];
       if (Array.isArray(data)) {
@@ -412,7 +403,7 @@ export default function ProductosPage() {
         // Si no es un array, intentar usar el objeto directamente
         productosArray = [data];
       }
-      
+
       // Mapear los datos de la API al formato esperado
       const productosMapeados = productosArray.map((item) => ({
         id: item.id || item.ID || item.id_producto || item.idProducto || 0,
@@ -430,7 +421,7 @@ export default function ProductosPage() {
         stock: item.stock || item.STOCK || item.inventory || 0,
         activo: item.activo !== undefined ? item.activo : (item.ACTIVO !== undefined ? item.ACTIVO : (item.active !== undefined ? item.active : true)),
       }));
-      
+
       console.log("Productos mapeados:", productosMapeados);
       setProductos(productosMapeados);
 
@@ -451,15 +442,15 @@ export default function ProductosPage() {
       // Extraer tipos de producto únicos por categoría
       const tiposPorCat = {};
       productosMapeados.forEach(producto => {
-        if (producto.categoria && producto.categoria.trim() !== "" && 
-            producto.tipoProducto && producto.tipoProducto.trim() !== "") {
+        if (producto.categoria && producto.categoria.trim() !== "" &&
+          producto.tipoProducto && producto.tipoProducto.trim() !== "") {
           if (!tiposPorCat[producto.categoria]) {
             tiposPorCat[producto.categoria] = new Set();
           }
           tiposPorCat[producto.categoria].add(producto.tipoProducto);
         }
       });
-      
+
       // Convertir Sets a arrays ordenados
       const tiposPorCategoriaFormateado = {};
       Object.keys(tiposPorCat).forEach(categoria => {
@@ -476,7 +467,7 @@ export default function ProductosPage() {
         message: err.message,
         stack: err.stack
       });
-      
+
       // Mensajes de error más específicos
       let errorMessage = "Error al cargar los productos";
       if (err.message.includes("Failed to fetch") || err.message.includes("fetch")) {
@@ -486,7 +477,7 @@ export default function ProductosPage() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoadingData(false);
@@ -505,18 +496,18 @@ export default function ProductosPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       const token = localStorage.getItem("token");
-      
+
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
       };
-      
+
       if (token && token.trim() !== "") {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       // Mapear los datos del formulario al formato de la API
       // La API requiere todos estos campos según el error
       const apiData = {
@@ -532,17 +523,17 @@ export default function ProductosPage() {
         stock: productoData.stock ? parseInt(productoData.stock) : 0,
         ficha_tecnica: productoData.fichaTecnica || "",
       };
-      
+
       console.log("=== AGREGANDO PRODUCTO ===");
       console.log("Datos del formulario:", productoData);
       console.log("Datos mapeados para API:", apiData);
-      
+
       const response = await fetch("/api/productos", {
         method: "POST",
         headers: headers,
         body: JSON.stringify(apiData),
       });
-      
+
       if (!response.ok) {
         let errorData;
         try {
@@ -551,21 +542,21 @@ export default function ProductosPage() {
           const errorText = await response.text();
           errorData = { error: errorText || `Error ${response.status} al agregar producto` };
         }
-        
+
         console.error("=== ERROR AL AGREGAR PRODUCTO ===");
         console.error("Status:", response.status);
         console.error("Error data:", errorData);
         console.error("================================");
-        
+
         throw new Error(errorData.error || errorData.details || `Error ${response.status} al agregar producto`);
       }
-      
+
       const data = await response.json();
       console.log("Producto agregado exitosamente:", data);
-      
+
       // Recargar la lista de productos
       await fetchProductos();
-      
+
       return { success: true, data };
     } catch (err) {
       console.error("Error al agregar producto:", err);
@@ -580,25 +571,25 @@ export default function ProductosPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       const token = localStorage.getItem("token");
-      
+
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
       };
-      
+
       if (token && token.trim() !== "") {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       // Buscar el producto actual para mantener sus datos
       const productoActual = productos.find(p => p.id === productoId);
-      
+
       if (!productoActual) {
         throw new Error("No se encontró el producto a desactivar");
       }
-      
+
       // Mapear los datos del producto al formato de la API, cambiando el estado a 0
       const apiData = {
         id: productoId,
@@ -615,15 +606,15 @@ export default function ProductosPage() {
         ficha_tecnica: productoActual.fichaTecnica || "",
         estado: 0, // Cambiar el estado a 0 en lugar de eliminar
       };
-      
+
       console.log("Desactivando producto:", apiData);
-      
+
       const response = await fetch("/api/productos", {
         method: "PUT",
         headers: headers,
         body: JSON.stringify(apiData),
       });
-      
+
       if (!response.ok) {
         let errorData;
         try {
@@ -632,17 +623,17 @@ export default function ProductosPage() {
           const errorText = await response.text();
           errorData = { error: errorText || `Error ${response.status} al desactivar producto` };
         }
-        
+
         console.error("Error al desactivar producto:", errorData);
         throw new Error(errorData.error || errorData.details || `Error ${response.status} al desactivar producto`);
       }
-      
+
       const data = await response.json();
       console.log("Producto desactivado exitosamente:", data);
-      
+
       // Recargar la lista de productos
       await fetchProductos();
-      
+
       return { success: true, data };
     } catch (err) {
       console.error("Error al desactivar producto:", err);
@@ -657,18 +648,18 @@ export default function ProductosPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       const token = localStorage.getItem("token");
-      
+
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
       };
-      
+
       if (token && token.trim() !== "") {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       // Mapear los datos del formulario al formato de la API (usar el mismo formato que desactivarProducto)
       const apiData = {
         id: productoId,
@@ -681,26 +672,26 @@ export default function ProductosPage() {
         tamaño: productoData.tamano || "",
         pares_por_caja: productoData.paresPorCaja ? parseInt(productoData.paresPorCaja) : 0,
       };
-      
+
       console.log("Actualizando producto:", apiData);
-      
+
       const response = await fetch("/api/productos", {
         method: "PUT",
         headers: headers,
         body: JSON.stringify(apiData),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Error ${response.status} al actualizar producto`);
       }
-      
+
       const data = await response.json();
       console.log("Producto actualizado exitosamente:", data);
-      
+
       // Recargar la lista de productos
       await fetchProductos();
-      
+
       return { success: true, data };
     } catch (err) {
       console.error("Error al actualizar producto:", err);
@@ -711,7 +702,7 @@ export default function ProductosPage() {
   }, [fetchProductos]);
 
   // Filtrar productos por búsqueda
-  const filteredProductos = productos.filter(p => 
+  const filteredProductos = productos.filter(p =>
     (p.codigo && p.codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (p.nombre && p.nombre.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (p.categoria && p.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -742,9 +733,8 @@ export default function ProductosPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -778,13 +768,12 @@ export default function ProductosPage() {
                       <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona los productos activos del sistema</p>
                     </div>
                   </div>
-                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
-                    loadingData 
-                      ? 'bg-yellow-50 border border-yellow-200' 
-                      : error 
-                        ? 'bg-red-50 border border-red-200' 
-                        : 'bg-green-50 border border-green-200'
-                  }`}>
+                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${loadingData
+                    ? 'bg-yellow-50 border border-yellow-200'
+                    : error
+                      ? 'bg-red-50 border border-red-200'
+                      : 'bg-green-50 border border-green-200'
+                    }`}>
                     {loadingData ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
@@ -799,9 +788,9 @@ export default function ProductosPage() {
                       </>
                     ) : (
                       <>
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                       </>
                     )}
@@ -835,7 +824,7 @@ export default function ProductosPage() {
                       </svg>
                     </div>
                   </div>
-                  
+
                   {/* Botón Agregar */}
                   <button
                     onClick={() => {
@@ -906,31 +895,31 @@ export default function ProductosPage() {
                           </tr>
                         ) : (
                           paginatedActivos.map((producto) => (
-                          <tr key={producto.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.codigo}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.nombre}</td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center">
-                                <button
-                                  onClick={() => {
-                                    setSelectedDescripcion(producto.descripcion || "Sin descripción");
-                                    setIsDescripcionModalOpen(true);
-                                  }}
-                                  className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                                  title="Ver descripción completa"
-                                  style={{ fontFamily: 'var(--font-poppins)' }}
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.categoria}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tipoProducto || "-"}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.colorTipo || "-"}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tamano || "-"}</td>
+                            <tr key={producto.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.codigo}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.nombre}</td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center justify-center">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDescripcion(producto.descripcion || "Sin descripción");
+                                      setIsDescripcionModalOpen(true);
+                                    }}
+                                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                                    title="Ver descripción completa"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.categoria}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tipoProducto || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.colorTipo || "-"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.tamano || "-"}</td>
                               <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{producto.paresPorCaja || "-"}</td>
                               <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center">
@@ -940,11 +929,10 @@ export default function ProductosPage() {
                                       setSelectedFile(null);
                                       setIsGestionarPDFModalOpen(true);
                                     }}
-                                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
-                                      producto.fichaTecnica
-                                        ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                                        : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
-                                    }`}
+                                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${producto.fichaTecnica
+                                      ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                                      : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
+                                      }`}
                                     style={{ fontFamily: 'var(--font-poppins)' }}
                                     title={producto.fichaTecnica ? "Gestionar PDF del producto (Tiene ficha técnica)" : "Agregar ficha técnica al producto"}
                                   >
@@ -971,18 +959,18 @@ export default function ProductosPage() {
                                             "Authorization": `Bearer ${token}`
                                           }
                                         });
-                                        
+
                                         if (response.ok) {
                                           const productosActualizados = await response.json();
-                                          const productoActualizado = Array.isArray(productosActualizados) 
+                                          const productoActualizado = Array.isArray(productosActualizados)
                                             ? productosActualizados.find(p => {
-                                                const pId = p.id || p.ID || p.id_producto || p.idProducto;
-                                                const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
-                                                const productoIdNum = typeof producto.id === 'string' ? parseInt(producto.id) : producto.id;
-                                                return pIdNum === productoIdNum;
-                                              })
+                                              const pId = p.id || p.ID || p.id_producto || p.idProducto;
+                                              const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
+                                              const productoIdNum = typeof producto.id === 'string' ? parseInt(producto.id) : producto.id;
+                                              return pIdNum === productoIdNum;
+                                            })
                                             : null;
-                                          
+
                                           if (productoActualizado) {
                                             // Usar la función de mapeo completa para obtener todos los campos correctamente
                                             const productoMapeado = mapearProducto(productoActualizado);
@@ -1009,11 +997,10 @@ export default function ProductosPage() {
                                       setImagePreview(null);
                                       setIsGestionarImagenModalOpen(true);
                                     }}
-                                    className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${
-                                      producto.imagen
-                                        ? "bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-                                        : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
-                                    }`}
+                                    className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none ${producto.imagen
+                                      ? "bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                                      : "bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white"
+                                      }`}
                                     style={{ fontFamily: 'var(--font-poppins)' }}
                                     title={producto.imagen ? "Gestionar imagen del producto (Tiene imagen)" : "Agregar imagen al producto"}
                                   >
@@ -1064,7 +1051,7 @@ export default function ProductosPage() {
                                   </button>
                                 </div>
                               </td>
-                          </tr>
+                            </tr>
                           ))
                         )}
                       </tbody>
@@ -1151,9 +1138,8 @@ export default function ProductosPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</label>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
-                  selectedProducto.activo ? "bg-green-600 border-green-700 text-white" : "bg-red-600 border-red-700 text-white"
-                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${selectedProducto.activo ? "bg-green-600 border-green-700 text-white" : "bg-red-600 border-red-700 text-white"
+                  }`} style={{ fontFamily: 'var(--font-poppins)' }}>
                   {selectedProducto.activo ? "Activo" : "Inactivo"}
                 </span>
               </div>
@@ -1179,7 +1165,7 @@ export default function ProductosPage() {
           setSelectedProducto(null);
         }}
         title={`Editar Producto - ${selectedProducto?.codigo || ""}`}
-        size="md"
+        size="lg"
       >
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
@@ -1201,8 +1187,8 @@ export default function ProductosPage() {
                 <CategoriaAccordion
                   value={editForm.categoria}
                   onChange={(e) => {
-                    setEditForm({ 
-                      ...editForm, 
+                    setEditForm({
+                      ...editForm,
                       categoria: e.target.value,
                       tipoProducto: "" // Resetear tipo de producto al cambiar categoría
                     });
@@ -1314,16 +1300,16 @@ export default function ProductosPage() {
                     console.error("selectedProducto:", selectedProducto);
                     return;
                   }
-                  
+
                   // Validar campos requeridos
                   if (!editForm.codigo || !editForm.nombre || !editForm.categoria) {
                     alert("Por favor, complete todos los campos requeridos");
                     return;
                   }
-                  
+
                   console.log("Actualizando producto con ID:", selectedProducto.id);
                   console.log("Datos del formulario:", editForm);
-                  
+
                   await actualizarProducto(selectedProducto.id, editForm);
                   alert("Producto actualizado exitosamente");
                   setIsEditarModalOpen(false);
@@ -1379,7 +1365,7 @@ export default function ProductosPage() {
                       alert("Error: No se pudo identificar el producto a desactivar");
                       return;
                     }
-                    
+
                     await desactivarProducto(selectedProducto.id);
                     alert("Producto desactivado exitosamente");
                     setIsDesactivarModalOpen(false);
@@ -1459,7 +1445,7 @@ export default function ProductosPage() {
           });
         }}
         title="Agregar Nuevo Producto"
-        size="md"
+        size="lg"
       >
         <div className="space-y-4">
           <div>
@@ -1505,8 +1491,8 @@ export default function ProductosPage() {
             <CategoriaAccordion
               value={newProductForm.categoria}
               onChange={(e) => {
-                setNewProductForm({ 
-                  ...newProductForm, 
+                setNewProductForm({
+                  ...newProductForm,
                   categoria: e.target.value,
                   tipoProducto: "" // Resetear tipo de producto al cambiar categoría
                 });
@@ -1641,13 +1627,13 @@ export default function ProductosPage() {
               onClick={async () => {
                 try {
                   // Validar campos requeridos según la API
-                  if (!newProductForm.codigo || !newProductForm.nombre || !newProductForm.categoria || 
-                      !newProductForm.tipoProducto || !newProductForm.colorTipo || !newProductForm.tamano || 
-                      !newProductForm.paresPorCaja || !newProductForm.fichaTecnica) {
+                  if (!newProductForm.codigo || !newProductForm.nombre || !newProductForm.categoria ||
+                    !newProductForm.tipoProducto || !newProductForm.colorTipo || !newProductForm.tamano ||
+                    !newProductForm.paresPorCaja || !newProductForm.fichaTecnica) {
                     alert("Por favor, complete todos los campos requeridos");
                     return;
                   }
-                  
+
                   await agregarProducto(newProductForm);
                   alert("Producto agregado exitosamente");
                   setIsAgregarModalOpen(false);
@@ -1687,7 +1673,7 @@ export default function ProductosPage() {
           setImagePreview(null);
         }}
         title={`Gestionar Imagen del Producto - ${selectedProducto?.codigo || ""}`}
-        size="md"
+        size="lg"
       >
         {selectedProducto && (
           <div className="space-y-8">
@@ -1700,9 +1686,9 @@ export default function ProductosPage() {
                 </div>
                 <div className="flex flex-col items-center space-y-4">
                   <div className="relative w-full max-w-lg bg-white rounded-xl p-4 shadow-inner border border-gray-100">
-                    <img 
-                      src={selectedProducto.imagen} 
-                      alt="Imagen actual" 
+                    <img
+                      src={selectedProducto.imagen}
+                      alt="Imagen actual"
                       className="w-full h-auto max-h-72 object-contain rounded-lg"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -1735,9 +1721,9 @@ export default function ProductosPage() {
                 <div className="space-y-4">
                   <div className="relative w-full max-w-lg mx-auto bg-white rounded-xl p-4 shadow-inner border border-gray-200">
                     <div className="relative h-56 rounded-lg overflow-hidden bg-gray-50">
-                      <img 
-                        src={imagePreview} 
-                        alt="Vista previa" 
+                      <img
+                        src={imagePreview}
+                        alt="Vista previa"
                         className="w-full h-full object-contain"
                       />
                       <button
@@ -1854,7 +1840,7 @@ export default function ProductosPage() {
 
                   try {
                     setUploadingImage(true);
-                    
+
                     // Crear FormData para enviar el archivo
                     const formData = new FormData();
                     formData.append('file', selectedImageFile);
@@ -1891,7 +1877,7 @@ export default function ProductosPage() {
                       console.error("❌ Producto sin ID válido:", selectedProducto);
                       throw new Error("No se pudo obtener el ID del producto. Producto: " + JSON.stringify(selectedProducto));
                     }
-                    
+
                     // Asegurar que el ID sea un número
                     if (typeof productoId === 'string') {
                       productoId = parseInt(productoId);
@@ -1899,7 +1885,7 @@ export default function ProductosPage() {
                         throw new Error("El ID del producto no es un número válido: " + selectedProducto.id);
                       }
                     }
-                    
+
                     // Asegurar que sea un número entero positivo
                     productoId = Math.floor(Number(productoId));
                     if (productoId <= 0) {
@@ -1961,7 +1947,7 @@ export default function ProductosPage() {
                       console.log("✅ Tiene 'success':", updateData.success);
                       console.log("✅ Tiene 'Exito':", updateData.Exito);
                       console.log("✅ Respuesta completa:", JSON.stringify(updateData, null, 2));
-                      
+
                       // Verificar que la respuesta sea del backend nuevo
                       if (updateData.success === true) {
                         console.log("✅ Backend nuevo confirmado - success: true");
@@ -1982,10 +1968,10 @@ export default function ProductosPage() {
 
                     // Recargar la lista de productos para obtener los datos actualizados de la BD
                     await fetchProductos();
-                    
+
                     // Esperar un momento y verificar que la imagen se guardó realmente
                     await new Promise(resolve => setTimeout(resolve, 500));
-                    
+
                     // Obtener el producto actualizado directamente de la API para verificar
                     try {
                       const verifyResponse = await fetch("/api/productos", {
@@ -1995,30 +1981,30 @@ export default function ProductosPage() {
                           "Authorization": `Bearer ${token}`
                         }
                       });
-                      
+
                       if (verifyResponse.ok) {
                         const productosVerificados = await verifyResponse.json();
                         console.log("🔍 Productos verificados (primeros 3):", productosVerificados?.slice(0, 3));
                         console.log("🔍 Buscando producto con ID:", productoId);
-                        
+
                         // Buscar el producto con diferentes variaciones de ID
-                        const productoVerificado = Array.isArray(productosVerificados) 
+                        const productoVerificado = Array.isArray(productosVerificados)
                           ? productosVerificados.find(p => {
-                              const pId = p.id || p.ID || p.id_producto || p.idProducto;
-                              const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
-                              const productoIdNum = typeof productoId === 'string' ? parseInt(productoId) : productoId;
-                              return pIdNum === productoIdNum;
-                            })
+                            const pId = p.id || p.ID || p.id_producto || p.idProducto;
+                            const pIdNum = typeof pId === 'string' ? parseInt(pId) : pId;
+                            const productoIdNum = typeof productoId === 'string' ? parseInt(productoId) : productoId;
+                            return pIdNum === productoIdNum;
+                          })
                           : null;
-                        
+
                         console.log("🔍 Producto encontrado:", productoVerificado);
                         console.log("🔍 Campos del producto:", productoVerificado ? Object.keys(productoVerificado) : "No encontrado");
-                        
+
                         // Buscar IMG_URL en todas las variaciones posibles
                         const imagenGuardada = productoVerificado ? (
-                          productoVerificado.imagen || 
-                          productoVerificado.IMAGEN || 
-                          productoVerificado.IMG_URL || 
+                          productoVerificado.imagen ||
+                          productoVerificado.IMAGEN ||
+                          productoVerificado.IMG_URL ||
                           productoVerificado.img_url ||
                           productoVerificado.imagen_url ||
                           productoVerificado.imagenUrl ||
@@ -2026,15 +2012,15 @@ export default function ProductosPage() {
                           productoVerificado.image ||
                           productoVerificado.IMAGE
                         ) : null;
-                        
+
                         console.log("🔍 Imagen guardada encontrada:", imagenGuardada);
-                        
+
                         if (!imagenGuardada) {
                           console.error("❌ La imagen NO se guardó en la BD.");
                           console.error("❌ Producto verificado completo:", JSON.stringify(productoVerificado, null, 2));
                           console.error("❌ URL que se intentó guardar:", imageUrl);
                           console.error("❌ Respuesta del backend fue:", JSON.stringify(updateData, null, 2));
-                          
+
                           // Si el backend respondió con "Exito", es código antiguo
                           if (updateData.Exito && !updateData.success) {
                             throw new Error("El backend desplegado NO tiene el código nuevo. Está respondiendo con 'Exito' en lugar de 'success'. Por favor, verifica que el código se desplegó correctamente. La imagen se subió a storage pero NO se guardó la URL en la base de datos.");
@@ -2050,7 +2036,7 @@ export default function ProductosPage() {
                       console.warn("⚠️ No se pudo verificar si la imagen se guardó:", verifyError);
                       // No lanzar error aquí, solo advertir
                     }
-                    
+
                     // Verificar que la imagen se guardó realmente
                     const productoActualizado = productos.find(p => p.id === productoId);
                     if (!productoActualizado || !productoActualizado.imagen) {
@@ -2064,17 +2050,17 @@ export default function ProductosPage() {
                     setSelectedImageFile(null);
                     setImagePreview(null);
 
-                    setModalMensaje({ 
-                      open: true, 
-                      tipo: "success", 
-                      mensaje: "Imagen subida y guardada exitosamente en la base de datos." 
+                    setModalMensaje({
+                      open: true,
+                      tipo: "success",
+                      mensaje: "Imagen subida y guardada exitosamente en la base de datos."
                     });
                   } catch (error) {
                     console.error("Error al subir imagen:", error);
-                    setModalMensaje({ 
-                      open: true, 
-                      tipo: "error", 
-                      mensaje: `Error al subir la imagen: ${error.message}` 
+                    setModalMensaje({
+                      open: true,
+                      tipo: "error",
+                      mensaje: `Error al subir la imagen: ${error.message}`
                     });
                   } finally {
                     setUploadingImage(false);
@@ -2114,7 +2100,7 @@ export default function ProductosPage() {
           setSelectedFile(null);
         }}
         title={`Gestionar PDF del Producto - ${selectedProducto?.codigo || ""}`}
-        size="md"
+        size="lg"
       >
         {selectedProducto && (
           <div className="space-y-6">
@@ -2239,7 +2225,7 @@ export default function ProductosPage() {
                       console.error("❌ Producto sin ID válido:", selectedProducto);
                       throw new Error("No se pudo obtener el ID del producto. Producto: " + JSON.stringify(selectedProducto));
                     }
-                    
+
                     // Asegurar que el ID sea un número
                     if (typeof productoId === 'string') {
                       productoId = parseInt(productoId);
@@ -2247,7 +2233,7 @@ export default function ProductosPage() {
                         throw new Error("El ID del producto no es un número válido: " + selectedProducto.id);
                       }
                     }
-                    
+
                     // Asegurar que sea un número entero positivo
                     productoId = Math.floor(Number(productoId));
                     if (productoId <= 0) {
@@ -2264,7 +2250,7 @@ export default function ProductosPage() {
                       ID: productoId,  // También enviar en mayúsculas por si acaso
                       url_ficha_tecnica: pdfUrl
                     };
-                    
+
                     console.log("🔄 Body a enviar:", JSON.stringify(requestBody, null, 2));
 
                     console.log("🔄 Body a enviar:", requestBody);
@@ -2322,17 +2308,17 @@ export default function ProductosPage() {
                     setSelectedProducto(null);
                     setSelectedFile(null);
 
-                    setModalMensaje({ 
-                      open: true, 
-                      tipo: "success", 
-                      mensaje: "PDF subido y guardado exitosamente en la base de datos." 
+                    setModalMensaje({
+                      open: true,
+                      tipo: "success",
+                      mensaje: "PDF subido y guardado exitosamente en la base de datos."
                     });
                   } catch (error) {
                     console.error("Error al subir PDF:", error);
-                    setModalMensaje({ 
-                      open: true, 
-                      tipo: "error", 
-                      mensaje: `Error al subir el PDF: ${error.message}` 
+                    setModalMensaje({
+                      open: true,
+                      tipo: "error",
+                      mensaje: `Error al subir el PDF: ${error.message}`
                     });
                   }
                 }}
@@ -2386,21 +2372,19 @@ export default function ProductosPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className={`text-sm ${
-            modalMensaje.tipo === "success" ? "text-green-700" :
+          <p className={`text-sm ${modalMensaje.tipo === "success" ? "text-green-700" :
             modalMensaje.tipo === "error" ? "text-red-700" :
-            "text-blue-700"
-          }`}>
+              "text-blue-700"
+            }`}>
             {modalMensaje.mensaje}
           </p>
           <div className="flex justify-end pt-2">
             <button
               onClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
-              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
-                modalMensaje.tipo === "success" ? "bg-green-600 hover:bg-green-700" :
+              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${modalMensaje.tipo === "success" ? "bg-green-600 hover:bg-green-700" :
                 modalMensaje.tipo === "error" ? "bg-red-600 hover:bg-red-700" :
-                "bg-blue-600 hover:bg-blue-700"
-              }`}
+                  "bg-blue-600 hover:bg-blue-700"
+                }`}
             >
               Aceptar
             </button>

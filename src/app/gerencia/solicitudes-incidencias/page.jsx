@@ -18,7 +18,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
-  
+
   // Mapeo de módulos a áreas de emisión
   const getAreaEmisionByModule = (path) => {
     if (path.includes("/gerencia/")) return ""; // Todas las áreas
@@ -32,50 +32,50 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
     return ""; // Por defecto todas las áreas
   };
-  
+
   // Filtros - Iniciar vacío para mostrar todas las áreas por defecto
   const [areaRecepcion, setAreaRecepcion] = useState("");
   const [areaEmision, setAreaEmision] = useState("");
   const [colaborador, setColaborador] = useState("");
   const [estado, setEstado] = useState("");
   const [mostrarIncidencias, setMostrarIncidencias] = useState(false);
-  
+
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
-   // Modales
-   const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
-   const [modalRespuestasOpen, setModalRespuestasOpen] = useState(false);
-   const [modalReprogramacionesOpen, setModalReprogramacionesOpen] = useState(false);
-   const [modalHistorialReqExtraOpen, setModalHistorialReqExtraOpen] = useState(false);
-   const [modalEditarOpen, setModalEditarOpen] = useState(false);
-   const [modalProcedimientosOpen, setModalProcedimientosOpen] = useState(false);
-   const [textoModal, setTextoModal] = useState("");
-   const [tituloModal, setTituloModal] = useState("");
-   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
- 
-   // Estados para el formulario de edición
-   const [formFechaRespuesta, setFormFechaRespuesta] = useState("");
-   const [formRespondidoPor, setFormRespondidoPor] = useState("");
-   const [formNombrePersona, setFormNombrePersona] = useState("");
-   const [formRespuesta, setFormRespuesta] = useState("");
-   const [formArchivoInforme, setFormArchivoInforme] = useState(null);
-   const [formArchivoNombre, setFormArchivoNombre] = useState("");
-   const [formEstado, setFormEstado] = useState("");
-   const [formReprogramacion, setFormReprogramacion] = useState(false);
-   
-   // Estados para reprogramaciones
-   const [reprogramaciones, setReprogramaciones] = useState([]);
-   const [reprogramacionesCargadas, setReprogramacionesCargadas] = useState([]);
-   const [idRespuesta, setIdRespuesta] = useState(null);
-   const [checkboxReprogramacionHabilitado, setCheckboxReprogramacionHabilitado] = useState(false);
-   
-   // Estados para barras de progreso
-   const [progresoRespuesta, setProgresoRespuesta] = useState(0);
-   const [guardandoRespuesta, setGuardandoRespuesta] = useState(false);
-   const [progresoReprogramacion, setProgresoReprogramacion] = useState({});
-   const [guardandoReprogramacion, setGuardandoReprogramacion] = useState({});
+
+  // Modales
+  const [modalRequerimientosOpen, setModalRequerimientosOpen] = useState(false);
+  const [modalRespuestasOpen, setModalRespuestasOpen] = useState(false);
+  const [modalReprogramacionesOpen, setModalReprogramacionesOpen] = useState(false);
+  const [modalHistorialReqExtraOpen, setModalHistorialReqExtraOpen] = useState(false);
+  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [modalProcedimientosOpen, setModalProcedimientosOpen] = useState(false);
+  const [textoModal, setTextoModal] = useState("");
+  const [tituloModal, setTituloModal] = useState("");
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+
+  // Estados para el formulario de edición
+  const [formFechaRespuesta, setFormFechaRespuesta] = useState("");
+  const [formRespondidoPor, setFormRespondidoPor] = useState("");
+  const [formNombrePersona, setFormNombrePersona] = useState("");
+  const [formRespuesta, setFormRespuesta] = useState("");
+  const [formArchivoInforme, setFormArchivoInforme] = useState(null);
+  const [formArchivoNombre, setFormArchivoNombre] = useState("");
+  const [formEstado, setFormEstado] = useState("");
+  const [formReprogramacion, setFormReprogramacion] = useState(false);
+
+  // Estados para reprogramaciones
+  const [reprogramaciones, setReprogramaciones] = useState([]);
+  const [reprogramacionesCargadas, setReprogramacionesCargadas] = useState([]);
+  const [idRespuesta, setIdRespuesta] = useState(null);
+  const [checkboxReprogramacionHabilitado, setCheckboxReprogramacionHabilitado] = useState(false);
+
+  // Estados para barras de progreso
+  const [progresoRespuesta, setProgresoRespuesta] = useState(0);
+  const [guardandoRespuesta, setGuardandoRespuesta] = useState(false);
+  const [progresoReprogramacion, setProgresoReprogramacion] = useState({});
+  const [guardandoReprogramacion, setGuardandoReprogramacion] = useState({});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -110,11 +110,11 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       setLoadingData(true);
       setErrorAPI(null);
       const token = localStorage.getItem("token");
-      
+
       // Obtener todas las solicitudes de todas las áreas
       // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
       const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
-      
+
       // Hacer llamadas en paralelo para obtener todas las solicitudes
       const promesas = areas.map(async (area) => {
         try {
@@ -125,7 +125,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               ...(token && { 'Authorization': `Bearer ${token}` })
             }
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (Array.isArray(data)) {
@@ -138,7 +138,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           return [];
         }
       });
-      
+
       const resultados = await Promise.all(promesas);
       // Combinar todas las solicitudes y eliminar duplicados por ID
       const solicitudesUnicas = new Map();
@@ -148,27 +148,27 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           solicitudesUnicas.set(id, solicitud);
         }
       });
-      
+
       let data = Array.from(solicitudesUnicas.values());
-      
+
       // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
       data.sort((a, b) => {
         const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
         const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
-        
+
         if (!fechaA && !fechaB) return 0;
         if (!fechaA) return 1; // Sin fecha al final
         if (!fechaB) return -1; // Sin fecha al final
-        
+
         const dateA = new Date(fechaA);
         const dateB = new Date(fechaB);
-        
+
         // Orden descendente: más recientes primero
         return dateB.getTime() - dateA.getTime();
       });
-      
+
       console.log('Datos recibidos de la API (todas las áreas):', data);
-      
+
       setSolicitudes(data);
       setErrorAPI(null);
     } catch (error) {
@@ -234,14 +234,14 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     filtered.sort((a, b) => {
       const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
       const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
-      
+
       if (!fechaA && !fechaB) return 0;
       if (!fechaA) return 1; // Sin fecha al final
       if (!fechaB) return -1; // Sin fecha al final
-      
+
       const dateA = new Date(fechaA);
       const dateB = new Date(fechaB);
-      
+
       // Orden descendente: más recientes primero
       return dateB.getTime() - dateA.getTime();
     });
@@ -286,10 +286,10 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
     // Verificar si tiene respuesta registrada
     const tieneRespuesta = solicitud.ID_RESPUESTA || solicitud.RESPUESTA || solicitud.RESPUESTA_R;
-    
+
     // Formatear fecha para el input datetime-local
     let fechaFormateada = "";
-    
+
     if (tieneRespuesta && solicitud.FECHA_RESPUESTA) {
       // Si ya hay respuesta registrada, usar la fecha de esa respuesta
       try {
@@ -307,7 +307,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         console.error("Error al formatear fecha:", e);
       }
     }
-    
+
     // Si no hay respuesta registrada, usar la fecha y hora actual
     if (!fechaFormateada) {
       const ahora = new Date();
@@ -327,16 +327,16 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     setFormArchivoInforme(null);
     setFormArchivoNombre(solicitud.INFORME_RESPUESTA ? "Archivo existente" : "");
     setFormEstado(solicitud.ESTADO || "Pendiente");
-    
+
     // Guardar ID_RESPUESTA si existe
     if (tieneRespuesta && solicitud.ID_RESPUESTA) {
       setIdRespuesta(solicitud.ID_RESPUESTA);
     }
-    
+
     // Verificar si tiene reprogramaciones - verificar múltiples formas
     let tieneRepro = false;
     let reprogramacionesData = [];
-    
+
     // Verificar si viene como array
     if (solicitud.REPROGRAMACIONES) {
       if (Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0) {
@@ -354,13 +354,13 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         }
       }
     }
-    
+
     // Verificar campos individuales de reprogramación
     if (!tieneRepro) {
       const tieneRepro1 = solicitud.FECHA_REPROGRAMACION || solicitud.RESPUESTA_REPROGRAMACION || solicitud.INFORME_REPROGRAMACION;
       const tieneRepro2 = solicitud.FECHA_REPROGRAMACION_2 || solicitud.RESPUESTA_2 || solicitud.INFORME_2;
       const tieneRepro3 = solicitud.FECHA_REPROGRAMACION_3 || solicitud.RESPUESTA_3 || solicitud.INFORME_3;
-      
+
       if (tieneRepro1 || tieneRepro2 || tieneRepro3) {
         tieneRepro = true;
         // Construir array de reprogramaciones desde campos individuales
@@ -396,18 +396,18 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         }
       }
     }
-    
+
     // El checkbox debe estar habilitado si hay respuesta registrada
     // No importa si hay reprogramaciones o no, solo necesita tener respuesta
     // El checkbox se marca solo si hay reprogramaciones registradas
     setCheckboxReprogramacionHabilitado(!!tieneRespuesta);
     setFormReprogramacion(tieneRepro);
-    
+
     // Cargar reprogramaciones si existen
     if (tieneRepro && reprogramacionesData.length > 0) {
       // Cargar directamente las reprogramaciones encontradas
       setReprogramacionesCargadas(reprogramacionesData);
-      
+
       // Inicializar las reprogramaciones para edición
       const reprogForm = reprogramacionesData.map(r => {
         let fechaFormateada = "";
@@ -426,7 +426,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
             console.error("Error al formatear fecha:", e);
           }
         }
-        
+
         return {
           id: r.ID_REPROGRAMACION || null,
           fecha: fechaFormateada,
@@ -442,15 +442,15 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       setReprogramaciones([]);
       setReprogramacionesCargadas([]);
     }
-    
+
     setModalEditarOpen(true);
   };
-  
+
   // Función para cargar reprogramaciones
   const cargarReprogramaciones = async (idRespuesta) => {
     try {
       if (!solicitudSeleccionada) return;
-      
+
       let reprog = [];
       if (solicitudSeleccionada.REPROGRAMACIONES) {
         if (Array.isArray(solicitudSeleccionada.REPROGRAMACIONES)) {
@@ -463,9 +463,9 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           }
         }
       }
-      
+
       setReprogramacionesCargadas(reprog);
-      
+
       // Inicializar las reprogramaciones para edición
       if (reprog.length > 0) {
         const reprogForm = reprog.map(r => {
@@ -485,7 +485,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               console.error("Error al formatear fecha:", e);
             }
           }
-          
+
           return {
             id: r.ID_REPROGRAMACION || null,
             fecha: fechaFormateada,
@@ -513,7 +513,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     try {
       setGuardandoRespuesta(true);
       setProgresoRespuesta(0);
-      
+
       const token = localStorage.getItem("token");
 
       // Preparar datos para enviar según el formato requerido
@@ -560,13 +560,13 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         } else if (solicitudSeleccionada.ID_RESPUESTA) {
           setIdRespuesta(solicitudSeleccionada.ID_RESPUESTA);
         }
-        
+
         // Recargar solicitudes
         await cargarSolicitudes();
-        
+
         // Habilitar el checkbox ya que ahora hay una respuesta registrada
         setCheckboxReprogramacionHabilitado(true);
-        
+
         // Si hay reprogramaciones activas, no cerrar el modal aún
         if (!formReprogramacion) {
           setTimeout(() => {
@@ -595,7 +595,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       alert("Error al guardar los cambios");
     }
   };
-  
+
   // Función para agregar una nueva sección de reprogramación
   const agregarReprogramacion = () => {
     if (reprogramaciones.length < 3) {
@@ -610,13 +610,13 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       }]);
     }
   };
-  
+
   // Función para eliminar una sección de reprogramación
   const eliminarReprogramacion = (index) => {
     const nuevas = reprogramaciones.filter((_, i) => i !== index);
     setReprogramaciones(nuevas);
   };
-  
+
   // Función para guardar una reprogramación
   const guardarReprogramacion = async (index) => {
     // Verificar si hay respuesta registrada (puede ser de la solicitud o recién guardada)
@@ -625,20 +625,20 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       alert("Primero debe guardar la respuesta antes de agregar reprogramaciones");
       return;
     }
-    
+
     const reprog = reprogramaciones[index];
     if (!reprog.fecha) {
       alert("Debe ingresar una fecha y hora de reprogramación");
       return;
     }
-    
+
     try {
       setGuardandoReprogramacion(prev => ({ ...prev, [index]: true }));
       setProgresoReprogramacion(prev => ({ ...prev, [index]: 0 }));
-      
+
       const token = localStorage.getItem("token");
       const formData = new FormData();
-      
+
       // Simular progreso de carga
       const progressInterval = setInterval(() => {
         setProgresoReprogramacion(prev => {
@@ -650,18 +650,18 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           return { ...prev, [index]: current + 10 };
         });
       }, 100);
-      
+
       if (reprog.id) {
         // Editar reprogramación existente
         formData.append('ID_REPROGRAMACION', reprog.id);
         formData.append('RESPUESTA', reprog.motivo || '');
-        
+
         if (reprog.informe) {
           formData.append('informe', reprog.informe);
         } else {
           formData.append('informe', '');
         }
-        
+
         const response = await fetch(`${API_URL}?accion=reprogramar`, {
           method: 'PUT',
           headers: {
@@ -669,10 +669,10 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           },
           body: formData
         });
-        
+
         clearInterval(progressInterval);
         setProgresoReprogramacion(prev => ({ ...prev, [index]: 100 }));
-        
+
         if (response.ok) {
           setTimeout(async () => {
             alert("Reprogramación actualizada correctamente");
@@ -694,19 +694,19 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       } else {
         // Crear nueva reprogramación
         formData.append('ID_RESPUESTA', respuestaId);
-        
+
         // Formatear fecha: convertir de datetime-local a formato requerido
         const fechaObj = new Date(reprog.fecha);
         const fechaFormateada = fechaObj.toISOString().slice(0, 19).replace('T', ' ');
         formData.append('FECHA_REPROGRAMACION', fechaFormateada);
         formData.append('RESPUESTA', reprog.motivo || '');
-        
+
         if (reprog.informe) {
           formData.append('informe', reprog.informe);
         } else {
           formData.append('informe', '');
         }
-        
+
         const response = await fetch(`${API_URL}?accion=reprogramar`, {
           method: 'POST',
           headers: {
@@ -714,10 +714,10 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           },
           body: formData
         });
-        
+
         clearInterval(progressInterval);
         setProgresoReprogramacion(prev => ({ ...prev, [index]: 100 }));
-        
+
         if (response.ok) {
           const data = await response.json();
           // Actualizar el ID de la reprogramación guardada
@@ -726,7 +726,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
             nuevas[index].id = data.ID_REPROGRAMACION;
           }
           setReprogramaciones(nuevas);
-          
+
           setTimeout(async () => {
             alert("Reprogramación guardada correctamente");
             await cargarSolicitudes();
@@ -754,7 +754,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
       alert("Error al guardar la reprogramación");
     }
   };
-  
+
   // Función para actualizar un campo de reprogramación
   const actualizarReprogramacion = (index, campo, valor) => {
     const nuevas = [...reprogramaciones];
@@ -1345,7 +1345,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
           setModalRespuestasOpen(false);
         }}
         title={tituloModal}
-        size="md"
+        size="lg"
       >
         <div className="p-6">
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -1768,127 +1768,159 @@ export default function SolicitudesIncidenciasGerenciaPage() {
         title="Actualizar Respuesta"
         size="lg"
       >
-        <div className="p-6 space-y-6">
+        <div className="p-0 sm:p-2 space-y-8">
           {/* Datos de la respuesta */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-lg font-bold text-gray-900">Datos de la respuesta</h3>
+          <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 shadow-inner">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Datos de la Respuesta</h3>
+                <p className="text-xs text-gray-500 font-medium">Información básica del registro</p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   Fecha y Hora Respuesta
                 </label>
-                <input
-                  type="datetime-local"
-                  value={formFechaRespuesta}
-                  readOnly
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg outline-none text-sm text-gray-900 bg-gray-100 cursor-not-allowed"
-                />
+                <div className="relative group">
+                  <input
+                    type="datetime-local"
+                    value={formFechaRespuesta}
+                    readOnly
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none text-sm text-gray-900 bg-gray-50/80 cursor-not-allowed transition-all"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   Respondido Por
                 </label>
-                <select
-                  value={formRespondidoPor}
-                  onChange={(e) => {
-                    setFormRespondidoPor(e.target.value);
-                    if (e.target.value !== "OTROS") {
-                      setFormNombrePersona(e.target.value);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="HERVIN">HERVIN</option>
-                  <option value="KIMBERLY">KIMBERLY</option>
-                  <option value="OTROS">OTROS</option>
-                </select>
+                <div className="relative group">
+                  <select
+                    value={formRespondidoPor}
+                    onChange={(e) => {
+                      setFormRespondidoPor(e.target.value);
+                      if (e.target.value !== "OTROS") {
+                        setFormNombrePersona(e.target.value);
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white transition-all appearance-none cursor-pointer group-hover:border-blue-300 shadow-sm"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="HERVIN">HERVIN</option>
+                    <option value="KIMBERLY">KIMBERLY</option>
+                    <option value="OTROS">OTROS</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
               </div>
             </div>
 
             {formRespondidoPor === "OTROS" && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nombre de la persona
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  Nombre de la Persona
                 </label>
                 <input
                   type="text"
                   value={formNombrePersona}
                   onChange={(e) => setFormNombrePersona(e.target.value)}
-                  placeholder="Escribe el nombre..."
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
+                  placeholder="Escribe el nombre completo..."
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white transition-all hover:border-blue-300 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
                 />
               </div>
             )}
           </div>
 
           {/* Respuesta */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Respuesta
+          <div className="space-y-3 px-1">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+              Respuesta Detallada
             </label>
             <textarea
               value={formRespuesta}
               onChange={(e) => setFormRespuesta(e.target.value)}
-              rows={4}
-              placeholder="Escribe la respuesta..."
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white resize-y"
+              rows={5}
+              placeholder="Describe la solución o respuesta a la solicitud..."
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white transition-all resize-none shadow-sm hover:border-blue-300"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             />
           </div>
 
           {/* Informe */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Informe (Archivos PDF, rar, zip)
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="flex-shrink-0">
-                <input
-                  type="file"
-                  accept=".pdf,.rar,.zip"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setFormArchivoInforme(file);
-                      setFormArchivoNombre(file.name);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <span className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold cursor-pointer transition-colors shadow-sm hover:shadow-md">
-                  Seleccionar archivo
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start px-1">
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                Informe Adjunto (PDF, RAR, ZIP)
               </label>
-              <span className="text-sm text-gray-600 flex-1">
-                {formArchivoNombre || "Ningún archivo seleccionado"}
-              </span>
+              <div className="relative">
+                <label className="w-full flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-300 rounded-2xl hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer group shadow-sm bg-white">
+                  <input
+                    type="file"
+                    accept=".pdf,.rar,.zip"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setFormArchivoInforme(file);
+                        setFormArchivoNombre(file.name);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncation">
+                      {formArchivoNombre || "Seleccionar archivo"}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium">Click para buscar en tu equipo</p>
+                  </div>
+                </label>
+              </div>
             </div>
-          </div>
 
-          {/* Estado */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Estado
-            </label>
-            <select
-              value={formEstado}
-              onChange={(e) => setFormEstado(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
-            >
-              <option value="Pendiente">Pendiente</option>
-              <option value="En Revisión">En Revisión</option>
-              <option value="En Proceso">En Proceso</option>
-              <option value="Completado">Completado</option>
-              <option value="Requiere Info">Requiere Info</option>
-              <option value="Rechazada">Rechazada</option>
-            </select>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Actualizar Estado
+              </label>
+              <div className="relative group">
+                <select
+                  value={formEstado}
+                  onChange={(e) => setFormEstado(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white transition-all appearance-none cursor-pointer hover:border-blue-300 shadow-sm"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="En Revisión">En Revisión</option>
+                  <option value="En Proceso">En Proceso</option>
+                  <option value="Completado">Completado</option>
+                  <option value="Requiere Info">Requiere Info</option>
+                  <option value="Rechazada">Rechazada</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-blue-500 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Reprogramación */}
@@ -1901,7 +1933,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               onChange={(e) => {
                 // Solo permitir cambios si el checkbox está habilitado
                 if (!checkboxReprogramacionHabilitado) return;
-                
+
                 const checked = Boolean(e.target.checked);
                 setFormReprogramacion(checked);
                 if (!checked) {
@@ -1919,17 +1951,15 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   }]);
                 }
               }}
-              className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 ${
-                !checkboxReprogramacionHabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
+              className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 ${!checkboxReprogramacionHabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
             />
-            <label 
-              htmlFor="reprogramacion" 
-              className={`text-sm font-semibold ${
-                checkboxReprogramacionHabilitado 
-                  ? 'text-gray-700 cursor-pointer' 
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
+            <label
+              htmlFor="reprogramacion"
+              className={`text-sm font-semibold ${checkboxReprogramacionHabilitado
+                ? 'text-gray-700 cursor-pointer'
+                : 'text-gray-400 cursor-not-allowed'
+                }`}
             >
               Reprogramación / Más Respuestas
               {!checkboxReprogramacionHabilitado && (
@@ -1937,7 +1967,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               )}
             </label>
           </div>
-          
+
           {/* Barra de progreso para respuesta */}
           {guardandoRespuesta && (
             <div className="space-y-2">
@@ -1946,7 +1976,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                 <span className="text-blue-600 font-semibold">{progresoRespuesta}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
+                <div
                   className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${progresoRespuesta}%` }}
                 ></div>
@@ -1956,84 +1986,85 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
           {/* Secciones de Reprogramación */}
           {formReprogramacion && (
-            <div className="space-y-4 pt-4 border-t border-gray-200">
+            <div className="space-y-6 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  </div>
+                  <h4 className="text-base font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Reprogramaciones Sugeridas</h4>
+                </div>
+                {reprogramaciones.length < 3 && (
+                  <button
+                    onClick={agregarReprogramacion}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-xs font-bold transition-all border border-green-200"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    Añadir
+                  </button>
+                )}
+              </div>
+
               {reprogramaciones.map((reprog, index) => (
-                <div key={index} className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm">
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-blue-200">
+                <div key={index} className="group relative bg-white border-2 border-blue-50 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">{index + 1}</span>
-                      </div>
-                      <h6 className="font-bold text-blue-800 text-base">
+                      <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-[10px] font-black rounded-md shadow-sm">
+                        {index + 1}
+                      </span>
+                      <h6 className="font-bold text-blue-900 text-sm uppercase tracking-wider" style={{ fontFamily: 'var(--font-poppins)' }}>
                         {index === 0 ? 'Primera Reprogramación' : index === 1 ? 'Segunda Reprogramación' : 'Tercera Reprogramación'}
                       </h6>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {index > 0 && (
-                        <button
-                          onClick={() => eliminarReprogramacion(index)}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm hover:shadow-md"
-                          title="Eliminar sección"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                          </svg>
-                        </button>
-                      )}
-                      {index < 2 && reprogramaciones.length < 3 && (
-                        <button
-                          onClick={agregarReprogramacion}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-sm hover:shadow-md"
-                          title="Agregar otra reprogramación"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                    {index > 0 && (
+                      <button
+                        onClick={() => eliminarReprogramacion(index)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Eliminar esta sección"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    )}
                   </div>
 
-                  <div className="space-y-4">
-                    {/* Fecha y Hora de Reprogramación */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Fecha y Hora de Reprogramación
-                      </label>
+                  <div className="grid grid-cols-1 gap-5">
+                    {/* Fecha y Hora */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha y Hora Propuesta</label>
                       <input
                         type="datetime-local"
                         value={reprog.fecha}
                         onChange={(e) => actualizarReprogramacion(index, 'fecha', e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white"
+                        className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-gray-50/50 transition-all"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                     </div>
 
-                    {/* Motivo de Reprogramación */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Motivo de Reprogramación
-                      </label>
+                    {/* Motivo */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>Motivo de la Reprogramación</label>
                       <textarea
                         value={reprog.motivo}
                         onChange={(e) => actualizarReprogramacion(index, 'motivo', e.target.value)}
-                        rows={3}
-                        placeholder="Escribe el motivo de la reprogramación..."
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-gray-900 bg-white resize-y"
+                        rows={2}
+                        placeholder="Explica el motivo brevemente..."
+                        className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm text-gray-900 bg-gray-50/50 transition-all resize-none"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
                       />
                       {reprog.fhRespuesta && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Última actualización del motivo: {formatFecha(reprog.fhRespuesta)}
-                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium ml-1 italic">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Actualizado el: {formatFecha(reprog.fhRespuesta)}
+                        </div>
                       )}
                     </div>
 
-                    {/* Informe Reprogramación */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Informe Reprogramación
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <label className="flex-shrink-0">
+                    {/* Informe */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1" style={{ fontFamily: 'var(--font-poppins)' }}>Documento / Informe</label>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <label className="flex-1 flex items-center gap-3 px-4 py-2.5 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-white transition-all cursor-pointer group/file bg-gray-50/30 overflow-hidden">
                           <input
                             type="file"
                             accept=".pdf,.rar,.zip"
@@ -2045,55 +2076,51 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                             }}
                             className="hidden"
                           />
-                          <span className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold cursor-pointer transition-colors shadow-sm hover:shadow-md">
-                            Seleccionar archivo
+                          <svg className="w-4 h-4 text-gray-400 group-hover/file:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                          <span className="text-xs font-bold text-gray-600 truncate flex-1 group-hover/file:text-blue-700">
+                            {reprog.informeNombre || "Adjuntar archivo..."}
                           </span>
                         </label>
-                        <span className="text-sm text-gray-600 flex-1">
-                          {reprog.informeNombre || "Ningún archivo seleccionado"}
-                        </span>
+                        <button
+                          onClick={() => guardarReprogramacion(index)}
+                          disabled={guardandoReprogramacion[index]}
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md disabled:opacity-50 active:scale-95"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          {guardandoReprogramacion[index] ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          )}
+                          {guardandoReprogramacion[index] ? 'Guardando...' : 'Confirmar'}
+                        </button>
                       </div>
                       {reprog.fhInforme && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Última actualización del informe: {formatFecha(reprog.fhInforme)}
+                        <p className="text-[10px] text-gray-400 font-medium ml-1 italic">
+                          Última carga: {formatFecha(reprog.fhInforme)}
                         </p>
                       )}
                     </div>
-
-                    {/* Barra de progreso para reprogramación */}
-                    {guardandoReprogramacion[index] && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700 font-medium">Guardando reprogramación...</span>
-                          <span className="text-green-600 font-semibold">{progresoReprogramacion[index] || 0}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-green-600 h-2.5 rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${progresoReprogramacion[index] || 0}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Botón Guardar Reprogramación */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => guardarReprogramacion(index)}
-                        disabled={guardandoReprogramacion[index]}
-                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {guardandoReprogramacion[index] ? 'Guardando...' : 'Guardar Reprogramación'}
-                      </button>
-                    </div>
                   </div>
+
+                  {/* Progreso Local */}
+                  {guardandoReprogramacion[index] && (
+                    <div className="mt-4 px-1">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-green-500 h-full transition-all duration-300"
+                          style={{ width: `${progresoReprogramacion[index] || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
-          {/* Botones */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+          {/* Acciones principales */}
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-gray-100">
             <button
               onClick={() => {
                 setModalEditarOpen(false);
@@ -2109,16 +2136,19 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                 setGuardandoReprogramacion({});
                 setCheckboxReprogramacionHabilitado(false);
               }}
-              className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+              className="w-full sm:w-auto px-8 py-3 bg-white hover:bg-gray-50 text-gray-600 rounded-xl font-bold text-sm transition-all border border-gray-200 hover:border-gray-300 active:scale-95"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              Cancelar
+              Cerrar Modal
             </button>
             <button
               onClick={handleGuardarEdicion}
               disabled={guardandoRespuesta}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-10 py-3 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              {guardandoRespuesta ? 'Guardando...' : 'Guardar'}
+              {guardandoRespuesta && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {guardandoRespuesta ? 'Guardando Cambios...' : 'Guardar Información'}
             </button>
           </div>
         </div>
@@ -2129,5 +2159,5 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
 
 
-  
+
 }
