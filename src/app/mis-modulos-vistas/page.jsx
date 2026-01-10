@@ -266,9 +266,9 @@ export default function MisModulosVistasPage() {
                               }`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0 transition-colors duration-200 ${selectedModule?.id === modulo.id
-                                ? "bg-gradient-to-br from-blue-600 to-blue-700"
-                                : "bg-gradient-to-br from-gray-400 to-gray-500"
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 transition-colors duration-200 ${selectedModule?.id === modulo.id
+                                ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
+                                : "bg-blue-100 text-blue-600"
                                 }`}>
                                 {getIcon(getModuloIcon(modulo.nombre))}
                               </div>

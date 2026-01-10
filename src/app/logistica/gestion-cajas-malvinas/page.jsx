@@ -6,15 +6,6 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
-import * as XLSX from 'xlsx';
-
-// Importación dinámica de jsPDF
-let jsPDF;
-if (typeof window !== 'undefined') {
-  import('jspdf').then((module) => {
-    jsPDF = module.default;
-  });
-}
 
 export default function GestionCajasMalvinasPage() {
   const router = useRouter();
@@ -61,6 +52,10 @@ export default function GestionCajasMalvinasPage() {
   const [cargandoReservados, setCargandoReservados] = useState(false);
   const [exportandoExcel, setExportandoExcel] = useState(false);
 
+  // Estados de error
+  const [errorProductos, setErrorProductos] = useState(null);
+  const [errorReservados, setErrorReservados] = useState(null);
+
   // Referencias
   const buscadorRef = useRef(null);
   const sugerenciasRef = useRef(null);
@@ -105,6 +100,8 @@ export default function GestionCajasMalvinasPage() {
   const cargarDatos = async () => {
     setCargandoStock(true);
     setCargandoReservados(true);
+    setErrorProductos(null);
+    setErrorReservados(null);
 
     try {
       // Cargar productos
@@ -121,12 +118,13 @@ export default function GestionCajasMalvinasPage() {
       });
 
       if (!responseProductos.ok) {
-        throw new Error('Error al cargar productos');
+        const errorData = await responseProductos.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al cargar productos: ${responseProductos.status} ${responseProductos.statusText}`);
       }
 
       const dataProductos = await responseProductos.json();
       const productosArray = Array.isArray(dataProductos) ? dataProductos : (dataProductos.data || []);
-      
+
       const productosNormalizados = productosArray.map(p => {
         const idCrudo = p.ID || p.id || p.ID_PRODUCTO || p.id_producto || '';
         const id = idCrudo !== null && idCrudo !== undefined ? String(idCrudo) : '';
@@ -146,6 +144,7 @@ export default function GestionCajasMalvinasPage() {
       setCargandoStock(false);
     } catch (error) {
       console.error('Error cargando productos:', error);
+      setErrorProductos(error.message);
       setCargandoStock(false);
     }
 
@@ -164,18 +163,20 @@ export default function GestionCajasMalvinasPage() {
       });
 
       if (!responseReservados.ok) {
-        throw new Error('Error al cargar productos reservados');
+        const errorData = await responseReservados.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al cargar productos reservados: ${responseReservados.status} ${responseReservados.statusText}`);
       }
 
       const dataReservados = await responseReservados.json();
       const reservadosArray = Array.isArray(dataReservados) ? dataReservados : (dataReservados.data || []);
-      
+
       const reservadosNormalizados = reservadosArray.map(r => ({
         id: r.ID || r.id || r.ID_RESERVADOS || '',
         producto: r.PRODUCTO || r.producto || '',
         categoria: r.CATEGORIA || r.categoria || '',
         fechaHora: r['Fecha y hora de reserva'] || r.FECHA_HORA || r.fechaHora || '',
         responsable: r.RESPONSABLE || r.responsable || '',
+        area: r.AREA || r.area || '',
         cantidadReservada: r.CANTIDAD_RESERVADA || r.cantidadReservada || 0,
         unidadMedida: r.UNIDAD_MEDIDA || r.unidadMedida || 'CAJAS'
       }));
@@ -186,6 +187,7 @@ export default function GestionCajasMalvinasPage() {
       setCargandoReservados(false);
     } catch (error) {
       console.error('Error cargando productos reservados:', error);
+      setErrorReservados(error.message);
       setCargandoReservados(false);
     }
   };
@@ -560,6 +562,8 @@ export default function GestionCajasMalvinasPage() {
   const exportarExcel = async () => {
     setExportandoExcel(true);
     try {
+      const { default: XLSX } = await import('xlsx');
+
       const token = getAuthToken();
       const headers = {
         'Content-Type': 'application/json'
@@ -942,6 +946,20 @@ export default function GestionCajasMalvinasPage() {
 
               {cargandoStock ? (
                 <div className="text-center py-8 text-gray-600 p-4">Cargando stock...</div>
+              ) : errorProductos ? (
+                <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
+                  <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <p className="font-semibold">Error al cargar productos</p>
+                  <p className="text-sm mt-2">{errorProductos}</p>
+                  <button
+                    onClick={() => cargarDatos()}
+                    className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               ) : (
                 <>
               {/* Botón Confirmar Todo - Solo aparece cuando hay múltiples filas editando */}
@@ -1301,6 +1319,20 @@ export default function GestionCajasMalvinasPage() {
 
               {cargandoReservados ? (
                 <div className="text-center py-8 text-gray-600 p-4">Cargando productos reservados...</div>
+              ) : errorReservados ? (
+                <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
+                  <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <p className="font-semibold">Error al cargar productos reservados</p>
+                  <p className="text-sm mt-2">{errorReservados}</p>
+                  <button
+                    onClick={() => cargarDatos()}
+                    className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">

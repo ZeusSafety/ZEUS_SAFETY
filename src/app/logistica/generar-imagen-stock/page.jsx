@@ -228,37 +228,18 @@ export default function GenerarImagenStockPage() {
         throw new Error('No se encontró el elemento a capturar. Por favor, recargue la página.');
       }
 
-      // Guardar estilos originales
-      const originalPaddingRight = element.style.paddingRight;
-      const originalWidth = element.style.width;
-      const originalMaxWidth = element.style.maxWidth;
-      
-      // Encontrar el elemento de la tabla para obtener su ancho real
-      // Buscar el div con border que contiene la tabla
-      const tablaContainer = element.querySelector('div[style*="borderColor"]') || 
-                            element.querySelector('.grid') ||
-                            Array.from(element.querySelectorAll('div')).find(div => 
-                              div.style.borderColor && div.style.borderColor.includes('#002c59')
-                            );
-      
-      let contenidoWidth = element.scrollWidth;
-      if (tablaContainer) {
-        // Usar el ancho del contenido real más un pequeño margen
-        const tablaWidth = tablaContainer.scrollWidth || tablaContainer.offsetWidth || tablaContainer.clientWidth;
-        contenidoWidth = tablaWidth + 20; // Agregar margen para evitar cortes
-      } else {
-        // Si no encontramos la tabla, usar el ancho del header como referencia
-        const header = element.querySelector('h1');
-        if (header) {
-          const headerWidth = header.scrollWidth || header.offsetWidth;
-          contenidoWidth = Math.max(headerWidth + 40, contenidoWidth);
-        }
-      }
-      
-      // Ajustar el ancho del contenedor al ancho real del contenido
-      element.style.width = `${contenidoWidth}px`;
-      element.style.maxWidth = `${contenidoWidth}px`;
-      element.style.overflow = 'hidden';
+      // Crear clon del elemento para evitar interferencias responsive
+      const clone = element.cloneNode(true);
+
+      // Aplicar estilos forzados al clon
+      clone.style.width = '1600px';
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.zIndex = '-1';
+
+      // Añadir el clon al body
+      document.body.appendChild(clone);
 
       // Ocultar botones temporalmente
       const botones = document.querySelectorAll('button');
@@ -306,35 +287,25 @@ export default function GenerarImagenStockPage() {
       };
 
       try {
-        // Calcular el tamaño del elemento (usar el ancho ajustado)
-        const elementWidth = Math.min(element.scrollWidth, contenidoWidth);
-        const elementHeight = element.scrollHeight;
-        
-        // Calcular escala óptima considerando límites del navegador
-        // Los navegadores tienen límites de tamaño de canvas (típicamente 16,384px)
-        const maxCanvasSize = 16384;
-        const baseScale = 6; // Escala base alta pero manejable
-        const calculatedScale = Math.min(
-          baseScale,
-          Math.floor(maxCanvasSize / Math.max(elementWidth, elementHeight))
-        );
-        const finalScale = Math.max(calculatedScale, 4); // Mínimo 4x para buena calidad
-        
-        // Capturar la imagen con alta resolución y máxima calidad
-        const canvas = await html2canvas(element, {
-          scale: finalScale, // Escala optimizada para máxima calidad sin exceder límites
+        // Calcular el tamaño del clon
+        const elementWidth = 1600;
+        const elementHeight = clone.scrollHeight;
+
+        // Capturar la imagen del clon con configuración fija
+        const canvas = await html2canvas(clone, {
+          scale: 2, // Escala fija para alta definición
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
           width: elementWidth,
           height: elementHeight,
-          windowWidth: elementWidth,
+          windowWidth: 1600,
           windowHeight: elementHeight,
           allowTaint: false,
           foreignObjectRendering: false,
           removeContainer: true,
           imageTimeout: 20000, // Más tiempo para cargar imágenes
-          pixelRatio: Math.max(window.devicePixelRatio || 1, 2), // Mínimo 2x pixel ratio
+          pixelRatio: 2, // Pixel ratio fijo para consistencia
           letterRendering: true, // Mejor renderizado de texto
           onclone: (clonedDoc) => {
             // Mejorar la calidad de renderizado en el clon
@@ -343,22 +314,29 @@ export default function GenerarImagenStockPage() {
               try {
                 const style = window.getComputedStyle(el);
                 const bgImage = style.backgroundImage;
-                
+
+                // Forzar layout desktop (3 columnas) para evitar responsive stacking
+                if (el.classList.contains('grid')) {
+                  el.style.display = 'grid';
+                  el.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                  el.style.gap = '0px';
+                }
+
                 // Mejorar el renderizado de texto en todos los elementos de texto
-                if (el.tagName === 'TD' || el.tagName === 'TH' || el.tagName === 'P' || 
-                    el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'H1' || 
-                    el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4') {
+                if (el.tagName === 'TD' || el.tagName === 'TH' || el.tagName === 'P' || el.tagName === 'SPAN' ||
+                    el.tagName === 'DIV' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' ||
+                    el.tagName === 'H4') {
                   el.style.webkitFontSmoothing = 'antialiased';
                   el.style.mozOsxFontSmoothing = 'grayscale';
                   el.style.textRendering = 'optimizeLegibility';
                   el.style.imageRendering = 'crisp-edges';
                 }
-                
+
                 // Mejorar renderizado de bordes y líneas
                 if (el.tagName === 'TABLE' || el.tagName === 'TR' || el.tagName === 'TD' || el.tagName === 'TH') {
                   el.style.imageRendering = 'crisp-edges';
                 }
-                
+
                 // Si tiene un gradiente, intentar reemplazarlo
                 if (bgImage && bgImage !== 'none' && bgImage.includes('gradient')) {
                   // Obtener el color de fondo computado (el navegador ya lo convirtió a RGB)
@@ -393,11 +371,11 @@ export default function GenerarImagenStockPage() {
           btn.style.display = 'flex';
         });
 
-        // Convertir canvas a imagen PNG con máxima calidad
-        // PNG preserva la calidad sin pérdida de compresión
+        // Convertir canvas a imagen JPEG con máxima calidad
+        // JPEG ofrece mejor compresión para imágenes con texto
         let imgData;
         try {
-          imgData = canvas.toDataURL('image/png');
+          imgData = canvas.toDataURL('image/jpeg', 1.0);
         } catch (dataUrlError) {
           console.error('Error al convertir canvas a data URL:', dataUrlError);
           throw new Error('Error al procesar la imagen. El archivo puede ser demasiado grande. Intente con una tabla más pequeña.');
@@ -410,20 +388,17 @@ export default function GenerarImagenStockPage() {
         // Crear enlace de descarga
         const a = document.createElement('a');
         a.href = imgData;
-        a.download = 'zeus-safety-stock-tabla.png';
+        a.download = 'zeus-safety-stock-tabla.jpg';
         document.body.appendChild(a);
         a.click();
         
+        // Eliminar el clon
+        document.body.removeChild(clone);
+
         // Limpiar después de un momento
         setTimeout(() => {
           document.body.removeChild(a);
         }, 100);
-
-        // Restaurar los estilos originales
-        element.style.paddingRight = originalPaddingRight;
-        element.style.width = originalWidth;
-        element.style.maxWidth = originalMaxWidth;
-        element.style.overflow = '';
 
         setModalMensaje({
           open: true,
@@ -557,9 +532,9 @@ export default function GenerarImagenStockPage() {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
                     <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
-                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
-                        fontFamily: 'Arial, sans-serif', 
-                        backgroundColor: '#d4daedd4', 
+                      <div className="p-1 text-lg font-bold text-center border-b-[6px]" style={{
+                        fontFamily: 'Arial, sans-serif',
+                        backgroundColor: '#d4daedd4',
                         borderColor: '#002c59',
                         color: '#000000'
                       }}>
@@ -570,24 +545,29 @@ export default function GenerarImagenStockPage() {
                           {grupos[categoria].map((producto, idx) => {
                             const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
                             const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
-                            
+                            const unidadMedida = producto.UNIDAD_MEDIDA_CAJAS || producto.unidad_medida_cajas || 'CAJAS';
+
+                            // Determinar si usar UNIDADES o CAJAS
+                            const usarUnidades = unidadMedida === 'UNIDADES' || categoria === 'CONOS';
+                            const etiquetaUnidad = usarUnidades ? 'UNIDADES' : 'CAJAS';
+
                             // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
                             let colorTexto = '#008000'; // Verde por defecto
                             let stockText = '';
-                            
+
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
                               stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `CAJAS: ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `CAJAS: ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `CAJAS: ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             }
                             
                             return (
@@ -597,10 +577,10 @@ export default function GenerarImagenStockPage() {
                                 borderRight: '2px solid #002c59',
                                 borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
                               }}>
-                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
+                                <td className="w-[65%] text-left px-1 py-0.5 text-sm leading-[1.2] font-normal whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                <td className="w-[35%] text-center px-1 py-0.5 text-sm font-bold" style={{
                                   fontFamily: 'Arial, sans-serif',
                                   color: colorTexto
                                 }}>
@@ -622,9 +602,9 @@ export default function GenerarImagenStockPage() {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
                     <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
-                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
-                        fontFamily: 'Arial, sans-serif', 
-                        backgroundColor: '#d4daedd4', 
+                      <div className="p-1 text-lg font-bold text-center border-b-[6px]" style={{
+                        fontFamily: 'Arial, sans-serif',
+                        backgroundColor: '#d4daedd4',
                         borderColor: '#002c59',
                         color: '#000000'
                       }}>
@@ -635,24 +615,29 @@ export default function GenerarImagenStockPage() {
                           {grupos[categoria].map((producto, idx) => {
                             const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
                             const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
-                            
+                            const unidadMedida = producto.UNIDAD_MEDIDA_CAJAS || producto.unidad_medida_cajas || 'CAJAS';
+
+                            // Determinar si usar UNIDADES o CAJAS
+                            const usarUnidades = unidadMedida === 'UNIDADES' || categoria === 'CONOS';
+                            const etiquetaUnidad = usarUnidades ? 'UNIDADES' : 'CAJAS';
+
                             // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
                             let colorTexto = '#008000'; // Verde por defecto
                             let stockText = '';
-                            
+
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
                               stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `CAJAS: ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `CAJAS  : ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `CAJAS  : ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             }
                             
                             return (
@@ -662,10 +647,10 @@ export default function GenerarImagenStockPage() {
                                 borderRight: '2px solid #002c59',
                                 borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
                               }}>
-                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
+                                <td className="w-[65%] text-left px-1 py-0.5 text-sm leading-[1.2] font-normal whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                <td className="w-[35%] text-center px-1 py-0.5 text-sm font-bold" style={{
                                   fontFamily: 'Arial, sans-serif',
                                   color: colorTexto
                                 }}>
@@ -687,9 +672,9 @@ export default function GenerarImagenStockPage() {
                   if (!grupos[categoria] || grupos[categoria].length === 0) return null;
                   return (
                     <div key={categoria} className="border-b-[6px] last:border-b-0 p-0" style={{ borderColor: '#002c59' }}>
-                      <div className="p-1.5 text-[20px] font-bold text-center border-b-[6px]" style={{ 
-                        fontFamily: 'Arial, sans-serif', 
-                        backgroundColor: '#d4daedd4', 
+                      <div className="p-1 text-lg font-bold text-center border-b-[6px]" style={{
+                        fontFamily: 'Arial, sans-serif',
+                        backgroundColor: '#d4daedd4',
                         borderColor: '#002c59',
                         color: '#000000'
                       }}>
@@ -700,24 +685,29 @@ export default function GenerarImagenStockPage() {
                           {grupos[categoria].map((producto, idx) => {
                             const cantidad = producto.CANTIDAD_CAJAS || producto.Cantidad || producto.cantidadCajas || 0;
                             const limite = producto.LIMITE_DESCUENTO_CAJAS || producto.limite_descuento_cajas || 0;
-                            
+                            const unidadMedida = producto.UNIDAD_MEDIDA_CAJAS || producto.unidad_medida_cajas || 'CAJAS';
+
+                            // Determinar si usar UNIDADES o CAJAS
+                            const usarUnidades = unidadMedida === 'UNIDADES' || categoria === 'CONOS';
+                            const etiquetaUnidad = usarUnidades ? 'UNIDADES' : 'CAJAS';
+
                             // Determinar color según la lógica (el límite se usa internamente pero no se muestra)
                             let colorTexto = '#008000'; // Verde por defecto
                             let stockText = '';
-                            
+
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
                               stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `CAJAS : ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `CAJAS : ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `CAJAS : ${cantidad}`;
+                              stockText = `${etiquetaUnidad}: ${cantidad}`;
                             }
                             
                             return (
@@ -727,10 +717,10 @@ export default function GenerarImagenStockPage() {
                                 borderRight: '2px solid #002c59',
                                 borderBottom: idx < grupos[categoria].length - 1 ? '1px solid #999' : '2px solid #002c59'
                               }}>
-                                <td className="w-[65%] text-left px-1.5 py-1 text-base leading-[1.3] font-normal" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
+                                <td className="w-[65%] text-left px-1 py-0.5 text-sm leading-[1.2] font-normal whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif', color: '#000000' }}>
                                   {producto.PRODUCTO || producto.producto || ''}
                                 </td>
-                                <td className="w-[35%] text-center px-1.5 py-1 text-base font-bold" style={{ 
+                                <td className="w-[35%] text-center px-1 py-0.5 text-sm font-bold" style={{
                                   fontFamily: 'Arial, sans-serif',
                                   color: colorTexto
                                 }}>
