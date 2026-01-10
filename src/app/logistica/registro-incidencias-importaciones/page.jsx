@@ -1046,6 +1046,7 @@ export default function RegistroIncidenciasImportacionesPage() {
                     </div>
                 </main>
             </div>
+            
 
             {/* Modal de Edición */}
             <Modal
