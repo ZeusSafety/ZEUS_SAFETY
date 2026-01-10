@@ -805,28 +805,74 @@ export default function ColaboradoresPage() {
           }
         }
 
-        // Obtener área - puede estar en un objeto anidado o como AREA_PRINCIPAL (ID)
-        let areaValue = getValue(colab, ["area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT", "AREA_PRINCIPAL", "area_principal"]);
-        if (!areaValue && colab.A && colab.A.NOMBRE) {
+        // Obtener área - priorizar el NOMBRE del área sobre el ID
+        // Primero buscar en objetos anidados que contengan el nombre del área
+        let areaValue = null;
+
+        // DEBUG: Log para ver la estructura completa del colaborador (solo los primeros 3)
+        if (index < 3) {
+          console.log(`🔍 DEBUG Colaborador ${index}:`, {
+            nombreCompleto: `${getValue(colab, ["NOMBRE", "nombre"])} ${getValue(colab, ["APELLIDO", "apellido"])}`,
+            todasLasClaves: Object.keys(colab),
+            objetoCompleto: colab,
+            // Buscar todas las claves que contengan "area" o "AREA"
+            clavesConArea: Object.keys(colab).filter(k => k.toLowerCase().includes('area')),
+            // Ver el valor de cada clave que contiene "area"
+            valoresArea: Object.keys(colab)
+              .filter(k => k.toLowerCase().includes('area'))
+              .reduce((acc, key) => {
+                acc[key] = {
+                  valor: colab[key],
+                  tipo: typeof colab[key],
+                  esObjeto: typeof colab[key] === 'object' && colab[key] !== null,
+                  contenido: typeof colab[key] === 'object' && colab[key] !== null ? colab[key] : 'N/A'
+                };
+                return acc;
+              }, {}),
+            // Ver si existe objeto A o a
+            tieneObjetoA: !!colab.A,
+            objetoA: colab.A,
+            tieneObjetoa: !!colab.a,
+            objetoa: colab.a,
+          });
+        }
+
+        // 1. Buscar en objeto anidado A (mayúscula)
+        if (colab.A && colab.A.NOMBRE) {
           areaValue = colab.A.NOMBRE;
         }
+        // 2. Buscar en objeto anidado a (minúscula)
         if (!areaValue && colab.a && colab.a.nombre) {
           areaValue = colab.a.nombre;
         }
-        // Buscar en objetos anidados con diferentes estructuras
+        // 3. Buscar en cualquier objeto anidado con campo NOMBRE o nombre
         if (!areaValue) {
           for (const key in colab) {
             if (typeof colab[key] === "object" && colab[key] !== null) {
-              const nestedArea = getValue(colab[key], ["NOMBRE", "nombre", "NOMBRE_AREA", "nombre_area", "AREA", "area"]);
-              if (nestedArea) {
+              const nestedArea = getValue(colab[key], ["NOMBRE", "nombre", "NOMBRE_AREA", "nombre_area", "name", "NAME"]);
+              if (nestedArea && typeof nestedArea === "string") {
                 areaValue = nestedArea;
+                if (index < 3) {
+                  console.log(`✅ Área encontrada en objeto anidado '${key}':`, nestedArea);
+                }
                 break;
               }
             }
           }
         }
-        // Si areaValue es un número (ID de área), mantenerlo como está por ahora
-        // El backend debería devolver el nombre del área, pero si solo viene el ID, lo mostramos
+        // 4. Solo si no se encontró en objetos anidados, buscar en campos directos (excluyendo IDs)
+        if (!areaValue) {
+          areaValue = getValue(colab, ["AREA_NOMBRE", "area_nombre", "areaNombre", "area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
+          if (areaValue && index < 3) {
+            console.log(`✅ Área encontrada en campo directo:`, areaValue);
+          }
+        }
+
+        if (index < 3) {
+          console.log(`📊 Resultado final areaValue para colaborador ${index}:`, areaValue || "Sin área asignada");
+        }
+
+
 
         // Determinar si está activo
         const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
@@ -876,7 +922,7 @@ export default function ColaboradoresPage() {
           id: getValue(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
           nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
           apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
-          area: getValue(colab, ["AREA", "area", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]) || "Sin área asignada",
+          area: areaValue || "Sin área asignada",
           usuario: usuarioFinal,
           fechaCumpleanos: fechaFormateada,
           activo: getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
