@@ -35,6 +35,11 @@ export default function Modal({
     lg: "max-w-2xl",
     xl: "max-w-xl",
     "xl-small": "max-w-xl",
+    "2xl": "max-w-2xl",
+    "3xl": "max-w-3xl",
+    "4xl": "max-w-4xl",
+    "5xl": "max-w-5xl",
+    "6xl": "max-w-6xl",
     full: "max-w-7xl",
   };
 

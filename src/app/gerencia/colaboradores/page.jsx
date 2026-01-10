@@ -35,10 +35,10 @@ export default function ColaboradoresPage() {
         }
         return null;
       };
-      
+
       const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
       let datosArray = null;
-      
+
       if (typeof datosField === "string") {
         try {
           datosArray = JSON.parse(datosField);
@@ -48,7 +48,7 @@ export default function ColaboradoresPage() {
       } else if (Array.isArray(datosField)) {
         datosArray = datosField;
       }
-      
+
       if (datosArray && Array.isArray(datosArray)) {
         setDatosEditables(datosArray);
       } else {
@@ -66,7 +66,7 @@ export default function ColaboradoresPage() {
     usuario: "",
     contraseña: "",
   });
-  
+
   // Estados para datos de la API
   const [colaboradores, setColaboradores] = useState([]);
   const [colaboradoresCompletos, setColaboradoresCompletos] = useState([]); // Datos originales de la API
@@ -96,7 +96,7 @@ export default function ColaboradoresPage() {
     try {
       // Asegurar que id_colaborador sea un número
       const idColab = typeof idColaborador === 'string' ? parseInt(idColaborador, 10) : idColaborador;
-      
+
       const url = new URL('https://api-login-accesos-2946605267.us-central1.run.app');
       url.searchParams.append('metodo', 'update_modules');
       url.searchParams.append('id_colaborador', idColab.toString());
@@ -105,25 +105,25 @@ export default function ColaboradoresPage() {
       // Formato esperado: [{ "NOMBRE": "LOGISTICA", "ESTADO": "1" }, ...]
       // ESTADO: "1" = permitido/activo, "0" = no permitido/inactivo (CORREGIDO)
       // IMPORTANTE: El body es directamente el array, NO un objeto con 'datos'
-      const modulosFormateados = Array.isArray(modulosPermitidos) 
+      const modulosFormateados = Array.isArray(modulosPermitidos)
         ? modulosPermitidos
-            .map(mod => {
-              // mod es un objeto con { nombre, permitido }
-              const nombreModulo = mod.nombre || mod.NOMBRE || mod.id;
-              const nombreFinal = String(nombreModulo).trim().toUpperCase();
-              
-              // Determinar el estado: "1" si está permitido (true), "0" si no está permitido (false)
-              // IMPORTANTE: Solo "1" si permitido es explícitamente true, cualquier otra cosa es "0"
-              const estado = (mod.permitido === true) ? "1" : "0";
-              console.log(`🔄 Formateando módulo ${nombreFinal}: permitido=${mod.permitido}, estado=${estado}`);
-              
-              // Retornar objeto con formato que espera la API (exactamente como Postman)
-              return {
-                NOMBRE: nombreFinal,
-                ESTADO: estado
-              };
-            })
-            .filter(mod => mod.NOMBRE !== '')
+          .map(mod => {
+            // mod es un objeto con { nombre, permitido }
+            const nombreModulo = mod.nombre || mod.NOMBRE || mod.id;
+            const nombreFinal = String(nombreModulo).trim().toUpperCase();
+
+            // Determinar el estado: "1" si está permitido (true), "0" si no está permitido (false)
+            // IMPORTANTE: Solo "1" si permitido es explícitamente true, cualquier otra cosa es "0"
+            const estado = (mod.permitido === true) ? "1" : "0";
+            console.log(`🔄 Formateando módulo ${nombreFinal}: permitido=${mod.permitido}, estado=${estado}`);
+
+            // Retornar objeto con formato que espera la API (exactamente como Postman)
+            return {
+              NOMBRE: nombreFinal,
+              ESTADO: estado
+            };
+          })
+          .filter(mod => mod.NOMBRE !== '')
         : [];
 
       // Formato correcto según Postman: el body es directamente el array, NO un objeto
@@ -160,7 +160,7 @@ export default function ColaboradoresPage() {
           url: url.toString(),
           bodySent: requestBody
         });
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
@@ -218,7 +218,7 @@ export default function ColaboradoresPage() {
       // Crear array con TODOS los módulos y su estado
       const modulosConEstado = todosLosModulos.map(nombreModulo => {
         // Obtener el estado del mapa, si no está en el mapa, asumir false (no permitido)
-        const estaPermitido = modulosPermitidosMap.has(nombreModulo) 
+        const estaPermitido = modulosPermitidosMap.has(nombreModulo)
           ? modulosPermitidosMap.get(nombreModulo) === true  // Solo true si es explícitamente true
           : false;  // Si no está en el mapa, es false (no permitido)
         console.log(`🔎 Módulo ${nombreModulo}: en mapa=${modulosPermitidosMap.has(nombreModulo)}, valor=${modulosPermitidosMap.get(nombreModulo)}, final=${estaPermitido}`);
@@ -361,11 +361,11 @@ export default function ColaboradoresPage() {
 
     try {
       await insertarSubVista(nombreUsuario, id);
-      
+
       // Actualizar estados localmente
       setSubVistasDisponibles((prevDisponibles) => prevDisponibles.filter((v) => v.id !== id));
       setSubVistasPermitidas((prevPermitidas) => [...prevPermitidas, vista]);
-      
+
       // Mostrar notificación de éxito
       setNotification({
         show: true,
@@ -416,11 +416,11 @@ export default function ColaboradoresPage() {
 
     try {
       await eliminarSubVista(nombreUsuario, id);
-      
+
       // Actualizar estados localmente
       setSubVistasPermitidas((prevPermitidas) => prevPermitidas.filter((v) => v.id !== id));
       setSubVistasDisponibles((prevDisponibles) => [...prevDisponibles, subVistaAEliminar]);
-      
+
       // Mostrar notificación de éxito
       setNotification({
         show: true,
@@ -428,7 +428,7 @@ export default function ColaboradoresPage() {
         type: "success"
       });
       setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
-      
+
       // Cerrar modal y limpiar estado
       setIsEliminarSubVistaModalOpen(false);
       setSubVistaAEliminar(null);
@@ -571,8 +571,7 @@ export default function ColaboradoresPage() {
           }
           const errorText = await response.text().catch(() => "");
           throw new Error(
-            `Error ${response.status} al obtener perfil: ${
-              errorText || "Respuesta no válida"
+            `Error ${response.status} al obtener perfil: ${errorText || "Respuesta no válida"
             }`
           );
         }
@@ -730,25 +729,25 @@ export default function ColaboradoresPage() {
       const data = await response.json();
       console.log("Datos recibidos de la API:", data);
       console.log("Primer colaborador de ejemplo:", data && Array.isArray(data) && data.length > 0 ? data[0] : "No hay datos");
-      
+
       // Buscar colaboradores recién agregados (Jhan Pier Sambos y Pilsen Pier)
       if (Array.isArray(data)) {
         const colaboradoresRecientes = data.filter(c => {
           const nombre = (c.NOMBRE || c.nombre || c.Nombre || c.name || c.NAME || "").toUpperCase();
           const apellido = (c.APELLIDO || c.apellido || c.Apellido || c.apellidos || c.APELLIDOS || c.lastname || c.LASTNAME || "").toUpperCase();
           return (nombre.includes("JHAN") && apellido.includes("SAMBOS")) ||
-                 (nombre.includes("PILSEN") && apellido.includes("PIER"));
+            (nombre.includes("PILSEN") && apellido.includes("PIER"));
         });
-        
+
         if (colaboradoresRecientes.length > 0) {
           colaboradoresRecientes.forEach((colab, idx) => {
             console.log(`🔍 Colaborador recién agregado ${idx + 1}:`, {
               nombre: colab.NOMBRE || colab.nombre || colab.Nombre || colab.name || colab.NAME,
               apellido: colab.APELLIDO || colab.apellido || colab.Apellido || colab.apellidos || colab.APELLIDOS || colab.lastname || colab.LASTNAME,
               objetoCompleto: colab,
-              camposUsuario: Object.keys(colab).filter(k => 
-                k.toLowerCase().includes('usuario') || 
-                k.toLowerCase().includes('user') || 
+              camposUsuario: Object.keys(colab).filter(k =>
+                k.toLowerCase().includes('usuario') ||
+                k.toLowerCase().includes('user') ||
                 k.toLowerCase().includes('login')
               ).reduce((acc, key) => {
                 acc[key] = {
@@ -831,16 +830,16 @@ export default function ColaboradoresPage() {
 
         // Determinar si está activo
         const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
-        const isActivo = estadoValue !== false && 
-                        estadoValue !== "inactivo" && 
-                        estadoValue !== "INACTIVO" && 
-                        estadoValue !== 0 &&
-                        estadoValue !== "0";
+        const isActivo = estadoValue !== false &&
+          estadoValue !== "inactivo" &&
+          estadoValue !== "INACTIVO" &&
+          estadoValue !== 0 &&
+          estadoValue !== "0";
 
         // Obtener usuario - puede venir como null, undefined, o no existir
         // IMPORTANTE: Si el colaborador no tiene credenciales, el campo puede venir como null, undefined, o string vacío
         const usuarioRaw = getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]);
-        
+
         // Verificar explícitamente si el valor es null, undefined, o string vacío
         let usuarioFinal = "";
         if (usuarioRaw !== null && usuarioRaw !== undefined && usuarioRaw !== "") {
@@ -849,7 +848,7 @@ export default function ColaboradoresPage() {
             usuarioFinal = usuarioStr;
           }
         }
-        
+
         // Log para depuración de TODOS los colaboradores para encontrar los sin usuario
         console.log(`🔍 Colaborador ${index} (${getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"])} ${getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"])}):`, {
           nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]),
@@ -862,9 +861,9 @@ export default function ColaboradoresPage() {
           usuarioFinalLength: usuarioFinal.length,
           tieneUsuario: usuarioFinal !== "",
           // Mostrar todos los campos relacionados con usuario del objeto original
-          camposUsuario: Object.keys(colab).filter(k => 
-            k.toLowerCase().includes('usuario') || 
-            k.toLowerCase().includes('user') || 
+          camposUsuario: Object.keys(colab).filter(k =>
+            k.toLowerCase().includes('usuario') ||
+            k.toLowerCase().includes('user') ||
             k.toLowerCase().includes('login')
           ).reduce((acc, key) => {
             acc[key] = colab[key];
@@ -884,7 +883,7 @@ export default function ColaboradoresPage() {
         };
       }) : [];
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
-      
+
       // Log detallado de cada colaborador y su campo usuario
       console.log("🔍 Análisis detallado de colaboradores:");
       colaboradoresMapeados.forEach((c, idx) => {
@@ -899,7 +898,7 @@ export default function ColaboradoresPage() {
           tieneUsuario: c.usuario && String(c.usuario).trim() !== ""
         });
       });
-      
+
       const sinUsuario = colaboradoresMapeados.filter(c => {
         const tieneUsuario = c.usuario && String(c.usuario).trim() !== "";
         return !tieneUsuario;
@@ -1004,10 +1003,10 @@ export default function ColaboradoresPage() {
       setModulosPermisos(modulos);
 
       // Mapear sub_vistas permitidas
-      const subVistasPermitidasIds = Array.isArray(data.sub_vistas) 
+      const subVistasPermitidasIds = Array.isArray(data.sub_vistas)
         ? data.sub_vistas.map((vista) => vista.ID_SUB_VISTAS || vista.id || vista.ID)
         : [];
-      
+
       const subVistas = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => ({
         id: vista.ID_SUB_VISTAS || vista.id || vista.ID,
         nombre: vista.NOMBRE || vista.nombre || vista.Nombre,
@@ -1019,7 +1018,7 @@ export default function ColaboradoresPage() {
 
       // Obtener todas las subvistas disponibles desde la API
       const todasLasSubVistas = await fetchSubVistasDisponibles();
-      
+
       // Calcular sub_vistas disponibles: todas las posibles menos las permitidas
       const disponibles = todasLasSubVistas.filter(
         (vista) => !subVistasPermitidasIds.includes(vista.id)
@@ -1069,7 +1068,7 @@ export default function ColaboradoresPage() {
   // Desactivar colaborador con API
   const handleDesactivarColaborador = async () => {
     if (!selectedColaborador) return;
-    
+
     try {
       // Buscar el colaborador completo para obtener el correo
       const getValue = (obj, keys) => {
@@ -1113,19 +1112,19 @@ export default function ColaboradoresPage() {
       }
 
       // Obtener correo del colaborador - verificar directamente en el objeto
-      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
-                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
-                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
-                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
-                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
-                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
-      
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO :
+        colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo :
+          colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+            colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+              colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+
       // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
       if (correo === null || correo === undefined || correo === "") {
         try {
           const token = localStorage.getItem("token");
           const username = selectedColaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
-          
+
           if (username) {
             const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
             const perfilResponse = await fetch(perfilUrl, {
@@ -1136,7 +1135,7 @@ export default function ColaboradoresPage() {
                 ...(token && { Authorization: `Bearer ${token}` }),
               },
             });
-            
+
             if (perfilResponse.ok) {
               const perfilData = await perfilResponse.json();
               const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
@@ -1149,7 +1148,7 @@ export default function ColaboradoresPage() {
           console.warn("⚠️ [DESACTIVAR] No se pudo obtener correo del perfil:", perfilError);
         }
       }
-      
+
       // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
       if (correo === "" || correo === "null" || correo === "undefined") {
         correo = null;
@@ -1178,7 +1177,7 @@ export default function ColaboradoresPage() {
       const requestBody = {
         estado: "0", // 0 para desactivar
       };
-      
+
       // Solo incluir correo si no es null, o incluir null explícitamente
       // El backend espera correo en el body, así que lo incluimos siempre
       requestBody.correo = correo; // null se serializará correctamente en JSON
@@ -1279,19 +1278,19 @@ export default function ColaboradoresPage() {
       }
 
       // Obtener correo del colaborador - verificar directamente en el objeto
-      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO : 
-                   colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo : 
-                   colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
-                   colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
-                   colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
-                   colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
-      
+      let correo = colaboradorCompleto.CORREO !== undefined ? colaboradorCompleto.CORREO :
+        colaboradorCompleto.correo !== undefined ? colaboradorCompleto.correo :
+          colaboradorCompleto.CORREO_ELECTRONICO !== undefined ? colaboradorCompleto.CORREO_ELECTRONICO :
+            colaboradorCompleto.correo_electronico !== undefined ? colaboradorCompleto.correo_electronico :
+              colaboradorCompleto.email !== undefined ? colaboradorCompleto.email :
+                colaboradorCompleto.EMAIL !== undefined ? colaboradorCompleto.EMAIL : null;
+
       // Si el correo no está en los datos completos, intentar obtenerlo de la API de perfil
       if (correo === null || correo === undefined || correo === "") {
         try {
           const token = localStorage.getItem("token");
           const username = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
-          
+
           if (username) {
             const perfilUrl = `https://colaboradores2026-2946605267.us-central1.run.app?method=perfil_usuario_2026&user=${encodeURIComponent(username)}`;
             const perfilResponse = await fetch(perfilUrl, {
@@ -1302,7 +1301,7 @@ export default function ColaboradoresPage() {
                 ...(token && { Authorization: `Bearer ${token}` }),
               },
             });
-            
+
             if (perfilResponse.ok) {
               const perfilData = await perfilResponse.json();
               const perfilCorreo = perfilData?.CORREO || perfilData?.correo || perfilData?.CORREO_ELECTRONICO || perfilData?.correo_electronico || perfilData?.email || perfilData?.EMAIL;
@@ -1315,7 +1314,7 @@ export default function ColaboradoresPage() {
           console.warn("⚠️ [ACTIVAR] No se pudo obtener correo del perfil:", perfilError);
         }
       }
-      
+
       // Si el correo es string vacío, convertir a null para que coincida con NULL en la base de datos
       if (correo === "" || correo === "null" || correo === "undefined") {
         correo = null;
@@ -1328,7 +1327,7 @@ export default function ColaboradoresPage() {
       const requestBody = {
         estado: "1", // 1 para activar
       };
-      
+
       // Solo incluir correo si no es null, o incluir null explícitamente
       // El backend espera correo en el body, así que lo incluimos siempre
       requestBody.correo = correo; // null se serializará correctamente en JSON
@@ -1451,439 +1450,436 @@ export default function ColaboradoresPage() {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-            sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-          }`}
+          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+            }`}
         >
           <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
           <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
             <div className="max-w-[95%] mx-auto px-4 py-4">
-            {/* Botón Volver */}
-            <button
-              onClick={() => router.push("/gerencia")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
-              style={{ fontFamily: 'var(--font-poppins)' }}
-            >
-              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Volver a Gerencia</span>
-            </button>
+              {/* Botón Volver */}
+              <button
+                onClick={() => router.push("/gerencia")}
+                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+                style={{ fontFamily: 'var(--font-poppins)' }}
+              >
+                <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Volver a Gerencia</span>
+              </button>
 
-            {/* Contenedor principal con fondo */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
-              {/* Sección: Listado de Colaboradores */}
+              {/* Contenedor principal con fondo */}
               <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
-              <div>
-                {/* Header de Sección */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
+                {/* Sección: Listado de Colaboradores */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
+                  <div>
+                    {/* Header de Sección */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Colaboradores</h2>
+                          <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona los colaboradores activos del sistema</p>
+                        </div>
+                      </div>
+                      <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${loadingColaboradores
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : errorColaboradores
+                          ? "bg-red-50 border border-red-200"
+                          : "bg-green-50 border border-green-200"
+                        }`}>
+                        {loadingColaboradores ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                            <span className="text-sm font-semibold text-yellow-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando...</span>
+                          </>
+                        ) : errorColaboradores ? (
+                          <>
+                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>Error: {errorColaboradores}</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Colaboradores</h2>
-                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Gestiona los colaboradores activos del sistema</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
-                    loadingColaboradores 
-                      ? "bg-yellow-50 border border-yellow-200" 
-                      : errorColaboradores 
-                        ? "bg-red-50 border border-red-200" 
-                        : "bg-green-50 border border-green-200"
-                  }`}>
-                    {loadingColaboradores ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                        <span className="text-sm font-semibold text-yellow-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando...</span>
-                      </>
-                    ) : errorColaboradores ? (
-                      <>
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>Error: {errorColaboradores}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
-                      </>
-                    )}
-                  </div>
-                </div>
 
-                {/* Mensaje de error */}
-                {errorColaboradores && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      <strong>Error:</strong> {errorColaboradores}
-                    </p>
+                    {/* Mensaje de error */}
+                    {errorColaboradores && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          <strong>Error:</strong> {errorColaboradores}
+                        </p>
+                        <button
+                          onClick={fetchColaboradores}
+                          className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          Intentar de nuevo
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Botón Agregar */}
                     <button
-                      onClick={fetchColaboradores}
-                      className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                      onClick={() => {
+                        // Recargar colaboradores antes de abrir el modal para tener la lista actualizada
+                        fetchColaboradores();
+                        setNewColaboradorForm({
+                          id_colaborador: null,
+                          nombre: "",
+                          apellido: "",
+                          area: "",
+                          usuario: "",
+                          contraseña: "",
+                        });
+                        setIsAgregarModalOpen(true);
+                      }}
+                      className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-xs"
                       style={{ fontFamily: 'var(--font-poppins)' }}
                     >
-                      Intentar de nuevo
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>Agregar Colaborador</span>
                     </button>
-                  </div>
-                )}
 
-                {/* Botón Agregar */}
-                <button
-                  onClick={() => {
-                    // Recargar colaboradores antes de abrir el modal para tener la lista actualizada
-                    fetchColaboradores();
-                    setNewColaboradorForm({
-                      id_colaborador: null,
-                      nombre: "",
-                      apellido: "",
-                      area: "",
-                      usuario: "",
-                      contraseña: "",
-                    });
-                    setIsAgregarModalOpen(true);
-                  }}
-                  className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-xs"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Agregar Colaborador</span>
-                </button>
-
-                {/* Tabla */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
-                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {loadingColaboradores ? (
-                          <tr>
-                            <td colSpan={5} className="px-3 py-8 text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                                <span className="text-sm text-gray-600">Cargando colaboradores...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : paginatedActivos.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
-                              No hay colaboradores activos
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedActivos.map((colaborador, index) => {
-                            // Encontrar el colaborador completo original
-                            const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                              const getValue = (obj, keys) => {
-                                for (const key of keys) {
-                                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                    return obj[key];
-                                  }
-                                }
-                                return "";
-                              };
-                              const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                              const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
-                              return (idOriginal && idOriginal === colaborador.id) || 
-                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
-                            }) || colaboradoresCompletos[index] || null;
-
-                            return (
-                              <tr key={colaborador.id || `colab-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                    {/* Tabla */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-blue-700 border-b-2 border-blue-800">
+                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">USUARIO</th>
+                              <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {loadingColaboradores ? (
+                              <tr>
+                                <td colSpan={5} className="px-3 py-8 text-center">
                                   <div className="flex items-center justify-center space-x-2">
-                                    <button
-                                      onClick={async () => {
-                                        setSelectedColaborador(colaborador);
-                                        setSelectedColaboradorCompleto(colaboradorCompleto);
-                                        setIsPermisosModalOpen(true);
-                                        // Obtener permisos cuando se abre el modal
-                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
-                                        if (usuario) {
-                                          await fetchPermisos(usuario);
-                                        }
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar permisos del colaborador"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedColaborador(colaborador);
-                                        setIsDesactivarModalOpen(true);
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      style={{ fontFamily: 'var(--font-poppins)' }}
-                                      title="Desactivar colaborador"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Desactivar</span>
-                                    </button>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                                    <span className="text-sm text-gray-600">Cargando colaboradores...</span>
                                   </div>
                                 </td>
                               </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                            ) : paginatedActivos.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
+                                  No hay colaboradores activos
+                                </td>
+                              </tr>
+                            ) : (
+                              paginatedActivos.map((colaborador, index) => {
+                                // Encontrar el colaborador completo original
+                                const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                                  const getValue = (obj, keys) => {
+                                    for (const key of keys) {
+                                      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                                        return obj[key];
+                                      }
+                                    }
+                                    return "";
+                                  };
+                                  const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                                  const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                                  return (idOriginal && idOriginal === colaborador.id) ||
+                                    (nombreOriginal && nombreOriginal === colaborador.nombre);
+                                }) || colaboradoresCompletos[index] || null;
 
-                  {/* Paginación */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &lt;
-                    </button>
-                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Página {currentPage} de {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      »
-                    </button>
+                                return (
+                                  <tr key={colaborador.id || `colab-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                                      <div className="flex items-center justify-center space-x-2">
+                                        <button
+                                          onClick={async () => {
+                                            setSelectedColaborador(colaborador);
+                                            setSelectedColaboradorCompleto(colaboradorCompleto);
+                                            setIsPermisosModalOpen(true);
+                                            // Obtener permisos cuando se abre el modal
+                                            const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                            if (usuario) {
+                                              await fetchPermisos(usuario);
+                                            }
+                                          }}
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Gestionar permisos del colaborador"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>Permisos</span>
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setSelectedColaborador(colaborador);
+                                            setIsDesactivarModalOpen(true);
+                                          }}
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                          title="Desactivar colaborador"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>Desactivar</span>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Paginación */}
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                        <button
+                          onClick={() => setCurrentPage(1)}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          «
+                        </button>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          &lt;
+                        </button>
+                        <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Página {currentPage} de {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          &gt;
+                        </button>
+                        <button
+                          onClick={() => setCurrentPage(totalPages)}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          »
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sección: Colaboradores Inactivos */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+                  <div>
+                    {/* Header de Sección */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Colaboradores Inactivos</h2>
+                          <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Sin acceso al sistema</p>
+                        </div>
+                      </div>
+                      <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${loadingColaboradores
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : errorColaboradores
+                          ? "bg-red-50 border border-red-200"
+                          : "bg-green-50 border border-green-200"
+                        }`}>
+                        {loadingColaboradores ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                            <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
+                          </>
+                        ) : errorColaboradores ? (
+                          <>
+                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="text-sm font-semibold text-red-700">Error: {errorColaboradores}</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tabla */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>APELLIDO</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ÁREA</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>USUARIO</th>
+                              <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ACCIÓN</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {loadingColaboradores ? (
+                              <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                                    <span className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando colaboradores...</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : paginatedInactivos.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  No hay colaboradores inactivos
+                                </td>
+                              </tr>
+                            ) : (
+                              paginatedInactivos.map((colaborador, index) => {
+                                // Encontrar el colaborador completo original
+                                const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                                  const getValue = (obj, keys) => {
+                                    for (const key of keys) {
+                                      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                                        return obj[key];
+                                      }
+                                    }
+                                    return "";
+                                  };
+                                  const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                                  const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                                  return (idOriginal && idOriginal === colaborador.id) ||
+                                    (nombreOriginal && nombreOriginal === colaborador.nombre);
+                                }) || colaboradoresCompletos[colaboradores.length + index] || null;
+
+                                return (
+                                  <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                      <div className="flex items-center justify-center space-x-2">
+                                        <button
+                                          onClick={async () => {
+                                            setSelectedColaborador(colaborador);
+                                            setSelectedColaboradorCompleto(colaboradorCompleto);
+                                            setIsPermisosModalOpen(true);
+                                            // Obtener permisos cuando se abre el modal
+                                            const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
+                                            if (usuario) {
+                                              await fetchPermisos(usuario);
+                                            }
+                                          }}
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Gestionar permisos del colaborador"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>Permisos</span>
+                                        </button>
+                                        <button
+                                          onClick={() => handleActivarColaborador(colaborador)}
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Activar colaborador"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>Activar</span>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Paginación */}
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                        <button
+                          onClick={() => setCurrentPageInactivos(1)}
+                          disabled={currentPageInactivos === 1}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          «
+                        </button>
+                        <button
+                          onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
+                          disabled={currentPageInactivos === 1}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          &lt;
+                        </button>
+                        <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Página {currentPageInactivos} de {totalPagesInactivos}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
+                          disabled={currentPageInactivos === totalPagesInactivos}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          &gt;
+                        </button>
+                        <button
+                          onClick={() => setCurrentPageInactivos(totalPagesInactivos)}
+                          disabled={currentPageInactivos === totalPagesInactivos}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          »
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-              {/* Sección: Colaboradores Inactivos */}
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-              <div>
-                {/* Header de Sección */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Colaboradores Inactivos</h2>
-                      <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>Sin acceso al sistema</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-center space-x-2 rounded-lg px-3 py-1.5 ${
-                    loadingColaboradores 
-                      ? "bg-yellow-50 border border-yellow-200" 
-                      : errorColaboradores 
-                        ? "bg-red-50 border border-red-200" 
-                        : "bg-green-50 border border-green-200"
-                  }`}>
-                    {loadingColaboradores ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                        <span className="text-sm font-semibold text-yellow-700">Cargando...</span>
-                      </>
-                    ) : errorColaboradores ? (
-                      <>
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span className="text-sm font-semibold text-red-700">Error: {errorColaboradores}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tabla */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
-                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>NOMBRE</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>APELLIDO</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ÁREA</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>USUARIO</th>
-                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ACCIÓN</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {loadingColaboradores ? (
-                          <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                                <span className="text-sm text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando colaboradores...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : paginatedInactivos.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
-                              No hay colaboradores inactivos
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedInactivos.map((colaborador, index) => {
-                            // Encontrar el colaborador completo original
-                            const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                              const getValue = (obj, keys) => {
-                                for (const key of keys) {
-                                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                    return obj[key];
-                                  }
-                                }
-                                return "";
-                              };
-                              const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                              const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
-                              return (idOriginal && idOriginal === colaborador.id) || 
-                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
-                            }) || colaboradoresCompletos[colaboradores.length + index] || null;
-
-                            return (
-                              <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.nombre}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.apellido}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.area}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{colaborador.usuario || "Sin usuario"}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-center">
-                                  <div className="flex items-center justify-center space-x-2">
-                                    <button
-                                      onClick={async () => {
-                                        setSelectedColaborador(colaborador);
-                                        setSelectedColaboradorCompleto(colaboradorCompleto);
-                                        setIsPermisosModalOpen(true);
-                                        // Obtener permisos cuando se abre el modal
-                                        const usuario = colaborador.usuario || colaboradorCompleto?.USUARIO || colaboradorCompleto?.usuario;
-                                        if (usuario) {
-                                          await fetchPermisos(usuario);
-                                        }
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Gestionar permisos del colaborador"
-                                      style={{ fontFamily: 'var(--font-poppins)' }}
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Permisos</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleActivarColaborador(colaborador)}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Activar colaborador"
-                                      style={{ fontFamily: 'var(--font-poppins)' }}
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>Activar</span>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Paginación */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                    <button
-                      onClick={() => setCurrentPageInactivos(1)}
-                      disabled={currentPageInactivos === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setCurrentPageInactivos(prev => Math.max(1, prev - 1))}
-                      disabled={currentPageInactivos === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &lt;
-                    </button>
-                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Página {currentPageInactivos} de {totalPagesInactivos}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPageInactivos(prev => Math.min(totalPagesInactivos, prev + 1))}
-                      disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPageInactivos(totalPagesInactivos)}
-                      disabled={currentPageInactivos === totalPagesInactivos}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      »
-                    </button>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-          </div>
           </main>
         </div>
       </div>
@@ -1895,7 +1891,7 @@ export default function ColaboradoresPage() {
           setSelectedColaborador(null);
         }}
         title="Accesibilidad y Credenciales"
-        size="xl"
+        size="5xl"
       >
         {selectedColaborador && (
           <div className="space-y-5">
@@ -1951,37 +1947,35 @@ export default function ColaboradoresPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {modulosPermisos.length > 0 ? modulosPermisos.map((mod) => (
-                      <tr key={mod.id} className="hover:bg-slate-200 transition-colors">
-                        <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
-                          {mod.nombre}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => togglePermisoModulo(mod.id)}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
-                              mod.permitido ? "bg-emerald-500" : "bg-gray-300"
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                                mod.permitido ? "translate-x-4" : "translate-x-1"
-                              }`}
-                            />
-                          </button>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-center">
-                          {mod.permitido ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500 border-2 border-emerald-600 text-white">
-                              Concedido
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-gray-500 border-2 border-gray-600 text-white">
-                              Apagado
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )) : (
+                        <tr key={mod.id} className="hover:bg-slate-200 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">
+                            {mod.nombre}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => togglePermisoModulo(mod.id)}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${mod.permitido ? "bg-emerald-500" : "bg-gray-300"
+                                }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${mod.permitido ? "translate-x-4" : "translate-x-1"
+                                  }`}
+                              />
+                            </button>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                            {mod.permitido ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500 border-2 border-emerald-600 text-white">
+                                Concedido
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-gray-500 border-2 border-gray-600 text-white">
+                                Apagado
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )) : (
                         <tr>
                           <td colSpan={3} className="px-3 py-4 text-center text-sm text-gray-500">
                             No hay módulos disponibles
@@ -2077,12 +2071,14 @@ export default function ColaboradoresPage() {
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] text-xs text-gray-900"
                   >
                     <option value="TODAS">Todas las Áreas</option>
-                    <option value="MARKETING">MARKETING</option>
+                    <option value="GERENCIA">GERENCIA</option>
+                    <option value="ADMINISTRACION">ADMINISTRACION</option>
                     <option value="IMPORTACION">IMPORTACION</option>
                     <option value="LOGISTICA">LOGISTICA</option>
-                    <option value="GERENCIA">GERENCIA</option>
-                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
                     <option value="FACTURACION">FACTURACION</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="SISTEMAS">SISTEMAS</option>
+                    <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
                     <option value="VENTAS">VENTAS</option>
                   </select>
                 </div>
@@ -2121,7 +2117,7 @@ export default function ColaboradoresPage() {
                               ? vista.nombre.toLowerCase().includes(busquedaSubVista.toLowerCase())
                               : true
                           );
-                        
+
                         return vistasFiltradas.length > 0 ? (
                           vistasFiltradas.map((vista) => (
                             <tr key={vista.id} className="hover:bg-slate-200 transition-colors">
@@ -2356,7 +2352,7 @@ export default function ColaboradoresPage() {
                     const tieneUsuario = colab.usuario && String(colab.usuario).trim() !== "";
                     return !tieneUsuario;
                   });
-                  
+
                   return colaboradoresSinUsuario.length === 0 ? (
                     <div className="p-4 text-center text-sm text-gray-500">
                       No hay colaboradores sin usuario/contraseña
@@ -2364,44 +2360,44 @@ export default function ColaboradoresPage() {
                   ) : (
                     <div className="divide-y divide-gray-200">
                       {colaboradoresSinUsuario
-                      .map((colab, index) => (
-                        <button
-                          key={colab.id || index}
-                          onClick={() => {
-                            setNewColaboradorForm({
-                              id_colaborador: colab.id || null,
-                              nombre: colab.nombre || "",
-                              apellido: colab.apellido || "",
-                              area: colab.area || "",
-                              usuario: "",
-                              contraseña: "",
-                            });
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-200 last:border-b-0"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {colab.nombre} {colab.apellido}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-0.5">{colab.area || "Sin área asignada"}</p>
+                        .map((colab, index) => (
+                          <button
+                            key={colab.id || index}
+                            onClick={() => {
+                              setNewColaboradorForm({
+                                id_colaborador: colab.id || null,
+                                nombre: colab.nombre || "",
+                                apellido: colab.apellido || "",
+                                area: colab.area || "",
+                                usuario: "",
+                                contraseña: "",
+                              });
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-200 last:border-b-0"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {colab.nombre} {colab.apellido}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-0.5">{colab.area || "Sin área asignada"}</p>
+                              </div>
+                              <svg
+                                className="w-5 h-5 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
                             </div>
-                            <svg
-                              className="w-5 h-5 text-blue-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
                     </div>
                   );
                 })()}
@@ -2409,7 +2405,7 @@ export default function ColaboradoresPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-end space-x-3 pt-4 mt-6 border-t border-gray-200">
           <button
             onClick={() => {
@@ -2465,14 +2461,14 @@ export default function ColaboradoresPage() {
 
                 const data = await response.json();
                 console.log("Credenciales agregadas exitosamente:", data);
-                
+
                 // Mostrar notificación de éxito
                 setNotification({
                   show: true,
                   message: "Credenciales agregadas exitosamente",
                   type: "success"
                 });
-                
+
                 // Cerrar modal y resetear formulario
                 setIsAgregarModalOpen(false);
                 setNewColaboradorForm({
@@ -2486,7 +2482,7 @@ export default function ColaboradoresPage() {
 
                 // Recargar la lista de colaboradores
                 fetchColaboradores();
-                
+
                 // Ocultar notificación después de 3 segundos
                 setTimeout(() => {
                   setNotification({ show: false, message: "", type: "success" });
@@ -2563,7 +2559,7 @@ export default function ColaboradoresPage() {
 
               // Obtener todos los campos del objeto
               const campos = Object.keys(selectedColaboradorCompleto);
-              
+
               // Campos principales a mostrar primero
               const camposPrincipales = [
                 { keys: ["id", "ID", "Id"], label: "ID" },
@@ -2582,7 +2578,7 @@ export default function ColaboradoresPage() {
                 if (campoLower === "datos") {
                   return false;
                 }
-                const esPrincipal = camposPrincipales.some(cp => 
+                const esPrincipal = camposPrincipales.some(cp =>
                   cp.keys.some(key => key.toLowerCase() === campo.toLowerCase())
                 );
                 return !esPrincipal && typeof selectedColaboradorCompleto[campo] !== "object";
@@ -2595,7 +2591,7 @@ export default function ColaboradoresPage() {
                     {camposPrincipales.map((campo, index) => {
                       const value = getValue(selectedColaboradorCompleto, campo.keys);
                       const displayValue = campo.isDate ? formatDate(value) : formatValue(value);
-                      
+
                       return (
                         <div key={index}>
                           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -2621,7 +2617,7 @@ export default function ColaboradoresPage() {
                         {camposRestantes.map((campo, index) => {
                           const value = selectedColaboradorCompleto[campo];
                           const displayValue = formatValue(value);
-                          
+
                           return (
                             <div key={index}>
                               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -2640,10 +2636,10 @@ export default function ColaboradoresPage() {
                   {/* Campo DATOS especial - Array de teléfonos, correos, etc. */}
                   {(() => {
                     const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
-                    
+
                     // Usar datosEditables (ya inicializados en useEffect)
                     const datosParaMostrar = datosEditables;
-                    
+
                     if (datosParaMostrar && Array.isArray(datosParaMostrar) && datosParaMostrar.length > 0) {
                       // Agrupar por MEDIO
                       const agrupados = {};
@@ -2653,7 +2649,7 @@ export default function ColaboradoresPage() {
                           const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
                           const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
                           const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
-                          
+
                           if (!agrupados[medio]) {
                             agrupados[medio] = [];
                           }
@@ -2758,13 +2754,13 @@ export default function ColaboradoresPage() {
                     if (campoLower === "datos") {
                       return false;
                     }
-                    return typeof valor === "object" && 
-                           valor !== null &&
-                           !Array.isArray(valor);
+                    return typeof valor === "object" &&
+                      valor !== null &&
+                      !Array.isArray(valor);
                   }).map((campo, index) => {
                     const objeto = selectedColaboradorCompleto[campo];
                     const subCampos = Object.keys(objeto);
-                    
+
                     return (
                       <div key={`nested-${index}`} className="border-t border-gray-200 pt-4 mt-4">
                         <h3 className="text-sm font-bold text-gray-800 mb-3">
@@ -2774,7 +2770,7 @@ export default function ColaboradoresPage() {
                           {subCampos.map((subCampo, subIndex) => {
                             const value = objeto[subCampo];
                             const displayValue = formatValue(value);
-                            
+
                             return (
                               <div key={subIndex}>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -2800,16 +2796,14 @@ export default function ColaboradoresPage() {
       {/* Notificación Toast */}
       {notification.show && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${
-            notification.type === "success" 
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
-              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
-          } min-w-[320px] max-w-md`}>
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-              notification.type === "success" 
-                ? "bg-green-500" 
-                : "bg-red-500"
-            }`}>
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${notification.type === "success"
+            ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300"
+            : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+            } min-w-[320px] max-w-md`}>
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${notification.type === "success"
+              ? "bg-green-500"
+              : "bg-red-500"
+              }`}>
               {notification.type === "success" ? (
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -2821,21 +2815,19 @@ export default function ColaboradoresPage() {
               )}
             </div>
             <div className="flex-1">
-              <p className={`text-sm font-semibold ${
-                notification.type === "success" 
-                  ? "text-green-800" 
-                  : "text-red-800"
-              }`}>
+              <p className={`text-sm font-semibold ${notification.type === "success"
+                ? "text-green-800"
+                : "text-red-800"
+                }`}>
                 {notification.message}
               </p>
             </div>
             <button
               onClick={() => setNotification({ show: false, message: "", type: notification.type })}
-              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${
-                notification.type === "success" 
-                  ? "hover:text-green-600" 
-                  : "hover:text-red-600"
-              }`}
+              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${notification.type === "success"
+                ? "hover:text-green-600"
+                : "hover:text-red-600"
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

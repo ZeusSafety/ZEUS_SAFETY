@@ -81,13 +81,13 @@ export default function GestionPreciosPage() {
   const fetchFichasTecnicas = useCallback(async (codigos) => {
     try {
       if (!codigos || codigos.length === 0) return {};
-      
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
+
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
       if (!token) return {};
-      
+
       // Obtener todos los productos de la API
       const apiUrl = `/api/productos`;
       const headers = {
@@ -95,34 +95,34 @@ export default function GestionPreciosPage() {
         "Accept": "application/json",
         "Authorization": `Bearer ${token}`,
       };
-      
+
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: headers,
       });
-      
+
       if (!response.ok) {
         console.warn("No se pudieron obtener las fichas técnicas de productos");
         return {};
       }
-      
+
       const data = await response.json();
-      const productosArray = Array.isArray(data) ? data : 
-                            (data?.data && Array.isArray(data.data) ? data.data : []);
-      
+      const productosArray = Array.isArray(data) ? data :
+        (data?.data && Array.isArray(data.data) ? data.data : []);
+
       // Crear un mapa de código -> ficha técnica
       const fichasMap = {};
       productosArray.forEach(producto => {
         const codigo = producto.CODIGO || producto.codigo || producto.CÓDIGO;
-        const ficha = producto.FICHA_TECNICA_ENLACE || producto.ficha_tecnica_enlace || 
-                     producto.FICHA_TECNICA || producto.ficha_tecnica ||
-                     producto.fichaTecnica || producto.fichaTecnicaEnlace;
-        
+        const ficha = producto.FICHA_TECNICA_ENLACE || producto.ficha_tecnica_enlace ||
+          producto.FICHA_TECNICA || producto.ficha_tecnica ||
+          producto.fichaTecnica || producto.fichaTecnicaEnlace;
+
         if (codigo && ficha) {
           fichasMap[codigo] = ficha;
         }
       });
-      
+
       console.log(`✅ Fichas técnicas obtenidas: ${Object.keys(fichasMap).length} productos con ficha`);
       return fichasMap;
     } catch (err) {
@@ -133,64 +133,64 @@ export default function GestionPreciosPage() {
 
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
       if (!token) {
         router.push("/login");
         throw new Error("Token no encontrado. Por favor, inicie sesión.");
       }
-      
+
       const apiId = getApiId(tablaId);
       // Usar listar_franjas en lugar de franja_precios para obtener IDs más confiables (sin pivot)
       const apiUrl = `/api/franja-precios?method=listar_franjas&id=${encodeURIComponent(apiId)}`;
-      
+
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": `Bearer ${token}`,
       };
-      
+
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: headers,
       });
-      
+
       if (!response.ok) {
         // Para errores 401, solo lanzar error sin redirigir inmediatamente
         // La redirección se manejará solo si TODAS las peticiones fallan
         if (response.status === 401) {
           throw new Error("token expirado");
         }
-        
+
         // Para errores 500, retornar array vacío (tabla sin datos o error del servidor)
         if (response.status === 500) {
           return [];
         }
-        
+
         const errorData = await response.json().catch(() => ({ error: `Error ${response.status}` }));
         const errorMessage = errorData.error || errorData.message || errorData.details || `Error ${response.status}`;
-        
+
         // Solo redirigir si es explícitamente un error de token expirado
         if (errorData.error === "token expirado" || errorMessage.toLowerCase().includes("token expirado")) {
           throw new Error("token expirado");
         }
-        
+
         // Para otros errores, retornar array vacío
         return [];
       }
-      
+
       const data = await response.json();
-      const preciosArray = Array.isArray(data) ? data : 
-                          (data?.data && Array.isArray(data.data) ? data.data : []);
-      
+      const preciosArray = Array.isArray(data) ? data :
+        (data?.data && Array.isArray(data.data) ? data.data : []);
+
       console.log("🔍 [FRONTEND-GESTION] PreciosArray procesado - Total:", preciosArray.length);
-      
+
       if (preciosArray.length > 0) {
         console.log("🔍 [FRONTEND-GESTION] Primer registro completo:", preciosArray[0]);
         console.log("🔍 [FRONTEND-GESTION] Claves del primer registro:", Object.keys(preciosArray[0]));
-        
+
         // Mostrar todos los valores del primer registro
         const primerRegistro = preciosArray[0];
         console.log("🔍 [FRONTEND-GESTION] Todos los valores del primer registro:");
@@ -200,21 +200,21 @@ export default function GestionPreciosPage() {
       } else {
         console.warn("⚠️ [FRONTEND-GESTION] No hay registros en preciosArray");
       }
-      
+
       // Obtener fichas técnicas de productos (aunque no las mostremos, las obtenemos para mantener consistencia con la API)
       const codigos = preciosArray.map(p => p.CODIGO || p.codigo).filter(Boolean);
       const fichasMap = await fetchFichasTecnicas(codigos);
-      
+
       // Combinar fichas técnicas con los datos de precios (aunque no las mostremos)
       // IMPORTANTE: Preservar el ID aunque no se muestre en la tabla
       const preciosConFichas = preciosArray.map(precio => {
         const codigo = precio.CODIGO || precio.codigo;
         const ficha = fichasMap[codigo] || precio.FICHA_TECNICA_ENLACE || precio.ficha_tecnica_enlace ||
-                     precio.FICHA_TECNICA || precio.ficha_tecnica;
-        
+          precio.FICHA_TECNICA || precio.ficha_tecnica;
+
         // Asegurar que el ID esté presente en ambos formatos (mayúsculas y minúsculas)
         const idValue = precio.ID || precio.id || precio.Id || precio._id;
-        
+
         return {
           ...precio,
           // Preservar el ID en todos los formatos posibles
@@ -226,26 +226,26 @@ export default function GestionPreciosPage() {
           ficha_tecnica: ficha
         };
       });
-      
+
       console.log("🔍 [FRONTEND-GESTION] Precios con fichas - Total:", preciosConFichas.length);
       if (preciosConFichas.length > 0) {
         console.log("🔍 [FRONTEND-GESTION] Primer registro final:", preciosConFichas[0]);
       }
       console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
       console.log("🔍 [FRONTEND-GESTION] ===== FIN DATOS API =====");
-      
+
       return preciosConFichas;
     } catch (err) {
       const errorMessage = err.message || "";
-      const isExpectedError = errorMessage.includes("'PRECIO'") || 
-                             errorMessage.includes("PRECIO") ||
-                             errorMessage.includes("No hay datos") ||
-                             errorMessage.includes("no existe");
-      
+      const isExpectedError = errorMessage.includes("'PRECIO'") ||
+        errorMessage.includes("PRECIO") ||
+        errorMessage.includes("No hay datos") ||
+        errorMessage.includes("no existe");
+
       if (!isExpectedError) {
         console.error(`Error al obtener precios para ${tablaId}:`, err.message);
       }
-      
+
       return [];
     }
   }, [user, router, fetchFichasTecnicas]);
@@ -253,13 +253,13 @@ export default function GestionPreciosPage() {
   useEffect(() => {
     let isMounted = true;
     let timeoutId;
-    
+
     const loadAllData = async () => {
       if (!user || loading) return;
-      
+
       setLoadingAll(true);
       setError(null);
-      
+
       // Timeout de seguridad: si tarda más de 30 segundos, detener la carga
       timeoutId = setTimeout(() => {
         if (isMounted) {
@@ -267,9 +267,9 @@ export default function GestionPreciosPage() {
           setError("La carga está tardando demasiado. Por favor, recarga la página.");
         }
       }, 30000);
-      
+
       let hasTokenError = false;
-      
+
       try {
         // Usar las tablas iniciales, no las del estado que pueden cambiar
         const tablasIniciales = [
@@ -280,10 +280,10 @@ export default function GestionPreciosPage() {
           { value: "FERRETERIA", label: "Ferretería", disponible: true },
           { value: "CLIENTES_FINALES", label: "Clientes Finales", disponible: true },
         ];
-        
+
         // Solo cargar las tablas que están marcadas como disponibles inicialmente
         const tablasACargar = tablasIniciales.filter(t => t.disponible);
-        
+
         const promises = tablasACargar.map(async (tabla) => {
           try {
             const data = await fetchPrecios(tabla.value);
@@ -296,16 +296,16 @@ export default function GestionPreciosPage() {
             return { tabla: tabla.value, data: [], error: err.message };
           }
         });
-        
+
         const results = await Promise.allSettled(promises);
-        
+
         if (!isMounted) {
           clearTimeout(timeoutId);
           return;
         }
-        
+
         clearTimeout(timeoutId);
-        
+
         const newPreciosData = {};
         results.forEach((result, index) => {
           if (result.status === 'fulfilled') {
@@ -317,28 +317,28 @@ export default function GestionPreciosPage() {
             newPreciosData[tabla] = [];
           }
         });
-        
+
         // Si hay error de token en todas las peticiones, redirigir al login
-        const allTokenErrors = results.every(r => 
+        const allTokenErrors = results.every(r =>
           r.status === 'fulfilled' && r.value.error && r.value.error.includes("token expirado")
         );
-        
+
         if (hasTokenError && allTokenErrors) {
           localStorage.removeItem("token");
           router.push("/login");
           return;
         }
-        
+
         setPreciosData(newPreciosData);
-        
+
         // Actualizar disponibilidad de tablas
-        setTablasDisponibles(prev => 
+        setTablasDisponibles(prev =>
           prev.map(tabla => {
             const tieneDatos = newPreciosData[tabla.value] && newPreciosData[tabla.value].length > 0;
             return { ...tabla, disponible: tieneDatos };
           })
         );
-        
+
         // Si la tabla activa no tiene datos, cambiar a la primera disponible
         const activeTabData = newPreciosData[activeTab];
         if (!activeTabData || activeTabData.length === 0) {
@@ -372,7 +372,7 @@ export default function GestionPreciosPage() {
     if (!loading && user) {
       loadAllData();
     }
-    
+
     return () => {
       isMounted = false;
       if (timeoutId) {
@@ -385,47 +385,47 @@ export default function GestionPreciosPage() {
 
   const getPriceColumns = useMemo(() => {
     if (precios.length === 0) return [];
-    
+
     const excludedFields = [
       'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
       'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
       'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
       'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar', 'MEDIDA', 'medida', 'PRECIO', 'precio'
     ];
-    
+
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
-    
+
     // Debug: mostrar qué campos hay disponibles
     console.log("=== CAMPOS DISPONIBLES EN PRECIOS ===");
     console.log("Primer registro:", firstRecord);
     console.log("Todas las claves:", allKeys);
-    
+
     const priceColumns = allKeys
       .filter(key => {
         const keyUpper = key.toUpperCase();
         const isExcluded = excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()));
-        
+
         // Incluir campos que contengan CAJA, DOCENA, PAR o UNIDAD seguido de un número
         const isPriceField = /(CAJA|DOCENA|PAR|UNIDAD)\s*\d+/i.test(keyUpper);
-        
+
         const value = firstRecord[key];
-        const isNumeric = typeof value === 'number' || 
-                         (!isNaN(parseFloat(value)) && value !== null && value !== '' && value !== undefined);
-        
+        const isNumeric = typeof value === 'number' ||
+          (!isNaN(parseFloat(value)) && value !== null && value !== '' && value !== undefined);
+
         // Si es un campo de precio (CAJA 1, DOCENA 1, etc.) o es numérico y no está excluido
         const shouldInclude = !isExcluded && (isPriceField || isNumeric);
-        
+
         if (shouldInclude) {
           console.log(`✅ Incluyendo columna: ${key} = ${value} (tipo: ${typeof value})`);
         }
-        
+
         return shouldInclude;
       })
       .sort((a, b) => {
         const aUpper = a.toUpperCase();
         const bUpper = b.toUpperCase();
-        
+
         const getOrder = (str) => {
           if (str.includes('CAJA')) return 1;
           if (str.includes('DOCENA')) return 2;
@@ -433,19 +433,19 @@ export default function GestionPreciosPage() {
           if (str.includes('UNIDAD')) return 4;
           return 5;
         };
-        
+
         const orderA = getOrder(aUpper);
         const orderB = getOrder(bUpper);
-        
+
         if (orderA !== orderB) return orderA - orderB;
-        
+
         const numA = parseInt(a.match(/\d+/)?.[0] || '0');
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
-    
+
     console.log("Columnas de precio detectadas:", priceColumns);
-    
+
     return priceColumns;
   }, [precios]);
 
@@ -504,9 +504,9 @@ export default function GestionPreciosPage() {
   // Función para obtener el token de autenticación
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem("token") || 
-             (user?.token || user?.accessToken || user?.access_token) || 
-             sessionStorage.getItem("token") || "";
+      return localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token") || "";
     }
     return "";
   };
@@ -533,7 +533,7 @@ export default function GestionPreciosPage() {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           console.error("Error 401: Token de autenticación inválido o expirado");
@@ -544,10 +544,10 @@ export default function GestionPreciosPage() {
       }
 
       const data = await response.json();
-      
+
       // Asegurarse de que data sea un array
       const productos = Array.isArray(data) ? data : (data.data || []);
-      
+
       setTodosLosProductos(productos);
       setProductosCargados(true);
     } catch (error) {
@@ -591,7 +591,7 @@ export default function GestionPreciosPage() {
       const codigo = (prod.CODIGO || prod.codigo || "").toLowerCase();
       return nombre.includes(terminoLower) || codigo.includes(terminoLower);
     });
-    
+
     setSugerenciasProductos(productosFiltrados);
     setMostrarSugerencias(productosFiltrados.length > 0);
   };
@@ -602,7 +602,7 @@ export default function GestionPreciosPage() {
     if (!productosCargados && todosLosProductos.length === 0) {
       cargarTodosLosProductos();
     }
-    
+
     // Si hay texto y sugerencias previas, mostrarlas
     if (productoBusqueda && sugerenciasProductos.length > 0) {
       setMostrarSugerencias(true);
@@ -613,7 +613,7 @@ export default function GestionPreciosPage() {
   const seleccionarProducto = (productoItem) => {
     const nombre = productoItem.NOMBRE || productoItem.nombre || "";
     const codigo = productoItem.CODIGO || productoItem.codigo || "";
-    
+
     setProductoBusqueda(nombre);
     setFormData({ ...formData, NOMBRE: nombre, CODIGO: codigo });
     setSugerenciasProductos([]);
@@ -645,7 +645,7 @@ export default function GestionPreciosPage() {
   const handleActualizar = (precio) => {
     setModalType("update");
     setSelectedPrecio(precio);
-    
+
     // Mapear los datos del precio al formulario
     const getField = (variations) => {
       for (const variation of variations) {
@@ -666,12 +666,12 @@ export default function GestionPreciosPage() {
 
     // Buscar ID en todas las variaciones posibles
     let idValue = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
-    
+
     // Validar que el ID encontrado sea numérico
     if (idValue && !isValidId(idValue)) {
       idValue = null; // Resetear si no es válido
     }
-    
+
     // Si no se encuentra, buscar manualmente en todas las keys
     if (!idValue || !isValidId(idValue)) {
       const allKeys = Object.keys(precio);
@@ -679,13 +679,13 @@ export default function GestionPreciosPage() {
       console.log("Precio completo:", JSON.stringify(precio, null, 2));
       console.log("Todas las claves:", allKeys);
       console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
-      
+
       // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
       for (const key of allKeys) {
         const keyUpper = key.toUpperCase();
-        if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
-            !keyUpper.includes("CODIGO") && 
-            !keyUpper.includes("CLASIFICACION")) {
+        if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) &&
+          !keyUpper.includes("CODIGO") &&
+          !keyUpper.includes("CLASIFICACION")) {
           const value = precio[key];
           console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
           if (isValidId(value)) {
@@ -695,7 +695,7 @@ export default function GestionPreciosPage() {
           }
         }
       }
-      
+
       // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
       if (!idValue || !isValidId(idValue)) {
         for (const key of allKeys) {
@@ -712,7 +712,7 @@ export default function GestionPreciosPage() {
         }
       }
     }
-    
+
     // Convertir a número si es string numérico
     if (idValue && typeof idValue === 'string' && /^\d+$/.test(idValue.trim())) {
       idValue = parseInt(idValue.trim(), 10);
@@ -735,10 +735,10 @@ export default function GestionPreciosPage() {
     // Obtener el nombre - el backend devuelve el nombre en PRODUCTO
     // Priorizar PRODUCTO ya que es el campo que devuelve el backend
     const nombreValue = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
-    
+
     // Asegurar que el ID sea un número entero
     const finalId = typeof idValue === 'number' ? idValue : parseInt(idValue, 10);
-    
+
     const formDataToSet = {
       ID: finalId,
       id: finalId, // También enviar como 'id' por si la API lo requiere
@@ -752,9 +752,9 @@ export default function GestionPreciosPage() {
       CLASIFICACION: activeTab,
       TEXTO_COPIAR: getField(["TEXTO_COPIAR", "texto_copiar", "textoCopiar"]) || ""
     };
-    
+
     console.log("✅ FormData a enviar (con ID válido):", formDataToSet);
-    
+
     setFormData(formDataToSet);
     // Sincronizar el campo de búsqueda con el nombre del producto
     setProductoBusqueda(nombreValue || "");
@@ -774,10 +774,10 @@ export default function GestionPreciosPage() {
     try {
       setSaving(true);
       const precio = precioToDelete;
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
       if (!token) {
         router.push("/login");
         return;
@@ -802,13 +802,13 @@ export default function GestionPreciosPage() {
 
       // Buscar ID en todas las variaciones posibles
       let id = getField(["ID", "id", "Id", "_id", "ID_FRANJA", "id_franja"]);
-      
+
       // Validar que el ID encontrado sea numérico
       if (id && !isValidId(id)) {
         console.warn(`⚠️ ID encontrado pero no es válido: ${id} (tipo: ${typeof id})`);
         id = null; // Resetear si no es válido
       }
-      
+
       // Si no se encuentra, buscar manualmente en todas las keys
       if (!id || !isValidId(id)) {
         const allKeys = Object.keys(precio);
@@ -816,13 +816,13 @@ export default function GestionPreciosPage() {
         console.log("Precio completo:", JSON.stringify(precio, null, 2));
         console.log("Todas las claves:", allKeys);
         console.log("Valores de cada clave:", allKeys.map(k => `${k}: ${precio[k]} (tipo: ${typeof precio[k]})`));
-        
+
         // Primero buscar campos que sean exactamente "ID" o terminen/empiecen con "_ID" o "ID_"
         for (const key of allKeys) {
           const keyUpper = key.toUpperCase();
-          if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) && 
-              !keyUpper.includes("CODIGO") && 
-              !keyUpper.includes("CLASIFICACION")) {
+          if ((keyUpper === "ID" || keyUpper.endsWith("_ID") || keyUpper.startsWith("ID_")) &&
+            !keyUpper.includes("CODIGO") &&
+            !keyUpper.includes("CLASIFICACION")) {
             const value = precio[key];
             console.log(`🔍 Revisando campo ${key} = ${value} (tipo: ${typeof value})`);
             if (isValidId(value)) {
@@ -832,7 +832,7 @@ export default function GestionPreciosPage() {
             }
           }
         }
-        
+
         // Si aún no se encuentra, buscar cualquier campo numérico que parezca un ID
         if (!id || !isValidId(id)) {
           for (const key of allKeys) {
@@ -848,12 +848,12 @@ export default function GestionPreciosPage() {
           }
         }
       }
-      
+
       // Convertir a número si es string numérico
       if (id && typeof id === 'string' && /^\d+$/.test(id.trim())) {
         id = parseInt(id.trim(), 10);
       }
-      
+
       if (!id || !isValidId(id)) {
         console.error("❌ No se pudo encontrar el ID en ningún campo");
         console.error("Objeto completo:", precio);
@@ -898,13 +898,13 @@ export default function GestionPreciosPage() {
         return pId !== id;
       });
       setPreciosData(newPreciosData);
-      
+
       // Mostrar notificación de éxito
       setNotification({ show: true, message: "Producto eliminado correctamente", type: "success" });
       setTimeout(() => {
         setNotification({ show: false, message: "", type: "success" });
       }, 2000);
-      
+
       setShowDeleteModal(false);
       setPrecioToDelete(null);
     } catch (error) {
@@ -919,10 +919,10 @@ export default function GestionPreciosPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
       if (!token) {
         router.push("/login");
         return;
@@ -936,7 +936,7 @@ export default function GestionPreciosPage() {
         setSaving(false);
         return;
       }
-      
+
       if (modalType === "create" && !formData.NOMBRE) {
         setErrorMessage("Por favor complete todos los campos requeridos");
         setShowErrorModal(true);
@@ -956,16 +956,16 @@ export default function GestionPreciosPage() {
       const method = modalType === "create" ? "POST" : "PUT";
       const apiMethod = modalType === "create" ? "CREAR_FRANJA_PRECIO" : "ACTUALIZAR_FRANJA_PRECIO";
       const apiUrl = `/api/franja-precios?method=${apiMethod}&id=${encodeURIComponent(activeTab)}`;
-      
+
       // Preparar el body con todos los datos necesarios
       const textoCopiarValue = formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "";
-      
+
       // Para actualizar, el nombre viene de PRODUCTO (campo que devuelve el backend)
       // El backend protege el CODIGO y el nombre, así que solo necesitamos enviarlo si es creación
-      const nombreValue = modalType === "create" 
+      const nombreValue = modalType === "create"
         ? (formData.NOMBRE || formData.nombre || "")
         : (formData.NOMBRE || formData.nombre || selectedPrecio?.PRODUCTO || selectedPrecio?.producto || selectedPrecio?.NOMBRE || selectedPrecio?.nombre || "");
-      
+
       const requestBody = {
         CODIGO: formData.CODIGO || formData.codigo,
         // El backend protege el nombre en actualización, pero lo enviamos por si acaso
@@ -1007,7 +1007,7 @@ export default function GestionPreciosPage() {
       console.log("Method:", method);
       console.log("FormData original:", formData);
       console.log("Body a enviar:", requestBody);
-      
+
       const response = await fetch(apiUrl, {
         method: method,
         headers: {
@@ -1026,10 +1026,10 @@ export default function GestionPreciosPage() {
           try {
             const errorData = JSON.parse(errorText);
             // El backend puede devolver el error en diferentes formatos
-            let extractedError = errorData.error || 
-                                errorData.message || 
-                                errorData.details;
-            
+            let extractedError = errorData.error ||
+              errorData.message ||
+              errorData.details;
+
             // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
             if (typeof extractedError === 'number') {
               if (extractedError === 0) {
@@ -1038,7 +1038,7 @@ export default function GestionPreciosPage() {
                 extractedError = `Error ${extractedError}`;
               }
             }
-            
+
             // Si el error es un string vacío o solo espacios, usar el mensaje por defecto
             if (extractedError && typeof extractedError === 'string' && extractedError.trim()) {
               errorMessage = extractedError;
@@ -1062,7 +1062,7 @@ export default function GestionPreciosPage() {
 
       // Recargar los datos de la tabla activa
       const newData = await fetchPrecios(activeTab);
-      
+
       // Si es creación y el backend no devolvió el NOMBRE, agregarlo temporalmente desde el formData
       if (modalType === "create" && requestBody.NOMBRE) {
         const codigoCreado = requestBody.CODIGO;
@@ -1080,7 +1080,7 @@ export default function GestionPreciosPage() {
           }
           return item;
         });
-        
+
         const newPreciosData = { ...preciosData };
         newPreciosData[activeTab] = dataConNombre;
         setPreciosData(newPreciosData);
@@ -1089,17 +1089,17 @@ export default function GestionPreciosPage() {
         newPreciosData[activeTab] = newData;
         setPreciosData(newPreciosData);
       }
-      
+
       setShowModal(false);
       setProductoBusqueda("");
       setSugerenciasProductos([]);
       setMostrarSugerencias(false);
-      
+
       // Mostrar notificación de éxito
-      setNotification({ 
-        show: true, 
-        message: `Producto ${modalType === "create" ? "creado" : "actualizado"} correctamente`, 
-        type: "success" 
+      setNotification({
+        show: true,
+        message: `Producto ${modalType === "create" ? "creado" : "actualizado"} correctamente`,
+        type: "success"
       });
       setTimeout(() => {
         setNotification({ show: false, message: "", type: "success" });
@@ -1168,7 +1168,7 @@ export default function GestionPreciosPage() {
                     const isActive = activeTab === tabla.value;
                     const isDisabled = !tabla.disponible;
                     const hasData = preciosData[tabla.value]?.length > 0;
-                    
+
                     return (
                       <button
                         key={tabla.value}
@@ -1181,11 +1181,11 @@ export default function GestionPreciosPage() {
                         disabled={isDisabled}
                         className={`
                           px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200
-                          ${isActive 
-                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg" 
+                          ${isActive
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg"
                             : isDisabled
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-sm"
                           }
                           ${!isDisabled && !isActive ? "hover:border-blue-300" : ""}
                         `}
@@ -1310,7 +1310,7 @@ export default function GestionPreciosPage() {
                                 CANTIDAD EN CAJA
                               </th>
                               {getPriceColumns.map((columna) => (
-                                <th 
+                                <th
                                   key={columna}
                                   className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
                                   style={{ fontFamily: 'var(--font-poppins)' }}
@@ -1340,12 +1340,13 @@ export default function GestionPreciosPage() {
                                 if (typeof value === "number" && isNaN(value)) return { text: "-", isZero: false };
                                 const num = parseFloat(value);
                                 if (isNaN(num)) return { text: "-", isZero: false };
-                                return { text: `S/.${num.toFixed(2)}`, isZero: num === 0 };
+                                if (num === 0) return { text: "", isZero: true }; // Retornar vacío si es 0
+                                return { text: `S/.${num.toFixed(2)}`, isZero: false };
                               };
 
                               const codigo = getField(["CODIGO", "codigo"]);
                               // El backend devuelve el nombre en PRODUCTO (priorizar este campo)
-      const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
+                              const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
                               const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]);
                               const fichaTecnica = getField(["FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", "FICHA_TECNICA", "ficha_tecnica"]);
 
@@ -1363,7 +1364,7 @@ export default function GestionPreciosPage() {
                                   {getPriceColumns.map((columna) => {
                                     const precioValue = formatPrice(precio[columna]);
                                     return (
-                                      <td 
+                                      <td
                                         key={columna}
                                         className={`px-4 py-3 whitespace-nowrap text-[10px] ${precioValue.isZero ? "text-red-600 font-semibold" : "text-gray-700"}`}
                                         style={{ fontFamily: 'var(--font-poppins)' }}
@@ -1407,7 +1408,7 @@ export default function GestionPreciosPage() {
                           </tbody>
                         </table>
                       </div>
-                      
+
                       {/* Controles de Paginación */}
                       <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                         <button
@@ -1461,7 +1462,7 @@ export default function GestionPreciosPage() {
 
       {/* Modal para Crear/Actualizar */}
       {showModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={() => {
             setShowModal(false);
@@ -1528,9 +1529,8 @@ export default function GestionPreciosPage() {
                       onFocus={handleProductoFocus}
                       disabled={modalType === "update"}
                       readOnly={modalType === "update"}
-                      className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${
-                        modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
+                        }`}
                       required={modalType === "create"}
                       placeholder={modalType === "update" ? "El nombre no se puede editar" : "Escribe el nombre del producto..."}
                     />
@@ -1771,7 +1771,7 @@ export default function GestionPreciosPage() {
 
       {/* Modal de Confirmación para Eliminar */}
       {showDeleteModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={() => !saving && setShowDeleteModal(false)}
         >
@@ -1861,7 +1861,7 @@ export default function GestionPreciosPage() {
 
       {/* Modal de Error */}
       {showErrorModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={() => setShowErrorModal(false)}
         >
@@ -1917,21 +1917,18 @@ export default function GestionPreciosPage() {
       {/* Notificación en esquina superior izquierda */}
       {notification.show && (
         <div className="fixed top-4 left-4 z-[60] animate-slide-in-left">
-          <div className={`rounded-3xl shadow-xl border max-w-md w-full overflow-hidden ${
-            notification.type === "success" 
-              ? "bg-white border-green-200" 
+          <div className={`rounded-3xl shadow-xl border max-w-md w-full overflow-hidden ${notification.type === "success"
+              ? "bg-white border-green-200"
               : "bg-white border-red-200"
-          }`}>
-            <div className={`flex items-center gap-3 px-5 py-4 ${
-              notification.type === "success"
+            }`}>
+            <div className={`flex items-center gap-3 px-5 py-4 ${notification.type === "success"
                 ? "bg-gradient-to-r from-green-50 to-white"
                 : "bg-gradient-to-r from-red-50 to-white"
-            }`}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
-                notification.type === "success"
+              }`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${notification.type === "success"
                   ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
                   : "bg-gradient-to-br from-red-500 to-red-600 text-white"
-              }`}>
+                }`}>
                 {notification.type === "success" ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

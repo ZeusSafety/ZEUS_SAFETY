@@ -16,6 +16,7 @@ export default function SubidaArchivosMarketingPage() {
     archivo: null,
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -64,34 +65,71 @@ export default function SubidaArchivosMarketingPage() {
 
     setIsUploading(true);
     setMessage("");
+    setUploadProgress(0);
 
     const data = new FormData();
     data.append('nombre', formData.nombre);
     data.append('fecha', formData.fecha);
     data.append('archivo', formData.archivo);
 
-    try {
-      const response = await fetch('https://configmarketing-2946605267.us-central1.run.app/upload', {
-        method: 'POST',
-        body: data,
-      });
+    // Usar XMLHttpRequest para tener control del progreso del envío al backend
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://configmarketing-2946605267.us-central1.run.app/upload', true);
 
-      if (response.ok) {
+    // Timeout infinito explícito (aunque serverless puede tener sus propios límites)
+    xhr.timeout = 0;
+
+    // Escuchar progreso de subida (Frontend -> Backend)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percentComplete);
+      }
+    };
+
+    // Manejar respuesta
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        console.log("Subida exitosa:", xhr.responseText);
         setMessage("Archivo subido exitosamente.");
         setFormData({
           nombre: "",
           fecha: new Date().toISOString().split('T')[0],
           archivo: null,
         });
-        // Reset file input
-        document.getElementById('archivo').value = "";
+        const fileInput = document.getElementById('archivo');
+        if (fileInput) fileInput.value = "";
+        setUploadProgress(0);
       } else {
-        setMessage("Error al subir el archivo. Intente nuevamente.");
+        console.error("Error del servidor:", xhr.status, xhr.statusText, xhr.responseText);
+        // Intentar leer error del JSON si existe
+        let errorMsg = `Error al subir el archivo. Código: ${xhr.status}`;
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.error) errorMsg = res.error;
+        } catch (e) { }
+        setMessage(errorMsg);
       }
+      setIsUploading(false);
+    };
+
+    xhr.onerror = () => {
+      console.error('Error de red al intentar subir el archivo.');
+      setMessage("Error de conexión con el servidor.");
+      setIsUploading(false);
+    };
+
+    xhr.ontimeout = () => {
+      console.error('La petición expiró.');
+      setMessage("La subida tardó demasiado y el servidor no respondió.");
+      setIsUploading(false);
+    };
+
+    try {
+      xhr.send(data);
     } catch (error) {
-      console.error('Error:', error);
-      setMessage("Error de conexión. Intente nuevamente.");
-    } finally {
+      console.error('Error al enviar solicitud:', error);
+      setMessage("Error inesperado al iniciar la carga.");
       setIsUploading(false);
     }
   };
@@ -113,9 +151,8 @@ export default function SubidaArchivosMarketingPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -218,7 +255,27 @@ export default function SubidaArchivosMarketingPage() {
                   </div>
                 )}
 
-
+                {isUploading && (
+                  <div className="mb-6 bg-blue-50/50 rounded-lg p-4 border border-blue-100">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-semibold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Subiendo archivo...
+                      </span>
+                      <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        {uploadProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-600 to-blue-400 h-2.5 rounded-full transition-all duration-300 ease-out shadow-sm"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Por favor no cierre esta ventana mientras se sube el archivo.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex justify-end">
                   <button
