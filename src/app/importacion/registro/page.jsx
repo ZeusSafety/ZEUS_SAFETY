@@ -409,18 +409,23 @@ export default function RegistroImportacionesPage() {
 
     // Generar filas de la tabla de productos
     let filasProductos = "";
-    const totalFilas = Math.max(32, listaProductos.length);
+    // Siempre generar 22 filas, pero solo numerar las que tienen productos
+    const totalFilas = 22;
     let totalCantidad = 0;
+    let contadorProductos = 0; // Contador para numerar solo los productos reales
 
     for (let i = 0; i < totalFilas; i++) {
       const producto = listaProductos[i];
       if (producto) {
+        contadorProductos++; // Incrementar solo cuando hay producto
         const cantidad = parseInt(producto.cantidad) || 0;
         totalCantidad += cantidad;
+        // Escapar el nombre del producto para HTML
+        const nombreProducto = (producto.producto || "").replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         filasProductos += `
           <tr>
-            <td><input type="text" value="${i + 1}" readonly></td>
-            <td><input type="text" value="${producto.producto || ""}" readonly></td>
+            <td><input type="text" value="${contadorProductos}" readonly></td>
+            <td class="producto-cell"><div class="producto-text">${nombreProducto}</div></td>
             <td><input type="text" value="${producto.codigo || ""}" readonly></td>
             <td><input type="text" value="${producto.unidadMedida || ""}" readonly></td>
             <td><input type="text" value="${producto.cantidad || ""}" readonly></td>
@@ -430,10 +435,11 @@ export default function RegistroImportacionesPage() {
           </tr>
         `;
       } else {
+        // Fila vacía sin número en la columna N°
         filasProductos += `
           <tr>
-            <td><input type="text" value="${i + 1}" readonly></td>
             <td><input type="text" value="" readonly></td>
+            <td class="producto-cell"><div class="producto-text"></div></td>
             <td><input type="text" value="" readonly></td>
             <td><input type="text" value="" readonly></td>
             <td><input type="text" value="" readonly></td>
@@ -472,7 +478,7 @@ export default function RegistroImportacionesPage() {
 
         .document-page {
             background-color: white;
-            width: 850px;
+            width: 850px; 
             min-height: 1100px;
             padding: 40px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -575,6 +581,13 @@ export default function RegistroImportacionesPage() {
             color: #000000;
         }
 
+        .import-table td.producto-cell {
+            height: auto;
+            min-height: 22px;
+            vertical-align: top;
+            padding: 2px 5px;
+        }
+
         .import-table input {
             width: 100%;
             height: 100%;
@@ -585,6 +598,20 @@ export default function RegistroImportacionesPage() {
             font-size: 11px;
             background-color: transparent;
             color: #000000;
+        }
+
+        .import-table .producto-text {
+            width: 100%;
+            min-height: 18px;
+            padding: 2px 0;
+            font-size: 11px;
+            color: #000000;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            line-height: 1.3;
+            font-family: Arial, sans-serif;
+            margin-bottom: 10px;
         }
 
         .import-table tr:nth-child(even) td {
@@ -632,7 +659,7 @@ export default function RegistroImportacionesPage() {
     </style>
 </head>
 <body>
-<div class="document-page">
+<div class="document-page">   
     <div class="registration-date">Fecha Registro: ${fechaRegistro}</div>
 
     <div class="header-top">
@@ -1117,7 +1144,7 @@ export default function RegistroImportacionesPage() {
                         { value: "", label: "Seleccione un estado" },
                         { value: "PENDIENTE", label: "PENDIENTE" },
                         { value: "PRODUCCIÓN", label: "PRODUCCIÓN" },
-                        { value: "TRÁNSITO", label: "TRÁNSITO" },
+                        { value: "TRANSITO", label: "TRANSITO" },
                         { value: "ETA", label: "ETA" },
                       ]}
                     />

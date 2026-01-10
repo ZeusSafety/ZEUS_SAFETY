@@ -577,17 +577,17 @@ export default function GenerarImagenStockPage() {
                             
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
-                              stockText = 'Sin Stock';
+                              stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS: ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS: ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS: ${cantidad}`;
                             }
                             
                             return (
@@ -642,17 +642,17 @@ export default function GenerarImagenStockPage() {
                             
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
-                              stockText = 'Sin Stock';
+                              stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS: ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS  : ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS  : ${cantidad}`;
                             }
                             
                             return (
@@ -707,17 +707,17 @@ export default function GenerarImagenStockPage() {
                             
                             if (cantidad === 0) {
                               colorTexto = '#000000'; // Negro para Sin Stock
-                              stockText = 'Sin Stock';
+                              stockText = 'SIN STOCK';
                             } else if (cantidad === limite) {
                               colorTexto = '#ff0000'; // Rojo si cantidad igual al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS : ${cantidad}`;
                             } else if (cantidad > limite) {
                               colorTexto = '#008000'; // Verde si cantidad mayor al límite
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS : ${cantidad}`;
                             } else {
                               // Si cantidad < límite, también rojo (stock bajo)
                               colorTexto = '#ff0000';
-                              stockText = `Stock: ${cantidad}`;
+                              stockText = `CAJAS : ${cantidad}`;
                             }
                             
                             return (
