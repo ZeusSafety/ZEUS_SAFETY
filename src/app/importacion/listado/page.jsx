@@ -45,7 +45,7 @@ export default function ListadoImportacionesPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       const token = localStorage.getItem("token");
       if (!token) {
         router.push("/login");
@@ -72,7 +72,7 @@ export default function ListadoImportacionesPage() {
       }
 
       const data = await response.json();
-      
+
       // Mapear los datos de la API al formato esperado
       const mappedData = Array.isArray(data) ? data.map((item) => {
         // Normalizar estado: convertir "PRODUCCION" a "PRODUCCIÓN" si es necesario
@@ -80,12 +80,12 @@ export default function ListadoImportacionesPage() {
         if (estado === "PRODUCCION") {
           estado = "PRODUCCIÓN";
         }
-        
+
         // Asegurarse de que el ID sea un número y esté presente
-        const id = typeof item.ID_IMPORTACIONES === 'number' 
-          ? item.ID_IMPORTACIONES 
+        const id = typeof item.ID_IMPORTACIONES === 'number'
+          ? item.ID_IMPORTACIONES
           : (item.ID_IMPORTACIONES ? parseInt(item.ID_IMPORTACIONES) : null);
-        
+
         return {
           id: id, // ID de la fila seleccionada - se usará para el PUT
           fechaRegistro: item.FECHA_REGISTRO ? item.FECHA_REGISTRO.split(' ')[0] : "",
@@ -212,14 +212,14 @@ export default function ListadoImportacionesPage() {
 
       // Obtener el ID de la importación seleccionada (de la fila de la tabla)
       // Intentar obtener el ID de múltiples fuentes posibles
-      const importacionId = selectedImportacion.id 
-        || selectedImportacion.ID_IMPORTACIONES 
+      const importacionId = selectedImportacion.id
+        || selectedImportacion.ID_IMPORTACIONES
         || selectedImportacion._original?.ID_IMPORTACIONES
         || selectedImportacion._original?.id;
-      
+
       console.log('🔍 ID obtenido de selectedImportacion:', importacionId);
       console.log('🔍 selectedImportacion completa:', JSON.stringify(selectedImportacion, null, 2));
-      
+
       if (!importacionId && importacionId !== 0) {
         setError('No se pudo obtener el ID de la importación. Por favor, intente nuevamente.');
         console.error('❌ selectedImportacion sin ID:', selectedImportacion);
@@ -238,16 +238,16 @@ export default function ListadoImportacionesPage() {
       if (estadoParaAPI === "PRODUCCIÓN") {
         estadoParaAPI = "PRODUCCION";
       }
-      
+
       // Asegurarse de que el ID sea un número
       const idNumerico = typeof importacionId === 'number' ? importacionId : parseInt(importacionId);
-      
+
       if (isNaN(idNumerico)) {
         setError('El ID de la importación no es válido.');
         console.error('ID inválido:', importacionId);
         return;
       }
-      
+
       // Preparar el payload según la estructura esperada por la API
       // El backend espera:
       // - id en la raíz del body (data["id"])
@@ -255,7 +255,7 @@ export default function ListadoImportacionesPage() {
       // - solo los campos que el backend espera para area=importacion
       // - productos SIEMPRE debe estar presente (requerido por el backend)
       const productos = updateForm.productos || selectedImportacion.productos || "";
-      
+
       const payload = {
         id: idNumerico, // ID en la raíz del body (requerido por el backend)
         productos: productos, // SIEMPRE requerido por el backend
@@ -297,10 +297,10 @@ export default function ListadoImportacionesPage() {
       setIsUpdateModalOpen(false);
       setSelectedImportacion(null);
       setError(null);
-      
+
       // Mostrar modal de éxito
       setIsSuccessModalOpen(true);
-      
+
       // Recargar datos
       await cargarImportaciones();
     } catch (err) {
@@ -342,9 +342,8 @@ export default function ListadoImportacionesPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -386,26 +385,6 @@ export default function ListadoImportacionesPage() {
                     </svg>
                     <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                   </div>
-                  <button
-                    onClick={() => {}}
-                    className="inline-flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] transition-all duration-200"
-                    style={{ fontFamily: 'var(--font-poppins)' }}
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span>Ver procedimiento</span>
-                  </button>
                 </div>
               </div>
 
@@ -500,114 +479,113 @@ export default function ListadoImportacionesPage() {
                       ) : (
                         currentImportaciones.map((importacion) => (
                           <tr key={importacion.id} className="hover:bg-slate-200 transition-colors">
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{formatearFecha(importacion.fechaRegistro)}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
-                              <button 
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  const url = importacion.archivoPdf;
-                                  
-                                  if (!url || url.trim() === "") {
-                                    alert("No hay enlace PDF disponible");
-                                    return;
-                                  }
-                                  
-                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
-                                  window.open(url, "_blank", "noopener,noreferrer");
-                                }}
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                title="Abrir archivo PDF"
-                              >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                </svg>
-                                <span style={{ pointerEvents: 'none' }}>PDF</span>
-                              </button>
-                            ) : (
-                              <button
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                disabled
-                                title="Sin archivo PDF"
-                              >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                </svg>
-                                <span style={{ pointerEvents: 'none' }}>PDF</span>
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaLlegada)}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaAlmacen)}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {importacion.estado && (
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(importacion.estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {importacion.estado}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {importacion.canal && (
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getCanalBadge(importacion.canal)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {importacion.canal}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(importacion.fechaRecepcion)}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${
-                              importacion.incidencias 
-                                ? "bg-gradient-to-br from-red-600 to-red-700" 
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{formatearFecha(importacion.fechaRegistro)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.numeroDespacho}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.redactadoPor || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{importacion.productos || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              {importacion.archivoPdf && importacion.archivoPdf.trim() !== "" ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const url = importacion.archivoPdf;
+
+                                    if (!url || url.trim() === "") {
+                                      alert("No hay enlace PDF disponible");
+                                      return;
+                                    }
+
+                                    // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                    window.open(url, "_blank", "noopener,noreferrer");
+                                  }}
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  title="Abrir archivo PDF"
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                </button>
+                              ) : (
+                                <button
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  disabled
+                                  title="Sin archivo PDF"
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaLlegada)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{importacion.tipoCarga || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formatearFecha(importacion.fechaAlmacen)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              {importacion.estado && (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(importacion.estado)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {importacion.estado}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              {importacion.canal && (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getCanalBadge(importacion.canal)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {importacion.canal}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(importacion.fechaRecepcion)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${importacion.incidencias
+                                ? "bg-gradient-to-br from-red-600 to-red-700"
                                 : "bg-gradient-to-br from-green-600 to-green-700"
-                            }`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                              {importacion.incidencias ? "SI" : "NO"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <button
-                              onClick={() => {
-                                console.log('🔍 Seleccionando importación:', importacion);
-                                console.log('🔍 ID de la importación:', importacion.id);
-                                console.log('🔍 ID original:', importacion._original?.ID_IMPORTACIONES);
-                                
-                                // Guardar la importación completa para asegurar que el ID esté disponible
-                                setSelectedImportacion({
-                                  ...importacion,
-                                  // Asegurar que el ID esté presente
-                                  id: importacion.id || importacion._original?.ID_IMPORTACIONES,
-                                });
-                                
-                                setUpdateForm({
-                                  fechaRegistro: importacion.fechaRegistro || "",
-                                  numeroDespacho: importacion.numeroDespacho || "",
-                                  redactadoPor: importacion.redactadoPor || "",
-                                  fechaLlegadaProductos: importacion.fechaLlegada || "",
-                                  fechaAlmacen: importacion.fechaAlmacen || "",
-                                  productos: importacion.productos || "",
-                                  tipoCarga: importacion.tipoCarga || "",
-                                  estado: importacion.estado || "",
-                                  canal: importacion.canal || "",
-                                });
-                                setIsUpdateModalOpen(true);
-                              }}
-                              className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                              title="Actualizar importación"
-                              style={{ fontFamily: 'var(--font-poppins)' }}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                          </td>
+                                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                {importacion.incidencias ? "SI" : "NO"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <button
+                                onClick={() => {
+                                  console.log('🔍 Seleccionando importación:', importacion);
+                                  console.log('🔍 ID de la importación:', importacion.id);
+                                  console.log('🔍 ID original:', importacion._original?.ID_IMPORTACIONES);
+
+                                  // Guardar la importación completa para asegurar que el ID esté disponible
+                                  setSelectedImportacion({
+                                    ...importacion,
+                                    // Asegurar que el ID esté presente
+                                    id: importacion.id || importacion._original?.ID_IMPORTACIONES,
+                                  });
+
+                                  setUpdateForm({
+                                    fechaRegistro: importacion.fechaRegistro || "",
+                                    numeroDespacho: importacion.numeroDespacho || "",
+                                    redactadoPor: importacion.redactadoPor || "",
+                                    fechaLlegadaProductos: importacion.fechaLlegada || "",
+                                    fechaAlmacen: importacion.fechaAlmacen || "",
+                                    productos: importacion.productos || "",
+                                    tipoCarga: importacion.tipoCarga || "",
+                                    estado: importacion.estado || "",
+                                    canal: importacion.canal || "",
+                                  });
+                                  setIsUpdateModalOpen(true);
+                                }}
+                                className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                title="Actualizar importación"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </td>
                           </tr>
                         ))
                       )}

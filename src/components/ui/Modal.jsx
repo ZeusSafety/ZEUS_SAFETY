@@ -31,7 +31,7 @@ export default function Modal({
     sm: "max-w-md",
     small: "max-w-md",
     md: "max-w-lg",
-    medium: "max-w-2xl",
+    medium: "max-w-3xl",
     lg: "max-w-2xl",
     xl: "max-w-xl",
     "xl-small": "max-w-xl",
@@ -51,7 +51,7 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[85vh] h-[85vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[85vh] h-[85vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
+        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[85vh] h-[85vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[95vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -68,7 +68,7 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-2 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-2 max-h-[calc(85vh-140px)]' : size === 'md' ? 'py-2 max-h-[calc(60vh-140px)]' : 'py-2'}`}>{children}</div>
+        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-2 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-2 max-h-[calc(95vh-140px)]' : size === 'md' ? 'py-2 max-h-[calc(60vh-140px)]' : 'py-2'}`}>{children}</div>
 
         {/* Footer opcional con botones de acción */}
         {showFooter && (

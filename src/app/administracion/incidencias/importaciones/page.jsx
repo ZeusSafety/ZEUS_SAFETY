@@ -39,15 +39,14 @@ export default function IncidenciasImportacionesPage() {
 
   // Estados para filtros
   const [filtros, setFiltros] = useState({
-    fechaDesde: "2025-11-16",
-    fechaHasta: "2025-12-16",
+    fechaDesde: "",
+    fechaHasta: "",
     numeroDespacho: "",
   });
 
   // Estados para modales
   const [modalDetalles, setModalDetalles] = useState(false);
   const [modalObservaciones, setModalObservaciones] = useState(false);
-  const [modalProcedimientos, setModalProcedimientos] = useState(false);
   const [incidenciaSeleccionada, setIncidenciaSeleccionada] = useState(null);
   const [modalActualizar, setModalActualizar] = useState(false);
 
@@ -80,6 +79,24 @@ export default function IncidenciasImportacionesPage() {
   const [isSavingProducts, setIsSavingProducts] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [incidencias, setIncidencias] = useState([]);
+  const [allIncidencias, setAllIncidencias] = useState([]); // Nuevo estado para datos originales
+
+  // Estado para alertas personalizadas
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info" // success, error, warning, info
+  });
+
+  const showAlert = (title, message, type = "info") => {
+    setAlertConfig({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
 
   // Cargar incidencias desde la API
   const fetchIncidencias = async () => {
@@ -103,13 +120,61 @@ export default function IncidenciasImportacionesPage() {
           estadoDespacho: item.ESTADO_DESPACHO,
           fechaRegistroFacturacion: item.FECHA_REGISTRO_FACTURACION,
           observacionesFacturacion: item.OBSERVACIONES_FACTURACION,
+          observaciones: item.OBSERVACIONES || item.observaciones,
           // Guardamos las originales por si acaso
           ...item
         })) : [];
         setIncidencias(mappedData);
+        setAllIncidencias(mappedData);
       }
     } catch (error) {
       console.error("Error al cargar incidencias:", error);
+    }
+  };
+
+  // Cargar productos de una incidencia específica
+  const fetchProductosIncidencia = async (idIncidencia) => {
+    try {
+      const api = "https://incidenciaslogisticacrud-2946605267.us-central1.run.app";
+      const response = await fetch(`${api}?id=${idIncidencia}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📦 Productos recibidos de la API:", data);
+
+        // Convertir a array si es un objeto individual
+        let productos = Array.isArray(data) ? data : (data ? [data] : []);
+
+        // Mapear productos al formato esperado
+        const productosMapeados = productos.map((p, index) => ({
+          item: p.ITEM || (index + 1),
+          unidadMedida: p.UNIDAD_MEDIDA || "N/A",
+          producto: p.PRODUCTO || "N/A",
+          cantidadInicial: p.CANTIDAD_INICIAL || "0",
+          cantidadRecibida: p.CANTIDAD_RECIBIDA || "0",
+          motivo: p.MOTIVO || "Sin motivo especificado"
+        }));
+
+        console.log("✅ Productos mapeados:", productosMapeados);
+
+        // Actualizar la incidencia seleccionada con los productos
+        setIncidenciaSeleccionada(prev => ({
+          ...prev,
+          productosAfectados: productosMapeados
+        }));
+      } else {
+        console.error("❌ Error al cargar productos:", response.status);
+        setIncidenciaSeleccionada(prev => ({
+          ...prev,
+          productosAfectados: []
+        }));
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar productos:", error);
+      setIncidenciaSeleccionada(prev => ({
+        ...prev,
+        productosAfectados: []
+      }));
     }
   };
 
@@ -160,7 +225,7 @@ export default function IncidenciasImportacionesPage() {
   // Función para actualizar solo los 4 campos
   const handleUpdateFields = async () => {
     if (!incidenciaEditando.fechaCorreccion || !incidenciaEditando.estado || !incidenciaEditando.respondidoPor || !incidenciaEditando.estadoDespacho) {
-      alert("Por favor complete todos los campos requeridos");
+      showAlert("Campos Incompletos", "Por favor complete todos los campos requeridos", "warning");
       return;
     }
     setIsUpdatingFields(true);
@@ -178,12 +243,12 @@ export default function IncidenciasImportacionesPage() {
         body: JSON.stringify(data)
       });
       if (response.ok) {
-        alert("Incidencia actualizada correctamente");
+        showAlert("Éxito", "Incidencia actualizada correctamente", "success");
         fetchIncidencias();
       }
     } catch (error) {
       console.error("Error al actualizar campos:", error);
-      alert("Error al actualizar la incidencia");
+      showAlert("Error", "Error al actualizar la incidencia", "error");
     } finally {
       setIsUpdatingFields(false);
     }
@@ -191,26 +256,44 @@ export default function IncidenciasImportacionesPage() {
 
   // Función para extraer importación inicial
   const handleExtractInitial = async () => {
-    if (!incidenciaEditando.numeroDespacho) return;
+    if (!incidenciaEditando.numeroDespacho) {
+      showAlert("Atención", "No hay un número de despacho disponible para extraer", "warning");
+      return;
+    }
+
     setIsExtracting(true);
     try {
+      console.log("🔄 Extrayendo importación inicial para despacho:", incidenciaEditando.numeroDespacho);
       const response = await fetch(`https://importacionesvr01crud-2946605267.us-central1.run.app?despacho=${encodeURIComponent(incidenciaEditando.numeroDespacho)}`);
+
       if (response.ok) {
         const data = await response.json();
-        if (data.detalles && Array.isArray(data.detalles)) {
-          constMapped = data.detalles.map((d, i) => ({
-            item: d.ITEM || i + 1,
+        console.log("📦 Datos de importación recibidos:", data);
+
+        if (data.detalles && Array.isArray(data.detalles) && data.detalles.length > 0) {
+          const mapped = data.detalles.map((d, i) => ({
+            item: d.ITEM || (i + 1),
             producto: d.PRODUCTO || "N/A",
             codigo: d.CODIGO || "N/A",
             unidadMedida: d.UNIDAD_MEDIDA || "N/A",
             cantidadEnCaja: 0,
             cantidad: d.CANTIDAD || 0,
           }));
-          setProductosNuevos(constMapped);
+
+          setProductosNuevos(mapped);
+          showAlert("Éxito", `Se extrajeron ${mapped.length} productos de la importación inicial`, "success");
+          console.log("✅ Productos extraídos:", mapped);
+        } else {
+          showAlert("Aviso", "No se encontraron productos en la importación inicial", "warning");
+          console.log("⚠️ No hay detalles en la respuesta");
         }
+      } else {
+        showAlert("Error", "Error al extraer la importación inicial", "error");
+        console.error("❌ Error en la respuesta:", response.status);
       }
     } catch (error) {
-      console.error("Error al extraer importación:", error);
+      console.error("❌ Error al extraer importación:", error);
+      showAlert("Error", "Error al conectar con el servidor para extraer la importación", "error");
     } finally {
       setIsExtracting(false);
     }
@@ -219,7 +302,7 @@ export default function IncidenciasImportacionesPage() {
   // Función para guardar solo productos
   const handleSaveProducts = async () => {
     if (productosNuevos.length === 0) {
-      alert("No hay productos para guardar");
+      showAlert("Atención", "No hay productos para guardar", "warning");
       return;
     }
     setIsSavingProducts(true);
@@ -246,13 +329,13 @@ export default function IncidenciasImportacionesPage() {
         body: JSON.stringify(payload)
       });
       if (response.ok) {
-        alert("Productos guardados exitosamente");
+        showAlert("Éxito", "Productos guardados exitosamente", "success");
         setModalActualizar(false);
         fetchIncidencias();
       }
     } catch (error) {
       console.error("Error al guardar productos:", error);
-      alert("Error al guardar los productos");
+      showAlert("Error", "Error al guardar los productos", "error");
     } finally {
       setIsSavingProducts(false);
     }
@@ -260,7 +343,7 @@ export default function IncidenciasImportacionesPage() {
 
   const addProductToList = () => {
     if (!nuevoProductoForm.producto || !nuevoProductoForm.codigo) {
-      alert("Debe seleccionar un producto");
+      showAlert("Atención", "Debe seleccionar un producto", "warning");
       return;
     }
     setProductosNuevos([...productosNuevos, { ...nuevoProductoForm }]);
@@ -324,9 +407,14 @@ export default function IncidenciasImportacionesPage() {
   };
 
   // Manejar ver detalles
-  const handleVerDetalles = (incidencia) => {
+  const handleVerDetalles = async (incidencia) => {
     setIncidenciaSeleccionada(incidencia);
     setModalDetalles(true);
+
+    // Cargar productos desde la API
+    const idIncidencia = incidencia.id || incidencia.ID_INCIDENCIA;
+    console.log("🔍 Cargando productos para incidencia:", idIncidencia);
+    await fetchProductosIncidencia(idIncidencia);
   };
 
   // Manejar ver observaciones
@@ -337,8 +425,34 @@ export default function IncidenciasImportacionesPage() {
 
   // Manejar búsqueda
   const handleBuscar = () => {
-    // Aquí iría la lógica de búsqueda
-    console.log("Buscando con filtros:", filtros);
+    let filtrados = [...allIncidencias];
+
+    if (filtros.fechaDesde) {
+      filtrados = filtrados.filter(item => {
+        if (!item.fechaRegistro) return false;
+        // Comparar solo la parte de la fecha YYYY-MM-DD
+        return item.fechaRegistro.split(' ')[0] >= filtros.fechaDesde;
+      });
+    }
+
+    if (filtros.fechaHasta) {
+      filtrados = filtrados.filter(item => {
+        if (!item.fechaRegistro) return false;
+        return item.fechaRegistro.split(' ')[0] <= filtros.fechaHasta;
+      });
+    }
+
+    if (filtros.numeroDespacho) {
+      // Normalizar: quitar espacios y pasar a minúsculas
+      const termino = filtros.numeroDespacho.toLowerCase().replace(/\s+/g, '');
+      filtrados = filtrados.filter(item =>
+        item.numeroDespacho && item.numeroDespacho.toLowerCase().replace(/\s+/g, '').includes(termino)
+      );
+    }
+
+    setIncidencias(filtrados);
+    setCurrentPage(1);
+    console.log(`Búsqueda completada. Encontrados: ${filtrados.length} registros.`);
   };
 
   if (loading) {
@@ -446,23 +560,13 @@ export default function IncidenciasImportacionesPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       onClick={handleBuscar}
-                      className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
+                      className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
                       style={{ fontFamily: 'var(--font-poppins)' }}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <span>Buscar</span>
-                    </button>
-                    <button
-                      onClick={() => setModalProcedimientos(true)}
-                      className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span>Procedimientos</span>
                     </button>
                   </div>
                 </div>
@@ -508,7 +612,7 @@ export default function IncidenciasImportacionesPage() {
                                   e.stopPropagation();
                                   const url = incidencia.pdfInicial;
                                   if (!url || url.trim() === "") {
-                                    alert("No hay enlace PDF disponible");
+                                    showAlert("Atención", "No hay enlace PDF disponible", "warning");
                                     return;
                                   }
                                   window.open(url, "_blank", "noopener,noreferrer");
@@ -563,7 +667,7 @@ export default function IncidenciasImportacionesPage() {
                                   e.stopPropagation();
                                   const url = incidencia.pdfIncidencia;
                                   if (!url || url.trim() === "") {
-                                    alert("No hay enlace PDF disponible");
+                                    showAlert("Atención", "No hay enlace PDF disponible", "warning");
                                     return;
                                   }
                                   window.open(url, "_blank", "noopener,noreferrer");
@@ -650,7 +754,7 @@ export default function IncidenciasImportacionesPage() {
                                   e.stopPropagation();
                                   const url = incidencia.solucionPdf;
                                   if (!url || url.trim() === "") {
-                                    alert("No hay enlace PDF disponible");
+                                    showAlert("Atención", "No hay enlace PDF disponible", "warning");
                                     return;
                                   }
                                   window.open(url, "_blank", "noopener,noreferrer");
@@ -800,7 +904,7 @@ export default function IncidenciasImportacionesPage() {
             <div className="bg-white rounded-xl border-2 border-gray-200 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
                   Productos Afectados
@@ -863,6 +967,31 @@ export default function IncidenciasImportacionesPage() {
                 rows={6}
                 style={{ overflowY: "auto" }}
               />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Observaciones Facturación */}
+      <Modal
+        isOpen={modalObservaciones}
+        onClose={() => {
+          setModalObservaciones(false);
+          setIncidenciaSeleccionada(null);
+        }}
+        title="Observaciones de Facturación"
+        size="2xl"
+      >
+        {incidenciaSeleccionada && (
+          <div className="bg-white rounded-xl border-2 border-gray-200 p-4 shadow-sm">
+            <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Observaciones
+            </h4>
+            <div className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg text-sm text-gray-800 min-h-[100px] whitespace-pre-wrap">
+              {incidenciaSeleccionada.observacionesFacturacion || "No hay observaciones registradas."}
             </div>
           </div>
         )}
@@ -1110,7 +1239,7 @@ export default function IncidenciasImportacionesPage() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-800 text-white font-bold text-[11px] uppercase tracking-wider">
+                  <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900 text-white font-bold text-[11px] uppercase tracking-wider">
                     <th className="px-4 py-3 text-left">Item</th>
                     <th className="px-4 py-3 text-left">Producto</th>
                     <th className="px-4 py-3 text-left">Código</th>
@@ -1181,7 +1310,54 @@ export default function IncidenciasImportacionesPage() {
           </div>
         </div>
       </Modal>
-    </div>
+
+      {/* Modal Alerta Personalizada */}
+      <Modal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        title={alertConfig.title}
+        size="md"
+      >
+        <div className="p-4">
+          <div className="flex items-center gap-4 mb-6">
+            {alertConfig.type === 'success' && (
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              </div>
+            )}
+            {alertConfig.type === 'error' && (
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </div>
+            )}
+            {alertConfig.type === 'warning' && (
+              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              </div>
+            )}
+            {alertConfig.type === 'info' && (
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-gray-800 text-sm font-medium leading-relaxed" style={{ fontFamily: 'var(--font-poppins)' }}>
+                {alertConfig.message}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+              className="px-6 py-2 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-bold shadow-md hover:shadow-lg active:scale-[0.98]"
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div >
   );
 }
 

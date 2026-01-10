@@ -22,7 +22,7 @@ export default function RegistroActividadPage() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState(null);
   const [viewMode, setViewMode] = useState("table"); // "calendar" o "table"
-  
+
   // Paginación para la vista de tabla
   const [currentPageTable, setCurrentPageTable] = useState(1);
   const itemsPerPageTable = 20;
@@ -59,32 +59,32 @@ export default function RegistroActividadPage() {
     try {
       setLoadingData(true);
       setErrorAPI(null);
-      
+
       // Obtener el id_colaborador del usuario
       // Usar el email o name del usuario (que es lo que se usa para identificar al colaborador)
       // El error "Data too long for column 'P_ID_GENERAL'" probablemente viene del backend,
       // no del parámetro id_colaborador que enviamos. La API route.js ya trunca a 50 caracteres.
       let idColaborador = user?.email || user?.name || user?.id || "hervinzeus";
-      
+
       // Convertir a string y asegurar que no esté vacío
       idColaborador = String(idColaborador).trim();
-      
+
       if (!idColaborador || idColaborador === "") {
         console.error("No se pudo obtener id_colaborador del usuario");
         setErrorAPI("Error: No se pudo identificar al usuario");
         setLoadingData(false);
         return;
       }
-      
+
       console.log("Buscando logs para id_colaborador:", idColaborador);
-      
+
       // Obtener el token de autenticación
       const token = localStorage.getItem("token");
-      
+
       // Construir la URL con los parámetros
       const queryParams = new URLSearchParams();
       queryParams.append("id_colaborador", idColaborador);
-      
+
       const response = await fetch(
         `${API_URL}?${queryParams.toString()}`,
         {
@@ -116,7 +116,7 @@ export default function RegistroActividadPage() {
 
       const data = await response.json();
       console.log('Logs recibidos de la API:', data);
-      
+
       // La API puede devolver un array directamente o un objeto con una propiedad
       let logsData = [];
       if (Array.isArray(data)) {
@@ -144,7 +144,7 @@ export default function RegistroActividadPage() {
     logs.forEach((log) => {
       const fechaStr = log.FECHA_HORA || log.fecha_hora || log.FECHA || log.fecha || log.timestamp || log.TIMESTAMP;
       if (!fechaStr) return;
-      
+
       try {
         let date;
         if (typeof fechaStr === 'string' && fechaStr.includes(' ')) {
@@ -154,7 +154,7 @@ export default function RegistroActividadPage() {
         } else {
           date = new Date(fechaStr);
         }
-        
+
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         if (!agrupados[key]) {
           agrupados[key] = [];
@@ -188,7 +188,7 @@ export default function RegistroActividadPage() {
 
     const semanas = [];
     let semana = [];
-    
+
     // Agregar días vacíos al inicio
     for (let i = 0; i < diaInicioSemana; i++) {
       semana.push(null);
@@ -262,22 +262,22 @@ export default function RegistroActividadPage() {
       } else {
         date = new Date(fecha);
       }
-      
+
       const dia = String(date.getDate()).padStart(2, "0");
       const mes = String(date.getMonth() + 1).padStart(2, "0");
       const año = date.getFullYear();
       const horas = String(date.getHours()).padStart(2, "0");
       const minutos = String(date.getMinutes()).padStart(2, "0");
       const segundos = String(date.getSeconds()).padStart(2, "0");
-      
+
       // Nombres de meses en español
       const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
       const nombreMes = meses[date.getMonth()];
-      
+
       // Nombres de días de la semana
       const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
       const nombreDia = diasSemana[date.getDay()];
-      
+
       return (
         <div className="flex items-center space-x-2">
           <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 shadow-sm">
@@ -322,9 +322,8 @@ export default function RegistroActividadPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -339,7 +338,7 @@ export default function RegistroActividadPage() {
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Volver</span>
+              <span>Volver al Perfil</span>
             </button>
 
             {/* Contenedor principal con fondo blanco */}
@@ -388,11 +387,10 @@ export default function RegistroActividadPage() {
                     setViewMode("calendar");
                     setCurrentPageTable(1);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    viewMode === "calendar"
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === "calendar"
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center space-x-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,11 +404,10 @@ export default function RegistroActividadPage() {
                     setViewMode("table");
                     setCurrentPageTable(1);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    viewMode === "table"
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === "table"
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center space-x-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -491,21 +488,20 @@ export default function RegistroActividadPage() {
 
                             const tieneActividad = diasConActividad.has(dia);
                             const estaSeleccionado = selectedDate === dia;
-                            const esHoy = dia === new Date().getDate() && 
-                                         currentMonth === new Date().getMonth() && 
-                                         currentYear === new Date().getFullYear();
+                            const esHoy = dia === new Date().getDate() &&
+                              currentMonth === new Date().getMonth() &&
+                              currentYear === new Date().getFullYear();
 
                             return (
                               <button
                                 key={diaIndex}
                                 onClick={() => setSelectedDate(dia)}
-                                className={`h-12 rounded-lg p-1.5 flex flex-col items-center justify-center transition-all relative ${
-                                  estaSeleccionado
+                                className={`h-12 rounded-lg p-1.5 flex flex-col items-center justify-center transition-all relative ${estaSeleccionado
                                     ? "bg-blue-600 text-white shadow-md scale-105 ring-2 ring-blue-300"
                                     : tieneActividad
-                                    ? "bg-blue-50 hover:bg-blue-100 border border-blue-200 text-gray-900"
-                                    : "bg-gray-50 hover:bg-gray-100 text-gray-600"
-                                } ${esHoy && !estaSeleccionado ? "ring-1 ring-blue-400" : ""}`}
+                                      ? "bg-blue-50 hover:bg-blue-100 border border-blue-200 text-gray-900"
+                                      : "bg-gray-50 hover:bg-gray-100 text-gray-600"
+                                  } ${esHoy && !estaSeleccionado ? "ring-1 ring-blue-400" : ""}`}
                               >
                                 <span className={`text-xs font-bold ${estaSeleccionado ? "text-white" : "text-gray-900"}`}>
                                   {dia}

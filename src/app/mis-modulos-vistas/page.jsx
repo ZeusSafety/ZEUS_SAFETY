@@ -222,7 +222,7 @@ export default function MisModulosVistasPage() {
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Volver</span>
+              <span>Volver al Perfil</span>
             </button>
 
             {/* Contenedor principal */}

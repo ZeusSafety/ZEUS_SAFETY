@@ -18,23 +18,24 @@ export default function SolicitudesIncidenciasPage() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [errorAPI, setErrorAPI] = useState(null);
-  
+
+  // Mapeo de módulos a áreas de emisión
   // Mapeo de módulos a áreas de emisión
   const getAreaEmisionByModule = (path) => {
     if (path.includes("/gerencia/")) return ""; // Todas las áreas
     if (path.includes("/logistica/")) return "LOGISTICA";
     if (path.includes("/marketing/")) return "MARKETING";
     if (path.includes("/ventas/")) return "VENTAS";
-    if (path.includes("/facturacion/")) return "FACTURACIÓN";
-    if (path.includes("/importacion/")) return "IMPORTACIÓN";
+    if (path.includes("/facturacion/")) return "FACTURACION";
+    if (path.includes("/importacion/")) return "IMPORTACION";
     if (path.includes("/administracion/")) return "ADMINISTRACION";
     if (path.includes("/sistemas/")) return "SISTEMAS";
     if (path.includes("/recursos-humanos/")) return "RECURSOS HUMANOS";
     return ""; // Por defecto todas las áreas
   };
-  
+
   // Filtros - Iniciar con IMPORTACION seleccionado por defecto
-  const [areaRecepcion, setAreaRecepcion] = useState("IMPORTACIÓN");
+  const [areaRecepcion, setAreaRecepcion] = useState(getAreaEmisionByModule(pathname));
 
   // Filtros adicionales
   const [colaborador, setColaborador] = useState("");
@@ -66,13 +67,13 @@ export default function SolicitudesIncidenciasPage() {
   const [formArchivoNombre, setFormArchivoNombre] = useState("");
   const [formEstado, setFormEstado] = useState("");
   const [formReprogramacion, setFormReprogramacion] = useState(false);
-  
+
   // Estados para reprogramaciones
   const [reprogramaciones, setReprogramaciones] = useState([]);
   const [reprogramacionesCargadas, setReprogramacionesCargadas] = useState([]);
   const [idRespuesta, setIdRespuesta] = useState(null);
   const [checkboxReprogramacionHabilitado, setCheckboxReprogramacionHabilitado] = useState(false);
-  
+
   // Estados para barras de progreso
   const [progresoRespuesta, setProgresoRespuesta] = useState(0);
   const [guardandoRespuesta, setGuardandoRespuesta] = useState(false);
@@ -114,21 +115,62 @@ export default function SolicitudesIncidenciasPage() {
       const token = localStorage.getItem("token");
 
       // Usar el proxy de Next.js que maneja CORS y autenticación
-      // El parámetro listado se pasa como query param
-      const response = await fetch(`${API_URL}?listado=importacion`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
+      // Obtener solicitudes de TODAS las áreas para permitir filtrado completo igual que en Admin
+      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+
+      const promesas = areas.map(async (area) => {
+        try {
+          const response = await fetch(`${API_URL}?listado=${area}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data)) {
+              return data;
+            }
+          }
+          return [];
+        } catch (error) {
+          console.error(`Error al obtener solicitudes de ${area}:`, error);
+          return [];
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
+      const resultados = await Promise.all(promesas);
 
-      const data = await response.json();
-      console.log('Datos recibidos de la API:', data);
+      // Combinar todas las solicitudes y eliminar duplicados por ID
+      const solicitudesUnicas = new Map();
+      resultados.flat().forEach(solicitud => {
+        const id = solicitud.ID_SOLICITUD || solicitud.id || solicitud.ID || solicitud.NUMERO_SOLICITUD;
+        if (id && !solicitudesUnicas.has(id)) {
+          solicitudesUnicas.set(id, solicitud);
+        }
+      });
+
+      let data = Array.from(solicitudesUnicas.values());
+
+      // Ordenar por FECHA_CONSULTA de manera descendente (más recientes primero)
+      data.sort((a, b) => {
+        const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
+        const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
+
+        if (!fechaA && !fechaB) return 0;
+        if (!fechaA) return 1; // Sin fecha al final
+        if (!fechaB) return -1; // Sin fecha al final
+
+        const dateA = new Date(fechaA);
+        const dateB = new Date(fechaB);
+
+        // Orden descendente: más recientes primero
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      console.log('Datos recibidos de la API (todas las áreas):', data);
 
       if (Array.isArray(data)) {
         setSolicitudes(data);
@@ -146,6 +188,11 @@ export default function SolicitudesIncidenciasPage() {
     }
   };
 
+  // Función auxiliar para normalizar texto (quitar acentos y espacios)
+  const normalizeText = (text) => {
+    return text ? text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : "";
+  };
+
   // Filtrar solicitudes dinámicamente
   const solicitudesFiltradas = useMemo(() => {
     let filtered = [...solicitudes];
@@ -154,7 +201,7 @@ export default function SolicitudesIncidenciasPage() {
     if (areaRecepcion) {
       filtered = filtered.filter(s => {
         const area = s.AREA_RECEPCION || s.area_recepcion || "";
-        return area === areaRecepcion;
+        return normalizeText(area) === normalizeText(areaRecepcion);
       });
     }
 
@@ -163,7 +210,7 @@ export default function SolicitudesIncidenciasPage() {
       filtered = filtered.filter(s => {
         // Buscar el área en el campo AREA (que es el área de envío/emisión)
         const area = s.AREA || s.area || "";
-        return area && area.trim() !== "" && area.toUpperCase() === areaEmision.toUpperCase();
+        return normalizeText(area) === normalizeText(areaEmision);
       });
     }
 
@@ -199,14 +246,14 @@ export default function SolicitudesIncidenciasPage() {
     filtered.sort((a, b) => {
       const fechaA = a.FECHA_CONSULTA || a.fecha_consulta || a.FECHA || a.fecha || "";
       const fechaB = b.FECHA_CONSULTA || b.fecha_consulta || b.FECHA || b.fecha || "";
-      
+
       if (!fechaA && !fechaB) return 0;
       if (!fechaA) return 1; // Sin fecha al final
       if (!fechaB) return -1; // Sin fecha al final
-      
+
       const dateA = new Date(fechaA);
       const dateB = new Date(fechaB);
-      
+
       // Orden descendente: más recientes primero
       return dateB.getTime() - dateA.getTime();
     });
@@ -251,10 +298,10 @@ export default function SolicitudesIncidenciasPage() {
 
     // Verificar si tiene respuesta registrada
     const tieneRespuesta = solicitud.ID_RESPUESTA || solicitud.RESPUESTA || solicitud.RESPUESTA_R;
-    
+
     // Formatear fecha para el input datetime-local
     let fechaFormateada = "";
-    
+
     if (tieneRespuesta && solicitud.FECHA_RESPUESTA) {
       // Si ya hay respuesta registrada, usar la fecha de esa respuesta
       try {
@@ -272,7 +319,7 @@ export default function SolicitudesIncidenciasPage() {
         console.error("Error al formatear fecha:", e);
       }
     }
-    
+
     // Si no hay respuesta registrada, usar la fecha y hora actual
     if (!fechaFormateada) {
       const ahora = new Date();
@@ -292,16 +339,16 @@ export default function SolicitudesIncidenciasPage() {
     setFormArchivoInforme(null);
     setFormArchivoNombre(solicitud.INFORME_RESPUESTA ? "Archivo existente" : "");
     setFormEstado(solicitud.ESTADO || "Pendiente");
-    
+
     // Guardar ID_RESPUESTA si existe
     if (tieneRespuesta && solicitud.ID_RESPUESTA) {
       setIdRespuesta(solicitud.ID_RESPUESTA);
     }
-    
+
     // Verificar si tiene reprogramaciones - verificar múltiples formas
     let tieneRepro = false;
     let reprogramacionesData = [];
-    
+
     // Verificar si viene como array
     if (solicitud.REPROGRAMACIONES) {
       if (Array.isArray(solicitud.REPROGRAMACIONES) && solicitud.REPROGRAMACIONES.length > 0) {
@@ -319,13 +366,13 @@ export default function SolicitudesIncidenciasPage() {
         }
       }
     }
-    
+
     // Verificar campos individuales de reprogramación
     if (!tieneRepro) {
       const tieneRepro1 = solicitud.FECHA_REPROGRAMACION || solicitud.RESPUESTA_REPROGRAMACION || solicitud.INFORME_REPROGRAMACION;
       const tieneRepro2 = solicitud.FECHA_REPROGRAMACION_2 || solicitud.RESPUESTA_2 || solicitud.INFORME_2;
       const tieneRepro3 = solicitud.FECHA_REPROGRAMACION_3 || solicitud.RESPUESTA_3 || solicitud.INFORME_3;
-      
+
       if (tieneRepro1 || tieneRepro2 || tieneRepro3) {
         tieneRepro = true;
         // Construir array de reprogramaciones desde campos individuales
@@ -361,18 +408,18 @@ export default function SolicitudesIncidenciasPage() {
         }
       }
     }
-    
+
     // El checkbox debe estar habilitado si hay respuesta registrada
     // No importa si hay reprogramaciones o no, solo necesita tener respuesta
     // El checkbox se marca solo si hay reprogramaciones registradas
     setCheckboxReprogramacionHabilitado(!!tieneRespuesta);
     setFormReprogramacion(tieneRepro);
-    
+
     // Cargar reprogramaciones si existen
     if (tieneRepro && reprogramacionesData.length > 0) {
       // Cargar directamente las reprogramaciones encontradas
       setReprogramacionesCargadas(reprogramacionesData);
-      
+
       // Inicializar las reprogramaciones para edición
       const reprogForm = reprogramacionesData.map(r => {
         let fechaFormateada = "";
@@ -391,7 +438,7 @@ export default function SolicitudesIncidenciasPage() {
             console.error("Error al formatear fecha:", e);
           }
         }
-        
+
         return {
           id: r.ID_REPROGRAMACION || null,
           fecha: fechaFormateada,
@@ -407,15 +454,15 @@ export default function SolicitudesIncidenciasPage() {
       setReprogramaciones([]);
       setReprogramacionesCargadas([]);
     }
-    
+
     setModalEditarOpen(true);
   };
-  
+
   // Función para cargar reprogramaciones
   const cargarReprogramaciones = async (idRespuesta) => {
     try {
       if (!solicitudSeleccionada) return;
-      
+
       let reprog = [];
       if (solicitudSeleccionada.REPROGRAMACIONES) {
         if (Array.isArray(solicitudSeleccionada.REPROGRAMACIONES)) {
@@ -428,9 +475,9 @@ export default function SolicitudesIncidenciasPage() {
           }
         }
       }
-      
+
       setReprogramacionesCargadas(reprog);
-      
+
       // Inicializar las reprogramaciones para edición
       if (reprog.length > 0) {
         const reprogForm = reprog.map(r => {
@@ -450,7 +497,7 @@ export default function SolicitudesIncidenciasPage() {
               console.error("Error al formatear fecha:", e);
             }
           }
-          
+
           return {
             id: r.ID_REPROGRAMACION || null,
             fecha: fechaFormateada,
@@ -478,7 +525,7 @@ export default function SolicitudesIncidenciasPage() {
     try {
       setGuardandoRespuesta(true);
       setProgresoRespuesta(0);
-      
+
       const token = localStorage.getItem("token");
 
       // Preparar datos para enviar según el formato requerido
@@ -525,13 +572,13 @@ export default function SolicitudesIncidenciasPage() {
         } else if (solicitudSeleccionada.ID_RESPUESTA) {
           setIdRespuesta(solicitudSeleccionada.ID_RESPUESTA);
         }
-        
+
         // Recargar solicitudes
         await cargarSolicitudes();
-        
+
         // Habilitar el checkbox ya que ahora hay una respuesta registrada
         setCheckboxReprogramacionHabilitado(true);
-        
+
         // Si hay reprogramaciones activas, no cerrar el modal aún
         if (!formReprogramacion) {
           setTimeout(() => {
@@ -560,7 +607,7 @@ export default function SolicitudesIncidenciasPage() {
       alert("Error al guardar los cambios");
     }
   };
-  
+
   // Función para agregar una nueva sección de reprogramación
   const agregarReprogramacion = () => {
     if (reprogramaciones.length < 3) {
@@ -575,13 +622,13 @@ export default function SolicitudesIncidenciasPage() {
       }]);
     }
   };
-  
+
   // Función para eliminar una sección de reprogramación
   const eliminarReprogramacion = (index) => {
     const nuevas = reprogramaciones.filter((_, i) => i !== index);
     setReprogramaciones(nuevas);
   };
-  
+
   // Función para guardar una reprogramación
   const guardarReprogramacion = async (index) => {
     // Verificar si hay respuesta registrada (puede ser de la solicitud o recién guardada)
@@ -590,20 +637,20 @@ export default function SolicitudesIncidenciasPage() {
       alert("Primero debe guardar la respuesta antes de agregar reprogramaciones");
       return;
     }
-    
+
     const reprog = reprogramaciones[index];
     if (!reprog.fecha) {
       alert("Debe ingresar una fecha y hora de reprogramación");
       return;
     }
-    
+
     try {
       setGuardandoReprogramacion(prev => ({ ...prev, [index]: true }));
       setProgresoReprogramacion(prev => ({ ...prev, [index]: 0 }));
-      
+
       const token = localStorage.getItem("token");
       const formData = new FormData();
-      
+
       // Simular progreso de carga
       const progressInterval = setInterval(() => {
         setProgresoReprogramacion(prev => {
@@ -615,18 +662,18 @@ export default function SolicitudesIncidenciasPage() {
           return { ...prev, [index]: current + 10 };
         });
       }, 100);
-      
+
       if (reprog.id) {
         // Editar reprogramación existente
         formData.append('ID_REPROGRAMACION', reprog.id);
         formData.append('RESPUESTA', reprog.motivo || '');
-        
+
         if (reprog.informe) {
           formData.append('informe', reprog.informe);
         } else {
           formData.append('informe', '');
         }
-        
+
         const response = await fetch(`${API_URL}?accion=reprogramar`, {
           method: 'PUT',
           headers: {
@@ -634,10 +681,10 @@ export default function SolicitudesIncidenciasPage() {
           },
           body: formData
         });
-        
+
         clearInterval(progressInterval);
         setProgresoReprogramacion(prev => ({ ...prev, [index]: 100 }));
-        
+
         if (response.ok) {
           setTimeout(async () => {
             alert("Reprogramación actualizada correctamente");
@@ -659,19 +706,19 @@ export default function SolicitudesIncidenciasPage() {
       } else {
         // Crear nueva reprogramación
         formData.append('ID_RESPUESTA', respuestaId);
-        
+
         // Formatear fecha: convertir de datetime-local a formato requerido
         const fechaObj = new Date(reprog.fecha);
         const fechaFormateada = fechaObj.toISOString().slice(0, 19).replace('T', ' ');
         formData.append('FECHA_REPROGRAMACION', fechaFormateada);
         formData.append('RESPUESTA', reprog.motivo || '');
-        
+
         if (reprog.informe) {
           formData.append('informe', reprog.informe);
         } else {
           formData.append('informe', '');
         }
-        
+
         const response = await fetch(`${API_URL}?accion=reprogramar`, {
           method: 'POST',
           headers: {
@@ -679,10 +726,10 @@ export default function SolicitudesIncidenciasPage() {
           },
           body: formData
         });
-        
+
         clearInterval(progressInterval);
         setProgresoReprogramacion(prev => ({ ...prev, [index]: 100 }));
-        
+
         if (response.ok) {
           const data = await response.json();
           // Actualizar el ID de la reprogramación guardada
@@ -691,7 +738,7 @@ export default function SolicitudesIncidenciasPage() {
             nuevas[index].id = data.ID_REPROGRAMACION;
           }
           setReprogramaciones(nuevas);
-          
+
           setTimeout(async () => {
             alert("Reprogramación guardada correctamente");
             await cargarSolicitudes();
@@ -719,7 +766,7 @@ export default function SolicitudesIncidenciasPage() {
       alert("Error al guardar la reprogramación");
     }
   };
-  
+
   // Función para actualizar un campo de reprogramación
   const actualizarReprogramacion = (index, campo, valor) => {
     const nuevas = [...reprogramaciones];
@@ -944,7 +991,7 @@ export default function SolicitudesIncidenciasPage() {
               {/* Filtros */}
               <div className="mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div hidden>
+                  <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Área de Recepción
                     </label>
@@ -1867,7 +1914,7 @@ export default function SolicitudesIncidenciasPage() {
               onChange={(e) => {
                 // Solo permitir cambios si el checkbox está habilitado
                 if (!checkboxReprogramacionHabilitado) return;
-                
+
                 const checked = Boolean(e.target.checked);
                 setFormReprogramacion(checked);
                 if (!checked) {
@@ -1885,17 +1932,15 @@ export default function SolicitudesIncidenciasPage() {
                   }]);
                 }
               }}
-              className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 ${
-                !checkboxReprogramacionHabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
+              className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 ${!checkboxReprogramacionHabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
             />
-            <label 
-              htmlFor="reprogramacion" 
-              className={`text-sm font-semibold ${
-                checkboxReprogramacionHabilitado 
-                  ? 'text-gray-700 cursor-pointer' 
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
+            <label
+              htmlFor="reprogramacion"
+              className={`text-sm font-semibold ${checkboxReprogramacionHabilitado
+                ? 'text-gray-700 cursor-pointer'
+                : 'text-gray-400 cursor-not-allowed'
+                }`}
             >
               Reprogramación / Más Respuestas
               {!checkboxReprogramacionHabilitado && (
@@ -1903,7 +1948,7 @@ export default function SolicitudesIncidenciasPage() {
               )}
             </label>
           </div>
-          
+
           {/* Barra de progreso para respuesta */}
           {guardandoRespuesta && (
             <div className="space-y-2">
@@ -1912,7 +1957,7 @@ export default function SolicitudesIncidenciasPage() {
                 <span className="text-blue-600 font-semibold">{progresoRespuesta}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
+                <div
                   className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${progresoRespuesta}%` }}
                 ></div>
@@ -2034,14 +2079,14 @@ export default function SolicitudesIncidenciasPage() {
                           <span className="text-green-600 font-semibold">{progresoReprogramacion[index] || 0}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
+                          <div
                             className="bg-green-600 h-2.5 rounded-full transition-all duration-300 ease-out"
                             style={{ width: `${progresoReprogramacion[index] || 0}%` }}
                           ></div>
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Botón Guardar Reprogramación */}
                     <div className="flex justify-end">
                       <button
@@ -2095,5 +2140,5 @@ export default function SolicitudesIncidenciasPage() {
 
 
 
-  
+
 }

@@ -348,12 +348,12 @@ export default function RegistroImportacionesPage() {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      
+
       // Timeout para evitar esperas infinitas
       const timeout = setTimeout(() => {
         resolve(null);
       }, 5000);
-      
+
       img.onload = () => {
         clearTimeout(timeout);
         try {
@@ -369,13 +369,13 @@ export default function RegistroImportacionesPage() {
           resolve(null);
         }
       };
-      
+
       img.onerror = () => {
         clearTimeout(timeout);
         console.warn("Error al cargar imagen:", url);
         resolve(null);
       };
-      
+
       img.src = url;
     });
   };
@@ -399,11 +399,11 @@ export default function RegistroImportacionesPage() {
 
   // Función para generar el HTML de la plantilla con los datos
   const generarHTMLPlantilla = (logoBase64 = null) => {
-    const fechaRegistro = formData.fechaRegistro 
+    const fechaRegistro = formData.fechaRegistro
       ? formatearFecha(formData.fechaRegistro)
       : formatearFecha(new Date().toISOString().split('T')[0]);
-    
-    const fechaLlegada = formData.fechaLlegada 
+
+    const fechaLlegada = formData.fechaLlegada
       ? formatearFecha(formData.fechaLlegada)
       : "";
 
@@ -730,7 +730,7 @@ export default function RegistroImportacionesPage() {
   const generarPDF = async () => {
     try {
       setGenerandoPDF(true);
-      
+
       // Convertir el logo a base64 antes de generar el HTML
       const logoUrl = "https://system-integration-rosy.vercel.app/Logo%20de%20Zeus.png";
       let logoBase64 = null;
@@ -739,9 +739,9 @@ export default function RegistroImportacionesPage() {
       } catch (error) {
         console.warn("No se pudo cargar el logo, se usará un placeholder:", error);
       }
-      
+
       const html = generarHTMLPlantilla(logoBase64);
-      
+
       // Crear un elemento temporal para renderizar el HTML
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
@@ -755,7 +755,7 @@ export default function RegistroImportacionesPage() {
       const images = tempDiv.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => {
         if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-        return new Promise(resolve => { 
+        return new Promise(resolve => {
           const timeout = setTimeout(() => resolve(), 3000); // Timeout de 3 segundos
           img.onload = () => {
             clearTimeout(timeout);
@@ -860,7 +860,7 @@ export default function RegistroImportacionesPage() {
         setMostrarModalPreview(true);
       }
     };
-    
+
     cargarPreview();
   };
 
@@ -871,7 +871,7 @@ export default function RegistroImportacionesPage() {
 
       // Generar el PDF
       const pdfResult = await generarPDF();
-      
+
       if (!pdfResult) {
         alert("Error al generar el PDF. Por favor, intente nuevamente.");
         setGenerandoPDF(false);
@@ -889,12 +889,12 @@ export default function RegistroImportacionesPage() {
 
       // Crear FormData para enviar el archivo PDF
       const formDataToSend = new FormData();
-      
+
       // Agregar el archivo PDF
       const nombreArchivo = `Ficha_Importacion_${formData.numeroDespacho}_${Date.now()}.pdf`;
       const archivoPDF = new File([blob], nombreArchivo, { type: 'application/pdf' });
       formDataToSend.append('archivo_pdf', archivoPDF);
-      
+
       // Agregar los demás campos como texto
       formDataToSend.append('numero_despacho', formData.numeroDespacho);
       formDataToSend.append('tipo_carga', formData.tipoCarga);
@@ -904,7 +904,7 @@ export default function RegistroImportacionesPage() {
       formDataToSend.append('fecha_llegada_productos', formData.fechaLlegada);
       formDataToSend.append('estado_importacion', formData.estado);
       formDataToSend.append('productos', formData.descripcionGeneral);
-      
+
       // Agregar detalles como JSON string
       const detalles = listaProductos.map((prod, index) => ({
         item: index + 1,
@@ -931,13 +931,13 @@ export default function RegistroImportacionesPage() {
       try {
         // 3. Petición a la API con FormData
         const apiUrl = `https://importaciones2026-2946605267.us-central1.run.app?param_post=registro_completo_importacion`;
-        
+
         console.log("Enviando datos a la API:", {
           url: apiUrl,
           method: 'POST',
           contentType: 'multipart/form-data (automático)'
         });
-        
+
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -1043,12 +1043,14 @@ export default function RegistroImportacionesPage() {
                     </p>
                   </div>
                 </div>
-                <button className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Procedimiento</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-6">
@@ -1071,7 +1073,7 @@ export default function RegistroImportacionesPage() {
                           value={formData.fechaRegistro}
                           onChange={(e) => setFormData({ ...formData, fechaRegistro: e.target.value })}
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                           required
                         />
                         <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1114,7 +1116,7 @@ export default function RegistroImportacionesPage() {
                           value={formData.fechaLlegada}
                           onChange={(e) => setFormData({ ...formData, fechaLlegada: e.target.value })}
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                           required
                         />
                         <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1187,26 +1189,6 @@ export default function RegistroImportacionesPage() {
                       </svg>
                       <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>API Conectada</span>
                     </div>
-                    <button
-                      onClick={() => {}}
-                      className="inline-flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] transition-all duration-200"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      <span>Ver procedimiento</span>
-                    </button>
                   </div>
                 </div>
 
@@ -1303,7 +1285,7 @@ export default function RegistroImportacionesPage() {
                           onChange={(e) => setDetalleProducto({ ...detalleProducto, cantidadCaja: e.target.value })}
                           min="0"
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white transition-all duration-200 hover:border-blue-300"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
+                          style={{ fontFamily: 'var(--font-poppins)' }}
                         />
                       </div>
                     </div>
@@ -1421,7 +1403,7 @@ export default function RegistroImportacionesPage() {
           </div>
           <div className="bg-blue-50 border-t border-blue-200 p-4">
             <p className="text-sm text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
-              <strong>Nota:</strong> Esta es una previsualización del PDF que se generará. 
+              <strong>Nota:</strong> Esta es una previsualización del PDF que se generará.
               Al hacer clic en "Registrar", se generará el PDF y se guardará la importación en la base de datos.
             </p>
           </div>
