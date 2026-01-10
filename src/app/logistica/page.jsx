@@ -99,8 +99,8 @@ export default function LogisticaPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           ),
-          title: "Incidencias",
-          description: "Registrar y gestionar incidencias logísticas",
+          title: "Importaciones",
+          description: "Registrar y gestionar incidencias en las importaciones",
           buttonText: "Gestionar Incidencias",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -351,6 +351,8 @@ export default function LogisticaPage() {
                                     router.push("/logistica/solicitudes-incidencias");
                                   } else if (card.id === "proformas") {
                                     router.push("/logistica/incidencias");
+                                  } else if (card.id === "incidencias") {
+                                    router.push("/logistica/registro-incidencias-importaciones");
                                   } else if (card.id === "gestion-cajas-malvinas") {
                                     router.push("/logistica/gestion-cajas-malvinas");
                                   } else if (card.id === "historial-cajas-malvinas") {
