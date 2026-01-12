@@ -293,3 +293,16 @@ select[class*="appearance-none"] option:checked {
   animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Botpress Webchat Overrides */
+.bpWebchat {
+  max-height: 550px !important;
+  height: min(550px, calc(100% - 120px)) !important;
+}
+
+@media (max-width: 768px) {
+  .bpWebchat {
+    max-height: 100vh !important;
+    height: 100vh !important;
+  }
+}
+
