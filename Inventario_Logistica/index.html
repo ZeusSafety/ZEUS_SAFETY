@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inventario Zeus Safety - Dashboard</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- Bootstrap CSS (solo para sistema de rejilla y utilidades, no componentes) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- jsPDF + autotable -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- SheetJS para Excel (XLSX/XLS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <!-- Chart.js para dashboard (tendencias/rotación) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  
+  <!-- html2canvas para capturas tipo imagen en PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <!-- CSS Modulares -->
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/views.css">
+  <link rel="stylesheet" href="assets/css/modals.css">
+</head>
+<body>
+
+  <!-- Barra de Navegación Lateral (Sidebar) -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <i class="bi bi-shield-check"></i>
+      <h3>Zeus Safety</h3>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-item active" data-view="callao"><i class="bi bi-building"></i> <span>Almacén Callao</span></a></li>
+      <li><a href="#" class="nav-item" data-view="malvinas"><i class="bi bi-shop"></i> <span>Almacén Malvinas</span></a></li>
+      <li><a href="#" class="nav-item" data-view="comparar"><i class="bi bi-arrow-left-right"></i> <span>Comparar</span></a></li>
+      <li><a href="#" class="nav-item" data-view="consolidado"><i class="bi bi-diagram-3"></i> <span>Consolidado</span></a></li>
+      <li><a href="#" class="nav-item" data-view="registro"><i class="bi bi-archive"></i> <span>Registro</span></a></li>
+      <li><a href="#" class="nav-item" data-view="proformas"><i class="bi bi-receipt"></i> <span>Proformas</span></a></li>
+      <li><a href="#" class="nav-item" data-view="logistica"><i class="bi bi-clipboard-check"></i> <span>Seguimiento</span></a></li>
+      <li><a href="#" class="nav-item" data-view="facturacion"><i class="bi bi-file-earmark-text"></i> <span>Facturación</span></a></li>
+    </ul>
+    <div class="sidebar-footer d-none"></div>
+  </nav>
+
+  <!-- Contenido Principal -->
+  <main class="main-content">
+    <header class="main-header">
+      <div class="header-left d-flex align-items-center gap-2">
+        <button id="sidebarToggle" class="btn btn-outline-secondary btn-icon" type="button" aria-label="Alternar navegación" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+        <div id="sesion-banner-global"></div>
+      </div>
+      <div class="header-right">
+        <span id="badgeProductos" class="badge bg-secondary align-self-center me-2">Productos: 0</span>
+        <span class="api-status loading" id="apiStatus" style="font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; margin-left: 10px; font-weight: 500;">
+          <i class="bi bi-arrow-repeat"></i> Conectando a API...
+        </span>
+        <button class="btn btn-sm btn-outline-primary" onclick="openSesionNumeroModal()" title="Asignar N° Inventario">
+          <i class="bi bi-clipboard2"></i> Asignar N°
+        </button>
+        <button class="btn btn-sm btn-outline-success" onclick="openUnirseModal()" title="Unirse a un N° asignado">
+          <i class="bi bi-link-45deg"></i> Unirse N°
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="openProcedimientoModal()" title="Procedimiento">
+          <i class="bi bi-journal-text"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      <!-- Las vistas se mantienen igual que en el archivo original -->
+      <!-- Se pueden mover a archivos HTML separados si se desea -->
+      
+      <!-- Vista Callao -->
+      <div id="view-callao">
+        <header class="view-header">
+          <h1><i class="bi bi-building"></i>Almacén Callao</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary-soft" onclick="openInventarioModal('callao','cajas')">
+              <i class="bi bi-box-seam"></i> Conteo por Cajas
+            </button>
+            <button class="btn btn-primary-soft" onclick="openInventarioModal('callao','stand')">
+              <i class="bi bi-columns-gap"></i> Conteo de Stand
+            </button>
+          </div>
+        </header>
+
+        <div id="panel-callao" class="invis">
+          <div class="card mb-3">
+            <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <div class="fw-bold">Inventario actual: <span id="callao-numero"></span></div>
+                <div class="mini-hint">Registrado por: <span id="callao-registrado"></span> · Inicio: <span id="callao-inicio"></span></div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <input id="emg-callao" type="file" accept=".xlsx,.xls,.csv" class="d-none" onchange="onEmergFileChange('callao', this)">
+                <button class="btn btn-warning" onclick="dispararEmergencia('callao')"><i class="bi bi-file-earmark-arrow-up"></i> Subir (Emergencia)</button>
+                <button class="btn btn-success" id="btnStartCallao" onclick="mostrarTablaInventario('callao')"><i class="bi bi-play-circle"></i> Empezar Inventario</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tabla-callao" class="card invis">
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tbl-callao">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Producto</th>
+                      <th>Código</th>
+                      <th>Cantidad</th>
+                      <th>Unidad de Medida</th>
+                      <th>Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-primary" onclick="registrarInventario('callao')"><i class="bi bi-check2-circle"></i> Registrar Inventario</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h5 class="mb-0">Listado de Conteo – Callao</h5>
+              <div class="d-flex gap-2 flex-wrap">
+                <input id="filtro-list-callao" class="form-control form-control-sm" placeholder="Buscar...">
+                <button class="btn btn-outline-primary btn-sm" onclick="cargarConteosCallao()" title="Actualizar datos desde la API">
+                  <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+                <button class="btn btn-outline-dark btn-sm" onclick="pdfListado('callao')">
+                  <i class="bi bi-file-earmark-pdf"></i> Generar reporte
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm" id="list-callao">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha y Hora (inicio)</th>
+                    <th>N° Inventario</th>
+                    <th>Registrado por</th>
+                    <th>Archivo</th>
+                    <th>Hora Final</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Malvinas -->
+      <div id="view-malvinas" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-shop"></i>Almacén Malvinas</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary-soft" onclick="openInventarioModal('malvinas','cajas')">
+              <i class="bi bi-box-seam"></i> Conteo por Cajas
+            </button>
+            <button class="btn btn-primary-soft" onclick="openInventarioModal('malvinas','stand')">
+              <i class="bi bi-columns-gap"></i> Conteo de Stand
+            </button>
+          </div>
+        </header>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="fw-bold mb-2">Estado de Tiendas</div>
+            <div id="status-tiendas" class="d-flex flex-wrap gap-3"></div>
+          </div>
+        </div>
+
+        <div id="panel-malvinas" class="invis">
+          <div class="card mb-3">
+            <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <div class="fw-bold">Inventario actual: <span id="malvinas-numero"></span></div>
+                <div class="mini-hint">Registrado por: <span id="malvinas-registrado"></span> · Inicio: <span id="malvinas-inicio"></span> · Tienda: <span id="malvinas-tienda"></span></div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <input id="emg-malvinas" type="file" accept=".xlsx,.xls,.csv" class="d-none" onchange="onEmergFileChange('malvinas', this)">
+                <button class="btn btn-warning" onclick="dispararEmergencia('malvinas')"><i class="bi bi-file-earmark-arrow-up"></i> Subir (Emergencia)</button>
+                <button class="btn btn-success" id="btnStartMalvinas" onclick="mostrarTablaInventario('malvinas')"><i class="bi bi-play-circle"></i> Empezar Inventario</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tabla-malvinas" class="card invis">
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tbl-malvinas">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Producto</th>
+                      <th>Código</th>
+                      <th>Cantidad</th>
+                      <th>Unidad de Medida</th>
+                      <th>Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="d-flex justify-content-end gap-2 my-3">
+                <button class="btn btn-primary" onclick="registrarInventario('malvinas')"><i class="bi bi-check2-circle"></i> Registrar Inventario</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h5 class="mb-0">Listado de Conteo – Malvinas</h5>
+              <div class="d-flex gap-2 flex-wrap">
+                <input id="filtro-list-malvinas" class="form-control form-control-sm" placeholder="Buscar...">
+                <button class="btn btn-outline-primary btn-sm" onclick="cargarConteosMalvinas()" title="Actualizar datos desde la API">
+                  <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+                <button class="btn btn-outline-dark btn-sm" onclick="pdfListado('malvinas')">
+                  <i class="bi bi-file-earmark-pdf"></i> Generar reporte
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm" id="list-malvinas">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha y Hora (inicio)</th>
+                    <th>N° Inventario</th>
+                    <th>Tienda</th>
+                    <th>Registrado por</th>
+                    <th>Archivo</th>
+                    <th>Hora Final</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Comparar -->
+      <div id="view-comparar" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-arrow-left-right"></i>Comparación de Inventario</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary-soft mb-0" onclick="abrirModalSistemaExcel('callao')">
+              <i class="bi bi-upload"></i> Subir Sistema Callao
+            </button>
+            <button id="btn-alm-callao" class="btn btn-primary" onclick="cargarYComparar('callao')"><i class="bi bi-building"></i> Almacén Callao</button>
+            <button class="btn btn-primary-soft mb-0 ms-2" onclick="abrirModalSistemaExcel('malvinas')">
+              <i class="bi bi-upload"></i> Subir Sistema Malvinas
+            </button>
+            <button id="btn-alm-malvinas" class="btn btn-primary" onclick="cargarYComparar('malvinas')"><i class="bi bi-shop"></i> Almacén Malvinas</button>
+          </div>
+        </header>
+
+        <div id="panel-comparacion" class="invis">
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3 flex-wrap mb-2">
+                <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Almacén:</span><b id="cmp-almacen"></b></div>
+                <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Inventario:</span><b id="cmp-numero"></b></div>
+                <div class="d-flex align-items-center gap-1"><span class="text-secondary small">Fecha:</span><b id="cmp-fecha"></b></div>
+              </div>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="btn-group me-1">
+                  <button class="btn btn-outline-dark btn-sm" onclick="exportComparacionPDF()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                  <button class="btn btn-success btn-sm" onclick="exportComparacionExcel()"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+                </div>
+                <div class="cmp-search-wrap">
+                  <input id="cmp-search" class="form-control form-control-sm" placeholder="Buscar código o producto..." oninput="debounceCmp()" />
+                  <div id="cmp-suggest" class="cmp-suggest d-none"></div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="cmpMostrarTodos()">Todos</button>
+                <span id="cmp-badge-ok" class="badge text-bg-success badge-click" onclick="toggleCmpEstado('OK')">Correctos: <span id="cmp-correctos">0</span></span>
+                <span id="cmp-badge-bad" class="badge text-bg-danger badge-click" onclick="toggleCmpEstado('BAD')">Incorrectos: <span id="cmp-incorrectos">0</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle" id="tbl-comparacion">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Producto</th>
+                  <th>Código</th>
+                  <th>Cantidad Sistema</th>
+                  <th>Cantidad Física</th>
+                  <th>Resultado</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="card mt-4">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="mb-0">Listado de Acciones</h5>
+                <div class="d-flex gap-2">
+                  <input id="filtro-acciones" class="form-control form-control-sm" placeholder="Buscar...">
+                  <button class="btn btn-outline-dark btn-sm" onclick="pdfAcciones()"><i class="bi bi-file-earmark-pdf"></i> Reporte PDF</button>
+                </div>
+              </div>
+              <div class="table-responsive mt-2">
+                <table class="table table-sm" id="tbl-acciones">
+                  <thead>
+                    <tr>
+                      <th>Item/Producto</th>
+                      <th>Fecha y Hora</th>
+                      <th>Registrado por</th>
+                      <th>Almacén</th>
+                      <th>Motivo</th>
+                      <th>Cantidad</th>
+                      <th>Error de</th>
+                      <th>Tipo</th>
+                      <th>Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Consolidado -->
+      <div id="view-consolidado" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-diagram-3"></i>Consolidado de Inventarios</h1>
+          <div class="header-actions">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="cons-show-cod" onchange="renderConsolidado()">
+              <label class="form-check-label" for="cons-show-cod">Mostrar códigos</label>
+            </div>
+          </div>
+        </header>
+
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="cons-head cons-blue">Inventario Callao</div>
+                <div class="table-responsive">
+                  <table class="table consolidado-table" id="cons-callao">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Producto</th>
+                        <th>Sistema</th>
+                        <th>Físico</th>
+                        <th>Diferencia</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="cons-head cons-yellow">Inventario Malvinas</div>
+                <div class="table-responsive">
+                  <table class="table consolidado-table" id="cons-malvinas">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Sistema</th>
+                        <th>Físico</th>
+                        <th>Diferencia</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="cons-head cons-green">Conteo General</div>
+                <div class="table-responsive">
+                  <table class="table consolidado-table text-center" id="cons-general">
+                    <thead>
+                      <tr>
+                        <th>Total Sistema</th>
+                        <th>Total Físico</th>
+                        <th>Diferencia</th>
+                        <th>Resultado</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Registro -->
+      <div id="view-registro" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-archive"></i>Registro de Inventarios</h1>
+          <div class="header-actions d-flex gap-2 align-items-center flex-wrap">
+            <input id="reg-desde" type="date" class="form-control form-control-sm" style="width:auto">
+            <input id="reg-hasta" type="date" class="form-control form-control-sm" style="width:auto">
+            <select id="reg-presets" class="form-select form-select-sm" style="width:auto">
+              <option value="">Rango rápido</option>
+              <option value="este_mes">Este mes</option>
+              <option value="mes_pasado">Mes pasado</option>
+              <option value="anio_actual">Año actual</option>
+              <option value="anio_pasado">Año pasado</option>
+            </select>
+            <button class="btn btn-outline-dark btn-sm" onclick="regExportPDF()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-registro">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Almacén</th>
+                    <th>N° Inventario</th>
+                    <th>Tipo/Tienda</th>
+                    <th>Registrado</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Comparar</th>
+                    <th>Consolidado</th>
+                    <th>Proformas</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Proformas -->
+      <div id="view-proformas" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-receipt"></i>Simulación de Proformas</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="openProformaModal()"><i class="bi bi-plus-circle"></i> Nuevo Registro</button>
+          </div>
+        </header>
+
+        <div id="panel-proforma" class="invis">
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select id="pf-asesor" class="form-select">
+                      <option>Hervin</option>
+                      <option>Evelyn</option>
+                      <option>Alvaro</option>
+                      <option>Kimberly</option>
+                      <option>Otro</option>
+                    </select>
+                    <label>Asesor</label>
+                  </div>
+                  <input id="pf-asesor-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre">
+                </div>
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select id="pf-almacen" class="form-select">
+                      <option value="callao">Almacén Callao</option>
+                      <option value="malvinas">Almacén Malvinas</option>
+                    </select>
+                    <label>Almacén</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select id="pf-registrado" class="form-select">
+                      <option>Joseph</option>
+                      <option>Joselyn</option>
+                      <option>Manuel</option>
+                      <option>Otro</option>
+                    </select>
+                    <label>Registrado por</label>
+                  </div>
+                  <input id="pf-registrado-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre">
+                </div>
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <input id="pf-num" class="form-control" placeholder="N° Proforma">
+                    <label>Número de Proforma</label>
+                  </div>
+                </div>
+              </div>
+              <hr>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tbl-proforma">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Unidad de Medida</th>
+                      <th>Cantidad</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <datalist id="pf-productos"></datalist>
+              </div>
+              <div class="d-flex justify-content-between">
+                <button class="btn btn-outline-primary" onclick="addLineaProforma()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                <button class="btn btn-success" onclick="registrarProforma()"><i class="bi bi-check2-circle"></i> Registrar Proforma</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h5 class="mb-0">Listado de Simulación de Proformas</h5>
+              <div class="d-flex gap-2">
+                <input id="filtro-proformas" class="form-control form-control-sm" placeholder="Buscar...">
+                <button class="btn btn-outline-dark btn-sm" onclick="pdfProformas()"><i class="bi bi-file-earmark-pdf"></i> Reporte PDF</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm" id="tbl-list-proformas">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha y Hora</th>
+                    <th>Asesor</th>
+                    <th>Registrado</th>
+                    <th>Almacén</th>
+                    <th>N° Proforma</th>
+                    <th>Archivo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Seguimiento -->
+      <div id="view-logistica" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-clipboard-check"></i>Seguimiento</h1>
+        </header>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-logistica">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha de Registro</th>
+                    <th>N° Inventario</th>
+                    <th>Registrado por</th>
+                    <th>Informe</th>
+                    <th>Estado</th>
+                    <th>Fecha de Respuesta</th>
+                    <th>Respuesta</th>
+                    <th>Estado Inventario</th>
+                    <th>Fecha de Registro</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Apartado Reportes -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Reportes</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-reportes">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Numero de Inventario</th>
+                    <th>Fecha de Culminacion de Inventario</th>
+                    <th>Estado de Inventario</th>
+                    <th>Fecha de Registro</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Facturación -->
+      <div id="view-facturacion" class="invis">
+        <header class="view-header">
+          <h1><i class="bi bi-calculator"></i>Facturación</h1>
+        </header>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tbl-facturacion">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha de Registro</th>
+                    <th>N° Inventario</th>
+                    <th>Registrado por</th>
+                    <th>Informe</th>
+                    <th>Estado</th>
+                    <th>Fecha de Respuesta</th>
+                    <th>Respuesta</th>
+                    <th>Acciones</th>
+                    <th>Estado Inventario</th>
+                    <th>Fecha de Registro</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Gerencia -->
+      <div id="view-gerencia" class="invis">
+        <!-- Contenido de la vista Gerencia -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Modales -->
+  <div class="modal fade" id="modalRegDetalle" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="regdet-title">Detalle</h6>
+          <button type="button" class="btn-close" aria-label="Cerrar" onclick="closeModal('#modalRegDetalle')"></button>
+        </div>
+        <div id="regdet-head" class="px-3 pt-2"></div>
+        <div class="modal-body">
+          <div id="regdet-body"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-dark" onclick="regdetExportPDFCurrent()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+          <button class="btn btn-secondary" onclick="closeModal('#modalRegDetalle')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalAviso" tabindex="-1">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Aviso de Prioridad de Conteo</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalAviso')"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-2">
+            <p class="mb-2">A partir de este momento el inventario está <b>en curso</b>. Toda digitación tiene <b>prioridad operativa</b>.</p>
+            <ul class="mb-2" style="margin-left: 1rem;">
+              <li>Verifique <b>código</b> y <b>descripción</b> del producto antes de registrar.</li>
+              <li>Ingrese la <b>cantidad exacta</b> y confirme visualmente el valor.</li>
+              <li>Evite correcciones repetidas y mantenga <b>concentración</b> durante el conteo.</li>
+              <li>Ante cualquier duda, <b>deténgase</b> y consulte al responsable.</li>
+            </ul>
+            <p class="text-secondary small mb-0">Al continuar usted declara conocer y cumplir el procedimiento.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="closeModal('#modalAviso')"><i class="bi bi-check2"></i> Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalSesionNumero" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-clipboard2"></i> Asignar N° Inventario</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalSesionNumero')"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-secondary">Ingrese la contraseña del jefe, el N° de inventario y quién autoriza.</div>
+          <input id="sn-pwd" type="password" class="form-control mb-2" placeholder="Contraseña">
+          <input id="sn-num" class="form-control mb-2" placeholder="Ej: INV-2025-214">
+          <div class="form-floating mb-2">
+            <select id="sn-area" class="form-select">
+              <option value="Administración">Administración</option>
+              <option value="Seguimiento">Seguimiento</option>
+              <option value="Otro">Otro</option>
+            </select>
+            <label>Área</label>
+          </div>
+          <div class="form-floating mb-2">
+            <select id="sn-persona" class="form-select">
+              <option value="">Cargando colaboradores...</option>
+            </select>
+            <label>Autorizado por</label>
+          </div>
+          <input id="sn-otro" class="form-control d-none mt-2" placeholder="Especifique nombre">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('#modalSesionNumero')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarSesionNumero()"><i class="bi bi-check2"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalUnirse" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-link-45deg"></i> Unirse a Inventario</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalUnirse')"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-secondary">Selecciona el N° de inventario asignado por el jefe para participar.</div>
+          <div class="form-floating">
+            <select id="join-num" class="form-select">
+              <option value="">Cargando inventarios...</option>
+            </select>
+            <label>N° de Inventario</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('#modalUnirse')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarUnirse()"><i class="bi bi-check2"></i> Unirse</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalProcedimiento" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-journal-text"></i> Procedimientos – Inventario</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalProcedimiento')"></button>
+        </div>
+        <div class="modal-body">
+          <div class="proc-sec">
+            <h6><i class="bi bi-info-circle"></i> Instrucciones Generales</h6>
+            <ul>
+              <li>Trabajamos por <b>N° de Inventario</b>. Debe ser asignado antes de registrar.</li>
+              <li>Los datos se guardan localmente; cada equipo puede <b>unirse</b> al mismo número.</li>
+              <li>Valide <b>código</b>, <b>descripción</b> y <b>cantidad</b> antes de confirmar.</li>
+            </ul>
+          </div>
+          <div class="proc-sec">
+            <h6><i class="bi bi-clipboard2"></i> Asignar N° Inventario</h6>
+            <ul>
+              <li>Ubicación: botón <b>Asignar N°</b> en la barra superior.</li>
+              <li>Campos: Contraseña del jefe, N° de inventario, Área y Autorizado.</li>
+              <li>Resultado: crea la sesión y habilita el registro en ambos almacenes.</li>
+            </ul>
+          </div>
+          <div class="proc-sec">
+            <h6><i class="bi bi-link-45deg"></i> Unirse a Inventario</h6>
+            <ul>
+              <li>Disponible para equipos adicionales.</li>
+              <li>Selecciona el N° asignado y sincroniza los conteos.</li>
+              <li>Si el inventario está cerrado, no se podrán crear nuevos conteos.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="guardarProcedimiento()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalInventario" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-clipboard2-check"></i> Datos de Inventario</h5>
+          <button class="btn-close" onclick="closeModal('#modalInventario')"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-floating">
+                <input id="inv-numero" class="form-control" placeholder="N° Inventario">
+                <label>Número de Inventario</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select id="inv-registrado" class="form-select">
+                  <option>Joseph</option>
+                  <option>Joselyn</option>
+                  <option>Manuel</option>
+                  <option>Otro</option>
+                </select>
+                <label>Registrado por</label>
+              </div>
+              <input id="inv-otro" class="form-control mt-2 d-none" placeholder="Especifique nombre">
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <input id="inv-inicio" class="form-control" placeholder="Inicio" disabled>
+                <label>Fecha y Hora (inicio)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select id="inv-almacen" class="form-select" disabled>
+                  <option value="callao">Callao</option>
+                  <option value="malvinas">Malvinas</option>
+                </select>
+                <label>Almacén</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select id="inv-tipo" class="form-select" disabled>
+                  <option value="general">General</option>
+                  <option value="emergencia">Emergencia</option>
+                  <option value="reconteo">Reconteo</option>
+                </select>
+                <label>Tipo de Conteo</label>
+              </div>
+            </div>
+            <div class="col-md-12 d-none" id="bloque-tiendas">
+              <div class="form-floating">
+                <select id="inv-tienda" class="form-select">
+                  <option value="">Seleccione una tienda...</option>
+                </select>
+                <label>Tienda</label>
+              </div>
+              <div class="mini-hint mt-2 text-secondary small">Las tiendas se cargan automáticamente desde la API.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('#modalInventario')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarModalInventario()"><i class="bi bi-check2"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalObs" tabindex="-1">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-eye"></i> Observaciones</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalObs')"></button>
+        </div>
+        <div class="modal-body">
+          <div id="obs-contenido" class="text-secondary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalSistemaExcel" tabindex="-1" aria-labelledby="modalSistemaExcelLabel" aria-hidden="true" role="dialog">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="modalSistemaExcelLabel"><i class="bi bi-file-earmark-excel"></i> Sistema de Inventario - <span id="modal-sistema-almacen"></span></h6>
+          <button type="button" class="btn-close" aria-label="Cerrar" onclick="cerrarModalCompletamente()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary" onclick="extraerConteosGuardados()">
+              <i class="bi bi-download"></i> Extraer Conteos Guardados
+            </button>
+            <button class="btn btn-success" onclick="abrirInputExcel()">
+              <i class="bi bi-upload"></i> Adjuntar Excel
+            </button>
+          </div>
+          <input type="file" id="input-excel-sistema" accept=".json,.csv,.xlsx,.xls" class="d-none" onchange="cargarSistema(event)">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalCompletamente()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop fade" style="display: none;"></div>
+
+  <!-- JavaScript Modulares (usando ES6 Modules) -->
+  <script type="module" src="assets/js/main.js"></script>
+  
+  <!-- Modal de Informes PDF -->
+  <div class="modal fade" id="modalInformesPDF" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="bi bi-file-earmark-pdf"></i> Informes PDF</h6>
+          <button type="button" class="btn-close" onclick="closeModal('#modalInformesPDF')"></button>
+        </div>
+        <div class="modal-body">
+          <div id="informes-pdf-container">
+            <p class="text-muted">Cargando informes...</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('#modalInformesPDF')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Handler Global -->
+  <script>
+    window.addEventListener('error', function(e) {
+      try {
+        console.error('[APP ERROR]', e.error || e.message || e);
+        alert('Error: ' + (e.error?.message || e.message || e));
+      } catch (err) {}
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,246 @@
+/**
+ * Estilos de modales
+ */
+
+/* Mini-menu */
+.mini-menu { 
+  position: absolute; 
+  top: calc(100% + 6px); 
+  right: 0; 
+  left: auto; 
+  width: clamp(240px, 28vw, 320px); 
+  opacity: 0; 
+  transform: translateY(6px); 
+  transition: opacity .12s ease, transform .12s ease; 
+  pointer-events: auto; 
+  z-index: 99999; 
+  background: #ffffff !important; 
+  backdrop-filter: none !important; 
+  border: 1px solid rgba(16,24,40,.14); 
+  box-shadow: 0 12px 24px rgba(16,24,40,.18), 0 6px 12px rgba(16,24,40,.10); 
+}
+
+.mini-menu.show { 
+  opacity: 1; 
+  transform: translateY(0); 
+}
+
+.mini-menu .mm-item { 
+  width: 100%; 
+  display: flex; 
+  align-items: center; 
+  gap: .55rem; 
+  padding: .72rem 1rem; 
+  border-radius: 10px; 
+  border: 1px solid transparent; 
+  background: #ffffff !important; 
+  color: #334155; 
+  font-weight: 700; 
+  letter-spacing: .2px; 
+  cursor: pointer; 
+  white-space: nowrap; 
+}
+
+.mini-menu .mm-item:hover { 
+  background: #eef2ff !important; 
+  color: #1e40af; 
+  border-color: rgba(37,99,235,.20); 
+}
+
+.mini-menu .mm-item:active { 
+  background: linear-gradient(180deg, rgba(37,99,235,.16), rgba(37,99,235,.10)); 
+}
+
+.mini-menu .mm-item i { 
+  color: #1e40af; 
+}
+
+.modal .mini-menu { 
+  z-index: 100001; 
+}
+
+/* Prevent clipping inside table cells */
+table.table td, 
+table.table th { 
+  overflow: visible; 
+  position: relative; 
+}
+
+#panel-comparacion .card, 
+#panel-comparacion .card-body, 
+#panel-comparacion .table-responsive { 
+  overflow: visible !important; 
+}
+
+#panel-comparacion .table { 
+  overflow: visible; 
+}
+
+/* Botón de edición */
+.btn-edit { 
+  background: linear-gradient(135deg, #2563eb, #1e40af); 
+  color: #fff !important; 
+  border: 1px solid rgba(37, 99, 235, .35); 
+  border-radius: 999px; 
+  padding: .32rem .78rem; 
+  font-weight: 700; 
+  box-shadow: 0 6px 14px rgba(37,99,235,.22), 0 3px 8px rgba(16,30,54,.12); 
+}
+
+.btn-edit:hover { 
+  filter: brightness(.98); 
+  box-shadow: 0 10px 22px rgba(37,99,235,.28), 0 6px 12px rgba(16,30,54,.14); 
+  transform: translateY(-1px); 
+}
+
+.btn-edit.active { 
+  background: linear-gradient(135deg, #1e40af, #1d4ed8); 
+  box-shadow: 0 12px 26px rgba(29,78,216,.30), 0 8px 14px rgba(16,30,54,.16); 
+}
+
+/* Estilos para modal de Verificación */
+.blk { 
+  border: 1px solid var(--border-color); 
+  border-radius: 10px; 
+  background: #fff; 
+  box-shadow: var(--shadow-sm); 
+  overflow: hidden; 
+}
+
+.blk + .blk { 
+  margin-top: 1rem; 
+}
+
+.blk-header { 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  letter-spacing: .4px; 
+  padding: .55rem .9rem; 
+}
+
+.blk-body { 
+  padding: .9rem; 
+  background: #fff; 
+}
+
+.blk-blue { 
+  background: #0d6efd; 
+  color: #fff; 
+}
+
+.blk-amber { 
+  background: #ffc107; 
+  color: #212529; 
+}
+
+.blk-green { 
+  background: #198754; 
+  color: #fff; 
+}
+
+.subttl { 
+  font-weight: 700; 
+  margin-bottom: .35rem; 
+  color: #0d6efd; 
+}
+
+#modalVerificacion .form-floating > .form-control[disabled],
+#modalVerificacion .form-floating > .form-control:disabled {
+  background: #f1f3f5; 
+  color: #495057; 
+  border-color: #e9ecef; 
+}
+
+#modalVerificacion .form-floating > .form-control,
+#modalVerificacion .form-floating > .form-select {
+  border-radius: 10px; 
+}
+
+#modalVerificacion .badge-amarillo { 
+  background: #ffc107; 
+  color: #212529; 
+}
+
+#modalVerificacion .badge-naranja { 
+  background: #fd7e14; 
+  color: #fff; 
+}
+
+#modalVerificacion .zs-btn { 
+  font-weight: 700; 
+}
+
+/* Ancho ampliado para modal de Registro (Consolidado) */
+#modalRegDetalle .modal-dialog { 
+  max-width: 96vw; 
+  width: 96vw; 
+}
+
+#regdet-cons-wrap { 
+  overflow-x: auto; 
+}
+
+#regdet-cons-wrap .row { 
+  flex-wrap: nowrap; 
+}
+
+#regdet-tabs { 
+  position: sticky; 
+  top: 0; 
+  background: #fff; 
+  z-index: 2; 
+  padding: 6px 0; 
+  border-bottom: 1px solid #eee; 
+}
+
+#regdet-tabs .fw-semibold { 
+  white-space: nowrap; 
+}
+
+#regdet-cons-wrap .col-12, 
+#regdet-cons-wrap .col-lg-4 { 
+  flex: 0 0 33.333%; 
+  max-width: 33.333%; 
+}
+
+/* Procedimiento */
+#modalProcedimiento .modal-header { 
+  background: linear-gradient(90deg, #2563eb, #0ea5e9); 
+  color: #fff; 
+}
+
+#modalProcedimiento .modal-header .btn-close { 
+  filter: invert(1); 
+  opacity: .85; 
+}
+
+#modalProcedimiento .proc-sec { 
+  border: 1px solid #e5e7eb; 
+  background: #ffffff; 
+  border-radius: 12px; 
+  padding: 14px 16px; 
+  box-shadow: var(--shadow-sm); 
+  margin-bottom: 14px; 
+}
+
+#modalProcedimiento .proc-sec h6 { 
+  margin: 0 0 .35rem 0; 
+  display: flex; 
+  align-items: center; 
+  gap: .5rem; 
+  font-weight: 800; 
+  color: #0f172a; 
+}
+
+#modalProcedimiento .proc-sec ul { 
+  margin: 0 0 .25rem 1.1rem; 
+}
+
+#modalProcedimiento .proc-note { 
+  background: #e7f0ff; 
+  border-left: 4px solid #3b82f6; 
+  padding: .65rem .85rem; 
+  border-radius: 10px; 
+  color: #0f172a; 
+}
+

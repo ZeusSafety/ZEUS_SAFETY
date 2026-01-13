@@ -1,0 +1,213 @@
+/**
+ * Estilos específicos de vistas
+ */
+
+/* --- Tablas --- */
+.table {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  margin-top: -8px;
+}
+
+.table thead th {
+  background: transparent;
+  border: none;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: .5rem 1rem;
+  position: sticky; 
+  top: 0; 
+  z-index: 1;
+  background: #f1f5ff;
+  box-shadow: 0 1px 0 rgba(16,24,40,.06);
+}
+
+.table tbody tr {
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: var(--shadow-sm);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(180deg, #fdfefe, #eef6ff);
+}
+
+/* Forzar color en tablas de Callao y Malvinas */
+#tbl-callao tbody tr, #tbl-malvinas tbody tr,
+#md-cons-callao tbody tr, #md-cons-malvinas tbody tr,
+.modal .table tbody tr {
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+}
+
+#tbl-callao thead th, #tbl-malvinas thead th,
+#md-cons-callao thead th, #md-cons-malvinas thead th {
+  background: #f1f5ff !important; 
+  color: #1f2a44; 
+  border-radius: 8px; 
+}
+
+/* Zebra striping para mejor lectura */
+#tbl-callao tbody tr:nth-child(odd), 
+#tbl-malvinas tbody tr:nth-child(odd) {
+  background: linear-gradient(180deg, #fbfdff, #f1f6ff) !important;
+}
+
+.table td, .table th {
+  border: none;
+  vertical-align: middle;
+  padding: .75rem 1rem;
+}
+
+.table-sm td, .table-sm th {
+  padding: .5rem .75rem;
+}
+
+.table td:first-child { 
+  border-top-left-radius: 8px; 
+  border-bottom-left-radius: 8px; 
+}
+
+.table td:last-child { 
+  border-top-right-radius: 8px; 
+  border-bottom-right-radius: 8px; 
+}
+
+.table-responsive {
+  padding: 2px;
+}
+
+/* Inputs de cantidad con foco azul suave */
+#tbl-callao input[type=number], 
+#tbl-malvinas input[type=number], 
+#tbl-comparacion input[type=number] { 
+  box-shadow: none; 
+  border: 1px solid #e7eef8; 
+}
+
+#tbl-callao input[type=number]:focus, 
+#tbl-malvinas input[type=number]:focus, 
+#tbl-comparacion input[type=number]:focus { 
+  border-color: #90b4ff; 
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15); 
+}
+
+/* Estilos específicos de la app */
+.status-dot { 
+  width: .6rem; 
+  height: .6rem; 
+  display: inline-block; 
+  border-radius: 50%; 
+  margin-right: .35rem; 
+  vertical-align: middle;
+}
+
+.status-green { 
+  background: var(--success-color); 
+}
+
+.status-red { 
+  background: var(--danger-color); 
+}
+
+.status-orange { 
+  background: var(--warning-color); 
+}
+
+#sesion-banner { 
+  background: #e6eefb; 
+  border: 1px solid #cfdbf5; 
+  border-radius: .75rem; 
+  padding: .65rem 1rem; 
+}
+
+/* Chips estado en Observaciones */
+.badge-pendiente { 
+  background: #fee2e2; 
+  color: #b91c1c; 
+  border: 1px solid #fecaca; 
+  padding: .35rem .6rem; 
+  border-radius: 999px; 
+  font-weight: 700; 
+  letter-spacing: .2px; 
+}
+
+/* Estilos Comparar */
+#tbl-comparacion thead th { 
+  font-weight: 700; 
+}
+
+#tbl-comparacion tbody tr.cmp-row-active { 
+  background: #eef4ff; 
+}
+
+.cmp-search-wrap { 
+  position: relative; 
+  flex: 1 1 560px; 
+  max-width: 720px; 
+}
+
+#cmp-search { 
+  padding: .7rem .9rem; 
+  border-radius: 12px; 
+  font-size: .95rem; 
+  height: 44px; 
+}
+
+#cmp-search.filter-active { 
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15), inset 0 0 0 1px #90b4ff; 
+  border-color: #90b4ff; 
+}
+
+.cmp-suggest { 
+  position: absolute; 
+  top: 100%; 
+  left: 0; 
+  right: 0; 
+  background: #fff; 
+  border: 1px solid #e5e7eb; 
+  border-top: none; 
+  border-radius: 0 0 12px 12px; 
+  z-index: 10010; 
+  box-shadow: 0 12px 24px rgba(16,24,40,.12), 0 6px 12px rgba(16,24,40,.08); 
+  max-height: 260px; 
+  overflow: auto; 
+}
+
+.cmp-suggest .item { 
+  padding: .5rem .75rem; 
+  cursor: pointer; 
+}
+
+.cmp-suggest .item:hover { 
+  background: #eef4ff; 
+}
+
+/* Encabezados consolidado */
+.cons-head { 
+  text-align: center; 
+  font-weight: 800; 
+  border-radius: 12px; 
+  padding: .9rem 1rem; 
+  margin-bottom: .75rem; 
+  color: #fff; 
+  box-shadow: var(--shadow-sm); 
+  letter-spacing: .2px; 
+}
+
+.cons-blue { 
+  background: #0B3B8C; 
+}
+
+.cons-yellow { 
+  background: #F4B400; 
+  color: #1f2937; 
+}
+
+.cons-green { 
+  background: #198754; 
+}
+

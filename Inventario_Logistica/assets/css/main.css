@@ -1,0 +1,94 @@
+/**
+ * Estilos principales y variables CSS
+ */
+
+:root {
+  /* Paleta de Colores Principal (Azul marino de marca) */
+  --primary-color: #0B3B8C; /* Azul marino */
+  --primary-color-light: #e6eefb;
+  --primary-color-dark: #072a63;
+
+  /* Colores de Estado */
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+
+  /* Paleta de Grises Neutros */
+  --bg-color: #F8F9FA;          /* Fondo general muy claro */
+  --surface-color: #FFFFFF;      /* Color para tarjetas y modales */
+  --border-color: #E9ECEF;      /* Bordes sutiles */
+  --text-primary: #212529;      /* Texto principal oscuro */
+  --text-secondary: #6C757D;    /* Texto secundario más claro */
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+}
+
+/* --- Reseteo y Estilos Base --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  display: flex;
+  min-height: 100vh;
+  font-size: 16px;
+}
+
+.invis { 
+  display: none !important; 
+}
+
+.cursor-pointer { 
+  cursor: pointer; 
+}
+
+.mini-hint { 
+  font-size: .85rem; 
+  color: var(--text-secondary); 
+}
+
+/* Estado de API */
+.api-status.loading {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.api-status.success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.api-status.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Animación de carga */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Estilos para botones de comparación */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sys-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
