@@ -16,6 +16,7 @@ export default function GerenciaPage() {
     "gestion-productos": false,
     "franja-precios": false,
     "gestion-solicitudes": false,
+    "gestion-movilidad": false,
   });
 
   useEffect(() => {
@@ -211,6 +212,34 @@ export default function GerenciaPage() {
         },
       ],
     },
+    {
+      id: "gestion-movilidad",
+      title: "Gestión de Movilidad",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "listado-movilidad",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+          ),
+          title: "Listado de Movilidad",
+          description: "Ver historial de movilidad de vehículos",
+          buttonText: "Ver Listado",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -354,6 +383,8 @@ export default function GerenciaPage() {
                                     router.push("/gerencia/gestion-precios");
                                   } else if (card.id === "listado-solicitudes") {
                                     router.push("/gerencia/solicitudes-incidencias");
+                                  } else if (card.id === "listado-movilidad") {
+                                    router.push("/gerencia/listado-movilidad");
                                   } else {
                                     router.push("/gerencia");
                                   }

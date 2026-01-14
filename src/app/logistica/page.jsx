@@ -16,6 +16,7 @@ export default function LogisticaPage() {
     "descuento-cajas-malvinas": false,
     "solicitudes-incidencias": false,
     "inventario": false,
+    "gestion-movilidad": false,
   });
 
   useEffect(() => {
@@ -342,6 +343,33 @@ export default function LogisticaPage() {
         },
       ],
     },
+    {
+      id: "gestion-movilidad",
+      title: "Gestión de Movilidad",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "registro-movilidad",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+            </svg>
+          ),
+          title: "Registro Movilidad",
+          description: "Registrar movilidad de vehículos",
+          buttonText: "Registrar",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -483,6 +511,8 @@ export default function LogisticaPage() {
                                     router.push("/logistica/inventario/registro");
                                   } else if (card.id === "inventario-proformas") {
                                     router.push("/logistica/inventario/proformas");
+                                  } else if (card.id === "registro-movilidad") {
+                                    router.push("/logistica/registro-movilidad");
                                   }
                                 }}
                                 className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
