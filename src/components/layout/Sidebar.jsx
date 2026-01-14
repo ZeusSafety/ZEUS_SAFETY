@@ -51,6 +51,14 @@ export function Sidebar({ isOpen, onClose }) {
     }
   }
   
+  // Asegurar que "permisos" siempre esté disponible para todos los usuarios
+  if (!modules.some(m => m.id === "permisos")) {
+    const permisosModule = allModules.find(m => m.id === "permisos");
+    if (permisosModule) {
+      modules = [...modules, permisosModule];
+    }
+  }
+  
   // Mapeo COMPLETO de nombres de sub_vistas (de la API) a IDs de items del sidebar
   // Este mapeo conecta los nombres que vienen de la API con los IDs usados en el sidebar
   const subVistaToItemIdMap = {
@@ -108,6 +116,12 @@ export function Sidebar({ isOpen, onClose }) {
     
     // Items del boletín informativo siempre están permitidos para todos
     if (itemId === "dashboard-boletin" || itemId === "calendario-cumpleanos") {
+      return true;
+    }
+    
+    // Items de permisos siempre están permitidos para todos
+    if (itemId === "registro-permisos" || itemId === "mis-permisos" || 
+        itemId === "registro-solicitudes-incidencias" || itemId === "mis-solicitudes-incidencias") {
       return true;
     }
     
