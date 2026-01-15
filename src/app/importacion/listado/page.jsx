@@ -184,15 +184,81 @@ export default function ListadoImportacionesPage() {
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
   }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
 
+  // Función para normalizar fechas para input type="date" (formato YYYY-MM-DD sin zona horaria)
+  const normalizarFechaParaInput = (fechaString) => {
+    if (!fechaString || fechaString === 'null' || fechaString === 'undefined' || fechaString === '') {
+      return '';
+    }
+    try {
+      // Si ya está en formato YYYY-MM-DD, devolverla tal cual
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
+        return fechaString;
+      }
+      
+      let year, month, day;
+      
+      if (fechaString.includes('T') || fechaString.includes(' ')) {
+        // Si tiene hora, tomar solo la parte de la fecha
+        const partes = fechaString.split('T')[0].split(' ')[0];
+        [year, month, day] = partes.split('-');
+      } else if (fechaString.includes('-')) {
+        // Fecha ISO: 2026-01-15
+        [year, month, day] = fechaString.split('-');
+      } else if (fechaString.includes('/')) {
+        // Fecha en formato dd/mm/aaaa
+        const partes = fechaString.split('/');
+        if (partes.length === 3) {
+          day = partes[0];
+          month = partes[1];
+          year = partes[2];
+        } else {
+          return '';
+        }
+      } else {
+        return '';
+      }
+      
+      // Asegurar formato con ceros a la izquierda
+      const yearStr = String(year).padStart(4, '0');
+      const monthStr = String(month).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      
+      return `${yearStr}-${monthStr}-${dayStr}`;
+    } catch {
+      return '';
+    }
+  };
+
   const formatearFecha = (fechaString) => {
     if (!fechaString || fechaString === 'null' || fechaString === 'undefined' || fechaString === '') {
       return '-';
     }
     try {
-      const fecha = new Date(fechaString);
+      // Si la fecha ya está en formato dd/mm/aaaa, devolverla tal cual
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaString)) {
+        return fechaString;
+      }
+      
+      // Para fechas en formato ISO (2026-01-15) o con hora, parsearlo sin zona horaria
+      let fecha;
+      if (fechaString.includes('T') || fechaString.includes(' ')) {
+        // Si tiene hora, tomar solo la parte de la fecha
+        const partes = fechaString.split('T')[0].split(' ')[0];
+        const [year, month, day] = partes.split('-');
+        fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else if (fechaString.includes('-')) {
+        // Fecha ISO sin hora: 2026-01-15
+        const [year, month, day] = fechaString.split('-');
+        fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        // Intenta parsear como fecha normal
+        fecha = new Date(fechaString);
+      }
+      
       if (isNaN(fecha.getTime())) {
         return fechaString;
       }
+      
       return fecha.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: '2-digit',
@@ -568,8 +634,8 @@ export default function ListadoImportacionesPage() {
                                     fechaRegistro: importacion.fechaRegistro || "",
                                     numeroDespacho: importacion.numeroDespacho || "",
                                     redactadoPor: importacion.redactadoPor || "",
-                                    fechaLlegadaProductos: importacion.fechaLlegada || "",
-                                    fechaAlmacen: importacion.fechaAlmacen || "",
+                                    fechaLlegadaProductos: normalizarFechaParaInput(importacion.fechaLlegada) || "",
+                                    fechaAlmacen: normalizarFechaParaInput(importacion.fechaAlmacen) || "",
                                     productos: importacion.productos || "",
                                     tipoCarga: importacion.tipoCarga || "",
                                     estado: importacion.estado || "",
