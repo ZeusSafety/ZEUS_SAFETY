@@ -149,6 +149,16 @@ export async function POST(request) {
       // Si es FormData, pasarlo directamente a la API externa
       const formData = await request.formData();
       
+      // Debug: verificar el valor de tipo_combustible antes de enviarlo al backend
+      const tipoCombustibleValue = formData.get("tipo_combustible");
+      if (tipoCombustibleValue) {
+        console.log("=== DEBUG MOVILIDAD API ===");
+        console.log("tipo_combustible recibido:", tipoCombustibleValue);
+        console.log("Tipo de dato:", typeof tipoCombustibleValue);
+        console.log("Longitud:", tipoCombustibleValue.length);
+        console.log("Representación string:", String(tipoCombustibleValue));
+      }
+      
       // Obtener el token
       const authHeader = request.headers.get("authorization");
       const token = authHeader ? authHeader.replace("Bearer ", "") : null;

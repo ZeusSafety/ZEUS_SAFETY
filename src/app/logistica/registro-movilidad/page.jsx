@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import { registrarCombustibleCompleto } from "../../../services/movilidadApi";
+import Modal from "../../../components/ui/Modal";
 
 export default function RegistroMovilidadPage() {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modalMensaje, setModalMensaje] = useState({
+    open: false,
+    tipo: "success", // success, error, warning, info
+    titulo: "",
+    mensaje: "",
+  });
 
   // Detectar si es desktop y abrir sidebar automáticamente
   useEffect(() => {
@@ -33,6 +40,7 @@ export default function RegistroMovilidadPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [vehiculo, setVehiculo] = useState("");
   const [conductor, setConductor] = useState("");
+  const [esOtroConductor, setEsOtroConductor] = useState(false); // <--- NUEVO ESTADO
   const [kmInicial, setKmInicial] = useState("");
   const [kmFinal, setKmFinal] = useState("");
   const [miembros, setMiembros] = useState("");
@@ -53,6 +61,43 @@ export default function RegistroMovilidadPage() {
   const [pagoCochera, setPagoCochera] = useState("");
   const [montoCochera, setMontoCochera] = useState("");
   const [fileCochera, setFileCochera] = useState(null);
+
+  // Estados para miembros
+const [miembrosSeleccionados, setMiembrosSeleccionados] = useState([]);
+const [miembroManual, setMiembroManual] = useState("");
+const [mostrarInputManual, setMostrarInputManual] = useState(false);
+
+// Sincronizar con el string de 'miembros' que ya usas para el backend
+useEffect(() => {
+  const lista = [...miembrosSeleccionados];
+  if (mostrarInputManual && miembroManual.trim() !== "") {
+    lista.push(miembroManual);
+  }
+  setMiembros(lista.join(", ")); // Esto actualiza el 'miembros' que envías al backend
+}, [miembrosSeleccionados, miembroManual, mostrarInputManual]);
+
+const handleCheckboxChange = (nombre) => {
+  if (nombre === "Otros") {
+    setMostrarInputManual(!mostrarInputManual);
+  } else {
+    setMiembrosSeleccionados(prev => 
+      prev.includes(nombre) 
+        ? prev.filter(item => item !== nombre) 
+        : [...prev, nombre]
+    );
+  }
+};
+
+  const handleConductorChange = (e) => {
+    const valor = e.target.value;
+    if (valor === "Otros") {
+      setEsOtroConductor(true);
+      setConductor(""); // Limpia para que el usuario escriba el nombre manual
+    } else {
+      setEsOtroConductor(false);
+      setConductor(valor);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,7 +156,30 @@ export default function RegistroMovilidadPage() {
       // Bloque 3
       formData.append("lleno_combustible", llenoCombustible);
       if (llenoCombustible === "Si") {
-        formData.append("tipo_combustible", tipoCombustible);
+        // Mapear valores del tipo de combustible al formato exacto que espera la base de datos
+        // Verificado: La BD acepta "Gas GNV" (con espacio) tal como se muestra en los registros existentes
+        let tipoCombustibleNormalizado = tipoCombustible.trim();
+        
+        // Mapeo específico: usar exactamente los valores que funcionan en la BD
+        const mapeoTipos = {
+          "Petroleo": "Petroleo",
+          "Gasolina": "Gasolina",
+          "GNV": "Gas GNV",        // Formato exacto que acepta la BD (con espacio)
+          "GLP": "Gas GLP"         // Formato consistente para GLP
+        };
+        
+        tipoCombustibleNormalizado = mapeoTipos[tipoCombustible] || tipoCombustible.trim();
+        
+        // Debug: ver qué valor se está enviando
+        console.log("Tipo de combustible seleccionado:", tipoCombustible);
+        console.log("Tipo de combustible mapeado:", tipoCombustibleNormalizado);
+        console.log("Longitud del valor:", tipoCombustibleNormalizado.length);
+        
+        // Verificar el FormData antes de enviarlo
+        formData.append("tipo_combustible", tipoCombustibleNormalizado);
+        
+        // Debug adicional: verificar que el valor se agregó correctamente al FormData
+        console.log("Valor en FormData (verificación):", formData.get("tipo_combustible"));
         formData.append("precio_total", precioTotal);
         formData.append("precio_unitario", precioUnitario);
         if (fileCombustible) {
@@ -131,11 +199,26 @@ export default function RegistroMovilidadPage() {
       // Enviar a la API
       await registrarCombustibleCompleto(formData);
       
-      alert("Registro guardado exitosamente");
-      router.push("/logistica");
+      // Mostrar modal de éxito
+      setModalMensaje({
+        open: true,
+        tipo: "success",
+        titulo: "¡Registro guardado exitosamente!",
+        mensaje: "El registro de movilidad ha sido guardado correctamente en el sistema.",
+      });
+      
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        router.push("/logistica");
+      }, 2000);
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("Error al guardar: " + error.message);
+      setModalMensaje({
+        open: true,
+        tipo: "error",
+        titulo: "Error al guardar",
+        mensaje: error.message || "Ocurrió un error al intentar guardar el registro. Por favor, intente nuevamente.",
+      });
     } finally {
       setLoading(false);
     }
@@ -185,167 +268,238 @@ export default function RegistroMovilidadPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Bloque 1: Datos Fijos */}
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
-                  <div className="flex items-center space-x-3 mb-5">
-                    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">1</span>
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Datos Fijos
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Fecha <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Vehículo <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={vehiculo}
-                        onChange={(e) => setVehiculo(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        required
-                      >
-                        <option value="">Seleccione un vehículo...</option>
-                        <option value="Apolo">Apolo</option>
-                        <option value="Ares">Ares</option>
-                        <option value="Poseidon">Poseidon</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Conductor <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={conductor}
-                        onChange={(e) => setConductor(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        placeholder="Nombre del conductor"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Kilometraje Inicial <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={kmInicial}
-                        onChange={(e) => setKmInicial(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        placeholder="00000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Kilometraje Final <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={kmFinal}
-                        onChange={(e) => setKmFinal(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        placeholder="00000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        Miembros en el vehículo <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={miembros}
-                        onChange={(e) => setMiembros(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        placeholder="Ej: Juan, María, Pedro"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
+  {/* Bloque 1: Datos Fijos */}
+  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
+    
+    <div className="flex items-center space-x-3 mb-5">
+      <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
+        <span className="text-white font-bold text-sm">1</span>
+      </div>
+      <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+        Datos Fijos
+      </h2>
+    </div>
+
+    {/* GRID PRINCIPAL */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+      
+      {/* 1. FECHA */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Fecha <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+          required
+        />
+      </div>
+
+      {/* 2. VEHÍCULO */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Vehículo <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={vehiculo}
+          onChange={(e) => setVehiculo(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+          required
+        >
+          <option value="">Seleccione un vehículo...</option>
+          <option value="Apolo">Apolo</option>
+          <option value="Ares">Ares</option>
+          <option value="Poseidon">Poseidon</option>
+        </select>
+      </div>
+
+      {/* 3. CONDUCTOR */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Conductor <span className="text-red-500">*</span>
+        </label>
+        <div className="space-y-3">
+          <select
+            onChange={handleConductorChange}
+            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+            required
+          >
+            <option value="">Seleccione un conductor...</option>
+            <option value="Joseph">Joseph</option>
+            <option value="Manuel">Manuel</option>
+            <option value="Hervin">Hervin</option>
+            <option value="Otros">Otros</option>
+          </select>
+          {esOtroConductor && (
+            <input
+              type="text"
+              value={conductor}
+              onChange={(e) => setConductor(e.target.value)}
+              className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black outline-none animate-in fade-in slide-in-from-top-1"
+              placeholder="Nombre del conductor"
+              required
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 4. MIEMBROS - COMPORTAMIENTO IGUAL AL CONDUCTOR */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Miembros en el vehículo <span className="text-red-500">*</span>
+        </label>
+        <div className="space-y-3">
+          {/* Caja de Checkboxes (Altura fija para no hacer acordeón) */}
+          <div className="w-full p-2 bg-white border-2 border-gray-300 rounded-lg min-h-[50px] flex items-center shadow-sm">
+            <div className="flex flex-wrap gap-2">
+              {["Manuel", "Jhonson", "Jhosep", "Victor", "Otros"].map((nombre) => (
+                <label 
+                  key={nombre}
+                  className={`flex items-center px-3 py-1 rounded-md border transition-all cursor-pointer select-none text-sm font-medium ${
+                    (nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre))
+                      ? "bg-blue-600 border-blue-600 text-white" 
+                      : "bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-400"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre)}
+                    onChange={() => handleCheckboxChange(nombre)}
+                  />
+                  {nombre}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Input Manual fuera de la caja (Igual que el Conductor) */}
+          {mostrarInputManual && (
+            <input
+              type="text"
+              value={miembroManual}
+              onChange={(e) => setMiembroManual(e.target.value)}
+              className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black font-medium outline-none animate-in fade-in slide-in-from-top-1"
+              placeholder="Escriba los nombres de los miembros adicionales..."
+              autoFocus
+              required
+            />
+          )}
+        </div>
+        <input type="hidden" value={miembros} required />
+      </div>
+
+      {/* 5. KILOMETRAJE INICIAL */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Kilometraje Inicial <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="number"
+          value={kmInicial}
+          onChange={(e) => setKmInicial(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+          placeholder="00000"
+          required
+        />
+      </div>
+
+      {/* 6. KILOMETRAJE FINAL */}
+      <div className="w-full">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Kilometraje Final <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="number"
+          value={kmFinal}
+          onChange={(e) => setKmFinal(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+          placeholder="00000"
+          required
+        />
+      </div>
+
+    </div>
+  </div>
 
                 {/* Bloque 2: Estado */}
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
-                  <div className="flex items-center space-x-3 mb-5">
-                    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">2</span>
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Estado del Vehículo
-                    </h2>
-                  </div>
-                  <div className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        ¿Has encontrado el vehículo limpio? <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={estaLimpio}
-                        onChange={(e) => setEstaLimpio(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        required
-                      >
-                        <option value="">Seleccione una opción...</option>
-                        <option value="Si">Sí</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                        ¿Vehículo en buen estado? <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={enBuenEstado}
-                        onChange={(e) => setEnBuenEstado(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                        required
-                      >
-                        <option value="">Seleccione una opción...</option>
-                        <option value="Si">Sí</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                    {enBuenEstado === "No" && (
-                      <div className="transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-2">
-                        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Descripción detallada del problema <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          value={descripcionEstado}
-                          onChange={(e) => setDescripcionEstado(e.target.value)}
-                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium resize-none"
-                          style={{ fontFamily: 'var(--font-poppins)' }}
-                          rows={4}
-                          placeholder="Describa el estado del vehículo..."
-                          required={enBuenEstado === "No"}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
+<div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
+  
+  {/* Título del Bloque */}
+  <div className="flex items-center space-x-3 mb-5">
+    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
+      <span className="text-white font-bold text-sm">2</span>
+    </div>
+    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+      Estado del Vehículo
+    </h2>
+  </div>
+
+  {/* CONTENEDOR GRID: 2 columnas en PC, 1 en móvil */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+    
+    {/* COLUMNA 1: LIMPIEZA */}
+    <div className="w-full">
+      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        ¿Has encontrado el vehículo limpio? <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={estaLimpio}
+        onChange={(e) => setEstaLimpio(e.target.value)}
+        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+        required
+      >
+        <option value="">Seleccione una opción...</option>
+        <option value="Si">Sí</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+
+    {/* COLUMNA 2: ESTADO */}
+    <div className="w-full">
+      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+        ¿Vehículo en buen estado? <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={enBuenEstado}
+        onChange={(e) => setEnBuenEstado(e.target.value)}
+        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+        style={{ fontFamily: 'var(--font-poppins)' }}
+        required
+      >
+        <option value="">Seleccione una opción...</option>
+        <option value="Si">Sí</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+
+    {/* DESCRIPCIÓN (Aparece abajo si es "No") */}
+    {enBuenEstado === "No" && (
+      <div className="col-span-1 md:col-span-2 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-2">
+        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Descripción detallada del problema <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          value={descripcionEstado}
+          onChange={(e) => setDescripcionEstado(e.target.value)}
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium resize-none"
+          style={{ fontFamily: 'var(--font-poppins)' }}
+          rows={3}
+          placeholder="Describa el estado del vehículo..."
+          required={enBuenEstado === "No"}
+        />
+      </div>
+    )}
+  </div>
+</div>
 
                 {/* Bloque 3: Combustible */}
                 <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
@@ -388,10 +542,10 @@ export default function RegistroMovilidadPage() {
                             required={llenoCombustible === "Si"}
                           >
                             <option value="">Seleccione el tipo...</option>
-                            <option value="Gasolina 90">Gasolina 90</option>
-                            <option value="Gasolina 95">Gasolina 95</option>
-                            <option value="Diesel">Diesel</option>
-                            <option value="GLP">GLP</option>
+                            <option value="Petroleo">Petróleo</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="GNV">GNV</option>
+                            <option value="GLP">Gas GLP</option>
                           </select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -554,6 +708,94 @@ export default function RegistroMovilidadPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Confirmación/Error Personalizado */}
+      <Modal
+        isOpen={modalMensaje.open}
+        onClose={() => setModalMensaje({ ...modalMensaje, open: false })}
+        title=""
+        size="sm"
+        hideFooter={true}
+      >
+        <div className="p-6">
+          {/* Header con gradiente según tipo */}
+          <div className={`rounded-t-xl -mx-6 -mt-6 mb-6 px-6 py-4 ${
+            modalMensaje.tipo === "success"
+              ? "bg-gradient-to-r from-green-500 to-green-600"
+              : modalMensaje.tipo === "error"
+              ? "bg-gradient-to-r from-red-500 to-red-600"
+              : modalMensaje.tipo === "warning"
+              ? "bg-gradient-to-r from-orange-500 to-orange-600"
+              : "bg-gradient-to-r from-blue-500 to-blue-600"
+          }`}>
+            <div className="flex items-center space-x-3">
+              {modalMensaje.tipo === "success" && (
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              {modalMensaje.tipo === "error" && (
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+              {modalMensaje.tipo === "warning" && (
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              )}
+              {modalMensaje.tipo === "info" && (
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              )}
+              <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-poppins)' }}>
+                {modalMensaje.titulo}
+              </h3>
+            </div>
+          </div>
+
+          {/* Mensaje */}
+          <p className={`text-base mb-6 ${
+            modalMensaje.tipo === "success"
+              ? "text-green-800"
+              : modalMensaje.tipo === "error"
+              ? "text-red-800"
+              : modalMensaje.tipo === "warning"
+              ? "text-orange-800"
+              : "text-blue-800"
+          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+            {modalMensaje.mensaje}
+          </p>
+
+          {/* Botón de acción */}
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setModalMensaje({ ...modalMensaje, open: false })}
+              className={`px-6 py-2.5 text-sm font-semibold text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
+                modalMensaje.tipo === "success"
+                  ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                  : modalMensaje.tipo === "error"
+                  ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                  : modalMensaje.tipo === "warning"
+                  ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800"
+                  : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+              }`}
+              style={{ fontFamily: 'var(--font-poppins)' }}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

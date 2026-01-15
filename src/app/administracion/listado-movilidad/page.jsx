@@ -263,7 +263,6 @@ export default function ListadoMovilidadPage() {
                                     <div>
                                       <div><strong>Tipo:</strong> {registro.tipo_combustible}</div>
                                       <div><strong>Total:</strong> S/ {registro.gasto_combustible || registro.precio_total || "-"}</div>
-                                      <div><strong>Unitario:</strong> S/ {registro.precio_unitario || "-"}</div>
                                       {registro.foto_combustible && (
                                         <a
                                           href={registro.foto_combustible}
