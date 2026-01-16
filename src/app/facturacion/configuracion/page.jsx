@@ -65,8 +65,8 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
           disabled 
             ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] ${
-              isOpen ? 'ring-2 ring-[#1E63F7] border-[#1E63F7]' : ''
+            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
+              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
             }`
         }`}
       >
@@ -106,7 +106,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 onClick={() => handleSelect(option.value)}
                 className={`w-full text-left px-4 py-3 transition-all duration-150 ${
                   value === option.value
-                    ? 'bg-[#1E63F7]/10 text-[#1E63F7] font-semibold'
+                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
                     : 'text-gray-900 hover:bg-gray-50'
                 }`}
                 style={{ borderRadius: '0.375rem' }}
@@ -307,7 +307,7 @@ export default function ConfiguracionPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Card 1: Gestión de Asesores */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6">
-                  <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg">
+                  <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg">
                     <div className="flex items-center space-x-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -378,7 +378,7 @@ export default function ConfiguracionPage() {
 
                 {/* Card 2: Gestión de Formas de Pago */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6">
-                  <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg">
+                  <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg">
                     <div className="flex items-center space-x-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -450,7 +450,7 @@ export default function ConfiguracionPage() {
 
               {/* Card 3: Gestión de Lugares */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg">
+                <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg">
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -538,7 +538,7 @@ export default function ConfiguracionPage() {
 
               {/* Card 4: Registro de Nuevos Clientes */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6">
-                <div className="flex items-center space-x-2 mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg">
+                <div className="flex items-center space-x-2 mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
@@ -556,7 +556,7 @@ export default function ConfiguracionPage() {
                       value={nuevoCliente.nombre}
                       onChange={handleClienteChange}
                       placeholder="Ingrese el nombre completo del cliente"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm"
                     />
                   </div>
                   <div>

@@ -360,7 +360,7 @@ export default function CalendarioCumpleanosPage() {
               {/* Header con API Conectada */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     {getIcon("birthday")}
                   </div>
                   <div>
@@ -402,7 +402,7 @@ export default function CalendarioCumpleanosPage() {
               <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                 <button
                   onClick={() => setExpandedCalendario(!expandedCalendario)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                 >
                   <div className="flex items-center space-x-2">
                     <div className="text-white">{getIcon("birthday")}</div>

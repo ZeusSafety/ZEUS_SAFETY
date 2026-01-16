@@ -758,7 +758,7 @@ export default function ProductosPage() {
                 {/* Header de Sección */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
@@ -2322,7 +2322,7 @@ export default function ProductosPage() {
                     });
                   }
                 }}
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -2356,7 +2356,7 @@ export default function ProductosPage() {
                 setIsDescripcionModalOpen(false);
                 setSelectedDescripcion("");
               }}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
             >
               Cerrar
             </button>

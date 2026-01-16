@@ -1148,7 +1148,7 @@ export default function GestionPreciosPage() {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 mb-6">
               {/* Título con icono */}
               <div className="mb-6 flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -1478,7 +1478,7 @@ export default function GestionPreciosPage() {
             {/* Header con gradiente */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     {modalType === "create" ? (
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1529,7 +1529,7 @@ export default function GestionPreciosPage() {
                       onFocus={handleProductoFocus}
                       disabled={modalType === "update"}
                       readOnly={modalType === "update"}
-                      className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm transition-all duration-200 ${modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
+                      className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm transition-all duration-200 ${modalType === "update" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white text-gray-900 hover:border-gray-300"
                         }`}
                       required={modalType === "create"}
                       placeholder={modalType === "update" ? "El nombre no se puede editar" : "Escribe el nombre del producto..."}
@@ -1592,7 +1592,7 @@ export default function GestionPreciosPage() {
                       <select
                         value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
                         onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
-                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
                         required
                       >
                         <option value="UNIDAD">UNIDAD</option>
@@ -1625,7 +1625,7 @@ export default function GestionPreciosPage() {
                           setFormData({ ...formData, CANTIDAD_UNIDAD_MEDIDA_VENTA: 1 });
                         }
                       }}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
                       required
                     />
                   </div>
@@ -1649,7 +1649,7 @@ export default function GestionPreciosPage() {
                         setFormData({ ...formData, PRECIO_UNIDAD_MEDIDA_VENTA: 0 });
                       }
                     }}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
                     required
                   />
                 </div>
@@ -1663,7 +1663,7 @@ export default function GestionPreciosPage() {
                       <select
                         value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
                         onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
-                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
                         required
                       >
                         <option value="UNIDAD">UNIDAD</option>
@@ -1696,7 +1696,7 @@ export default function GestionPreciosPage() {
                           setFormData({ ...formData, CANTIDAD_CAJA: 0 });
                         }
                       }}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
                     />
                   </div>
                 </div>
@@ -1710,7 +1710,7 @@ export default function GestionPreciosPage() {
                     value={formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || ""}
                     onChange={(e) => setFormData({ ...formData, TEXTO_COPIAR: e.target.value, texto_copiar: e.target.value, textoCopiar: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300 resize-y"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300 resize-y"
                     placeholder="Escribe el texto que se copiará para este producto..."
                   />
                 </div>
@@ -1734,7 +1734,7 @@ export default function GestionPreciosPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-[#1a56e6] hover:to-[#1a56e6] text-white rounded-lg font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md flex items-center gap-2"
+                className="px-6 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:from-[#1a56e6] hover:to-[#1a56e6] text-white rounded-lg font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md flex items-center gap-2"
               >
                 {saving ? (
                   <>

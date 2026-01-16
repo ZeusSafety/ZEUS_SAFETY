@@ -65,8 +65,8 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
           disabled 
             ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] ${
-              isOpen ? 'ring-2 ring-[#1E63F7] border-[#1E63F7]' : ''
+            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
+              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
             }`
         }`}
       >
@@ -107,7 +107,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 onClick={() => handleSelect(option.value)}
                 className={`w-full text-left px-4 py-3 transition-all duration-150 ${
                   value === option.value
-                    ? 'bg-[#1E63F7]/10 text-[#1E63F7] font-semibold'
+                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
                     : 'text-gray-900 hover:bg-gray-50'
                 }`}
                 style={{ borderRadius: '0.375rem' }}
@@ -774,7 +774,7 @@ export default function CrearVentaPage() {
               <div className="mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
@@ -797,7 +797,7 @@ export default function CrearVentaPage() {
 
               {/* Card 1: Cabecera del Pedido */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="flex items-center mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg">
+                <div className="flex items-center mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] rounded-lg">
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -818,7 +818,7 @@ export default function CrearVentaPage() {
                         name="fecha"
                         value={formData.fecha}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
                     </div>
                   </div>
@@ -863,7 +863,7 @@ export default function CrearVentaPage() {
                         if (formData.cliente) buscarClientes(formData.cliente);
                       }}
                       placeholder="Ingrese el nombre del cliente"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-400"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-400"
                       required
                     />
                     <div ref={clienteSuggestionsRef} className="relative">
@@ -897,7 +897,7 @@ export default function CrearVentaPage() {
                           value={formData.comprobanteNumero}
                           onChange={handleInputChange}
                           placeholder="Número"
-                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                           required
                         />
                       </div>
@@ -964,7 +964,7 @@ export default function CrearVentaPage() {
                       value={formData.observaciones}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm resize-none text-gray-900 placeholder:text-gray-400"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm resize-none text-gray-900 placeholder:text-gray-400"
                       placeholder="Ingrese observaciones..."
                     />
                   </div>
@@ -973,7 +973,7 @@ export default function CrearVentaPage() {
 
               {/* Card 2: Detalle de Productos Vendidos */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="flex items-center space-x-2 mb-4 p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg">
+                <div className="flex items-center space-x-2 mb-4 p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] rounded-lg">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
@@ -981,9 +981,9 @@ export default function CrearVentaPage() {
                 </div>
 
                 {/* Agregar Nuevo Producto */}
-                <div className="bg-[#E8EFFF] rounded-lg p-4 mb-4 border-2 border-[#1E63F7]/20">
+                <div className="bg-[#E9F1FF] rounded-lg p-4 mb-4 border-2 border-[#002D5A]/20">
                   <div className="flex items-center space-x-2 mb-4">
-                    <svg className="w-5 h-5 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <svg className="w-5 h-5 text-[#002D5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     <h3 className="text-base font-bold text-gray-900">Agregar Nuevo Producto</h3>
@@ -1005,7 +1005,7 @@ export default function CrearVentaPage() {
                           if (nuevoProducto.producto) buscarProductos(nuevoProducto.producto);
                         }}
                         placeholder="Nombre del producto"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
                       <div ref={productoSuggestionsRef} className="relative">
                         <SuggestionsList
@@ -1042,7 +1042,7 @@ export default function CrearVentaPage() {
                         value={nuevoProducto.cantidad}
                         onChange={handleProductoChange}
                         min="1"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
                     </div>
 
@@ -1058,7 +1058,7 @@ export default function CrearVentaPage() {
                         onChange={handleProductoChange}
                         step="0.01"
                         min="0"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
                     </div>
 
@@ -1174,7 +1174,7 @@ export default function CrearVentaPage() {
                 <button
                   type="button"
                   onClick={guardarVenta}
-                  className="px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm flex items-center space-x-2 text-sm"
+                  className="px-4 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm flex items-center space-x-2 text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />

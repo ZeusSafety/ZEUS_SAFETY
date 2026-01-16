@@ -65,8 +65,8 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
           disabled 
             ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] ${
-              isOpen ? 'ring-2 ring-[#1E63F7] border-[#1E63F7]' : ''
+            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
+              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
             }`
         }`}
       >
@@ -106,7 +106,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 onClick={() => handleSelect(option.value)}
                 className={`w-full text-left px-4 py-3 transition-all duration-150 ${
                   value === option.value
-                    ? 'bg-[#1E63F7]/10 text-[#1E63F7] font-semibold'
+                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
                     : 'text-gray-900 hover:bg-gray-50'
                 }`}
                 style={{ borderRadius: '0.375rem' }}
@@ -591,7 +591,7 @@ export default function CrearRegularizacionPage() {
               {/* Header */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
@@ -613,7 +613,7 @@ export default function CrearRegularizacionPage() {
 
               {/* Card 1: Datos Principales */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg mb-4">
+                <div className="p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg mb-4">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -636,7 +636,7 @@ export default function CrearRegularizacionPage() {
                       value={formData.nombreRegularizacion}
                       onChange={handleInputChange}
                       placeholder="Ingrese nombre"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -652,7 +652,7 @@ export default function CrearRegularizacionPage() {
                         value={formData.fecha}
                         onChange={handleInputChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -674,7 +674,7 @@ export default function CrearRegularizacionPage() {
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -703,7 +703,7 @@ export default function CrearRegularizacionPage() {
                       step="0.01"
                       min="0"
                       max="100"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -717,7 +717,7 @@ export default function CrearRegularizacionPage() {
                       value={formData.observaciones}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm resize-none text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm resize-none text-gray-900 placeholder:text-gray-500"
                       placeholder="Ingrese observaciones..."
                     />
                   </div>
@@ -726,7 +726,7 @@ export default function CrearRegularizacionPage() {
 
               {/* Card 2: Detalle de Comprobantes */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg mb-4">
+                <div className="p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg mb-4">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -749,7 +749,7 @@ export default function CrearRegularizacionPage() {
                       value={nuevoComprobante.comprobante}
                       onChange={handleComprobanteChange}
                       placeholder="Ingrese comprobante"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -765,7 +765,7 @@ export default function CrearRegularizacionPage() {
                       onChange={handleComprobanteChange}
                       step="0.01"
                       min="0"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -805,7 +805,7 @@ export default function CrearRegularizacionPage() {
                         value={nuevoComprobante.fechaRegularizacion}
                         onChange={handleComprobanteChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -826,7 +826,7 @@ export default function CrearRegularizacionPage() {
                       value={nuevoComprobante.observacion}
                       onChange={handleComprobanteChange}
                       placeholder="Ingrese observación"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-500"
                     />
                   </div>
 
@@ -861,7 +861,7 @@ export default function CrearRegularizacionPage() {
               {/* Total Efectivo */}
               <div className="mb-6 flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
                 <span className="text-lg font-bold text-gray-900">Total Efectivo:</span>
-                <span className="text-lg font-bold text-[#1E63F7]">${calcularTotalEfectivo()}</span>
+                <span className="text-lg font-bold text-[#002D5A]">${calcularTotalEfectivo()}</span>
               </div>
 
               {/* Botones de Acción */}
@@ -879,7 +879,7 @@ export default function CrearRegularizacionPage() {
                 <button
                   type="button"
                   onClick={guardarRegularizacion}
-                  className="px-6 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm flex items-center space-x-2"
+                  className="px-6 py-3 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm flex items-center space-x-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -890,7 +890,7 @@ export default function CrearRegularizacionPage() {
 
               {/* Card 3: Comprobantes Agregados */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6">
-                <div className="p-3 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg mb-4">
+                <div className="p-3 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg mb-4">
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

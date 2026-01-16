@@ -16,10 +16,9 @@ const SuggestionsList = ({ suggestions, onSelect, show, position = "bottom" }) =
   if (!show || !suggestions || suggestions.length === 0) return null;
 
   return (
-    <div 
-      className={`absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto ${
-        position === "top" ? "bottom-full mb-2" : "top-full mt-2"
-      }`}
+    <div
+      className={`absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto ${position === "top" ? "bottom-full mb-2" : "top-full mt-2"
+        }`}
     >
       {suggestions.map((item, index) => (
         <button
@@ -104,13 +103,13 @@ export default function GestionarVentaPage() {
       if (typeof dateString === "string" && dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
         return dateString;
       }
-      
+
       // Si está en formato YYYY-MM-DD, parsearlo manualmente para evitar problemas de zona horaria
       if (typeof dateString === "string" && dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
         const [year, month, day] = dateString.split("T")[0].split("-");
         return `${day}/${month}/${year}`;
       }
-      
+
       // Si viene en otro formato, intentar parsearlo
       // Pero usar métodos que no se vean afectados por zona horaria
       const date = new Date(dateString);
@@ -121,7 +120,7 @@ export default function GestionarVentaPage() {
         const year = date.getUTCFullYear();
         return `${day}/${month}/${year}`;
       }
-      
+
       return dateString;
     } catch {
       return dateString;
@@ -144,7 +143,7 @@ export default function GestionarVentaPage() {
     }
 
     const term = searchTerm.toLowerCase();
-    const filtradas = ventas.filter(venta => 
+    const filtradas = ventas.filter(venta =>
       (venta.cliente?.toLowerCase().includes(term)) ||
       (venta.comprobante?.toLowerCase().includes(term)) ||
       (venta.asesor?.toLowerCase().includes(term))
@@ -156,8 +155,8 @@ export default function GestionarVentaPage() {
   // Cerrar sugerencias al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (clienteSuggestionsRef.current && !clienteSuggestionsRef.current.contains(event.target) && 
-          clienteInputRef.current && !clienteInputRef.current.contains(event.target)) {
+      if (clienteSuggestionsRef.current && !clienteSuggestionsRef.current.contains(event.target) &&
+        clienteInputRef.current && !clienteInputRef.current.contains(event.target)) {
         setMostrarSugerenciasClientes(false);
       }
     };
@@ -170,9 +169,9 @@ export default function GestionarVentaPage() {
     try {
       setLoadingVentas(true);
       setApiConectada(false);
-      
+
       if (typeof window === "undefined") return;
-      
+
       // Llamar a la API para obtener todas las ventas
       // Nota: El código HTML antiguo no usa Authorization header
       // Basándome en el código HTML antiguo: area=ventas
@@ -193,7 +192,7 @@ export default function GestionarVentaPage() {
       const data = await response.json();
 
       const ventasData = Array.isArray(data) ? data : (data.data || data.ventas || data.resultado || []);
-      
+
       if (!ventasData || ventasData.length === 0) {
         console.warn("La API no devolvió ventas o el array está vacío. Respuesta:", data);
         // No es un error, simplemente no hay ventas
@@ -202,7 +201,7 @@ export default function GestionarVentaPage() {
         setApiConectada(true);
         return;
       }
-      
+
       // Formatear las ventas
       const ventasFormateadas = ventasData.map(venta => ({
         id: venta.ID_VENTA || venta.id_venta || venta.ID || venta.id,
@@ -235,10 +234,10 @@ export default function GestionarVentaPage() {
         stack: error.stack,
         apiUrl: VENTAS_API_URL
       });
-      setModalMensaje({ 
-        open: true, 
-        tipo: "error", 
-        mensaje: `Error al cargar las ventas: ${errorMessage}. Por favor, verifica que el endpoint de la API sea correcto.` 
+      setModalMensaje({
+        open: true,
+        tipo: "error",
+        mensaje: `Error al cargar las ventas: ${errorMessage}. Por favor, verifica que el endpoint de la API sea correcto.`
       });
       setApiConectada(false);
     } finally {
@@ -274,7 +273,7 @@ export default function GestionarVentaPage() {
         if (response.ok) {
           const data = await response.json();
           const clientes = Array.isArray(data) ? data : (data.data || data.clientes || []);
-          
+
           const sugerencias = clientes.slice(0, 10).map(cliente => ({
             value: cliente.ID_CLIENTE || cliente.id_cliente || cliente.ID || cliente.id,
             label: cliente.CLIENTE || cliente.cliente || cliente.NOMBRE || cliente.nombre || "N/A",
@@ -302,12 +301,12 @@ export default function GestionarVentaPage() {
 
   // Cargar detalles de venta
   const cargarDetallesVenta = async (ventaId, esModalPago = false) => {
-      try {
-        setLoadingDetalles(true);
-        
-        if (typeof window === "undefined") return;
+    try {
+      setLoadingDetalles(true);
 
-        // Cargar detalles de la venta
+      if (typeof window === "undefined") return;
+
+      // Cargar detalles de la venta
       // Basándome en el código HTML antiguo: area=ventas&id=${idVenta}
       const response = await fetch(`${VENTAS_API_URL}?area=ventas&id=${ventaId}`, {
         method: "GET",
@@ -324,13 +323,13 @@ export default function GestionarVentaPage() {
       const data = await response.json();
       // Debug: ver qué devuelve la API
       console.log("Datos de la API (ventas):", data);
-      
+
       // La API puede devolver un array o un objeto
       const ventaData = Array.isArray(data) ? (data[0] || data) : (data.data || data.venta || data);
-      
+
       // Debug: ver qué datos se extrajeron
       console.log("Datos extraídos de venta:", ventaData);
-      
+
       // Función helper para obtener valores con múltiples variaciones
       const getValue = (obj, keys, fallbackObj = null) => {
         // Primero buscar en el objeto principal
@@ -349,10 +348,10 @@ export default function GestionarVentaPage() {
         }
         return null;
       };
-      
+
       // Obtener datos completos de ventaSeleccionada como fallback
       const datosCompletosVenta = ventaSeleccionada?.datosCompletos || ventaSeleccionada || {};
-      
+
       // Si estamos en el modal de pago, guardar también los datos del pago
       // Según el código HTML antiguo, cuando se llama a area=ventas&id=${idVenta} para el modal de pago,
       // devuelve un array donde el primer elemento contiene los datos del pago
@@ -369,7 +368,7 @@ export default function GestionarVentaPage() {
           ESTADO: getValue(pagoData, ["ESTADO", "estado"]) || "COMPLETADO",
         });
       }
-      
+
       // Cargar productos de la venta
       // Basándome en el código HTML antiguo: area=detalle_productos&id=${idVenta}
       const productosResponse = await fetch(`${VENTAS_API_URL}?area=detalle_productos&id=${ventaId}`, {
@@ -386,7 +385,7 @@ export default function GestionarVentaPage() {
         console.log("Datos de productos:", productosData);
         productos = Array.isArray(productosData) ? productosData : (productosData.data || productosData.productos || [productosData]);
       }
-      
+
       // Primero intentar usar los datos de ventaSeleccionada directamente si están disponibles
       // Si la API devuelve datos, usarlos; si no, usar ventaSeleccionada
       const clienteFinal = getValue(ventaData, ["CLIENTE", "cliente", "NOMBRE_CLIENTE", "nombre_cliente", "CLIENTE_NOMBRE", "cliente_nombre"], datosCompletosVenta) || ventaSeleccionada?.cliente;
@@ -397,14 +396,14 @@ export default function GestionarVentaPage() {
       const lugarFinal = getValue(ventaData, ["LUGAR", "lugar", "NOMBRE_LUGAR", "nombre_lugar"], datosCompletosVenta) || ventaSeleccionada?.lugar;
       // Buscar salida de pedido con todas las variaciones posibles
       const salidaPedidoFinal = getValue(ventaData, [
-        "SALIDA_DE_PEDIDO", "salida_de_pedido", 
+        "SALIDA_DE_PEDIDO", "salida_de_pedido",
         "SALIDA_PEDIDO", "salida_pedido",
         "SALIDA", "salida",
         "SALIDA_PEDIDO_NOMBRE", "salida_pedido_nombre",
         "NOMBRE_SALIDA_PEDIDO", "nombre_salida_pedido"
       ], datosCompletosVenta) || ventaSeleccionada?.salidaPedido || ventaSeleccionada?.datosCompletos?.SALIDA_DE_PEDIDO || ventaSeleccionada?.datosCompletos?.salida_de_pedido || ventaSeleccionada?.datosCompletos?.SALIDA_PEDIDO || ventaSeleccionada?.datosCompletos?.salida_pedido;
       const observacionesFinal = getValue(ventaData, ["OBSERVACIONES", "observaciones", "OBSERVACION", "observacion", "NOTAS", "notas"], datosCompletosVenta) || ventaSeleccionada?.observaciones;
-      
+
       setDetallesVenta({
         id: getValue(ventaData, ["ID_VENTA", "id_venta", "ID", "id"], datosCompletosVenta) || ventaSeleccionada?.id,
         cliente: clienteFinal || "N/A",
@@ -427,7 +426,7 @@ export default function GestionarVentaPage() {
           total: parseFloat(getValue(prod, ["TOTAL", "total", "SUBTOTAL", "subtotal"]) || 0),
         })),
       });
-      
+
       // Debug: ver qué valores finales se están usando
       console.log("Valores finales mapeados:", {
         cliente: clienteFinal,
@@ -522,7 +521,7 @@ export default function GestionarVentaPage() {
   const handleBusquedaDetallada = async () => {
     try {
       setLoadingVentas(true);
-      
+
       if (typeof window === "undefined") return;
 
       // Basándome en el código HTML antiguo: area=busqueda_cliente_comprobante&metodo=${metodo}&id=${id}
@@ -555,7 +554,7 @@ export default function GestionarVentaPage() {
 
       const data = await response.json();
       const ventasData = Array.isArray(data) ? data : (data.data || data.ventas || []);
-      
+
       const ventasFormateadas = ventasData.map(venta => ({
         id: venta.ID_VENTA || venta.id_venta || venta.ID || venta.id,
         cliente: venta.CLIENTE || venta.cliente || "N/A",
@@ -805,9 +804,8 @@ export default function GestionarVentaPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -831,7 +829,7 @@ export default function GestionarVentaPage() {
               <div className="mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                       </svg>
@@ -862,7 +860,7 @@ export default function GestionarVentaPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Buscar por cliente, comprobante o asesor..."
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900 placeholder:text-gray-600"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900 placeholder:text-gray-600"
                       />
                     </div>
                     <button
@@ -910,60 +908,59 @@ export default function GestionarVentaPage() {
                           </tr>
                         ) : (
                           currentVentas.map((venta) => (
-                          <tr key={venta.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{venta.cliente}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.fecha}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.asesor}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.comprobante}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
-                              <span className={`px-2 py-1 rounded text-[10px] font-semibold ${
-                                (venta.estado || "").toUpperCase() === "CANCELADO"
+                            <tr key={venta.id} className="hover:bg-slate-200 transition-colors">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{venta.cliente}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.fecha}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.asesor}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.comprobante}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                                <span className={`px-2 py-1 rounded text-[10px] font-semibold ${(venta.estado || "").toUpperCase() === "CANCELADO"
                                   ? "bg-red-100 text-red-800"
                                   : (venta.estado || "").toUpperCase() === "ANULADO"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : (venta.estado || "").toUpperCase() === "COMPLETADO"
-                                  ? "bg-green-100 text-green-800"
-                                  : (venta.estado || "").toUpperCase() === "PENDIENTE"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}>
-                                {venta.estado}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.cancelado}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <button
+                                    ? "bg-orange-100 text-orange-800"
+                                    : (venta.estado || "").toUpperCase() === "COMPLETADO"
+                                      ? "bg-green-100 text-green-800"
+                                      : (venta.estado || "").toUpperCase() === "PENDIENTE"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-gray-100 text-gray-800"
+                                  }`}>
+                                  {venta.estado}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{venta.cancelado}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <button
                                     onClick={() => handleVer(venta)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  <span>Ver</span>
-                                </button>
-                                <button
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <span>Ver</span>
+                                  </button>
+                                  <button
                                     onClick={() => handlePago(venta)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  <span>Pago</span>
-                                </button>
-                                <button
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-green-600 border-2 border-green-700 hover:bg-green-700 hover:border-green-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Pago</span>
+                                  </button>
+                                  <button
                                     onClick={() => handleEliminar(venta)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span>Eliminar</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
                           ))
                         )}
                       </tbody>
@@ -1011,7 +1008,7 @@ export default function GestionarVentaPage() {
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
                 <button
                   onClick={() => setBusquedaDetalladaOpen(!busquedaDetalladaOpen)}
-                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg hover:shadow-md transition-all"
+                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg hover:shadow-md transition-all"
                 >
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1033,44 +1030,44 @@ export default function GestionarVentaPage() {
                 {busquedaDetalladaOpen && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
                     {busquedaDetallada.tipoBusqueda === "comprobante" ? (
-                    <div className="flex flex-row gap-4 mb-4 items-end">
-                      <div className="w-48">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Tipo de Búsqueda
-                        </label>
-                        <select
-                          value={busquedaDetallada.tipoBusqueda}
-                          onChange={(e) => {
-                            setBusquedaDetallada({ ...busquedaDetallada, tipoBusqueda: e.target.value, numeroComprobante: "", cliente: "", clienteId: "" });
-                            setResultadosBusquedaDetallada([]);
-                          }}
-                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
-                        >
-                          <option value="comprobante">Comprobante</option>
-                          <option value="cliente">Cliente</option>
-                        </select>
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Ingrese el número de comprobante
-                        </label>
-                        <input
-                          type="text"
-                          value={busquedaDetallada.numeroComprobante}
-                          onChange={(e) => setBusquedaDetallada({ ...busquedaDetallada, numeroComprobante: e.target.value })}
+                      <div className="flex flex-row gap-4 mb-4 items-end">
+                        <div className="w-48">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Tipo de Búsqueda
+                          </label>
+                          <select
+                            value={busquedaDetallada.tipoBusqueda}
+                            onChange={(e) => {
+                              setBusquedaDetallada({ ...busquedaDetallada, tipoBusqueda: e.target.value, numeroComprobante: "", cliente: "", clienteId: "" });
+                              setResultadosBusquedaDetallada([]);
+                            }}
+                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
+                          >
+                            <option value="comprobante">Comprobante</option>
+                            <option value="cliente">Cliente</option>
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Ingrese el número de comprobante
+                          </label>
+                          <input
+                            type="text"
+                            value={busquedaDetallada.numeroComprobante}
+                            onChange={(e) => setBusquedaDetallada({ ...busquedaDetallada, numeroComprobante: e.target.value })}
                             placeholder="Ingrese el número de comprobante"
-                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
-                        />
+                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button
+                            onClick={handleBusquedaDetallada}
+                            className="px-4 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm whitespace-nowrap"
+                          >
+                            Buscar
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-end">
-                        <button
-                          onClick={handleBusquedaDetallada}
-                          className="px-4 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm whitespace-nowrap"
-                        >
-                          Buscar
-                        </button>
-                      </div>
-                    </div>
                     ) : (
                       <div className="flex flex-row gap-4 mb-4 items-end">
                         <div className="w-48">
@@ -1083,7 +1080,7 @@ export default function GestionarVentaPage() {
                               setBusquedaDetallada({ ...busquedaDetallada, tipoBusqueda: e.target.value, numeroComprobante: "", cliente: "", clienteId: "" });
                               setResultadosBusquedaDetallada([]);
                             }}
-                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                           >
                             <option value="comprobante">Comprobante</option>
                             <option value="cliente">Cliente</option>
@@ -1105,7 +1102,7 @@ export default function GestionarVentaPage() {
                               if (busquedaDetallada.cliente) buscarClientes(busquedaDetallada.cliente);
                             }}
                             placeholder="Escriba el nombre del cliente"
-                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm text-gray-900"
+                            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                           />
                           <SuggestionsList
                             suggestions={sugerenciasClientes}
@@ -1116,7 +1113,7 @@ export default function GestionarVentaPage() {
                         <div className="flex items-end">
                           <button
                             onClick={handleBusquedaDetallada}
-                            className="px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm"
+                            className="px-6 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm"
                           >
                             Buscar
                           </button>
@@ -1132,7 +1129,7 @@ export default function GestionarVentaPage() {
                         <div className="overflow-x-auto rounded-lg border border-gray-200">
                           <table className="w-full text-xs">
                             <thead>
-                              <tr className="bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white">
+                              <tr className="bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white">
                                 <th className="px-3 py-2 text-left font-semibold uppercase">Cliente</th>
                                 <th className="px-3 py-2 text-left font-semibold uppercase">Fecha</th>
                                 <th className="px-3 py-2 text-left font-semibold uppercase">Asesor</th>
@@ -1150,26 +1147,24 @@ export default function GestionarVentaPage() {
                                   <td className="px-3 py-2 text-gray-800">{venta.asesor}</td>
                                   <td className="px-3 py-2 text-gray-800">{venta.comprobante}</td>
                                   <td className="px-3 py-2">
-                                    <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
-                                      (venta.estado || "").toUpperCase() === "CANCELADO"
-                                        ? "bg-red-100 text-red-800"
-                                        : (venta.estado || "").toUpperCase() === "ANULADO"
+                                    <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${(venta.estado || "").toUpperCase() === "CANCELADO"
+                                      ? "bg-red-100 text-red-800"
+                                      : (venta.estado || "").toUpperCase() === "ANULADO"
                                         ? "bg-orange-100 text-orange-800"
                                         : (venta.estado || "").toUpperCase() === "COMPLETADO"
-                                        ? "bg-green-100 text-green-800"
-                                        : (venta.estado || "").toUpperCase() === "PENDIENTE"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-gray-100 text-gray-800"
-                                    }`}>
+                                          ? "bg-green-100 text-green-800"
+                                          : (venta.estado || "").toUpperCase() === "PENDIENTE"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : "bg-gray-100 text-gray-800"
+                                      }`}>
                                       {venta.estado}
                                     </span>
                                   </td>
                                   <td className="px-3 py-2">
-                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-semibold ${
-                                      venta.cancelado === "SI" 
-                                        ? "bg-red-100 text-red-800" 
-                                        : "bg-green-100 text-green-800"
-                                    }`}>
+                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-semibold ${venta.cancelado === "SI"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-green-100 text-green-800"
+                                      }`}>
                                       {venta.cancelado}
                                     </span>
                                   </td>
@@ -1183,7 +1178,7 @@ export default function GestionarVentaPage() {
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
+                                        </svg>
                                       </button>
                                       <button
                                         onClick={() => handlePago(venta)}
@@ -1203,7 +1198,7 @@ export default function GestionarVentaPage() {
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                       </button>
-                    </div>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -1218,7 +1213,7 @@ export default function GestionarVentaPage() {
 
               {/* Card 3: Ventas por Mes */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6 mb-6">
-                <div className="p-4 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg mb-4">
+                <div className="p-4 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg mb-4">
                   <h2 className="text-lg font-bold">Ventas por Mes</h2>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
@@ -1229,7 +1224,7 @@ export default function GestionarVentaPage() {
                           type="checkbox"
                           checked={mesesSeleccionados.includes(mes)}
                           onChange={() => toggleMes(mes)}
-                          className="w-4 h-4 text-[#1E63F7] border-gray-300 rounded focus:ring-[#1E63F7]"
+                          className="w-4 h-4 text-[#002D5A] border-gray-300 rounded focus:ring-[#002D5A]"
                         />
                         <span className="text-sm font-medium text-gray-700">{mes}</span>
                       </label>
@@ -1243,11 +1238,13 @@ export default function GestionarVentaPage() {
                       <select
                         value={ano}
                         onChange={(e) => setAno(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-black"
                       >
                         <option value="2023">2023</option>
                         <option value="2024">2024</option>
                         <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
                       </select>
                     </div>
                     <button
@@ -1265,7 +1262,7 @@ export default function GestionarVentaPage() {
 
               {/* Card 4: Ventas sin Completar */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-6">
-                <div className="p-4 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg mb-4">
+                <div className="p-4 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg mb-4">
                   <h2 className="text-lg font-bold">Ventas sin Completar</h2>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
@@ -1332,38 +1329,38 @@ export default function GestionarVentaPage() {
 
                     <div className="p-4 space-y-4">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-              <div>
+                        <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             Cliente
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {(detallesVenta?.cliente && detallesVenta.cliente !== "N/A") ? detallesVenta.cliente : (ventaSeleccionada?.cliente && ventaSeleccionada.cliente !== "N/A" ? ventaSeleccionada.cliente : "N/A")}
-                </p>
-              </div>
-              <div>
+                          </p>
+                        </div>
+                        <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             Fecha
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {detallesVenta?.fecha ? formatDate(detallesVenta.fecha) : (ventaSeleccionada?.fecha || "N/A")}
-                </p>
-              </div>
-              <div>
+                          </p>
+                        </div>
+                        <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             Asesor
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {(detallesVenta?.asesor && detallesVenta.asesor !== "N/A") ? detallesVenta.asesor : (ventaSeleccionada?.asesor && ventaSeleccionada.asesor !== "N/A" ? ventaSeleccionada.asesor : "N/A")}
-                </p>
-              </div>
-              <div>
+                          </p>
+                        </div>
+                        <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             N° Comprobante
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {(detallesVenta?.comprobante && detallesVenta.comprobante !== "N/A") ? detallesVenta.comprobante : (ventaSeleccionada?.comprobante && ventaSeleccionada.comprobante !== "N/A" ? ventaSeleccionada.comprobante : "N/A")}
-                </p>
-              </div>
+                          </p>
+                        </div>
                         <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             Clasificación
@@ -1371,7 +1368,7 @@ export default function GestionarVentaPage() {
                           <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                             {(detallesVenta?.clasificacion && detallesVenta.clasificacion !== "N/A") ? detallesVenta.clasificacion : (ventaSeleccionada?.clasificacion && ventaSeleccionada.clasificacion !== "N/A" ? ventaSeleccionada.clasificacion : "N/A")}
                           </p>
-            </div>
+                        </div>
                         <div>
                           <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                             Región
@@ -1422,17 +1419,16 @@ export default function GestionarVentaPage() {
                             Estado
                           </p>
                           <div className="mt-1">
-                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
-                              ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "CANCELADO"
-                                ? "bg-red-100 text-red-800"
-                                : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "ANULADO"
+                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "CANCELADO"
+                              ? "bg-red-100 text-red-800"
+                              : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "ANULADO"
                                 ? "bg-orange-100 text-orange-800"
                                 : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "COMPLETADO"
-                                ? "bg-green-100 text-green-800"
-                                : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "PENDIENTE"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}>
+                                  ? "bg-green-100 text-green-800"
+                                  : ((detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO") + "").toUpperCase() === "PENDIENTE"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                              }`}>
                               {detallesVenta?.estado || ventaSeleccionada.estado || "COMPLETADO"}
                             </span>
                           </div>
@@ -1442,11 +1438,10 @@ export default function GestionarVentaPage() {
                             Cancelado
                           </p>
                           <div className="mt-1">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${
-                              (detallesVenta?.cancelado || ventaSeleccionada.cancelado || "NO").toUpperCase() === "SI"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-green-100 text-green-800"
-                            }`}>
+                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${(detallesVenta?.cancelado || ventaSeleccionada.cancelado || "NO").toUpperCase() === "SI"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                              }`}>
                               {detallesVenta?.cancelado || ventaSeleccionada.cancelado || "NO"}
                             </span>
                           </div>
@@ -1605,7 +1600,7 @@ export default function GestionarVentaPage() {
                   setVentaSeleccionada(null);
                   setDetallesVenta(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#002D5A] to-[#002D5A] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
               >
                 Cerrar Modal
               </button>
@@ -1628,7 +1623,7 @@ export default function GestionarVentaPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Columna izquierda */}
-          <div className="space-y-4">
+              <div className="space-y-4">
                 {/* Información de Pago */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 bg-blue-700 text-white">
@@ -1648,7 +1643,7 @@ export default function GestionarVentaPage() {
                       </svg>
                       <span className="text-sm font-semibold">
                         Información de Pago
-              </span>
+                      </span>
                     </div>
                   </div>
                   <div className="p-4">
@@ -1661,7 +1656,7 @@ export default function GestionarVentaPage() {
                           {datosPago?.ID_PAGO || ventaSeleccionada?.id || "N/A"}
                         </p>
                       </div>
-              <div>
+                      <div>
                         <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
                           N° Comprobante
                         </p>
@@ -1687,7 +1682,7 @@ export default function GestionarVentaPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-500 text-[10px] uppercase tracking-wide">
-                  Fecha de Pago
+                          Fecha de Pago
                         </p>
                         <p className="mt-1 text-[11px] font-semibold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                           {datosPago?.FECHA_DE_PAGO ? formatDate(datosPago.FECHA_DE_PAGO) : "N/A"}
@@ -1698,11 +1693,10 @@ export default function GestionarVentaPage() {
                           Regularizado
                         </p>
                         <div className="mt-1">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${
-                            (datosPago?.REGULARIZADO || "NO").toUpperCase() === "SI" 
-                              ? "bg-green-100 text-green-800" 
-                              : "bg-gray-100 text-gray-800"
-                          }`}>
+                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-semibold ${(datosPago?.REGULARIZADO || "NO").toUpperCase() === "SI"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                            }`}>
                             {datosPago?.REGULARIZADO || "NO"}
                           </span>
                         </div>
@@ -1712,11 +1706,10 @@ export default function GestionarVentaPage() {
                           Cancelado
                         </p>
                         <div className="mt-1">
-                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
-                            (datosPago?.CANCELADO || "NO").toUpperCase() === "SI" 
-                              ? "bg-red-100 text-red-800" 
-                              : "bg-green-100 text-green-800"
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${(datosPago?.CANCELADO || "NO").toUpperCase() === "SI"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-green-100 text-green-800"
+                            }`}>
                             {datosPago?.CANCELADO || "NO"}
                           </span>
                         </div>
@@ -1726,17 +1719,16 @@ export default function GestionarVentaPage() {
                           Estado
                         </p>
                         <div className="mt-1">
-                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
-                            (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "CANCELADO"
-                              ? "bg-red-100 text-red-800"
-                              : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "ANULADO"
+                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${(datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "CANCELADO"
+                            ? "bg-red-100 text-red-800"
+                            : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "ANULADO"
                               ? "bg-orange-100 text-orange-800"
-                              : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "COMPLETADO" 
-                              ? "bg-green-100 text-green-800" 
-                              : (datosPago?.ESTADO || "").toUpperCase() === "PENDIENTE"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}>
+                              : (datosPago?.ESTADO || "COMPLETADO").toUpperCase() === "COMPLETADO"
+                                ? "bg-green-100 text-green-800"
+                                : (datosPago?.ESTADO || "").toUpperCase() === "PENDIENTE"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
+                            }`}>
                             {datosPago?.ESTADO || "COMPLETADO"}
                           </span>
                         </div>
@@ -1747,11 +1739,10 @@ export default function GestionarVentaPage() {
                             Anulado
                           </p>
                           <div className="mt-1">
-                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${
-                              (datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO").toUpperCase() === "SI" 
-                                ? "bg-orange-100 text-orange-800" 
-                                : "bg-gray-100 text-gray-800"
-                            }`}>
+                            <span className={`inline-flex px-2 py-1 rounded text-[10px] font-semibold ${(datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO").toUpperCase() === "SI"
+                              ? "bg-orange-100 text-orange-800"
+                              : "bg-gray-100 text-gray-800"
+                              }`}>
                               {datosPago?.ANULADO || ventaSeleccionada?.anulado || "NO"}
                             </span>
                           </div>
@@ -1803,7 +1794,7 @@ export default function GestionarVentaPage() {
                       <span className="text-sm font-semibold">
                         Montos Pagados
                       </span>
-              </div>
+                    </div>
                   </div>
                   <div className="p-4">
                     {pagosVenta && pagosVenta.length > 0 ? (
@@ -1829,7 +1820,7 @@ export default function GestionarVentaPage() {
                               const monto = pago.MONTO || pago.monto || pago.MONTO_PAGADO || pago.monto_pagado || pago.MONTO_TOTAL || pago.monto_total || 0;
                               const fechaReg = pago.FECHA_REGULARIZACION || pago.fecha_regularizacion || pago.FECHA_REG || pago.fecha_reg || pago.FECHA_PAGO || pago.fecha_pago || pago.FECHA || pago.fecha || "N/A";
                               const validacion = pago.VALIDACION || pago.validacion || pago.ESTADO_VALIDACION || pago.estado_validacion || "VALIDO";
-                              
+
                               return (
                                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                                   <td className="px-3 py-2.5 text-gray-900 font-medium">
@@ -1848,11 +1839,10 @@ export default function GestionarVentaPage() {
                                     {fechaReg !== "N/A" ? formatDate(fechaReg) : "N/A"}
                                   </td>
                                   <td className="px-3 py-2.5 text-center">
-                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${
-                                      validacion.toUpperCase() === "VALIDO"
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}>
+                                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${validacion.toUpperCase() === "VALIDO"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                      }`}>
                                       {validacion.toUpperCase()}
                                     </span>
                                   </td>
@@ -1894,9 +1884,9 @@ export default function GestionarVentaPage() {
                         <p className="text-xs font-medium">
                           No hay pagos registrados aún
                         </p>
-              </div>
+                      </div>
                     )}
-            </div>
+                  </div>
                 </div>
               </div>
 
@@ -2040,11 +2030,10 @@ export default function GestionarVentaPage() {
                         </p>
                       </div>
                     </div>
-                    <div className={`border rounded-lg px-4 py-3 text-[11px] flex items-center justify-between gap-2 flex-wrap ${
-                      saldoPendiente > 0 
-                        ? "border-amber-300 bg-amber-50 text-amber-800" 
-                        : "border-green-300 bg-green-50 text-green-800"
-                    }`}>
+                    <div className={`border rounded-lg px-4 py-3 text-[11px] flex items-center justify-between gap-2 flex-wrap ${saldoPendiente > 0
+                      ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : "border-green-300 bg-green-50 text-green-800"
+                      }`}>
                       <div className="flex items-center space-x-2">
                         <svg
                           className="w-4 h-4"
@@ -2056,14 +2045,14 @@ export default function GestionarVentaPage() {
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d={saldoPendiente > 0 
+                            d={saldoPendiente > 0
                               ? "M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M5 13a7 7 0 1114 0 7 7 0 01-14 0z"
                               : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                             }
                           />
                         </svg>
                         <span className="font-semibold">
-                          {saldoPendiente > 0 
+                          {saldoPendiente > 0
                             ? `COMPROBANTE AÚN POR CANCELAR (${porcentajePagado}% pagado)`
                             : "COMPROBANTE COMPLETAMENTE PAGADO (100% pagado)"
                           }
@@ -2084,7 +2073,7 @@ export default function GestionarVentaPage() {
                   setPagosVenta([]);
                   setDatosPago(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#002D5A] to-[#002D5A] rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
               >
                 Cerrar Modal
               </button>
@@ -2153,7 +2142,7 @@ export default function GestionarVentaPage() {
                   if (!isNaN(date.getTime())) {
                     return date.toISOString().split('T')[0];
                   }
-                } catch {}
+                } catch { }
                 return "";
               })() : ""}
               onChange={(e) => setFormularioEditarPago({ ...formularioEditarPago, fecha_pago: e.target.value })}
@@ -2241,7 +2230,7 @@ export default function GestionarVentaPage() {
               try {
                 const token = localStorage.getItem("token");
                 const idPago = datosPago?.ID_PAGO || ventaSeleccionada?.id;
-                
+
                 if (!idPago) {
                   setModalMensaje({ open: true, tipo: "error", mensaje: "No se encontró el ID del pago." });
                   return;
@@ -2281,7 +2270,7 @@ export default function GestionarVentaPage() {
                 }
 
                 const data = await response.json();
-                
+
                 // Actualizar datosPago con los nuevos valores
                 setDatosPago({
                   ...datosPago,
@@ -2296,7 +2285,7 @@ export default function GestionarVentaPage() {
 
                 setModalEditarPagoOpen(false);
                 setModalMensaje({ open: true, tipo: "success", mensaje: "Información de pago actualizada correctamente." });
-                
+
                 // Recargar detalles para asegurar que todo esté actualizado
                 await cargarDetallesVenta(ventaSeleccionada.id, true);
               } catch (error) {
@@ -2391,21 +2380,19 @@ export default function GestionarVentaPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className={`text-sm ${
-            modalMensaje.tipo === "success" ? "text-green-700" :
+          <p className={`text-sm ${modalMensaje.tipo === "success" ? "text-green-700" :
             modalMensaje.tipo === "error" ? "text-red-700" :
-            "text-blue-700"
-          }`}>
+              "text-blue-700"
+            }`}>
             {modalMensaje.mensaje}
           </p>
           <div className="flex justify-end pt-2">
             <button
               onClick={() => setModalMensaje({ open: false, tipo: "success", mensaje: "" })}
-              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
-                modalMensaje.tipo === "success" ? "bg-green-600 hover:bg-green-700" :
+              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${modalMensaje.tipo === "success" ? "bg-green-600 hover:bg-green-700" :
                 modalMensaje.tipo === "error" ? "bg-red-600 hover:bg-red-700" :
-                "bg-blue-600 hover:bg-blue-700"
-              }`}
+                  "bg-blue-600 hover:bg-blue-700"
+                }`}
             >
               Aceptar
             </button>

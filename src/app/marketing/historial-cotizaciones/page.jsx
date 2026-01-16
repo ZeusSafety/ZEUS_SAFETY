@@ -334,7 +334,7 @@ export default function HistorialCotizacionesPage() {
               {/* Header de la página */}
               <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
                 <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg
                       className="w-5 h-5 sm:w-6 sm:h-6"
                       fill="none"

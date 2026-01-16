@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 
 export function ModuleCard({ module, onClick, index = 0 }) {
   const getStatusColor = (status) => {
-    if (status === "Disponible") return "bg-[#1E63F7]";
-    if (status === "Próximamente") return "bg-orange-500";
+    if (status === "Disponible") return "bg-[#002D5A]";
+    if (status === "Próximamente") return "bg-[#E5A017]";
     return "bg-gray-500";
   };
 
   const getStatusBg = (status) => {
-    if (status === "Disponible") return "bg-[#D9E8FF] text-[#1E63F7]";
-    if (status === "Próximamente") return "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300/60 text-orange-700";
+    if (status === "Disponible") return "bg-[#E9F1FF] text-[#002D5A]";
+    if (status === "Próximamente") return "bg-gradient-to-r from-amber-50 to-yellow-50 border-[#E5A017]/60 text-[#E5A017]";
     return "bg-gradient-to-r from-slate-100 to-gray-100 border-slate-300/60 text-gray-700";
   };
 
@@ -98,16 +98,15 @@ export function ModuleCard({ module, onClick, index = 0 }) {
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#003B75] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
             {getIcon(module.icon)}
           </div>
-          <div className={`flex items-center space-x-1.5 rounded-full text-xs shadow-sm group-hover:shadow-md transition-all duration-300 ${getStatusBg(module.status)} relative overflow-hidden ${
-            module.status === "Disponible" ? "py-[3px] px-[10px]" : "px-2.5 py-1"
-          }`}>
+          <div className={`flex items-center space-x-1.5 rounded-full text-xs shadow-sm group-hover:shadow-md transition-all duration-300 ${getStatusBg(module.status)} relative overflow-hidden ${module.status === "Disponible" ? "py-[3px] px-[10px]" : "px-2.5 py-1"
+            }`}>
             {/* Efecto de pulso sutil para "Disponible" */}
             {module.status === "Disponible" && (
               <>
-                <div className="absolute inset-0 bg-[#1E63F7]/20 rounded-full animate-pulse-slow"></div>
+                <div className="absolute inset-0 bg-[#002D5A]/20 rounded-full animate-pulse-slow"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               </>
             )}
@@ -115,7 +114,7 @@ export function ModuleCard({ module, onClick, index = 0 }) {
             <span className={`relative z-10 ${module.status === "Disponible" ? "font-medium" : "font-normal"}`} style={{ fontFamily: 'var(--font-poppins)' }}>{module.status}</span>
           </div>
         </div>
-        <h3 className="text-base font-medium text-gray-900 mb-1.5 group-hover:text-blue-800 transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
+        <h3 className="text-base font-medium text-gray-900 mb-1.5 group-hover:text-[#002D5A] transition-colors" style={{ fontFamily: 'var(--font-poppins)' }}>
           {module.name}
         </h3>
         <p className="text-xs text-gray-500 leading-relaxed font-normal" style={{ fontFamily: 'var(--font-poppins)' }}>

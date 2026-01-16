@@ -65,8 +65,8 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
           disabled 
             ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] ${
-              isOpen ? 'ring-2 ring-[#1E63F7] border-[#1E63F7]' : ''
+            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
+              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
             }`
         }`}
       >
@@ -106,7 +106,7 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 onClick={() => handleSelect(option.value)}
                 className={`w-full text-left px-4 py-3 transition-all duration-150 ${
                   value === option.value
-                    ? 'bg-[#1E63F7]/10 text-[#1E63F7] font-semibold'
+                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
                     : 'text-gray-900 hover:bg-gray-50'
                 }`}
                 style={{ borderRadius: '0.375rem' }}
@@ -309,7 +309,7 @@ export default function IncidenciaProformasPage() {
             {/* Card contenedor principal */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
-              <div className="mb-6 flex items-center justify-between p-4 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white rounded-lg">
+              <div className="mb-6 flex items-center justify-between p-4 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white rounded-lg">
                 <h1 className="text-2xl font-bold">Listado de incidencias</h1>
                 <button
                   onClick={verProcedimiento}
@@ -349,7 +349,7 @@ export default function IncidenciaProformasPage() {
                         value={filtros.desde}
                         onChange={handleFiltroChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -371,7 +371,7 @@ export default function IncidenciaProformasPage() {
                         value={filtros.hasta}
                         onChange={handleFiltroChange}
                         placeholder="dd/mm/aaaa"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all text-sm"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -386,7 +386,7 @@ export default function IncidenciaProformasPage() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={aplicarFiltros}
-                    className="px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm"
+                    className="px-6 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md transition-all duration-200 shadow-sm"
                   >
                     Aplicar filtros
                   </button>

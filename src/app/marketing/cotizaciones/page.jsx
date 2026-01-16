@@ -727,7 +727,7 @@ export default function CotizacionesPage() {
         }
 
         .download-button {
-            background: linear-gradient(135deg, #1E63F7 0%, #1E63F7 100%);
+            background: linear-gradient(135deg, #002D5A 0%, #002D5A 100%);
             color: white;
             border: none;
             padding: 12px 24px;

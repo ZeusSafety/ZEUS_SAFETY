@@ -28,7 +28,7 @@ function PopupContent({ data }) {
   return (
     <div className="p-0 m-0">
       {/* Header del Popup */}
-      <div className="bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white p-2 rounded-t-lg">
+      <div className="bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white p-2 rounded-t-lg">
         <div className="flex items-center justify-between mb-0.5">
           <h3 className="text-sm font-bold">{codigo}</h3>
           <span className={`${estadoColor} text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full`}>
@@ -101,7 +101,7 @@ function PopupContent({ data }) {
         </div>
 
         {/* Botón de Ver Detalles */}
-        <button className="w-full mt-1.5 bg-gradient-to-r from-[#1E63F7] to-[#1E63F7] text-white py-1 px-2 rounded text-[10px] font-semibold hover:opacity-90 transition-opacity flex items-center justify-center space-x-1">
+        <button className="w-full mt-1.5 bg-gradient-to-r from-[#002D5A] to-[#002D5A] text-white py-1 px-2 rounded text-[10px] font-semibold hover:opacity-90 transition-opacity flex items-center justify-center space-x-1">
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -138,7 +138,7 @@ export default function MapComponent({ center, entregas }) {
         return (
           <button
             onClick={() => map.zoomIn()}
-            className="w-10 h-10 bg-white hover:bg-[#1E63F7] text-[#1E63F7] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#1E63F7] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 group backdrop-blur-sm"
+            className="w-10 h-10 bg-white hover:bg-[#002D5A] text-[#002D5A] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#002D5A] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 group backdrop-blur-sm"
             aria-label="Acercar"
             style={{ boxShadow: '0 4px 12px rgba(30, 99, 247, 0.15)' }}
           >
@@ -154,7 +154,7 @@ export default function MapComponent({ center, entregas }) {
         return (
           <button
             onClick={() => map.zoomOut()}
-            className="w-10 h-10 bg-white hover:bg-[#1E63F7] text-[#1E63F7] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#1E63F7] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-sm"
+            className="w-10 h-10 bg-white hover:bg-[#002D5A] text-[#002D5A] hover:text-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-[#002D5A] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-sm"
             aria-label="Alejar"
             style={{ boxShadow: '0 4px 12px rgba(30, 99, 247, 0.15)' }}
           >

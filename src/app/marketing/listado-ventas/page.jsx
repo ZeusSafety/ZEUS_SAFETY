@@ -120,7 +120,7 @@ export default function ListadoVentasMarketingPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#002D5A]"></div>
       </div>
     );
   }
@@ -132,20 +132,19 @@ export default function ListadoVentasMarketingPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div 
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        
+
         <main className="flex-1 overflow-y-auto" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-6">
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/marketing")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -159,7 +158,7 @@ export default function ListadoVentasMarketingPage() {
               {/* Header de la página */}
               <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
                 <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -192,7 +191,7 @@ export default function ListadoVentasMarketingPage() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {}}
+                      onClick={() => { }}
                       className="px-4 py-2.5 bg-yellow-500 border-2 border-yellow-600 hover:bg-yellow-600 hover:border-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -218,7 +217,7 @@ export default function ListadoVentasMarketingPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           CLIENTE
                         </th>
@@ -278,7 +277,7 @@ export default function ListadoVentasMarketingPage() {
                               <div className="flex items-center space-x-1">
                                 <button
                                   onClick={() => handleVer(venta)}
-                                  className="flex items-center justify-center w-7 h-7 bg-cyan-500 border-2 border-cyan-600 hover:bg-cyan-600 hover:border-cyan-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  className="flex items-center justify-center w-7 h-7 bg-[#002D5A] border-2 border-[#001F3D] hover:bg-[#001F3D] hover:border-[#002D5A] text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
                                   aria-label="Ver"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -309,7 +308,7 @@ export default function ListadoVentasMarketingPage() {
                     </tbody>
                   </table>
                 </div>
-                
+
                 {/* Paginación */}
                 {totalPages > 0 && (
                   <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
@@ -321,7 +320,7 @@ export default function ListadoVentasMarketingPage() {
                     >
                       «
                     </button>
-                    
+
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -330,11 +329,11 @@ export default function ListadoVentasMarketingPage() {
                     >
                       &lt;
                     </button>
-                    
+
                     <span className="text-[10px] text-gray-700 font-medium">
                       Página {currentPage} de {totalPages}
                     </span>
-                    
+
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
@@ -343,7 +342,7 @@ export default function ListadoVentasMarketingPage() {
                     >
                       &gt;
                     </button>
-                    
+
                     <button
                       onClick={handleLastPage}
                       disabled={currentPage === totalPages}
@@ -397,9 +396,8 @@ export default function ListadoVentasMarketingPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Cancelado</label>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
-                  selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
-                } text-white`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
+                  } text-white`}>
                   {selectedVenta.cancelado}
                 </span>
               </div>
@@ -407,7 +405,7 @@ export default function ListadoVentasMarketingPage() {
             <div className="flex items-center justify-end pt-4 border-t border-gray-200">
               <button
                 onClick={() => setIsVerModalOpen(false)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
               >
                 Cerrar
               </button>
@@ -439,9 +437,8 @@ export default function ListadoVentasMarketingPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Estado del Pago</label>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${
-                  selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
-                } text-white`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border-2 ${selectedVenta.cancelado === "SI" ? "bg-red-600 border-red-700" : "bg-green-600 border-green-700"
+                  } text-white`}>
                   {selectedVenta.cancelado === "SI" ? "Pendiente" : "Pagado"}
                 </span>
               </div>
@@ -458,7 +455,7 @@ export default function ListadoVentasMarketingPage() {
                   alert("Funcionalidad de procesar pago pendiente de implementar");
                   setIsPagoModalOpen(false);
                 }}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm"
               >
                 Procesar Pago
               </button>

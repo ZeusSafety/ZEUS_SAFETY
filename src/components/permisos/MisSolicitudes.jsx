@@ -438,7 +438,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               {/* Título con icono y botones de acción */}
               <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -979,7 +979,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50">
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-[#002D5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
                   </div>
@@ -998,7 +998,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50">
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-[#002D5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
                     </svg>
                   </div>
@@ -1017,7 +1017,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                     onChange={(e) => setFormRequerimiento2(e.target.value)}
                     rows={4}
                     placeholder="Ingrese el detalle de la respuesta 2..."
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
                   />
                   {solicitudSeleccionada.FECHA_REQUERIMIENTO_2 && (
                     <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
@@ -1048,7 +1048,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                         className="hidden"
                         id="archivo2-input"
                       />
-                      <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
+                      <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
@@ -1057,7 +1057,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                     </label>
                     <span className="text-xs text-gray-600 flex-1">
                       {formArchivo2 ? (
-                        <span className="text-[#1E63F7] font-medium">{formArchivo2.name}</span>
+                        <span className="text-[#002D5A] font-medium">{formArchivo2.name}</span>
                       ) : (
                         "Ningún archivo seleccionado"
                       )}
@@ -1111,7 +1111,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               <div className="px-4 py-3 border-b border-gray-200/60 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-[#1E63F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-[#002D5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
                     </svg>
                   </div>
@@ -1152,7 +1152,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                       onChange={(e) => setFormRequerimiento3(e.target.value)}
                       rows={4}
                       placeholder="Ingrese el detalle de la respuesta 3..."
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] outline-none text-sm text-gray-900 bg-white resize-y transition-all"
                     />
                     {solicitudSeleccionada.FECHA_REQUERIMIENTO_3 && (
                       <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
@@ -1183,7 +1183,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                           className="hidden"
                           id="archivo3-input"
                         />
-                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
+                        <span className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
@@ -1192,7 +1192,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                       </label>
                       <span className="text-xs text-gray-600 flex-1">
                         {formArchivo3 ? (
-                          <span className="text-[#1E63F7] font-medium">{formArchivo3.name}</span>
+                          <span className="text-[#002D5A] font-medium">{formArchivo3.name}</span>
                         ) : (
                           "Ningún archivo seleccionado"
                         )}
@@ -1329,7 +1329,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                   }
                 }}
                 disabled={guardandoRequerimientos}
-                className="px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:opacity-90 text-white rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:opacity-90 text-white rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {guardandoRequerimientos ? (
                   <>

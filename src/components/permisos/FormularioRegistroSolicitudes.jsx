@@ -226,7 +226,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center space-x-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -302,7 +302,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
               name="CON_INCIDENCIA"
               checked={formData.CON_INCIDENCIA}
               onChange={handleChange}
-              className="w-5 h-5 text-[#1E63F7] border-gray-300 rounded focus:ring-[#1E63F7] focus:ring-2"
+              className="w-5 h-5 text-[#002D5A] border-gray-300 rounded focus:ring-[#002D5A] focus:ring-2"
             />
             <span className="text-sm font-semibold text-gray-800">¿Con Incidencia?</span>
           </label>
@@ -350,7 +350,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
             name="INFORME"
             onChange={handleChange}
             accept="*/*"
-            className="w-full px-4 py-3 border-2 rounded-xl bg-slate-200 border-gray-300 hover:border-gray-400 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none font-medium text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1E63F7] file:text-white hover:file:bg-[#1E63F7] file:cursor-pointer"
+            className="w-full px-4 py-3 border-2 rounded-xl bg-slate-200 border-gray-300 hover:border-gray-400 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none font-medium text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#002D5A] file:text-white hover:file:bg-[#002D5A] file:cursor-pointer"
           />
           {formData.INFORME && (
             <p className="mt-2 text-sm text-gray-600">
@@ -402,11 +402,11 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Subiendo solicitud...</span>
-              <span className="text-sm font-bold text-[#1E63F7]">{uploadProgress}%</span>
+              <span className="text-sm font-bold text-[#002D5A]">{uploadProgress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-[#1E63F7] to-[#3A8DFF] h-3 rounded-full transition-all duration-300 ease-out"
+                className="bg-gradient-to-r from-[#002D5A] to-[#3A8DFF] h-3 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -425,7 +425,7 @@ export default function FormularioRegistroSolicitudes({ onBack }) {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-6 py-3 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white font-semibold rounded-lg hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white font-semibold rounded-lg hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registrando...' : 'Registrar Solicitud'}
           </button>

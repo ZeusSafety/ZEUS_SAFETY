@@ -51,11 +51,11 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[85vh] h-[85vh]' : size === 'xl' ? 'max-h-[90vh] h-[90vh]' : size === 'xl-small' ? 'max-h-[90vh]' : size === 'medium' ? 'max-h-[95vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
+        className={`bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full ${sizeClasses[size]} ${size === 'full' ? 'max-h-[90vh]' : size === 'md' ? 'max-h-[60vh]' : 'max-h-[90vh]'} overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+        <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 bg-gradient-to-r from-[#E9F1FF]/50 to-white">
           <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{title}</h2>
           <button
             onClick={onClose}
@@ -68,7 +68,7 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className={`flex-1 overflow-y-auto px-6 ${size === 'full' ? 'py-2 max-h-[calc(98vh-140px)]' : size === 'xl' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'xl-small' ? 'py-2 max-h-[calc(90vh-140px)]' : size === 'medium' ? 'py-2 max-h-[calc(95vh-140px)]' : size === 'md' ? 'py-2 max-h-[calc(60vh-140px)]' : 'py-2'}`}>{children}</div>
+        <div className={`flex-1 overflow-y-auto px-6 py-4`}>{children}</div>
 
         {/* Footer opcional con botones de acción */}
         {showFooter && (
@@ -87,7 +87,7 @@ export default function Modal({
               <button
                 type="button"
                 onClick={onPrimaryButtonClick}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
                 style={{ fontFamily: 'var(--font-poppins)' }}
               >
                 {primaryButtonText}

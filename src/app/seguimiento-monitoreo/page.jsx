@@ -281,7 +281,7 @@ export default function SeguimientoMonitoreoPage() {
             {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -294,7 +294,7 @@ export default function SeguimientoMonitoreoPage() {
               {/* Header de Sección */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -315,7 +315,7 @@ export default function SeguimientoMonitoreoPage() {
 
               {/* Mensaje Próximamente */}
               <div className="text-center mb-6">
-                <div className="w-14 h-14 bg-gradient-to-br from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#002D5A] via-[#002D5A] to-[#002D5A] rounded-full flex items-center justify-center mx-auto mb-3">
                   <svg
                     className="w-7 h-7 text-white"
                     fill="none"
@@ -346,7 +346,7 @@ export default function SeguimientoMonitoreoPage() {
               {/* Header de Sección */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
@@ -372,7 +372,7 @@ export default function SeguimientoMonitoreoPage() {
                     <select
                       value={rutaSeleccionada}
                       onChange={(e) => setRutaSeleccionada(e.target.value)}
-                      className="custom-select flex-1 px-3 py-2 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white text-gray-900 text-sm font-medium shadow-sm hover:border-gray-400 appearance-none cursor-pointer"
+                      className="custom-select flex-1 px-3 py-2 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white text-gray-900 text-sm font-medium shadow-sm hover:border-gray-400 appearance-none cursor-pointer"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231E63F7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
@@ -397,7 +397,7 @@ export default function SeguimientoMonitoreoPage() {
                         }
                       }}
                       disabled={!rutaSeleccionada}
-                      className="px-3 py-2 bg-[#1E63F7] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs whitespace-nowrap"
+                      className="px-3 py-2 bg-[#002D5A] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs whitespace-nowrap"
                     >
                       Asignar a Todas
                     </button>
@@ -416,7 +416,7 @@ export default function SeguimientoMonitoreoPage() {
                     <select
                       value={conductorSeleccionado}
                       onChange={(e) => setConductorSeleccionado(e.target.value)}
-                      className="custom-select flex-1 px-3 py-2 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white text-gray-900 text-sm font-medium shadow-sm hover:border-gray-400 appearance-none cursor-pointer"
+                      className="custom-select flex-1 px-3 py-2 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white text-gray-900 text-sm font-medium shadow-sm hover:border-gray-400 appearance-none cursor-pointer"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231E63F7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
@@ -443,7 +443,7 @@ export default function SeguimientoMonitoreoPage() {
                         }
                       }}
                       disabled={!conductorSeleccionado}
-                      className="px-3 py-2 bg-[#1E63F7] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs whitespace-nowrap"
+                      className="px-3 py-2 bg-[#002D5A] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs whitespace-nowrap"
                     >
                       Asignar a Todas
                     </button>
@@ -466,7 +466,7 @@ export default function SeguimientoMonitoreoPage() {
                 }
                 .custom-select option:checked,
                 .custom-select option:focus {
-                  background-color: #1E63F7;
+                  background-color: #002D5A;
                   color: white;
                   font-weight: 600;
                 }
@@ -564,7 +564,7 @@ export default function SeguimientoMonitoreoPage() {
                           <div className="flex flex-col space-y-2 ml-3">
                             <button
                               onClick={() => setEditingEntrega(entrega.id)}
-                              className="px-2.5 py-1.5 bg-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-opacity flex items-center space-x-1 whitespace-nowrap"
+                              className="px-2.5 py-1.5 bg-[#002D5A] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-opacity flex items-center space-x-1 whitespace-nowrap"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -636,7 +636,7 @@ export default function SeguimientoMonitoreoPage() {
                   <select
                     value={editForm.fechaProgramada || entrega.fechaProgramada}
                     onChange={(e) => setEditForm({ ...editForm, fechaProgramada: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white"
                   >
                     {opcionesFecha.map((opcion, index) => (
                       <option key={index} value={opcion.value}>
@@ -654,7 +654,7 @@ export default function SeguimientoMonitoreoPage() {
                   <select
                     value={editForm.estado || entrega.estado}
                     onChange={(e) => setEditForm({ ...editForm, estado: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white"
                   >
                     <option value="No entregado">No entregado</option>
                     <option value="En espera">En espera</option>
@@ -671,7 +671,7 @@ export default function SeguimientoMonitoreoPage() {
                   <select
                     value={editForm.prioridad || entrega.prioridad}
                     onChange={(e) => setEditForm({ ...editForm, prioridad: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white"
                   >
                     <option value="Alta">Alta</option>
                     <option value="Media">Media</option>
@@ -687,7 +687,7 @@ export default function SeguimientoMonitoreoPage() {
                   <select
                     value={editForm.ruta || entrega.ruta}
                     onChange={(e) => setEditForm({ ...editForm, ruta: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white"
                   >
                     <option value="">Seleccione una ruta</option>
                     {rutasEstablecidas.map((ruta) => (
@@ -706,7 +706,7 @@ export default function SeguimientoMonitoreoPage() {
                   <select
                     value={editForm.conductor || entrega.conductor}
                     onChange={(e) => setEditForm({ ...editForm, conductor: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E63F7] focus:border-[#1E63F7] transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all bg-white"
                   >
                     <option value="">Seleccione un conductor</option>
                     {conductores
@@ -760,7 +760,7 @@ export default function SeguimientoMonitoreoPage() {
                       conductor: ""
                     });
                   }}
-                  className="px-4 py-2 bg-[#1E63F7] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 bg-[#002D5A] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   Guardar Cambios
                 </button>

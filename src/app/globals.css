@@ -1,14 +1,34 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --azul-oscuro: #002D5A;
+  --azul-principal: #002D5A;
+  --azul-hover: #001F3D;
+  --azul-claro: #E9F1FF;
+
+  /* Nuevos colores semánticos globales */
+  --rojo-principal: #E63946;
+  --verde-principal: #48A98E;
+  --amarillo-principal: #E5A017;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --color-blue-700: var(--azul-oscuro);
+  --color-blue-800: var(--azul-hover);
+  --color-blue-600: #003B75;
+
+  /* Mapeo de colores semánticos a Tailwind */
+  --color-red-500: var(--rojo-principal);
+  --color-red-600: #D62E3B;
+  --color-green-500: var(--verde-principal);
+  --color-green-600: #3D917A;
+  --color-yellow-500: var(--amarillo-principal);
+  --color-yellow-600: #D49215;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,36 +46,25 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
-image.png
-#__next {
+
+image.png #__next {
   height: 100%;
   overflow: hidden;
 }
 
 /* Custom Scrollbar Styles - Mejorado */
 .custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(29, 78, 216) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-  margin: 8px 0;
+  scrollbar-color: #002D5A transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(29, 78, 216);
+  background: #002D5A;
   border-radius: 10px;
   transition: all 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgb(30, 64, 175);
+  background: #001F3D;
 }
 
 /* Animations - Mejoradas */
@@ -64,6 +73,7 @@ image.png
     opacity: 0;
     transform: translateY(-15px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -74,6 +84,7 @@ image.png
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -84,6 +95,7 @@ image.png
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -91,13 +103,24 @@ image.png
 }
 
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-5px);
   }
-  20%, 40%, 60%, 80% {
+
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(5px);
   }
 }
@@ -106,6 +129,7 @@ image.png
   0% {
     transform: translateX(-100%) skewX(-12deg);
   }
+
   100% {
     transform: translateX(200%) skewX(-12deg);
   }
@@ -128,6 +152,7 @@ image.png
     opacity: 0;
     transform: translateY(10px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -171,6 +196,7 @@ image.png
     transform: scale(0);
     opacity: 1;
   }
+
   100% {
     transform: scale(4);
     opacity: 0;
@@ -215,17 +241,17 @@ image.png
   margin: 4px;
 }
 
-/* Estilos mejorados para selects de Área de Emisión */
+/* Estilos mejorados para selects de Ãrea de EmisiÃ³n */
 select[class*="appearance-none"] {
-  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%231E63F7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
+  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23002D5A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 1.25rem 1.25rem;
 }
 
 select[class*="appearance-none"]:focus {
-  border-color: #1E63F7;
-  box-shadow: 0 0 0 3px rgba(30, 99, 247, 0.1);
+  border-color: #002D5A;
+  box-shadow: 0 0 0 3px rgba(0, 45, 90, 0.1);
 }
 
 select[class*="appearance-none"] option {
@@ -238,20 +264,23 @@ select[class*="appearance-none"] option {
 }
 
 select[class*="appearance-none"] option:hover {
-  background-color: #EFF6FF;
+  background-color: #E9F1FF;
 }
 
 select[class*="appearance-none"] option:checked {
-  background-color: #DBEAFE;
-  color: #1E40AF;
+  background-color: #D9E8FF;
+  color: #002D5A;
   font-weight: 600;
 }
 
-/* Animación de pulso lento para badges */
+/* AnimaciÃ³n de pulso lento para badges */
 @keyframes pulse-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -261,12 +290,13 @@ select[class*="appearance-none"] option:checked {
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
-/* Animación para notificaciones desde la derecha */
+/* AnimaciÃ³n para notificaciones desde la derecha */
 @keyframes slide-in-right {
   from {
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -277,12 +307,13 @@ select[class*="appearance-none"] option:checked {
   animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Animación para notificaciones desde la izquierda */
+/* AnimaciÃ³n para notificaciones desde la izquierda */
 @keyframes slide-in-left {
   from {
     opacity: 0;
     transform: translateX(-100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -306,3 +337,11 @@ select[class*="appearance-none"] option:checked {
   }
 }
 
+/* Forzar color del botÃ³n del chatbot */
+[data-testid="base-button"],
+.bp-webchat-button,
+button[class*="bp-"] {
+  background-color: #002D5A !important;
+}
+/* Linea amarilla Zeus */
+thead tr { border-bottom: 3px solid #E5A017 !important; }

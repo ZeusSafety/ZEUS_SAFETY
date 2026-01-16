@@ -596,7 +596,7 @@ export default function IncidenciasProformasActasPage() {
               {/* Título con icono y API Conectada */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg
                       className="w-6 h-6"
                       fill="none"

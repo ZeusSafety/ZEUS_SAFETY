@@ -63,30 +63,30 @@ export default function RegistroMovilidadPage() {
   const [fileCochera, setFileCochera] = useState(null);
 
   // Estados para miembros
-const [miembrosSeleccionados, setMiembrosSeleccionados] = useState([]);
-const [miembroManual, setMiembroManual] = useState("");
-const [mostrarInputManual, setMostrarInputManual] = useState(false);
+  const [miembrosSeleccionados, setMiembrosSeleccionados] = useState([]);
+  const [miembroManual, setMiembroManual] = useState("");
+  const [mostrarInputManual, setMostrarInputManual] = useState(false);
 
-// Sincronizar con el string de 'miembros' que ya usas para el backend
-useEffect(() => {
-  const lista = [...miembrosSeleccionados];
-  if (mostrarInputManual && miembroManual.trim() !== "") {
-    lista.push(miembroManual);
-  }
-  setMiembros(lista.join(", ")); // Esto actualiza el 'miembros' que envías al backend
-}, [miembrosSeleccionados, miembroManual, mostrarInputManual]);
+  // Sincronizar con el string de 'miembros' que ya usas para el backend
+  useEffect(() => {
+    const lista = [...miembrosSeleccionados];
+    if (mostrarInputManual && miembroManual.trim() !== "") {
+      lista.push(miembroManual);
+    }
+    setMiembros(lista.join(", ")); // Esto actualiza el 'miembros' que envías al backend
+  }, [miembrosSeleccionados, miembroManual, mostrarInputManual]);
 
-const handleCheckboxChange = (nombre) => {
-  if (nombre === "Otros") {
-    setMostrarInputManual(!mostrarInputManual);
-  } else {
-    setMiembrosSeleccionados(prev => 
-      prev.includes(nombre) 
-        ? prev.filter(item => item !== nombre) 
-        : [...prev, nombre]
-    );
-  }
-};
+  const handleCheckboxChange = (nombre) => {
+    if (nombre === "Otros") {
+      setMostrarInputManual(!mostrarInputManual);
+    } else {
+      setMiembrosSeleccionados(prev =>
+        prev.includes(nombre)
+          ? prev.filter(item => item !== nombre)
+          : [...prev, nombre]
+      );
+    }
+  };
 
   const handleConductorChange = (e) => {
     const valor = e.target.value;
@@ -101,7 +101,7 @@ const handleCheckboxChange = (nombre) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validaciones básicas
     if (!vehiculo || !conductor || !kmInicial || !kmFinal || !miembros) {
       alert("Por favor complete todos los campos del Bloque 1");
@@ -137,7 +137,7 @@ const handleCheckboxChange = (nombre) => {
 
       // Crear FormData
       const formData = new FormData();
-      
+
       // Bloque 1
       formData.append("fecha", fecha);
       formData.append("vehiculo", vehiculo);
@@ -159,7 +159,7 @@ const handleCheckboxChange = (nombre) => {
         // Mapear valores del tipo de combustible al formato exacto que espera la base de datos
         // Verificado: La BD acepta "Gas GNV" (con espacio) tal como se muestra en los registros existentes
         let tipoCombustibleNormalizado = tipoCombustible.trim();
-        
+
         // Mapeo específico: usar exactamente los valores que funcionan en la BD
         const mapeoTipos = {
           "Petroleo": "Petroleo",
@@ -167,17 +167,17 @@ const handleCheckboxChange = (nombre) => {
           "GNV": "Gas GNV",        // Formato exacto que acepta la BD (con espacio)
           "GLP": "Gas GLP"         // Formato consistente para GLP
         };
-        
+
         tipoCombustibleNormalizado = mapeoTipos[tipoCombustible] || tipoCombustible.trim();
-        
+
         // Debug: ver qué valor se está enviando
         console.log("Tipo de combustible seleccionado:", tipoCombustible);
         console.log("Tipo de combustible mapeado:", tipoCombustibleNormalizado);
         console.log("Longitud del valor:", tipoCombustibleNormalizado.length);
-        
+
         // Verificar el FormData antes de enviarlo
         formData.append("tipo_combustible", tipoCombustibleNormalizado);
-        
+
         // Debug adicional: verificar que el valor se agregó correctamente al FormData
         console.log("Valor en FormData (verificación):", formData.get("tipo_combustible"));
         formData.append("precio_total", precioTotal);
@@ -198,7 +198,7 @@ const handleCheckboxChange = (nombre) => {
 
       // Enviar a la API
       await registrarCombustibleCompleto(formData);
-      
+
       // Mostrar modal de éxito
       setModalMensaje({
         open: true,
@@ -206,7 +206,7 @@ const handleCheckboxChange = (nombre) => {
         titulo: "¡Registro guardado exitosamente!",
         mensaje: "El registro de movilidad ha sido guardado correctamente en el sistema.",
       });
-      
+
       // Redirigir después de 2 segundos
       setTimeout(() => {
         router.push("/logistica");
@@ -229,9 +229,8 @@ const handleCheckboxChange = (nombre) => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -249,7 +248,7 @@ const handleCheckboxChange = (nombre) => {
             </button>
 
             {/* Card contenedor blanco */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-8">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-4 md:p-8">
               {/* Header mejorado */}
               <div className="mb-8 pb-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3 mb-2">
@@ -268,238 +267,237 @@ const handleCheckboxChange = (nombre) => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
-  {/* Bloque 1: Datos Fijos */}
-  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
-    
-    <div className="flex items-center space-x-3 mb-5">
-      <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-        <span className="text-white font-bold text-sm">1</span>
-      </div>
-      <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-        Datos Fijos
-      </h2>
-    </div>
+                {/* Bloque 1: Datos Fijos */}
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
 
-    {/* GRID PRINCIPAL */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-      
-      {/* 1. FECHA */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Fecha <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-          style={{ fontFamily: 'var(--font-poppins)' }}
-          required
-        />
-      </div>
+                  <div className="flex items-center space-x-3 mb-5">
+                    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">1</span>
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Datos Fijos
+                    </h2>
+                  </div>
 
-      {/* 2. VEHÍCULO */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Vehículo <span className="text-red-500">*</span>
-        </label>
-        <select
-          value={vehiculo}
-          onChange={(e) => setVehiculo(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-          style={{ fontFamily: 'var(--font-poppins)' }}
-          required
-        >
-          <option value="">Seleccione un vehículo...</option>
-          <option value="Apolo">Apolo</option>
-          <option value="Ares">Ares</option>
-          <option value="Poseidon">Poseidon</option>
-        </select>
-      </div>
+                  {/* GRID PRINCIPAL */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
 
-      {/* 3. CONDUCTOR */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Conductor <span className="text-red-500">*</span>
-        </label>
-        <div className="space-y-3">
-          <select
-            onChange={handleConductorChange}
-            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-            style={{ fontFamily: 'var(--font-poppins)' }}
-            required
-          >
-            <option value="">Seleccione un conductor...</option>
-            <option value="Joseph">Joseph</option>
-            <option value="Manuel">Manuel</option>
-            <option value="Hervin">Hervin</option>
-            <option value="Otros">Otros</option>
-          </select>
-          {esOtroConductor && (
-            <input
-              type="text"
-              value={conductor}
-              onChange={(e) => setConductor(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black outline-none animate-in fade-in slide-in-from-top-1"
-              placeholder="Nombre del conductor"
-              required
-            />
-          )}
-        </div>
-      </div>
+                    {/* 1. FECHA */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Fecha <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        required
+                      />
+                    </div>
 
-      {/* 4. MIEMBROS - COMPORTAMIENTO IGUAL AL CONDUCTOR */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Miembros en el vehículo <span className="text-red-500">*</span>
-        </label>
-        <div className="space-y-3">
-          {/* Caja de Checkboxes (Altura fija para no hacer acordeón) */}
-          <div className="w-full p-2 bg-white border-2 border-gray-300 rounded-lg min-h-[50px] flex items-center shadow-sm">
-            <div className="flex flex-wrap gap-2">
-              {["Manuel", "Jhonson", "Jhosep", "Victor", "Otros"].map((nombre) => (
-                <label 
-                  key={nombre}
-                  className={`flex items-center px-3 py-1 rounded-md border transition-all cursor-pointer select-none text-sm font-medium ${
-                    (nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre))
-                      ? "bg-blue-600 border-blue-600 text-white" 
-                      : "bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-400"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="hidden"
-                    checked={nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre)}
-                    onChange={() => handleCheckboxChange(nombre)}
-                  />
-                  {nombre}
-                </label>
-              ))}
-            </div>
-          </div>
+                    {/* 2. VEHÍCULO */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Vehículo <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={vehiculo}
+                        onChange={(e) => setVehiculo(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        required
+                      >
+                        <option value="">Seleccione un vehículo...</option>
+                        <option value="Apolo">Apolo</option>
+                        <option value="Ares">Ares</option>
+                        <option value="Poseidon">Poseidon</option>
+                      </select>
+                    </div>
 
-          {/* Input Manual fuera de la caja (Igual que el Conductor) */}
-          {mostrarInputManual && (
-            <input
-              type="text"
-              value={miembroManual}
-              onChange={(e) => setMiembroManual(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black font-medium outline-none animate-in fade-in slide-in-from-top-1"
-              placeholder="Escriba los nombres de los miembros adicionales..."
-              autoFocus
-              required
-            />
-          )}
-        </div>
-        <input type="hidden" value={miembros} required />
-      </div>
+                    {/* 3. CONDUCTOR */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Conductor <span className="text-red-500">*</span>
+                      </label>
+                      <div className="space-y-3">
+                        <select
+                          onChange={handleConductorChange}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                          required
+                        >
+                          <option value="">Seleccione un conductor...</option>
+                          <option value="Joseph">Joseph</option>
+                          <option value="Manuel">Manuel</option>
+                          <option value="Hervin">Hervin</option>
+                          <option value="Otros">Otros</option>
+                        </select>
+                        {esOtroConductor && (
+                          <input
+                            type="text"
+                            value={conductor}
+                            onChange={(e) => setConductor(e.target.value)}
+                            className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black outline-none animate-in fade-in slide-in-from-top-1"
+                            placeholder="Nombre del conductor"
+                            required
+                          />
+                        )}
+                      </div>
+                    </div>
 
-      {/* 5. KILOMETRAJE INICIAL */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Kilometraje Inicial <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="number"
-          value={kmInicial}
-          onChange={(e) => setKmInicial(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-          style={{ fontFamily: 'var(--font-poppins)' }}
-          placeholder="00000"
-          required
-        />
-      </div>
+                    {/* 4. MIEMBROS - COMPORTAMIENTO IGUAL AL CONDUCTOR */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Miembros en el vehículo <span className="text-red-500">*</span>
+                      </label>
+                      <div className="space-y-3">
+                        {/* Caja de Checkboxes (Altura fija para no hacer acordeón) */}
+                        <div className="w-full p-2 bg-white border-2 border-gray-300 rounded-lg min-h-[50px] flex items-center shadow-sm">
+                          <div className="flex flex-wrap gap-2">
+                            {["Manuel", "Jhonson", "Jhosep", "Victor", "Otros"].map((nombre) => (
+                              <label
+                                key={nombre}
+                                className={`flex items-center px-3 py-1 rounded-md border transition-all cursor-pointer select-none text-sm font-medium ${(nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre))
+                                  ? "bg-blue-600 border-blue-600 text-white"
+                                  : "bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-400"
+                                  }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="hidden"
+                                  checked={nombre === "Otros" ? mostrarInputManual : miembrosSeleccionados.includes(nombre)}
+                                  onChange={() => handleCheckboxChange(nombre)}
+                                />
+                                {nombre}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
 
-      {/* 6. KILOMETRAJE FINAL */}
-      <div className="w-full">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Kilometraje Final <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="number"
-          value={kmFinal}
-          onChange={(e) => setKmFinal(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-          style={{ fontFamily: 'var(--font-poppins)' }}
-          placeholder="00000"
-          required
-        />
-      </div>
+                        {/* Input Manual fuera de la caja (Igual que el Conductor) */}
+                        {mostrarInputManual && (
+                          <input
+                            type="text"
+                            value={miembroManual}
+                            onChange={(e) => setMiembroManual(e.target.value)}
+                            className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg text-black font-medium outline-none animate-in fade-in slide-in-from-top-1"
+                            placeholder="Escriba los nombres de los miembros adicionales..."
+                            autoFocus
+                            required
+                          />
+                        )}
+                      </div>
+                      <input type="hidden" value={miembros} required />
+                    </div>
 
-    </div>
-  </div>
+                    {/* 5. KILOMETRAJE INICIAL */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Kilometraje Inicial <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={kmInicial}
+                        onChange={(e) => setKmInicial(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        placeholder="00000"
+                        required
+                      />
+                    </div>
+
+                    {/* 6. KILOMETRAJE FINAL */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Kilometraje Final <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={kmFinal}
+                        onChange={(e) => setKmFinal(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        placeholder="00000"
+                        required
+                      />
+                    </div>
+
+                  </div>
+                </div>
 
                 {/* Bloque 2: Estado */}
-<div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
-  
-  {/* Título del Bloque */}
-  <div className="flex items-center space-x-3 mb-5">
-    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-      <span className="text-white font-bold text-sm">2</span>
-    </div>
-    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-      Estado del Vehículo
-    </h2>
-  </div>
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
 
-  {/* CONTENEDOR GRID: 2 columnas en PC, 1 en móvil */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-    
-    {/* COLUMNA 1: LIMPIEZA */}
-    <div className="w-full">
-      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-        ¿Has encontrado el vehículo limpio? <span className="text-red-500">*</span>
-      </label>
-      <select
-        value={estaLimpio}
-        onChange={(e) => setEstaLimpio(e.target.value)}
-        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-        required
-      >
-        <option value="">Seleccione una opción...</option>
-        <option value="Si">Sí</option>
-        <option value="No">No</option>
-      </select>
-    </div>
+                  {/* Título del Bloque */}
+                  <div className="flex items-center space-x-3 mb-5">
+                    <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">2</span>
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Estado del Vehículo
+                    </h2>
+                  </div>
 
-    {/* COLUMNA 2: ESTADO */}
-    <div className="w-full">
-      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-        ¿Vehículo en buen estado? <span className="text-red-500">*</span>
-      </label>
-      <select
-        value={enBuenEstado}
-        onChange={(e) => setEnBuenEstado(e.target.value)}
-        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-        required
-      >
-        <option value="">Seleccione una opción...</option>
-        <option value="Si">Sí</option>
-        <option value="No">No</option>
-      </select>
-    </div>
+                  {/* CONTENEDOR GRID: 2 columnas en PC, 1 en móvil */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
 
-    {/* DESCRIPCIÓN (Aparece abajo si es "No") */}
-    {enBuenEstado === "No" && (
-      <div className="col-span-1 md:col-span-2 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-2">
-        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-          Descripción detallada del problema <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          value={descripcionEstado}
-          onChange={(e) => setDescripcionEstado(e.target.value)}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium resize-none"
-          style={{ fontFamily: 'var(--font-poppins)' }}
-          rows={3}
-          placeholder="Describa el estado del vehículo..."
-          required={enBuenEstado === "No"}
-        />
-      </div>
-    )}
-  </div>
-</div>
+                    {/* COLUMNA 1: LIMPIEZA */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        ¿Has encontrado el vehículo limpio? <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={estaLimpio}
+                        onChange={(e) => setEstaLimpio(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        required
+                      >
+                        <option value="">Seleccione una opción...</option>
+                        <option value="Si">Sí</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+
+                    {/* COLUMNA 2: ESTADO */}
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        ¿Vehículo en buen estado? <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={enBuenEstado}
+                        onChange={(e) => setEnBuenEstado(e.target.value)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                        required
+                      >
+                        <option value="">Seleccione una opción...</option>
+                        <option value="Si">Sí</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+
+                    {/* DESCRIPCIÓN (Aparece abajo si es "No") */}
+                    {enBuenEstado === "No" && (
+                      <div className="col-span-1 md:col-span-2 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-2">
+                        <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                          Descripción detallada del problema <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          value={descripcionEstado}
+                          onChange={(e) => setDescripcionEstado(e.target.value)}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black bg-white font-medium resize-none"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                          rows={3}
+                          placeholder="Describa el estado del vehículo..."
+                          required={enBuenEstado === "No"}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Bloque 3: Combustible */}
                 <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
@@ -584,20 +582,62 @@ const handleCheckboxChange = (nombre) => {
                           <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                             Imagen de Comprobante de Pago <span className="text-red-500">*</span>
                           </label>
-                          <div className="relative">
+                          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-blue-400 transition-colors bg-white cursor-pointer relative group">
                             <input
+                              id="file-combustible-input"
                               type="file"
                               accept="image/*"
+                              capture="environment"
                               onChange={(e) => setFileCombustible(e.target.files[0])}
-                              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                              style={{ fontFamily: 'var(--font-poppins)' }}
+                              className="sr-only"
                               required={llenoCombustible === "Si"}
                             />
+                            <label htmlFor="file-combustible-input" className="cursor-pointer text-center w-full">
+                              <div className="space-y-1 text-center">
+                                <svg
+                                  className="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-colors"
+                                  stroke="currentColor"
+                                  fill="none"
+                                  viewBox="0 0 48 48"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                <div className="flex flex-col items-center text-sm text-gray-600">
+                                  <span className="relative cursor-pointer bg-blue-50 px-4 py-2 rounded-lg font-bold text-blue-700 hover:bg-blue-100 transition-all border border-blue-200">
+                                    {fileCombustible ? "Cambiar archivo / foto" : "Seleccionar o Tomar Foto"}
+                                  </span>
+                                  <p className="mt-2 text-xs text-gray-500">Click para abrir la cámara o galería</p>
+                                </div>
+                              </div>
+                            </label>
                           </div>
                           {fileCombustible && (
-                            <p className="mt-2 text-sm text-green-600 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
-                              ✓ Archivo seleccionado: {fileCombustible.name}
-                            </p>
+                            <div className="mt-3 p-3 bg-green-50 rounded-lg flex items-center justify-between border border-green-200 animate-in fade-in slide-in-from-top-1">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                <div className="overflow-hidden">
+                                  <p className="text-xs font-bold text-green-800 truncate max-w-[200px]">{fileCombustible.name}</p>
+                                  <p className="text-[10px] text-green-600">Archivo listo para cargar</p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setFileCombustible(null)}
+                                className="p-1.5 rounded-full hover:bg-red-50 text-red-500 transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -653,20 +693,62 @@ const handleCheckboxChange = (nombre) => {
                           <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
                             Imagen de Comprobante de Pago <span className="text-red-500">*</span>
                           </label>
-                          <div className="relative">
+                          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-blue-400 transition-colors bg-white cursor-pointer relative group">
                             <input
+                              id="file-cochera-input"
                               type="file"
                               accept="image/*"
+                              capture="environment"
                               onChange={(e) => setFileCochera(e.target.files[0])}
-                              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white font-medium file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                              style={{ fontFamily: 'var(--font-poppins)' }}
+                              className="sr-only"
                               required={pagoCochera === "Si"}
                             />
+                            <label htmlFor="file-cochera-input" className="cursor-pointer text-center w-full">
+                              <div className="space-y-1 text-center">
+                                <svg
+                                  className="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-colors"
+                                  stroke="currentColor"
+                                  fill="none"
+                                  viewBox="0 0 48 48"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                <div className="flex flex-col items-center text-sm text-gray-600">
+                                  <span className="relative cursor-pointer bg-blue-50 px-4 py-2 rounded-lg font-bold text-blue-700 hover:bg-blue-100 transition-all border border-blue-200">
+                                    {fileCochera ? "Cambiar archivo / foto" : "Seleccionar o Tomar Foto"}
+                                  </span>
+                                  <p className="mt-2 text-xs text-gray-500">Click para abrir la cámara o galería</p>
+                                </div>
+                              </div>
+                            </label>
                           </div>
                           {fileCochera && (
-                            <p className="mt-2 text-sm text-green-600 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
-                              ✓ Archivo seleccionado: {fileCochera.name}
-                            </p>
+                            <div className="mt-3 p-3 bg-green-50 rounded-lg flex items-center justify-between border border-green-200 animate-in fade-in slide-in-from-top-1">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                <div className="overflow-hidden">
+                                  <p className="text-xs font-bold text-green-800 truncate max-w-[200px]">{fileCochera.name}</p>
+                                  <p className="text-[10px] text-green-600">Archivo listo para cargar</p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setFileCochera(null)}
+                                className="p-1.5 rounded-full hover:bg-red-50 text-red-500 transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -675,11 +757,11 @@ const handleCheckboxChange = (nombre) => {
                 </div>
 
                 {/* Botones mejorados */}
-                <div className="flex gap-4 pt-4 border-t border-gray-200">
+                <div className="flex flex-col md:flex-row gap-3 md:gap-4 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => router.push("/logistica")}
-                    className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="w-full md:flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     Cancelar
@@ -687,7 +769,7 @@ const handleCheckboxChange = (nombre) => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 px-6 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white rounded-xl hover:from-blue-800 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                    className="w-full md:flex-1 px-6 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white rounded-xl hover:from-blue-800 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     {loading ? (
@@ -719,15 +801,14 @@ const handleCheckboxChange = (nombre) => {
       >
         <div className="p-6">
           {/* Header con gradiente según tipo */}
-          <div className={`rounded-t-xl -mx-6 -mt-6 mb-6 px-6 py-4 ${
-            modalMensaje.tipo === "success"
-              ? "bg-gradient-to-r from-green-500 to-green-600"
-              : modalMensaje.tipo === "error"
+          <div className={`rounded-t-xl -mx-6 -mt-6 mb-6 px-6 py-4 ${modalMensaje.tipo === "success"
+            ? "bg-gradient-to-r from-green-500 to-green-600"
+            : modalMensaje.tipo === "error"
               ? "bg-gradient-to-r from-red-500 to-red-600"
               : modalMensaje.tipo === "warning"
-              ? "bg-gradient-to-r from-orange-500 to-orange-600"
-              : "bg-gradient-to-r from-blue-500 to-blue-600"
-          }`}>
+                ? "bg-gradient-to-r from-orange-500 to-orange-600"
+                : "bg-gradient-to-r from-blue-500 to-blue-600"
+            }`}>
             <div className="flex items-center space-x-3">
               {modalMensaje.tipo === "success" && (
                 <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
@@ -764,15 +845,14 @@ const handleCheckboxChange = (nombre) => {
           </div>
 
           {/* Mensaje */}
-          <p className={`text-base mb-6 ${
-            modalMensaje.tipo === "success"
-              ? "text-green-800"
-              : modalMensaje.tipo === "error"
+          <p className={`text-base mb-6 ${modalMensaje.tipo === "success"
+            ? "text-green-800"
+            : modalMensaje.tipo === "error"
               ? "text-red-800"
               : modalMensaje.tipo === "warning"
-              ? "text-orange-800"
-              : "text-blue-800"
-          }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                ? "text-orange-800"
+                : "text-blue-800"
+            }`} style={{ fontFamily: 'var(--font-poppins)' }}>
             {modalMensaje.mensaje}
           </p>
 
@@ -780,15 +860,14 @@ const handleCheckboxChange = (nombre) => {
           <div className="flex justify-end pt-2">
             <button
               onClick={() => setModalMensaje({ ...modalMensaje, open: false })}
-              className={`px-6 py-2.5 text-sm font-semibold text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
-                modalMensaje.tipo === "success"
-                  ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                  : modalMensaje.tipo === "error"
+              className={`px-6 py-2.5 text-sm font-semibold text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 ${modalMensaje.tipo === "success"
+                ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                : modalMensaje.tipo === "error"
                   ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                   : modalMensaje.tipo === "warning"
-                  ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800"
-                  : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              }`}
+                    ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800"
+                    : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                }`}
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               Aceptar

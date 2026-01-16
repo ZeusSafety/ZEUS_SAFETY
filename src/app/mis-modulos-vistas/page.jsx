@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,7 @@ export default function MisModulosVistasPage() {
     }
   }, [user, loading, router]);
 
-  // Detectar si es desktop y abrir sidebar automáticamente
+  // Detectar si es desktop y abrir sidebar automÃ¡ticamente
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -36,7 +36,7 @@ export default function MisModulosVistasPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Cargar módulos y vistas
+  // Cargar mÃ³dulos y vistas
   useEffect(() => {
     if (user) {
       cargarModulosVistas();
@@ -65,7 +65,7 @@ export default function MisModulosVistasPage() {
 
       const data = await response.json();
 
-      // Mapear módulos
+      // Mapear mÃ³dulos
       const modulosData = Array.isArray(data.modulos) ? data.modulos.map((mod) => ({
         id: mod.NOMBRE || mod.nombre || mod.Nombre,
         nombre: mod.NOMBRE || mod.nombre || mod.Nombre,
@@ -73,11 +73,11 @@ export default function MisModulosVistasPage() {
 
       setModulos(modulosData);
 
-      // Función auxiliar para adivinar el área basada en el nombre
+      // FunciÃ³n auxiliar para adivinar el Ã¡rea basada en el nombre
       const detectarModulo = (nombreVista) => {
         const nombre = nombreVista?.toUpperCase() || "";
 
-        // Mapeo directo de palabras clave a módulos
+        // Mapeo directo de palabras clave a mÃ³dulos
         if (nombre.includes("IMPORT") || nombre.includes("ADUANA")) return "IMPORTACION";
         if (nombre.includes("LOGISTICA") || nombre.includes("ALMACEN") || nombre.includes("MOVILIDAD")) return "LOGISTICA";
         if (nombre.includes("MARKETING") || nombre.includes("CLIENTE")) return "MARKETING";
@@ -91,7 +91,7 @@ export default function MisModulosVistasPage() {
         return "OTROS";
       };
 
-      // Mapear sub_vistas asignando módulo si no tienen area
+      // Mapear sub_vistas asignando mÃ³dulo si no tienen area
       const subVistasData = Array.isArray(data.sub_vistas) ? data.sub_vistas.map((vista) => {
         const nombreVista = vista.NOMBRE || vista.nombre || vista.Nombre;
         const areaOriginal = vista.AREA || vista.area;
@@ -106,12 +106,12 @@ export default function MisModulosVistasPage() {
 
       setSubVistas(subVistasData);
 
-      // No seleccionar ningún módulo por defecto para que el usuario elija
+      // No seleccionar ningÃºn mÃ³dulo por defecto para que el usuario elija
       // if (modulosData.length > 0) {
       //   setSelectedModule(modulosData[0]);
       // }
     } catch (error) {
-      console.error("Error al obtener módulos y vistas:", error);
+      console.error("Error al obtener mÃ³dulos y vistas:", error);
       setModulos([]);
       setSubVistas([]);
     } finally {
@@ -193,7 +193,7 @@ export default function MisModulosVistasPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
       </div>
     );
   }
@@ -214,10 +214,10 @@ export default function MisModulosVistasPage() {
 
         <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
-            {/* Botón Volver */}
+            {/* BotÃ³n Volver */}
             <button
               onClick={() => router.push("/perfil")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm text-sm group"
               style={{ fontFamily: 'var(--font-poppins)' }}
             >
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -231,30 +231,30 @@ export default function MisModulosVistasPage() {
               {/* Header */}
               <div className="mb-6">
                 <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-900 to-blue-950 rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>Mis Módulos y Vistas</h1>
-                    <p className="text-sm text-gray-600 font-medium mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>Módulos y vistas asignados a tu cuenta</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>Mis MÃ³dulos y Vistas</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>MÃ³dulos y vistas asignados a tu cuenta</p>
                   </div>
                 </div>
               </div>
 
               {loadingData ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Módulos */}
-                  {/* Módulos */}
+                  {/* MÃ³dulos */}
+                  {/* MÃ³dulos */}
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>Módulos Habilitados</h2>
+                    <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>MÃ³dulos Habilitados</h2>
                     {modulos.length === 0 ? (
-                      <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>No tienes módulos asignados</p>
+                      <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>No tienes mÃ³dulos asignados</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {modulos.map((modulo) => (
@@ -262,14 +262,14 @@ export default function MisModulosVistasPage() {
                             key={modulo.id}
                             onClick={() => setSelectedModule(modulo)}
                             className={`bg-white rounded-lg border p-4 cursor-pointer transition-all duration-200 ${selectedModule?.id === modulo.id
-                              ? "border-blue-500 ring-2 ring-blue-100 shadow-md transform scale-[1.02]"
+                              ? "border-blue-700 ring-2 ring-blue-50 shadow-md transform scale-[1.02]"
                               : "border-gray-200 hover:shadow-md hover:border-blue-300"
                               }`}
                           >
                             <div className="flex items-center space-x-3">
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 transition-colors duration-200 ${selectedModule?.id === modulo.id
-                                ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
-                                : "bg-blue-100 text-blue-600"
+                                ? "bg-gradient-to-br from-blue-900 to-blue-900 text-white"
+                                : "bg-blue-50 text-blue-900"
                                 }`}>
                                 {getIcon(getModuloIcon(modulo.nombre))}
                               </div>
@@ -293,7 +293,7 @@ export default function MisModulosVistasPage() {
                     {!selectedModule ? (
                       <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
                         <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Selecciona un módulo arriba para ver sus vistas disponibles.
+                          Selecciona un mÃ³dulo arriba para ver sus vistas disponibles.
                         </p>
                       </div>
                     ) : subVistas.filter(v =>
@@ -302,7 +302,7 @@ export default function MisModulosVistasPage() {
                     ).length === 0 ? (
                       <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
                         <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          No hay vistas disponibles para el módulo <span className="font-semibold text-blue-700">{selectedModule?.nombre}</span>
+                          No hay vistas disponibles para el mÃ³dulo <span className="font-semibold text-blue-900">{selectedModule?.nombre}</span>
                         </p>
                       </div>
                     ) : (

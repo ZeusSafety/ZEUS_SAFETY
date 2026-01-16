@@ -52,7 +52,7 @@ export default function MenuPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -139,18 +139,18 @@ export default function MenuPage() {
   // Filtrar módulos según los permisos del usuario
   const userModules = user?.modules || [];
   const isAdmin = user?.isAdmin || false;
-  
+
   // Si es admin, mostrar todos los módulos
   // Si no es admin pero tiene módulos, filtrar
   // Si no es admin y no tiene módulos, no mostrar ninguno
   // Temporalmente ocultar "Seguimiento y Monitoreo" (en proceso)
   // Ocultar "Permisos" del menú (pero seguirá visible en el sidebar)
-  let availableModules = (isAdmin 
-    ? allModules 
+  let availableModules = (isAdmin
+    ? allModules
     : userModules.length > 0
-    ? allModules.filter((module) => userModules.includes(module.id))
-    : []).filter((module) => module.id !== "seguimiento-monitoreo" && module.id !== "permisos");
-  
+      ? allModules.filter((module) => userModules.includes(module.id))
+      : []).filter((module) => module.id !== "seguimiento-monitoreo" && module.id !== "permisos");
+
   // Asegurar que "boletin-informativo" siempre esté disponible para todos los usuarios
   if (!availableModules.some(m => m.id === "boletin-informativo")) {
     const boletinModule = allModules.find(m => m.id === "boletin-informativo");
@@ -158,7 +158,7 @@ export default function MenuPage() {
       availableModules = [...availableModules, boletinModule];
     }
   }
-  
+
   // Log para depuración - mostrar contenido completo
   console.log("=== MENU PAGE ===");
   console.log("User object:", JSON.stringify(user, null, 2));
@@ -173,18 +173,18 @@ export default function MenuPage() {
   // Generar mensaje de bienvenida según los módulos
   const getWelcomeMessage = () => {
     const userName = user?.name || user?.email || "Usuario";
-    
+
     if (isAdmin || userModules.length === 0 || userModules.length >= 5) {
       return `¡Bienvenido, ${userName}!`;
     }
-    
+
     if (userModules.length === 1) {
       // Obtener el nombre del módulo desde availableModules
       const module = availableModules.find(m => userModules.includes(m.id)) || availableModules[0];
       const moduleName = module?.name || "el sistema";
       return `¡Bienvenido, ${userName}, al área de ${moduleName}!`;
     }
-    
+
     // Si tiene múltiples módulos, listar los principales
     const moduleNames = availableModules.slice(0, 3).map(m => m.name).join(", ");
     return `¡Bienvenido, ${userName}! Acceso a: ${moduleNames}`;
@@ -207,14 +207,13 @@ export default function MenuPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div 
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        
+
         <main className="flex-1 overflow-y-auto">
           {/* Banner de Bienvenida al Iniciar Sesión */}
           {showWelcomeBanner && user && (
@@ -226,7 +225,7 @@ export default function MenuPage() {
 
           {/* Welcome Banner */}
           <div className="max-w-[95%] mx-auto px-2 sm:px-4 pt-3 sm:pt-4">
-            <div className="relative text-white px-3 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(21, 94, 239, 0.25)' }}>
+            <div className="relative text-white px-3 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden bg-gradient-to-r from-[#002D5A] via-[#003B75] to-[#002D5A] backdrop-blur-md" style={{ boxShadow: '0 20px 60px -12px rgba(0, 45, 90, 0.25)' }}>
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -262,7 +261,7 @@ export default function MenuPage() {
           <div className="max-w-[95%] mx-auto px-4 pt-6 pb-4">
             <div className="mb-4">
               <h2 className="text-xl font-medium text-gray-900 mb-2 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>MÓDULOS DISPONIBLES</h2>
-              <div className="w-16 h-1 bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full"></div>
+              <div className="w-16 h-1 bg-gradient-to-r from-[#002D5A] via-[#003B75] to-[#002D5A] rounded-full"></div>
             </div>
             {availableModules.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

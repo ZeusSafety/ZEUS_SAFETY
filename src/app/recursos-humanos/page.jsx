@@ -2381,7 +2381,7 @@ function RecursosHumanosContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? "text-[#1E63F7] border-b-2 border-[#1E63F7] bg-blue-50"
+                      ? "text-[#002D5A] border-b-2 border-[#002D5A] bg-blue-50"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
@@ -2536,7 +2536,7 @@ function RecursosHumanosContent() {
 
               const Seccion = ({ title, children }) => (
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-[#1E63F7] to-[#1D4ED8] px-4 py-3">
+                  <div className="bg-gradient-to-r from-[#002D5A] to-[#1D4ED8] px-4 py-3">
                     <h3 className="text-sm font-bold text-white uppercase tracking-wide">{title}</h3>
                   </div>
                   <div className="p-4">

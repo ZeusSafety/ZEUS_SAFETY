@@ -43,7 +43,7 @@ export function LocationPanel({ isOpen, onClose }) {
         className="fixed top-14 right-2 sm:right-4 md:right-6 lg:right-8 xl:right-10 2xl:right-12 w-[calc(100vw-1rem)] sm:w-[420px] md:w-[480px] lg:w-[520px] xl:w-[560px] 2xl:w-[600px] h-[calc(100vh-5rem)] sm:h-[500px] md:h-[550px] lg:h-[580px] bg-white rounded-2xl shadow-2xl border-2 border-gray-200/60 z-[10001] flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] px-4 sm:px-5 md:px-6 py-3 sm:py-4 flex items-center justify-between border-b-2 border-blue-800">
+        <div className="bg-gradient-to-r from-[#002D5A] via-[#002D5A] to-[#002D5A] px-4 sm:px-5 md:px-6 py-3 sm:py-4 flex items-center justify-between border-b-2 border-blue-800">
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -71,7 +71,7 @@ export function LocationPanel({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 md:p-6">
           {/* Mensaje Próximamente */}
           <div className="text-center mb-3 sm:mb-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-[#1E63F7] via-[#1E63F7] to-[#1E63F7] rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-[#002D5A] via-[#002D5A] to-[#002D5A] rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
               <svg
                 className="w-6 h-6 sm:w-7 sm:h-7 text-white"
                 fill="none"

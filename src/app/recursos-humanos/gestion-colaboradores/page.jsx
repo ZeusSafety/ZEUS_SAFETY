@@ -2157,7 +2157,7 @@ function GestionColaboradoresContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? "text-[#1E63F7] border-b-2 border-[#1E63F7] bg-blue-50"
+                      ? "text-[#002D5A] border-b-2 border-[#002D5A] bg-blue-50"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >

@@ -1031,7 +1031,7 @@ export default function RegistroImportacionesPage() {
               {/* Header */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
@@ -1170,7 +1170,7 @@ export default function RegistroImportacionesPage() {
                 {/* Header con API Conectada y Ver procedimiento */}
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -1293,7 +1293,7 @@ export default function RegistroImportacionesPage() {
                       <label className="block text-sm font-semibold text-gray-900 mb-2" style={{ color: 'transparent' }}>.</label>
                       <button
                         onClick={agregarProductoALista}
-                        className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
+                        className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
                         style={{ fontFamily: 'var(--font-poppins)' }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1357,7 +1357,7 @@ export default function RegistroImportacionesPage() {
                 <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
                     onClick={mostrarPrevisualizacion}
-                    className="flex items-center space-x-1.5 px-6 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
+                    className="flex items-center space-x-1.5 px-6 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

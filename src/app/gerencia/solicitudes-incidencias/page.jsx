@@ -908,7 +908,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
               {/* Título con icono y API Conectada */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -1065,7 +1065,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                           type="checkbox"
                           checked={mostrarIncidencias}
                           onChange={(e) => setMostrarIncidencias(e.target.checked)}
-                          className="w-5 h-5 text-[#1E63F7] border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-[#1E63F7]/30 focus:ring-offset-2 focus:border-[#1E63F7] transition-all duration-200 cursor-pointer appearance-none checked:bg-[#1E63F7] checked:border-[#1E63F7] hover:border-[#1E63F7]"
+                          className="w-5 h-5 text-[#002D5A] border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-[#002D5A]/30 focus:ring-offset-2 focus:border-[#002D5A] transition-all duration-200 cursor-pointer appearance-none checked:bg-[#002D5A] checked:border-[#002D5A] hover:border-[#002D5A]"
                         />
                         {mostrarIncidencias && (
                           <svg
@@ -1083,7 +1083,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                           </svg>
                         )}
                       </div>
-                      <span className="text-sm font-semibold text-gray-800 group-hover:text-[#1E63F7] transition-colors duration-200 mb-2">
+                      <span className="text-sm font-semibold text-gray-800 group-hover:text-[#002D5A] transition-colors duration-200 mb-2">
                         Mostrar Incidencias
                       </span>
                     </label>
