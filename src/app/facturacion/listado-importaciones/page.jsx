@@ -26,6 +26,7 @@ export default function ListadoImportacionesFacturacionPage() {
     observaciones: "",
     estadoVerificacion: "",
   });
+  const [soloPendientes, setSoloPendientes] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -270,9 +271,24 @@ export default function ListadoImportacionesFacturacionPage() {
       }
     }
 
+    // Lógica de filtrado por estado de recepción/incidencia:
+    // Pendiente = Sin fecha de incidencias Y incidencias en NO
+    if (soloPendientes) {
+      filtered = filtered.filter((item) =>
+        (!item.fechaIncidencias || item.fechaIncidencias.trim() === "" || item.fechaIncidencias === "-" || item.fechaIncidencias === "null") &&
+        item.incidencias === false
+      );
+    } else {
+      // Por defecto, mostrar solo los que YA TIENEN fecha o tienen incidencias en SI
+      filtered = filtered.filter((item) =>
+        (item.fechaIncidencias && item.fechaIncidencias.trim() !== "" && item.fechaIncidencias !== "-" && item.fechaIncidencias !== "null") ||
+        item.incidencias === true
+      );
+    }
+
     setFilteredFacturaciones(filtered);
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
-  }, [facturaciones, fechaInicio, fechaFinal, numeroDespacho]);
+  }, [facturaciones, fechaInicio, fechaFinal, numeroDespacho, soloPendientes]);
 
   if (loading) {
     return (
@@ -377,8 +393,25 @@ export default function ListadoImportacionesFacturacionPage() {
                 </div>
                 <div className="flex items-end gap-2.5">
                   <button
+                    onClick={() => setSoloPendientes(!soloPendientes)}
+                    className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 text-sm whitespace-nowrap active:scale-95 ${soloPendientes
+                        ? "bg-gradient-to-br from-blue-700 to-blue-800 text-white border-2 border-blue-800"
+                        : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600"
+                      }`}
+                    style={{ fontFamily: 'var(--font-poppins)', height: '42px' }}
+                  >
+                    <svg className={`w-5 h-5 ${soloPendientes ? "text-white" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Pendientes de Recepción</span>
+                    {soloPendientes && (
+                      <span className="flex h-2 w-2 rounded-full bg-white animate-pulse ml-1"></span>
+                    )}
+                  </button>
+                  <button
                     onClick={handleProcedimiento}
                     className="px-4 py-2.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-1.5 text-sm whitespace-nowrap"
+                    style={{ height: '42px' }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
