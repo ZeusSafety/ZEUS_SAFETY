@@ -1,8 +1,8 @@
 import { Inter, Poppins } from "next/font/google";
-import Script from "next/script";
 import { AuthProviderWrapper } from "../components/providers/AuthProviderWrapper";
 // import { ChatBotButton } from "../components/ui/ChatBotButton";
 import { TokenExpirationNotification } from "../components/ui/TokenExpirationNotification";
+import { ChatBotScripts } from "../components/layout/ChatBotScripts";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,9 +35,8 @@ export default function RootLayout({ children }) {
           <TokenExpirationNotification />
         </AuthProviderWrapper>
 
-        {/* Botpress Webchat Scripts */}
-        <Script src="https://cdn.botpress.cloud/webchat/v3.5/inject.js" strategy="afterInteractive" />
-        <Script src="https://files.bpcontent.cloud/2025/11/25/17/20251125173159-L7WG0LDO.js" strategy="afterInteractive" />
+        {/* Botpress Webchat Scripts (Condicionales) */}
+        <ChatBotScripts />
       </body>
     </html>
   );
