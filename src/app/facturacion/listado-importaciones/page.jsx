@@ -229,18 +229,6 @@ export default function ListadoImportacionesFacturacionPage() {
     }
   }, [user, loading, fetchFacturaciones]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E63F7]"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
   // Filtrado automático del lado del cliente
   const [filteredFacturaciones, setFilteredFacturaciones] = useState([]);
 
@@ -285,6 +273,18 @@ export default function ListadoImportacionesFacturacionPage() {
     setFilteredFacturaciones(filtered);
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
   }, [facturaciones, fechaInicio, fechaFinal, numeroDespacho]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E63F7]"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleProcedimiento = () => {
     console.log("Procedimiento");
