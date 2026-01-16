@@ -25,7 +25,6 @@ export default function ListadoImportacionesFacturacionPage() {
   const [editForm, setEditForm] = useState({
     observaciones: "",
     estadoVerificacion: "",
-    estadoDespacho: "",
   });
 
   useEffect(() => {
@@ -57,24 +56,24 @@ export default function ListadoImportacionesFacturacionPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       // Verificar que estamos en el cliente
       if (typeof window === "undefined") {
         throw new Error("Este código debe ejecutarse en el cliente");
       }
-      
+
       // Obtener el token del localStorage
       const token = localStorage.getItem("token");
-      
+
       if (!token || token.trim() === "") {
         throw new Error("No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.");
       }
-      
+
       console.log("Fetching facturaciones with token:", token.substring(0, 20) + "...");
       console.log("API URL:", "https://importaciones2026-2946605267.us-central1.run.app?facturacion=facturacion");
-      
+
       const apiUrl = "https://importaciones2026-2946605267.us-central1.run.app?facturacion=facturacion";
-      
+
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
@@ -83,9 +82,9 @@ export default function ListadoImportacionesFacturacionPage() {
           "Authorization": `Bearer ${token}`,
         },
       });
-      
+
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         // Si el token está caducado (401), redirigir al login
         if (response.status === 401 || response.status === 403) {
@@ -94,11 +93,11 @@ export default function ListadoImportacionesFacturacionPage() {
           router.push("/login");
           return;
         }
-        
+
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText || "No se pudieron obtener los datos"}`);
       }
-      
+
       let data;
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -111,103 +110,102 @@ export default function ListadoImportacionesFacturacionPage() {
           throw new Error("La respuesta no es un JSON válido");
         }
       }
-      
+
       console.log("Data received:", data);
-      
+
       // Mapear los datos de la API al formato esperado para facturación
-      const mappedData = Array.isArray(data) 
+      const mappedData = Array.isArray(data)
         ? data.map((item, index) => {
-            // Buscar el campo PDF en todas las variaciones posibles
-            let pdfField = item.archivo_pdf || item.archivoPdf || item.ARCHIVO_PDF || 
-                           item.pdf_url || item.pdfUrl || item.PDF_URL || 
-                           item.solucion_pdf || item.solucionPdf || item.SOLUCION_PDF ||
-                           item.pdf || item.PDF || item.url_pdf || item.urlPdf || item.URL_PDF ||
-                           item.link_pdf || item.linkPdf || item.LINK_PDF ||
-                           item.documento_pdf || item.documentoPdf || item.DOCUMENTO_PDF ||
-                           // Buscar en todos los campos que contengan "pdf" en el nombre
-                           (() => {
-                             const keys = Object.keys(item);
-                             for (const key of keys) {
-                               if (key.toLowerCase().includes('pdf') && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
-                                 return item[key];
-                               }
-                             }
-                             return "";
-                           })() || "";
-            
-            // Normalizar la URL del PDF
-            if (pdfField && pdfField.trim() !== "") {
-              // Si no empieza con http:// o https://, agregar https://
-              if (!pdfField.startsWith("http://") && !pdfField.startsWith("https://")) {
-                // Si empieza con //, agregar https:
-                if (pdfField.startsWith("//")) {
-                  pdfField = "https:" + pdfField;
-                } 
-                // Si empieza con /, es una ruta relativa - agregar el dominio base de la API
-                else if (pdfField.startsWith("/")) {
-                  pdfField = "https://importaciones2026-2946605267.us-central1.run.app" + pdfField;
-                }
-                // Si no tiene protocolo, agregar https://
-                else {
-                  pdfField = "https://" + pdfField;
+          // Buscar el campo PDF en todas las variaciones posibles
+          let pdfField = item.archivo_pdf || item.archivoPdf || item.ARCHIVO_PDF ||
+            item.pdf_url || item.pdfUrl || item.PDF_URL ||
+            item.solucion_pdf || item.solucionPdf || item.SOLUCION_PDF ||
+            item.pdf || item.PDF || item.url_pdf || item.urlPdf || item.URL_PDF ||
+            item.link_pdf || item.linkPdf || item.LINK_PDF ||
+            item.documento_pdf || item.documentoPdf || item.DOCUMENTO_PDF ||
+            // Buscar en todos los campos que contengan "pdf" en el nombre
+            (() => {
+              const keys = Object.keys(item);
+              for (const key of keys) {
+                if (key.toLowerCase().includes('pdf') && item[key] && typeof item[key] === 'string' && item[key].trim() !== '') {
+                  return item[key];
                 }
               }
+              return "";
+            })() || "";
+
+          // Normalizar la URL del PDF
+          if (pdfField && pdfField.trim() !== "") {
+            // Si no empieza con http:// o https://, agregar https://
+            if (!pdfField.startsWith("http://") && !pdfField.startsWith("https://")) {
+              // Si empieza con //, agregar https:
+              if (pdfField.startsWith("//")) {
+                pdfField = "https:" + pdfField;
+              }
+              // Si empieza con /, es una ruta relativa - agregar el dominio base de la API
+              else if (pdfField.startsWith("/")) {
+                pdfField = "https://importaciones2026-2946605267.us-central1.run.app" + pdfField;
+              }
+              // Si no tiene protocolo, agregar https://
+              else {
+                pdfField = "https://" + pdfField;
+              }
             }
-            
-            // Log para debuggear el campo PDF
-            if (index === 0) {
-              console.log("=== DEBUG PDF FIELD ===");
-              console.log("Sample item keys:", Object.keys(item));
-              console.log("Sample item (complete):", item);
-              console.log("PDF field found (raw):", item.archivo_pdf || item.archivoPdf || item.ARCHIVO_PDF || item.pdf_url || item.pdfUrl || item.PDF_URL || item.solucion_pdf || item.solucionPdf || item.SOLUCION_PDF);
-              console.log("PDF field found (normalized):", pdfField);
-              console.log("All PDF-related fields:", {
-                archivo_pdf: item.archivo_pdf,
-                archivoPdf: item.archivoPdf,
-                ARCHIVO_PDF: item.ARCHIVO_PDF,
-                pdf_url: item.pdf_url,
-                pdfUrl: item.pdfUrl,
-                PDF_URL: item.PDF_URL,
-                solucion_pdf: item.solucion_pdf,
-                solucionPdf: item.solucionPdf,
-                SOLUCION_PDF: item.SOLUCION_PDF,
-                pdf: item.pdf,
-                PDF: item.PDF,
-                url: item.url,
-                URL: item.URL,
-                link: item.link,
-                LINK: item.LINK
-              });
-              // Buscar cualquier campo que contenga "pdf" o "url" en su nombre
-              const pdfRelatedKeys = Object.keys(item).filter(key => 
-                key.toLowerCase().includes('pdf') || 
-                key.toLowerCase().includes('url') || 
-                key.toLowerCase().includes('link') ||
-                key.toLowerCase().includes('archivo') ||
-                key.toLowerCase().includes('solucion')
-              );
-              console.log("Keys containing 'pdf', 'url', 'link', 'archivo', or 'solucion':", pdfRelatedKeys);
-              pdfRelatedKeys.forEach(key => {
-                console.log(`  ${key}:`, item[key]);
-              });
-              console.log("=== END DEBUG ===");
-            }
-            
-            return {
-              id: item.id || item.ID || index + 1,
-              fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
-              numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
-              fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || item.incidencia_registro || item.incidenciaRegistro || item.INCIDENCIA_REGISTRO || "",
-              incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
-              estadoVerificacion: item.estado_verificacion || item.estadoVerificacion || item.ESTADO_VERIFICACION || "",
-              estadoDespacho: item.estado_despacho || item.estadoDespacho || item.ESTADO_DESPACHO || "",
-              fechaRegistroCompleto: item.fecha_registro_completo || item.fechaRegistroCompleto || item.FECHA_REGISTRO_COMPLETO || item.fecha_registro_completa || item.fechaRegistroCompleta || item.FECHA_REGISTRO_COMPLETA || "",
-              observaciones: item.observaciones || item.OBSERVACIONES || "",
-              archivoPdf: pdfField,
-            };
-          })
+          }
+
+          // Log para debuggear el campo PDF
+          if (index === 0) {
+            console.log("=== DEBUG PDF FIELD ===");
+            console.log("Sample item keys:", Object.keys(item));
+            console.log("Sample item (complete):", item);
+            console.log("PDF field found (raw):", item.archivo_pdf || item.archivoPdf || item.ARCHIVO_PDF || item.pdf_url || item.pdfUrl || item.PDF_URL || item.solucion_pdf || item.solucionPdf || item.SOLUCION_PDF);
+            console.log("PDF field found (normalized):", pdfField);
+            console.log("All PDF-related fields:", {
+              archivo_pdf: item.archivo_pdf,
+              archivoPdf: item.archivoPdf,
+              ARCHIVO_PDF: item.ARCHIVO_PDF,
+              pdf_url: item.pdf_url,
+              pdfUrl: item.pdfUrl,
+              PDF_URL: item.PDF_URL,
+              solucion_pdf: item.solucion_pdf,
+              solucionPdf: item.solucionPdf,
+              SOLUCION_PDF: item.SOLUCION_PDF,
+              pdf: item.pdf,
+              PDF: item.PDF,
+              url: item.url,
+              URL: item.URL,
+              link: item.link,
+              LINK: item.LINK
+            });
+            // Buscar cualquier campo que contenga "pdf" o "url" en su nombre
+            const pdfRelatedKeys = Object.keys(item).filter(key =>
+              key.toLowerCase().includes('pdf') ||
+              key.toLowerCase().includes('url') ||
+              key.toLowerCase().includes('link') ||
+              key.toLowerCase().includes('archivo') ||
+              key.toLowerCase().includes('solucion')
+            );
+            console.log("Keys containing 'pdf', 'url', 'link', 'archivo', or 'solucion':", pdfRelatedKeys);
+            pdfRelatedKeys.forEach(key => {
+              console.log(`  ${key}:`, item[key]);
+            });
+            console.log("=== END DEBUG ===");
+          }
+
+          return {
+            id: item.id || item.ID || index + 1,
+            fechaRegistro: item.fecha_registro || item.fechaRegistro || item.FECHA_REGISTRO || "",
+            numeroDespacho: item.numero_despacho || item.numeroDespacho || item.NUMERO_DESPACHO || "",
+            fechaIncidencias: item.fecha_incidencias || item.fechaIncidencias || item.FECHA_INCIDENCIAS || item.incidencia_registro || item.incidenciaRegistro || item.INCIDENCIA_REGISTRO || "",
+            incidencias: item.incidencias === true || item.incidencias === "SI" || item.INCIDENCIAS === "SI" || false,
+            estadoVerificacion: item.estado_verificacion || item.estadoVerificacion || item.ESTADO_VERIFICACION || "",
+            fechaRegistroCompleto: item.fecha_registro_completo || item.fechaRegistroCompleto || item.FECHA_REGISTRO_COMPLETO || item.fecha_registro_completa || item.fechaRegistroCompleta || item.FECHA_REGISTRO_COMPLETA || "",
+            observaciones: item.observaciones || item.OBSERVACIONES || "",
+            archivoPdf: pdfField,
+          };
+        })
         : [];
-      
+
       console.log("Mapped data (first item):", mappedData[0]);
       setFacturaciones(mappedData);
     } catch (err) {
@@ -233,7 +231,7 @@ export default function ListadoImportacionesFacturacionPage() {
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#F7FAFF' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E63F7]"></div>
       </div>
     );
@@ -302,9 +300,8 @@ export default function ListadoImportacionesFacturacionPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -404,7 +401,6 @@ export default function ListadoImportacionesFacturacionPage() {
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA DE INCIDENCIAS</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">INCIDENCIAS</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO DE VERIFICACIÓN</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ESTADO DE DESPACHO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">FECHA DE REGISTRO</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">OBSERVACIONES</th>
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
@@ -413,7 +409,7 @@ export default function ListadoImportacionesFacturacionPage() {
                     <tbody className="divide-y divide-gray-100">
                       {loadingData ? (
                         <tr>
-                          <td colSpan={11} className="px-3 py-8 text-center">
+                          <td colSpan={10} className="px-3 py-8 text-center">
                             <div className="flex items-center justify-center space-x-2">
                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1E63F7]"></div>
                               <span className="text-sm text-gray-600">Cargando datos...</span>
@@ -422,7 +418,7 @@ export default function ListadoImportacionesFacturacionPage() {
                         </tr>
                       ) : error ? (
                         <tr>
-                          <td colSpan={11} className="px-3 py-8 text-center">
+                          <td colSpan={10} className="px-3 py-8 text-center">
                             <div className="flex flex-col items-center justify-center space-y-2">
                               <span className="text-sm text-red-600 font-semibold">Error al cargar los datos</span>
                               <span className="text-xs text-gray-500">{error}</span>
@@ -437,156 +433,147 @@ export default function ListadoImportacionesFacturacionPage() {
                         </tr>
                       ) : currentFacturaciones.length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="px-3 py-8 text-center">
+                          <td colSpan={10} className="px-3 py-8 text-center">
                             <span className="text-sm text-gray-500">No se encontraron facturaciones</span>
                           </td>
                         </tr>
                       ) : (
                         currentFacturaciones.map((facturacion) => (
-                        <tr key={facturacion.id} className="hover:bg-slate-200 transition-colors" onClick={(e) => {
-                          // Prevenir que el clic en la fila interfiera
-                          const target = e.target;
-                          if (target.closest('.pdf-button-container')) {
-                            return;
-                          }
-                        }}>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{facturacion.id}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistro}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{facturacion.numeroDespacho}</td>
-                          <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
-                            {facturacion.archivoPdf && facturacion.archivoPdf.trim() !== "" ? (
-                              <div 
-                                className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                  const url = facturacion.archivoPdf;
-                                  console.log("PDF clicked, URL:", url);
-                                  
-                                  if (!url || url.trim() === "") {
-                                    alert("No hay enlace PDF disponible");
-                                    return;
-                                  }
-                                  
-                                  // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
-                                  window.open(url, "_blank", "noopener,noreferrer");
-                                }}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                }}
-                                onMouseUp={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                }}
-                                onTouchStart={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                  const url = facturacion.archivoPdf;
-                                  if (url && url.trim() !== "") {
-                                    window.open(url, "_blank", "noopener,noreferrer");
-                                  }
-                                }}
-                                role="button"
-                                tabIndex={0}
-                                style={{ 
-                                  position: 'relative', 
-                                  zIndex: 9999, 
-                                  pointerEvents: 'auto',
-                                  userSelect: 'none',
-                                  WebkitUserSelect: 'none'
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
+                          <tr key={facturacion.id} className="hover:bg-slate-200 transition-colors" onClick={(e) => {
+                            // Prevenir que el clic en la fila interfiera
+                            const target = e.target;
+                            if (target.closest('.pdf-button-container')) {
+                              return;
+                            }
+                          }}>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{facturacion.id}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistro}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-bold text-gray-700">{facturacion.numeroDespacho}</td>
+                            <td className="px-3 py-2 whitespace-nowrap relative" style={{ pointerEvents: 'auto' }}>
+                              {facturacion.archivoPdf && facturacion.archivoPdf.trim() !== "" ? (
+                                <div
+                                  className="pdf-button-container inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                    const url = facturacion.archivoPdf;
+                                    console.log("PDF clicked, URL:", url);
+
+                                    if (!url || url.trim() === "") {
+                                      alert("No hay enlace PDF disponible");
+                                      return;
+                                    }
+
+                                    // Solo abrir en nueva pestaña, nunca cambiar la pestaña actual
+                                    window.open(url, "_blank", "noopener,noreferrer");
+                                  }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                  }}
+                                  onMouseUp={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                  }}
+                                  onTouchStart={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
                                     const url = facturacion.archivoPdf;
                                     if (url && url.trim() !== "") {
                                       window.open(url, "_blank", "noopener,noreferrer");
                                     }
-                                  }
-                                }}
-                              >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                </svg>
-                                <span style={{ pointerEvents: 'none' }}>PDF</span>
-                              </div>
-                            ) : (
-                              <button
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                disabled
-                                title="Sin archivo PDF"
-                              >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                  <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                  <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                </svg>
-                                <span style={{ pointerEvents: 'none' }}>PDF</span>
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaIncidencias || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${
-                              facturacion.incidencias 
-                                ? "bg-red-600 border-red-700 text-white" 
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  style={{
+                                    position: 'relative',
+                                    zIndex: 10,
+                                    pointerEvents: 'auto',
+                                    userSelect: 'none',
+                                    WebkitUserSelect: 'none'
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const url = facturacion.archivoPdf;
+                                      if (url && url.trim() !== "") {
+                                        window.open(url, "_blank", "noopener,noreferrer");
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                </div>
+                              ) : (
+                                <button
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                  disabled
+                                  title="Sin archivo PDF"
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                  </svg>
+                                  <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaIncidencias || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 ${facturacion.incidencias
+                                ? "bg-red-600 border-red-700 text-white"
                                 : "bg-green-600 border-green-700 text-white"
-                            }`}>
-                              {facturacion.incidencias ? "SI" : "NO"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.estadoVerificacion || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {facturacion.estadoDespacho && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
-                                {facturacion.estadoDespacho}
+                                }`}>
+                                {facturacion.incidencias ? "SI" : "NO"}
                               </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistroCompleto || "-"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <button
-                              onClick={() => {
-                                setSelectedFacturacion(facturacion);
-                                setIsVerModalOpen(true);
-                              }}
-                              className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-full text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <button
-                              onClick={() => {
-                                setSelectedFacturacion(facturacion);
-                                setEditForm({
-                                  observaciones: facturacion.observaciones || "",
-                                  estadoVerificacion: facturacion.estadoVerificacion || "",
-                                  estadoDespacho: facturacion.estadoDespacho || "",
-                                });
-                                setIsEditarModalOpen(true);
-                              }}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                              <span>Editar</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.estadoVerificacion || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{facturacion.fechaRegistroCompleto || "-"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <button
+                                onClick={() => {
+                                  setSelectedFacturacion(facturacion);
+                                  setIsVerModalOpen(true);
+                                }}
+                                className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-full text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <button
+                                onClick={() => {
+                                  setSelectedFacturacion(facturacion);
+                                  setEditForm({
+                                    observaciones: facturacion.observaciones || "",
+                                    estadoVerificacion: facturacion.estadoVerificacion || "",
+                                  });
+                                  setIsEditarModalOpen(true);
+                                }}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-br from-[#1E63F7] to-[#1E63F7] text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                <span>Editar</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
@@ -657,10 +644,6 @@ export default function ListadoImportacionesFacturacionPage() {
                 <p className="text-sm text-gray-900">{selectedFacturacion.estadoVerificacion || "-"}</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Estado de Despacho</label>
-                <p className="text-sm text-gray-900">{selectedFacturacion.estadoDespacho || "-"}</p>
-              </div>
-              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Incidencia</label>
                 <p className="text-sm text-gray-900">{selectedFacturacion.incidencias || "NO"}</p>
               </div>
@@ -703,25 +686,12 @@ export default function ListadoImportacionesFacturacionPage() {
             <select
               value={editForm.estadoVerificacion}
               onChange={(e) => setEditForm({ ...editForm, estadoVerificacion: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 font-medium"
             >
-              <option value="">Seleccionar estado</option>
-              <option value="PENDIENTE">PENDIENTE</option>
-              <option value="VERIFICADO">VERIFICADO</option>
-              <option value="RECHAZADO">RECHAZADO</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Estado de Despacho</label>
-            <select
-              value={editForm.estadoDespacho}
-              onChange={(e) => setEditForm({ ...editForm, estadoDespacho: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-              <option value="">Seleccionar estado</option>
-              <option value="PENDIENTE">PENDIENTE</option>
-              <option value="EN PROCESO">EN PROCESO</option>
-              <option value="DESPACHADO">DESPACHADO</option>
+              <option value="" className="text-gray-500">Seleccionar estado</option>
+              <option value="PENDIENTE" className="text-gray-900">PENDIENTE</option>
+              <option value="VERIFICADO" className="text-gray-900">VERIFICADO</option>
+              <option value="RECHAZADO" className="text-gray-900">RECHAZADO</option>
             </select>
           </div>
           <div>
@@ -730,7 +700,7 @@ export default function ListadoImportacionesFacturacionPage() {
               value={editForm.observaciones}
               onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none text-gray-900 font-medium placeholder:text-gray-500"
               placeholder="Ingrese observaciones..."
             />
           </div>
