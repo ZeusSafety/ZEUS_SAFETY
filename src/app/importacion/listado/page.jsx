@@ -33,6 +33,7 @@ export default function ListadoImportacionesPage() {
     estado: "",
     canal: "",
   });
+  const [soloPendientes, setSoloPendientes] = useState(false);
 
   // Cargar importaciones desde la API
   useEffect(() => {
@@ -180,9 +181,14 @@ export default function ListadoImportacionesPage() {
       }
     }
 
+    // Filtrar por despachos pendientes (sin fecha de recepción)
+    if (soloPendientes) {
+      filtered = filtered.filter((item) => !item.fechaRecepcion || item.fechaRecepcion.trim() === "" || item.fechaRecepcion === "null");
+    }
+
     setFilteredImportaciones(filtered);
     setCurrentPage(1); // Resetear a la primera página cuando se filtra
-  }, [importaciones, fechaInicio, fechaFinal, numeroDespacho]);
+  }, [importaciones, fechaInicio, fechaFinal, numeroDespacho, soloPendientes]);
 
   // Función para normalizar fechas para input type="date" (formato YYYY-MM-DD sin zona horaria)
   const normalizarFechaParaInput = (fechaString) => {
@@ -194,9 +200,9 @@ export default function ListadoImportacionesPage() {
       if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
         return fechaString;
       }
-      
+
       let year, month, day;
-      
+
       if (fechaString.includes('T') || fechaString.includes(' ')) {
         // Si tiene hora, tomar solo la parte de la fecha
         const partes = fechaString.split('T')[0].split(' ')[0];
@@ -217,12 +223,12 @@ export default function ListadoImportacionesPage() {
       } else {
         return '';
       }
-      
+
       // Asegurar formato con ceros a la izquierda
       const yearStr = String(year).padStart(4, '0');
       const monthStr = String(month).padStart(2, '0');
       const dayStr = String(day).padStart(2, '0');
-      
+
       return `${yearStr}-${monthStr}-${dayStr}`;
     } catch {
       return '';
@@ -238,7 +244,7 @@ export default function ListadoImportacionesPage() {
       if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaString)) {
         return fechaString;
       }
-      
+
       // Para fechas en formato ISO (2026-01-15) o con hora, parsearlo sin zona horaria
       let fecha;
       if (fechaString.includes('T') || fechaString.includes(' ')) {
@@ -254,11 +260,11 @@ export default function ListadoImportacionesPage() {
         // Intenta parsear como fecha normal
         fecha = new Date(fechaString);
       }
-      
+
       if (isNaN(fecha.getTime())) {
         return fechaString;
       }
-      
+
       return fecha.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: '2-digit',
@@ -504,6 +510,24 @@ export default function ListadoImportacionesPage() {
                     </svg>
                   </div>
                 </div>
+                <div className="flex flex-col justify-end">
+                  <button
+                    onClick={() => setSoloPendientes(!soloPendientes)}
+                    className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md active:scale-95 ${soloPendientes
+                        ? "bg-gradient-to-br from-blue-700 to-blue-800 text-white border-2 border-blue-800"
+                        : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600"
+                      }`}
+                    style={{ fontFamily: 'var(--font-poppins)', height: '42px' }}
+                  >
+                    <svg className={`w-5 h-5 ${soloPendientes ? "text-white" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Pendientes de Recepción</span>
+                    {soloPendientes && (
+                      <span className="flex h-2 w-2 rounded-full bg-white animate-pulse ml-1"></span>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Tabla */}
@@ -609,12 +633,16 @@ export default function ListadoImportacionesPage() {
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(importacion.fechaRecepcion)}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${importacion.incidencias
-                                ? "bg-gradient-to-br from-red-600 to-red-700"
-                                : "bg-gradient-to-br from-green-600 to-green-700"
-                                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {importacion.incidencias ? "SI" : "NO"}
-                              </span>
+                              {importacion.fechaRecepcion && importacion.fechaRecepcion.trim() !== "" && importacion.fechaRecepcion !== "null" ? (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${importacion.incidencias
+                                  ? "bg-gradient-to-br from-red-600 to-red-700"
+                                  : "bg-gradient-to-br from-green-600 to-green-700"
+                                  }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {importacion.incidencias ? "SI" : "NO"}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 font-medium px-3">-</span>
+                              )}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap">
                               <button
