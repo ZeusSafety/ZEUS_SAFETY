@@ -6,6 +6,8 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export default function IncidenciasImportacionesPage() {
   const router = useRouter();
@@ -15,27 +17,27 @@ export default function IncidenciasImportacionesPage() {
   const [productos, setProductos] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filtros
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [buscarDespacho, setBuscarDespacho] = useState("");
-  
+
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
-  
+
   // Modales
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
   const [isActualizarModalOpen, setIsActualizarModalOpen] = useState(false);
   const [isEditProductoModalOpen, setIsEditProductoModalOpen] = useState(false);
-  
+
   // Datos de incidencia seleccionada
   const [selectedIncidencia, setSelectedIncidencia] = useState(null);
   const [productosDetalle, setProductosDetalle] = useState([]);
   const [observacionesDetalle, setObservacionesDetalle] = useState("");
   const [currentIncidenciaId, setCurrentIncidenciaId] = useState(null);
-  
+
   // Formulario de actualización
   const [updateForm, setUpdateForm] = useState({
     idIncidencia: "",
@@ -44,7 +46,7 @@ export default function IncidenciasImportacionesPage() {
     respondidoPor: "",
     estadoDespacho: "",
   });
-  
+
   // Productos en el formulario de actualización
   const [productosForm, setProductosForm] = useState([]);
   const [nuevoProducto, setNuevoProducto] = useState({
@@ -55,21 +57,21 @@ export default function IncidenciasImportacionesPage() {
     cantidadEnCaja: "",
     cantidad: "",
   });
-  
+
   // Autocompletado
   const [autocompleteVisible, setAutocompleteVisible] = useState(false);
   const [autocompleteResults, setAutocompleteResults] = useState([]);
   const [autocompleteQuery, setAutocompleteQuery] = useState("");
   const autocompleteRef = useRef(null);
   const productoInputRef = useRef(null);
-  
+
   // Edición de producto
   const [filaEditando, setFilaEditando] = useState(null);
   const [editProducto, setEditProducto] = useState({
     cantidadEnCaja: "",
     cantidad: "",
   });
-  
+
   const [numeroDespachoActual, setNumeroDespachoActual] = useState(null);
 
   useEffect(() => {
@@ -96,7 +98,7 @@ export default function IncidenciasImportacionesPage() {
     if (user) {
       cargarIncencias();
       cargarProductos();
-      
+
       // NO establecer fechas por defecto - dejar vacío para mostrar todos los registros
       // El usuario puede filtrar después si lo desea
     }
@@ -122,7 +124,7 @@ export default function IncidenciasImportacionesPage() {
     try {
       setLoadingData(true);
       setError(null);
-      
+
       const token = localStorage.getItem("token");
       if (!token) {
         router.push("/login");
@@ -154,11 +156,11 @@ export default function IncidenciasImportacionesPage() {
 
       let data;
       const contentType = response.headers.get("content-type");
-      
+
       // Intentar obtener como texto primero para ver qué devuelve realmente
       const textResponse = await response.text();
       console.log('📄 Respuesta como texto (primeros 500 chars):', textResponse.substring(0, 500));
-      
+
       try {
         data = JSON.parse(textResponse);
         console.log('✅ Parseado como JSON exitosamente');
@@ -180,13 +182,13 @@ export default function IncidenciasImportacionesPage() {
           data = null;
         }
       }
-      
+
       console.log('📦 Data después del parseo:', data);
       console.log('📦 Tipo de data:', typeof data);
       console.log('📦 Es array?', Array.isArray(data));
-      
+
       let registros = [];
-      
+
       if (data === null || data === undefined) {
         console.warn('⚠️ Data es null o undefined');
         registros = [];
@@ -200,7 +202,7 @@ export default function IncidenciasImportacionesPage() {
           console.error('❌ Error parseando string:', e);
           registros = [];
         }
-      } 
+      }
       // Si data es un array, usarlo directamente
       else if (Array.isArray(data)) {
         registros = data;
@@ -223,25 +225,25 @@ export default function IncidenciasImportacionesPage() {
       if (registros.length > 0) {
         console.log('📋 Primer registro completo:', JSON.stringify(registros[0], null, 2));
         console.log('📋 Claves del primer registro:', Object.keys(registros[0]));
-        
+
         // Mapear los datos al formato esperado por la tabla
         const registrosMapeados = registros.map((item, index) => {
           // Buscar campos en diferentes variaciones (mayúsculas, minúsculas, snake_case, camelCase)
           const id = item.ID_INCIDENCIA || item.id_incidencia || item.ID || item.id || item.Id || (index + 1);
           const fechaRegistro = item.FECHA_REGISTRO || item.fecha_registro || item.Fecha_Registro || item.fechaRegistro || '';
           const numeroDespacho = item.NUMERO_DESPACHO || item.numero_despacho || item.Numero_Despacho || item.numeroDespacho || '';
-          
+
           // PDF Inicial
-          let pdfInicial = item.ARCHIVO_PDF_URL || item.archivo_pdf_url || item.ARCHIVO_PDF || item.archivo_pdf || 
-                          item.PDF_INICIAL || item.pdf_inicial || item.pdfInicial || '';
-          
+          let pdfInicial = item.ARCHIVO_PDF_URL || item.archivo_pdf_url || item.ARCHIVO_PDF || item.archivo_pdf ||
+            item.PDF_INICIAL || item.pdf_inicial || item.pdfInicial || '';
+
           // PDF Incidencia
-          let pdfIncidencia = item.PDF_INCIDENCIA_URL || item.pdf_incidencia_url || item.PDF_INCIDENCIA || 
-                             item.pdf_incidencia || item.pdfIncidencia || '';
-          
+          let pdfIncidencia = item.PDF_INCIDENCIA_URL || item.pdf_incidencia_url || item.PDF_INCIDENCIA ||
+            item.pdf_incidencia || item.pdfIncidencia || '';
+
           // Solución PDF
           let solucionPdf = item.SOLUCION_PDF || item.solucion_pdf || item.Solucion_Pdf || item.solucionPdf || '';
-          
+
           const fechaRecepcion = item.FECHA_RECEPCION || item.fecha_recepcion || item.Fecha_Recepcion || item.fechaRecepcion || '';
           const fechaCorreccion = item.FECHA_CORRECCION || item.fecha_correccion || item.Fecha_Correccion || item.fechaCorreccion || '';
           const incidencias = item.INCIDENCIAS || item.incidencias || item.Incidencias || '';
@@ -249,7 +251,7 @@ export default function IncidenciasImportacionesPage() {
           const respondidoPor = item.RESPONDIDO_POR || item.respondido_por || item.Respondido_Por || item.respondidoPor || '';
           const estadoDespacho = item.ESTADO_DESPACHO || item.estado_despacho || item.Estado_Despacho || item.estadoDespacho || '';
           const observaciones = item.OBSERVACIONES || item.observaciones || item.Observaciones || item.observaciones || '';
-          
+
           return {
             ID_INCIDENCIA: id,
             FECHA_REGISTRO: fechaRegistro,
@@ -268,10 +270,10 @@ export default function IncidenciasImportacionesPage() {
             _original: item
           };
         });
-        
+
         console.log('✅ Registros mapeados:', registrosMapeados.length);
         console.log('📋 Primer registro mapeado:', JSON.stringify(registrosMapeados[0], null, 2));
-        
+
         setIncidencias(registrosMapeados);
       } else {
         console.warn('⚠️ No se encontraron registros después del procesamiento');
@@ -317,16 +319,16 @@ export default function IncidenciasImportacionesPage() {
   const incidenciasFiltradas = useMemo(() => {
     console.log('🔍 Filtrando incidencias. Total sin filtrar:', incidencias.length);
     console.log('🔍 Filtros activos - Desde:', fechaDesde || 'NINGUNA', 'Hasta:', fechaHasta || 'NINGUNA', 'Despacho:', buscarDespacho || 'NINGUNO');
-    
+
     // Si no hay filtros activos, devolver todas las incidencias
     if (!fechaDesde && !fechaHasta && !buscarDespacho) {
       console.log('✅ Sin filtros activos, mostrando todas las incidencias:', incidencias.length);
       return incidencias;
     }
-    
+
     let filtradas = incidencias.filter(incidencia => {
       let cumple = true;
-      
+
       // Filtrar por fecha desde
       if (fechaDesde) {
         const fechaRegistro = incidencia.FECHA_REGISTRO || '';
@@ -352,7 +354,7 @@ export default function IncidenciasImportacionesPage() {
           // Esto permite que se muestren registros sin fecha
         }
       }
-      
+
       // Filtrar por fecha hasta
       if (fechaHasta && cumple) {
         const fechaRegistro = incidencia.FECHA_REGISTRO || '';
@@ -373,7 +375,7 @@ export default function IncidenciasImportacionesPage() {
           }
         }
       }
-      
+
       // Filtrar por número de despacho
       if (buscarDespacho && cumple) {
         const despacho = String(incidencia.NUMERO_DESPACHO || '').toLowerCase().trim();
@@ -385,10 +387,10 @@ export default function IncidenciasImportacionesPage() {
           cumple = false;
         }
       }
-      
+
       return cumple;
     });
-    
+
     console.log('✅ Incidencias después del filtro:', filtradas.length);
     if (filtradas.length === 0 && incidencias.length > 0) {
       console.warn('⚠️ Los filtros están ocultando todos los registros. Verificar fechas y despacho.');
@@ -478,11 +480,11 @@ export default function IncidenciasImportacionesPage() {
         } catch (e) {
           productosData = Array.isArray(data) ? data : [];
         }
-        
+
         if (productosData && typeof productosData === 'object' && !Array.isArray(productosData)) {
           productosData = [productosData];
         }
-        
+
         setProductosDetalle(Array.isArray(productosData) ? productosData : []);
       }
     } catch (error) {
@@ -734,10 +736,10 @@ export default function IncidenciasImportacionesPage() {
 
     try {
       const incidencia = selectedIncidencia;
-      
+
       // Usar los productos que se muestran en el modal
       const productosPDF = productosDetalle.length > 0 ? productosDetalle : [];
-      
+
       if (productosPDF.length === 0) {
         setError('No hay productos para generar el PDF');
         return;
@@ -747,7 +749,7 @@ export default function IncidenciasImportacionesPage() {
       let tipoCarga = "";
       let fechaLlegada = "";
       const numeroDespacho = incidencia.NUMERO_DESPACHO;
-      
+
       if (numeroDespacho) {
         try {
           const token = localStorage.getItem("token");
@@ -771,7 +773,7 @@ export default function IncidenciasImportacionesPage() {
             } else if (importData && typeof importData === 'object') {
               importacion = importData;
             }
-            
+
             if (importacion) {
               tipoCarga = importacion.TIPO_CARGA || importacion.tipo_carga || importacion.Tipo_Carga || "";
               fechaLlegada = importacion.FECHA_LLEGADA || importacion.fecha_llegada || importacion.Fecha_Llegada || "";
@@ -798,7 +800,7 @@ export default function IncidenciasImportacionesPage() {
           // item: producto.ITEM || String(index + 1) - siempre STRING
           // cantidad_inicial: producto.CANTIDAD_INICIAL || "0" - siempre STRING "0"
           // cantidad_recibida: producto.CANTIDAD_RECIBIDA || "0" - siempre STRING "0"
-          
+
           const itemData = {
             item: producto.ITEM || String(index + 1),
             producto: producto.PRODUCTO || "N/A",
@@ -808,9 +810,9 @@ export default function IncidenciasImportacionesPage() {
             cantidad_recibida: producto.CANTIDAD_RECIBIDA || "0",
             motivo: producto.MOTIVO || "Sin motivo especificado"
           };
-          
+
           console.log(`Item ${index + 1}:`, itemData);
-          
+
           return itemData;
         }),
       };
@@ -832,14 +834,14 @@ export default function IncidenciasImportacionesPage() {
       if (pdfResponse.ok) {
         const result = await pdfResponse.json();
         const pdfUrl = result.result;
-        
+
         console.log('✅ PDF generado exitosamente:', pdfUrl);
-        
+
         // Verificar si la respuesta contiene una URL
         if (pdfUrl && pdfUrl.trim() !== '') {
           // Intentar extraer URL de diferentes formatos de respuesta
           let urlFinal = null;
-          
+
           // Si la respuesta es directamente una URL
           if (typeof pdfUrl === 'string' && pdfUrl.startsWith('http')) {
             urlFinal = pdfUrl;
@@ -864,7 +866,7 @@ export default function IncidenciasImportacionesPage() {
           else if (typeof pdfUrl === 'object') {
             urlFinal = pdfUrl.url || pdfUrl.link || pdfUrl.pdf || pdfUrl.download_url || pdfUrl;
           }
-          
+
           // Si encontramos una URL, abrirla en Google Drive
           if (urlFinal && urlFinal.startsWith('http')) {
             console.log('🔗 Abriendo PDF en Google Drive:', urlFinal);
@@ -884,6 +886,95 @@ export default function IncidenciasImportacionesPage() {
     } catch (error) {
       console.error('Error al generar PDF:', error);
       setError('Error al generar el PDF: ' + error.message);
+    }
+  };
+
+  const exportarPDF = () => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const titulo = "Reporte de Incidencias de Importaciones";
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Encabezado
+      doc.setFontSize(18);
+      doc.setTextColor(30, 99, 247); // Color azul del tema
+      doc.text(titulo, 14, 20);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Fecha de generación: ${fechaGeneracion}`, 14, 28);
+
+      // Preparar datos de la tabla
+      const data = incidenciasFiltradas.map(inc => [
+        inc.ID_INCIDENCIA || '',
+        formatearFecha(inc.FECHA_REGISTRO),
+        inc.NUMERO_DESPACHO || '',
+        formatearFecha(inc.FECHA_RECEPCION),
+        formatearFecha(inc.FECHA_CORRECCION),
+        inc.INCIDENCIAS || 'N/A',
+        inc.ESTADO_INCIDENCIA || 'N/A',
+        inc.RESPONDIDO_POR || 'N/A'
+      ]);
+
+      const headers = [
+        ["ID", "Fecha Registro", "N° Despacho", "Fecha Recepción", "Fecha Corrección", "Incidencias", "Estado", "Respondido por"]
+      ];
+
+      doc.autoTable({
+        startY: 35,
+        head: headers,
+        body: data,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [30, 99, 247],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        bodyStyles: {
+          fontSize: 7,
+          valign: 'middle'
+        },
+        columnStyles: {
+          0: { cellWidth: 15, halign: 'center' },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 30, fontStyle: 'bold' },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 20, halign: 'center' },
+          6: { cellWidth: 30, halign: 'center' },
+          7: { cellWidth: 30 }
+        },
+        alternateRowStyles: {
+          fillColor: [245, 247, 250]
+        },
+        margin: { top: 35 },
+        didDrawPage: (data) => {
+          // Pie de página
+          const str = 'Página ' + doc.internal.getNumberOfPages();
+          doc.setFontSize(8);
+          const pageSize = doc.internal.pageSize;
+          const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+          doc.text(str, data.settings.margin.left, pageHeight - 10);
+        }
+      });
+
+      doc.save(`Reporte_Incidencias_${new Date().getTime()}.pdf`);
+    } catch (err) {
+      console.error("Error al exportar PDF:", err);
+      setError("Error al exportar el PDF: " + err.message);
     }
   };
 
@@ -948,69 +1039,80 @@ export default function IncidenciasImportacionesPage() {
                 </div>
               )}
 
-{/* Filtros */}
-<div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
-  {/* Cambiamos a 6 columnas para tener más control del ancho */}
-  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-    
-    {/* Fecha Desde - Ocupa 1 columna */}
-    <div className="md:col-span-1">
-      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-        Fecha Desde:
-      </label>
-      <input
-        type="date"
-        value={fechaDesde}
-        onChange={(e) => setFechaDesde(e.target.value)}
-        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-      />
-    </div>
+              {/* Filtros */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
+                {/* Cambiamos a 6 columnas para tener más control del ancho */}
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
 
-    {/* Fecha Hasta - Ocupa 1 columna */}
-    <div className="md:col-span-1">
-      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-        Fecha Hasta:
-      </label>
-      <input
-        type="date"
-        value={fechaHasta}
-        onChange={(e) => setFechaHasta(e.target.value)}
-        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-      />
-    </div>
+                  {/* Fecha Desde - Ocupa 1 columna */}
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Fecha Desde:
+                    </label>
+                    <input
+                      type="date"
+                      value={fechaDesde}
+                      onChange={(e) => setFechaDesde(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    />
+                  </div>
 
-    {/* Número de Despacho - AHORA MÁS ANCHO (Ocupa 3 columnas) */}
-    <div className="md:col-span-3">
-      <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
-        Número de Despacho:
-      </label>
-      <input
-        type="text"
-        value={buscarDespacho}
-        onChange={(e) => setBuscarDespacho(e.target.value)}
-        placeholder="Buscar por número de despacho"
-        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-      />
-    </div>
+                  {/* Fecha Hasta - Ocupa 1 columna */}
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Fecha Hasta:
+                    </label>
+                    <input
+                      type="date"
+                      value={fechaHasta}
+                      onChange={(e) => setFechaHasta(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    />
+                  </div>
 
-    {/* Botón Buscar - AHORA MÁS ANCHO (Ocupa 1 columna pero se siente más integrado) */}
-    <div className="flex items-end md:col-span-1">
-      <button
-        onClick={filtrarIncencias}
-        className="w-full py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-1.5"
-        style={{ fontFamily: 'var(--font-poppins)' }}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        Buscar
-      </button>
-    </div>
-  </div>
-</div>
+                  {/* Número de Despacho - AHORA MÁS ANCHO (Ocupa 3 columnas) */}
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Número de Despacho:
+                    </label>
+                    <input
+                      type="text"
+                      value={buscarDespacho}
+                      onChange={(e) => setBuscarDespacho(e.target.value)}
+                      placeholder="Buscar por número de despacho"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    />
+                  </div>
+
+                  {/* Botones Buscar y Exportar */}
+                  <div className="flex items-end md:col-span-1 gap-2">
+                    <button
+                      onClick={filtrarIncencias}
+                      className="flex-1 py-2.5 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-1.5"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      Buscar
+                    </button>
+                    <button
+                      onClick={exportarPDF}
+                      className="p-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+                      title="Exportar a PDF"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none"></path>
+                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* Tabla de Incidencias */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
@@ -1052,10 +1154,10 @@ export default function IncidenciasImportacionesPage() {
                               <td className="px-3 py-2 whitespace-nowrap text-[10px]">
                                 {incidencia.ARCHIVO_PDF_URL ? (
                                   <div className="flex items-center justify-center">
-                                    <a 
-                                      href={incidencia.ARCHIVO_PDF_URL} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
+                                    <a
+                                      href={incidencia.ARCHIVO_PDF_URL}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Abrir PDF en nueva pestaña"
                                       style={{ fontFamily: 'var(--font-poppins)' }}
@@ -1074,10 +1176,10 @@ export default function IncidenciasImportacionesPage() {
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap text-[10px]">
                                 {incidencia.PDF_INCIDENCIA_URL ? (
-                                  <a 
-                                    href={incidencia.PDF_INCIDENCIA_URL} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
+                                  <a
+                                    href={incidencia.PDF_INCIDENCIA_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                                   >
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1117,10 +1219,10 @@ export default function IncidenciasImportacionesPage() {
                               <td className="px-3 py-2 whitespace-nowrap text-[10px]">
                                 {incidencia.SOLUCION_PDF ? (
                                   <div className="flex items-center justify-center">
-                                    <a 
-                                      href={incidencia.SOLUCION_PDF} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
+                                    <a
+                                      href={incidencia.SOLUCION_PDF}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
                                       title="Abrir PDF en nueva pestaña"
                                       style={{ fontFamily: 'var(--font-poppins)' }}
@@ -1378,7 +1480,7 @@ export default function IncidenciasImportacionesPage() {
               </svg>
               Agregar Producto con Incidencia
             </h4>
-            
+
             <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
