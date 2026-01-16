@@ -641,16 +641,12 @@ export default function ListadoImportacionesPage() {
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(importacion.fechaRecepcion)}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
-                              {importacion.fechaRecepcion && importacion.fechaRecepcion.trim() !== "" && importacion.fechaRecepcion !== "null" ? (
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${importacion.incidencias
-                                  ? "bg-gradient-to-br from-red-600 to-red-700"
-                                  : "bg-gradient-to-br from-green-600 to-green-700"
-                                  }`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                  {importacion.incidencias ? "SI" : "NO"}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-gray-400 font-medium px-3">-</span>
-                              )}
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${importacion.incidencias
+                                ? "bg-gradient-to-br from-red-600 to-red-700"
+                                : "bg-gradient-to-br from-green-600 to-green-700"
+                                }`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                {importacion.incidencias ? "SI" : "NO"}
+                              </span>
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap">
                               <button
