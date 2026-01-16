@@ -181,9 +181,17 @@ export default function ListadoImportacionesPage() {
       }
     }
 
-    // Filtrar por despachos pendientes (sin fecha de recepción)
+    // Lógica de filtrado por recepción:
+    // Por defecto (soloPendientes: false) -> Mostrar solo los recibidos (con fechaRecepcion)
+    // Cuando está activo (soloPendientes: true) -> Mostrar solo los pendientes (sin fechaRecepcion)
     if (soloPendientes) {
-      filtered = filtered.filter((item) => !item.fechaRecepcion || item.fechaRecepcion.trim() === "" || item.fechaRecepcion === "null");
+      filtered = filtered.filter((item) =>
+        !item.fechaRecepcion || item.fechaRecepcion.trim() === "" || item.fechaRecepcion === "null" || item.fechaRecepcion === "-"
+      );
+    } else {
+      filtered = filtered.filter((item) =>
+        item.fechaRecepcion && item.fechaRecepcion.trim() !== "" && item.fechaRecepcion !== "null" && item.fechaRecepcion !== "-"
+      );
     }
 
     setFilteredImportaciones(filtered);
@@ -514,8 +522,8 @@ export default function ListadoImportacionesPage() {
                   <button
                     onClick={() => setSoloPendientes(!soloPendientes)}
                     className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md active:scale-95 ${soloPendientes
-                        ? "bg-gradient-to-br from-blue-700 to-blue-800 text-white border-2 border-blue-800"
-                        : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600"
+                      ? "bg-gradient-to-br from-blue-700 to-blue-800 text-white border-2 border-blue-800"
+                      : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600"
                       }`}
                     style={{ fontFamily: 'var(--font-poppins)', height: '42px' }}
                   >
