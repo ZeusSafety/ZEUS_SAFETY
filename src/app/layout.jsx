@@ -1,4 +1,5 @@
 import { Inter, Poppins } from "next/font/google";
+import { Metadata } from "next";
 import { AuthProviderWrapper } from "../components/providers/AuthProviderWrapper";
 // import { ChatBotButton } from "../components/ui/ChatBotButton";
 import { TokenExpirationNotification } from "../components/ui/TokenExpirationNotification";
@@ -18,6 +19,7 @@ const poppins = Poppins({
   display: "swap",
 });
 
+/** @type {Metadata} */
 export const metadata = {
   title: "Zeus Web",
   description: "Sistema de gestión Zeus",

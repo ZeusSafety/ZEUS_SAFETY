@@ -6,8 +6,8 @@ import Script from "next/script";
 export function ChatBotScripts() {
     const pathname = usePathname();
 
-    // No mostrar el chatbot en la página de login
-    if (pathname === "/login") {
+    // No mostrar el chatbot en la página de login o en la raíz (que redirecciona al login)
+    if (pathname === "/login" || pathname === "/") {
         return null;
     }
 
