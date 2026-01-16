@@ -949,18 +949,18 @@ export default function IncidenciasImportacionesPage() {
         },
         columnStyles: {
           0: { cellWidth: 15, halign: 'center' },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 30, fontStyle: 'bold' },
-          3: { cellWidth: 35 },
-          4: { cellWidth: 35 },
+          1: { cellWidth: 42 },
+          2: { cellWidth: 48, fontStyle: 'bold' },
+          3: { cellWidth: 42 },
+          4: { cellWidth: 42 },
           5: { cellWidth: 20, halign: 'center' },
-          6: { cellWidth: 30, halign: 'center' },
-          7: { cellWidth: 30 }
+          6: { cellWidth: 35, halign: 'center' },
+          7: { cellWidth: 35 }
         },
         alternateRowStyles: {
           fillColor: [245, 247, 250]
         },
-        margin: { top: 35 },
+        margin: { top: 35, left: 10, right: 10 },
         didDrawPage: (data) => {
           // Pie de página
           const str = 'Página ' + doc.internal.getNumberOfPages();
