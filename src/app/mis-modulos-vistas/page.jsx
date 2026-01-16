@@ -79,7 +79,7 @@ export default function MisModulosVistasPage() {
 
         // Mapeo directo de palabras clave a módulos
         if (nombre.includes("IMPORT") || nombre.includes("ADUANA")) return "IMPORTACION";
-        if (nombre.includes("LOGISTICA") || nombre.includes("ALMACEN")) return "LOGISTICA";
+        if (nombre.includes("LOGISTICA") || nombre.includes("ALMACEN") || nombre.includes("MOVILIDAD")) return "LOGISTICA";
         if (nombre.includes("MARKETING") || nombre.includes("CLIENTE")) return "MARKETING";
         if (nombre.includes("GERENCIA")) return "GERENCIA";
         if (nombre.includes("SISTEMAS") || nombre.includes("USUARIO") || nombre.includes("CONFIG")) return "SISTEMAS";
@@ -130,6 +130,7 @@ export default function MisModulosVistasPage() {
       "SISTEMAS": "gears",
       "RECURSOS HUMANOS": "users",
       "VENTAS": "document",
+      "MOVILIDAD": "truck",
     };
     return iconos[nombreModulo?.toUpperCase()] || "shield";
   };
