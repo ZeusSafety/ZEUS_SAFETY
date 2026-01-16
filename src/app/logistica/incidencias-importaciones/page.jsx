@@ -7,7 +7,7 @@ import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export default function IncidenciasImportacionesPage() {
   const router = useRouter();
@@ -931,7 +931,7 @@ export default function IncidenciasImportacionesPage() {
         ["ID", "Fecha Registro", "N° Despacho", "Fecha Recepción", "Fecha Corrección", "Incidencias", "Estado", "Respondido por"]
       ];
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: 35,
         head: headers,
         body: data,
