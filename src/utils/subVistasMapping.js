@@ -7,6 +7,7 @@ export const subVistasToCardsMap = {
   "GESTION DE PRODUCTOS": ["productos"],
   "SOLICITUDES ADMIN-GERENCIA": "listado-solicitudes",
   "LISTADO DE MOVILIDAD": "listado-movilidad",
+  "GERENCIA_LISTADO_PERMISOS": "listado-permisos", // Added for Gerencia
 
   // ========== ADMINISTRACION ==========
   "LISTADO DE IMPORTACIONES": ["importaciones", "listado-importaciones"],
@@ -14,12 +15,14 @@ export const subVistasToCardsMap = {
   "SOLICITUDES ADMIN-ADMINISTRACION": "listado-solicitudes",
   "LISTADO MOVILIDAD": "listado-movilidad",
   "LISTADO_MOVILIDAD": "listado-movilidad",
+  "ADMINISTRACION_LISTADO_PERMISOS": "listado-permisos", // Added for Administracion
 
   // ========== IMPORTACION ==========
   "IMPORTACIONES_REGISTRO": "registro",
   "LISTADO_IMPORTACIONES_IMPORT": "listado",
   "SOLICITUDES_LISTADO": "listado-solicitudes",
   "SOLICITUDES ADMIN-IMPORTACION": "listado-solicitudes",
+  "IMPORTACION_LISTADO_PERMISOS": "listado-permisos", // Added for Importacion
 
   // ========== LOGISTICA ==========
   "LISTADO_IMPORTACIONES_LOGISTICA": "importaciones",
@@ -34,6 +37,7 @@ export const subVistasToCardsMap = {
   "REGISTRO MOVILIDAD": "registro-movilidad",
   "REGISTRO_MOVILIDAD": "registro-movilidad",
   "MOVILIDAD": ["registro-movilidad", "listado-movilidad"],
+  "LOGISTICA_LISTADO_PERMISOS": "listado-permisos", // Added for Logistica
 
   // ========== FACTURACION ==========
   "REGISTRAR VENTAS": "registrar-venta",
@@ -44,6 +48,7 @@ export const subVistasToCardsMap = {
   "CONFIGURACION_VENTAS": "gestionar-configuracion",
   "SOLICITUDES ADMIN-FACTURACION": "listado-solicitudes",
   "FRANJA_DE_PRECIOS": "listado-precios",
+  "FACTURACION_LISTADO_PERMISOS": "listado-permisos", // Added for Facturacion
 
   // ========== MARKETING ==========
   "GESTION DE CLIENTES - MARKETING": "gestion-clientes",
@@ -53,13 +58,16 @@ export const subVistasToCardsMap = {
   "RECENCIA DE CLIENTES": "recencia-clientes",
   "SOLICITUDES ADMIN-MARKETING": "listado-solicitudes",
   "STOCK MALVINAS POR MAYOR CAJAS": "stock-precios-mayor",
+  "MARKETING_LISTADO_PERMISOS": "listado-permisos", // Added for Marketing
 
   // ========== SISTEMAS ==========
   "PAGOS": "gestion-pagos",
   "SOLICITUDES ADMIN-SISTEMAS": "listado-solicitudes",
+  "SISTEMAS_LISTADO_PERMISOS": "listado-permisos", // Added for Sistemas
 
   // ========== RECURSOS HUMANOS ==========
   "SOLICITUDES ADMIN-RRHH": "listado-solicitudes",
+  "RRHH_LISTADO_PERMISOS": "listado-permisos", // Added for Recursos Humanos
 };
 
 // Función helper para verificar si un card está permitido según las sub_vistas del usuario

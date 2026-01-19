@@ -49,7 +49,7 @@ export default function MisSolicitudes({ onBack }) {
   const [formArchivo3, setFormArchivo3] = useState(null);
   const [mostrarRespuesta3, setMostrarRespuesta3] = useState(false);
   const [guardandoRequerimientos, setGuardandoRequerimientos] = useState(false);
-  
+
   // Estado para modal de archivos
   const [modalArchivosOpen, setModalArchivosOpen] = useState(false);
   const [archivosSeleccionados, setArchivosSeleccionados] = useState([]);
@@ -70,11 +70,11 @@ export default function MisSolicitudes({ onBack }) {
   const cargarPermisos = async () => {
     try {
       setLoadingData(true);
-      
+
       // Obtener el ID del usuario logueado
       // El user.id es el username (ej: "eliaszeus")
       const usuarioId = user?.id || user?.name || "";
-      
+
       if (!usuarioId) {
         console.error("No se pudo obtener el ID del usuario. User object:", user);
         setPermisos([]);
@@ -93,7 +93,7 @@ export default function MisSolicitudes({ onBack }) {
 
       // Llamar a la API de permisos laborales a través del proxy
       const url = `${API_PERMISOS_URL}?id=${encodeURIComponent(usuarioId)}`;
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -106,7 +106,7 @@ export default function MisSolicitudes({ onBack }) {
         const data = await response.json();
         console.log('✅ Permisos recibidos de la API:', data);
         console.log('Tipo de datos:', typeof data, 'Es array?', Array.isArray(data));
-        
+
         // Asegurar que sea un array
         if (Array.isArray(data)) {
           console.log(`✅ Se encontraron ${data.length} permisos`);
@@ -436,224 +436,188 @@ export default function MisSolicitudes({ onBack }) {
 
               {/* Tabla */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mt-6">
-              {loadingData ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-                  <span className="ml-3 text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando permisos...</span>
-                </div>
-              ) : permisosFiltrados.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                {loadingData ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                    <span className="ml-3 text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>Cargando permisos...</span>
                   </div>
-                  <p className="text-gray-500 mb-2 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
-                    {permisos.length === 0 
-                      ? "No hay permisos registrados para tu usuario." 
-                      : "No hay permisos que coincidan con los filtros aplicados."}
-                  </p>
-                  <p className="text-xs text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>
-                    {permisos.length === 0 
-                      ? "Si crees que esto es un error, contacta al administrador." 
-                      : "Intenta ajustar los filtros para ver más resultados."}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto justify-center text-center">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-800">
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Consulta</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Solicitud</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Envio</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo de Incidencia</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Informe</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Recepción</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Respuesta</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Archivos</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Motivo</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Con Reprogramación / Más Respuestas</th>
-                          <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Más Requerimientos</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {permisosPaginados.map((permiso, index) => {
-                          const archivos = parseArchivos(permiso.ARCHIVOS || permiso.archivos);
-                          const tieneReprogramaciones = !!(permiso.REPROGRAMACIONES || permiso.FECHA_REPROGRAMACION);
-                          const motivo = permiso.MOTIVO || permiso.motivo || '-';
-                          
-                          return (
-                            <tr key={permiso.ID || permiso.id || index} className="hover:bg-blue-50 transition-colors">
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_REGISTRO || permiso.fecha_registro)}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.ID || permiso.id || '-'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.REGISTRADO_POR || permiso.registrado_por || permiso.NOMBRE || permiso.nombre || '-'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.NOMBRE || permiso.nombre || permiso.AREA_ENVIO || permiso.area_envio || '-'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.TIPO_PERMISO || permiso.tipo_permiso || '-'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD || permiso.estado_solicitud)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                  {permiso.ESTADO_SOLICITUD || permiso.estado_solicitud || 'PENDIENTE'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {permiso.AREA_RECEPCION || permiso.area_recepcion || permiso.AREA_RECEP || permiso.area_recep || permiso.RESPONDIDO_POR_AREA || permiso.respondido_por_area || '-'}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {formatFecha(permiso.FECHA_RESPUESTA || permiso.fecha_respuesta || permiso.FECHA_RESPU || permiso.fecha_respu || permiso.FECHA_RESP || permiso.fecha_resp)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
-                                {archivos && archivos.length > 0 ? (
-                                  <button
-                                    onClick={() => {
-                                      setArchivosSeleccionados(archivos);
-                                      setModalArchivosOpen(true);
-                                    }}
-                                    className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
-                                    title={`Ver ${archivos.length} archivo(s)`}
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                    </svg>
-                                  </button>
-                                ) : (
-                                  <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-[10px] text-gray-700 text-center">
-                                {motivo && motivo !== '-' ? (
-                                  <button
-                                    onClick={() => {
-                                      setTextoModal(motivo);
-                                      setTituloModal("Motivo del Permiso");
-                                      setModalDetalleOpen(true);
-                                    }}
-                                    className="inline-flex items-center justify-center px-2 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
-                                    title="Ver motivo completo"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                  </button>
-                                ) : (
-                                  <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD || permiso.estado_solicitud)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
-                                  {permiso.ESTADO_SOLICITUD || permiso.estado_solicitud || 'PENDIENTE'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
-                                {tieneReprogramaciones ? (
-                                  <div className="flex items-center gap-2 justify-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
-                                      SI
-                                    </span>
+                ) : permisosFiltrados.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 mb-2 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      {permisos.length === 0
+                        ? "No hay permisos registrados para tu usuario."
+                        : "No hay permisos que coincidan con los filtros aplicados."}
+                    </p>
+                    <p className="text-xs text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      {permisos.length === 0
+                        ? "Si crees que esto es un error, contacta al administrador."
+                        : "Intenta ajustar los filtros para ver más resultados."}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto justify-center text-center">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-800">
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Consulta</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>N° Solicitud</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Registrado Por</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Envio</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo de Incidencia</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Informe</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Área de Recepción</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Respuesta</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Archivos</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Motivo</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {permisosPaginados.map((permiso, index) => {
+                            const archivos = parseArchivos(permiso.ARCHIVOS || permiso.archivos);
+                            const tieneReprogramaciones = !!(permiso.REPROGRAMACIONES || permiso.FECHA_REPROGRAMACION);
+                            const motivo = permiso.MOTIVO || permiso.motivo || '-';
+
+                            return (
+                              <tr key={permiso.ID || permiso.id || index} className="hover:bg-blue-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(permiso.FECHA_REGISTRO || permiso.fecha_registro)}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.ID || permiso.id || '-'}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.REGISTRADO_POR || permiso.registrado_por || permiso.NOMBRE || permiso.nombre || '-'}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.NOMBRE || permiso.nombre || permiso.AREA_ENVIO || permiso.area_envio || '-'}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>{permiso.TIPO_PERMISO || permiso.tipo_permiso || '-'}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD || permiso.estado_solicitud)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                    {permiso.ESTADO_SOLICITUD || permiso.estado_solicitud || 'PENDIENTE'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {permiso.AREA_RECEPCION || permiso.area_recepcion || permiso.AREA_RECEP || permiso.area_recep || permiso.RESPONDIDO_POR_AREA || permiso.respondido_por_area || '-'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {formatFecha(permiso.FECHA_RESPUESTA || permiso.fecha_respuesta || permiso.FECHA_RESPU || permiso.fecha_respu || permiso.FECHA_RESP || permiso.fecha_resp)}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
+                                  {archivos && archivos.length > 0 ? (
                                     <button
-                                      onClick={() => verReprogramaciones(permiso)}
-                                      className="inline-flex items-center justify-center px-2 py-1 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                      title="Ver reprogramaciones"
+                                      onClick={() => {
+                                        setArchivosSeleccionados(archivos);
+                                        setModalArchivosOpen(true);
+                                      }}
+                                      className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                                      title={`Ver ${archivos.length} archivo(s)`}
                                       style={{ fontFamily: 'var(--font-poppins)' }}
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                       </svg>
                                     </button>
-                                  </div>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-red-600 border-red-700 text-white">
-                                    NO
+                                  ) : (
+                                    <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-[10px] text-gray-700 text-center">
+                                  {motivo && motivo !== '-' ? (
+                                    <button
+                                      onClick={() => {
+                                        setTextoModal(motivo);
+                                        setTituloModal("Motivo del Permiso");
+                                        setModalDetalleOpen(true);
+                                      }}
+                                      className="inline-flex items-center justify-center px-2 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                                      title="Ver motivo completo"
+                                      style={{ fontFamily: 'var(--font-poppins)' }}
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                    </button>
+                                  ) : (
+                                    <span className="text-gray-400" style={{ fontFamily: 'var(--font-poppins)' }}>-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm transition-all duration-200 ${getEstadoBadge(permiso.ESTADO_SOLICITUD || permiso.estado_solicitud)}`} style={{ fontFamily: 'var(--font-poppins)' }}>
+                                    {permiso.ESTADO_SOLICITUD || permiso.estado_solicitud || 'PENDIENTE'}
                                   </span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
-                                <button
-                                  onClick={() => abrirModalGestionRequerimientos(permiso)}
-                                  className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-                                  title="Gestionar requerimientos"
-                                  style={{ fontFamily: 'var(--font-poppins)' }}
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                  </svg>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Paginación */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1 || totalPages === 0}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1 || totalPages === 0}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &lt;
-                    </button>
-                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages || totalPages === 0}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      »
-                    </button>
-                  </div>
-                </>
-              )}
+                    {/* Paginación */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1 || totalPages === 0}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1 || totalPages === 0}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        &lt;
+                      </button>
+                      <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Página {totalPages > 0 ? currentPage : 0} de {totalPages || 1}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        &gt;
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        »
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </main>
-      </div>
+      </div >
 
       {/* Modal para ver Detalle del Permiso */}
-      <Modal
+      < Modal
         isOpen={modalDetalleOpen}
         onClose={() => {
           setModalDetalleOpen(false);
           setPermisoSeleccionado(null);
-        }}
+        }
+        }
         title={tituloModal}
         size="md"
       >
         <div className="p-4">
           <p className="text-gray-900 whitespace-pre-wrap">{textoModal}</p>
         </div>
-      </Modal>
+      </Modal >
 
       {/* Modal para ver Reprogramaciones */}
-      <Modal
+      < Modal
         isOpen={modalReprogramacionesOpen}
         onClose={() => {
           setModalReprogramacionesOpen(false);
@@ -730,10 +694,10 @@ export default function MisSolicitudes({ onBack }) {
             ));
           })}
         </div>
-      </Modal>
+      </Modal >
 
       {/* Modal para ver Historial de Requerimientos Extra */}
-      <Modal
+      < Modal
         isOpen={modalHistorialReqExtraOpen}
         onClose={() => {
           setModalHistorialReqExtraOpen(false);
@@ -820,10 +784,10 @@ export default function MisSolicitudes({ onBack }) {
             </>
           )}
         </div>
-      </Modal>
+      </Modal >
 
       {/* Modal de Gestión de Requerimientos */}
-      <Modal
+      < Modal
         isOpen={modalGestionRequerimientosOpen}
         onClose={() => {
           setModalGestionRequerimientosOpen(false);
@@ -1139,14 +1103,14 @@ export default function MisSolicitudes({ onBack }) {
 
                     const formData = new FormData();
                     formData.append('ID_SOLICITUD', idSolicitud);
-                    
+
                     if (formRequerimiento2.trim()) {
                       formData.append('REQUERIMIENTO_2', formRequerimiento2.trim());
                     }
                     if (formArchivo2) {
                       formData.append('informe2', formArchivo2);
                     }
-                    
+
                     if (mostrarRespuesta3) {
                       if (formRequerimiento3.trim()) {
                         formData.append('REQUERIMIENTO_3', formRequerimiento3.trim());
@@ -1213,10 +1177,10 @@ export default function MisSolicitudes({ onBack }) {
             </div>
           </div>
         )}
-      </Modal>
+      </Modal >
 
       {/* Modal para ver Archivos */}
-      <Modal
+      < Modal
         isOpen={modalArchivosOpen}
         onClose={() => {
           setModalArchivosOpen(false);
@@ -1257,10 +1221,10 @@ export default function MisSolicitudes({ onBack }) {
             </div>
           )}
         </div>
-      </Modal>
+      </Modal >
 
       {/* Modal para Agregar Respuesta */}
-      <Modal
+      < Modal
         isOpen={modalRespuestaOpen}
         onClose={() => {
           setModalRespuestaOpen(false);
@@ -1318,8 +1282,8 @@ export default function MisSolicitudes({ onBack }) {
             </>
           )}
         </div>
-      </Modal>
+      </Modal >
 
-    </div>
+    </div >
   );
 }

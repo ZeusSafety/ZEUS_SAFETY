@@ -15,8 +15,9 @@ function RecursosHumanosContent() {
   const [expandedSections, setExpandedSections] = useState({
     "gestion-colaboradores": false,
     "solicitudes-incidencias": false,
+    "gestion-permisos": false,
   });
-  
+
   // Estados para colaboradores
   const [colaboradores, setColaboradores] = useState([]);
   const [colaboradoresCompletos, setColaboradoresCompletos] = useState([]);
@@ -128,7 +129,7 @@ function RecursosHumanosContent() {
     const area = areasDisponibles.find(a => {
       if (typeof a === "object" && a !== null) {
         return (a.nombre && a.nombre.toUpperCase() === areaNombre.toUpperCase()) ||
-               (a.NOMBRE && a.NOMBRE.toUpperCase() === areaNombre.toUpperCase());
+          (a.NOMBRE && a.NOMBRE.toUpperCase() === areaNombre.toUpperCase());
       }
       // Si es un string, comparar directamente
       if (typeof a === "string") {
@@ -150,7 +151,7 @@ function RecursosHumanosContent() {
   // Función para obtener el ID del rol desde el nombre
   const getRolId = (rolNombre) => {
     if (!rolNombre) return null;
-    
+
     // Mapeo de nombres de roles a IDs numéricos
     const rolesMap = {
       "ADMINISTRADOR": 1,
@@ -159,21 +160,21 @@ function RecursosHumanosContent() {
       "USUARIO": 4,
       "ASISTENTE": 5,
     };
-    
+
     // Convertir a mayúsculas para comparar
     const rolUpper = String(rolNombre).toUpperCase().trim();
-    
+
     // Buscar en el mapeo
     if (rolesMap[rolUpper] !== undefined) {
       return rolesMap[rolUpper];
     }
-    
+
     // Si ya es un número, retornarlo
     const numRol = parseInt(rolNombre);
     if (!isNaN(numRol)) {
       return numRol;
     }
-    
+
     return null;
   };
 
@@ -309,10 +310,10 @@ function RecursosHumanosContent() {
     // Para el rol, necesitamos el ID numérico. Convertir el nombre del rol a ID
     if (data.rol !== undefined && data.rol !== "") {
       const rolId = getRolId(data.rol);
-      console.log("🔍 Debug Rol:", { 
-        rolOriginal: data.rol, 
-        rolId: rolId, 
-        tipoRolId: typeof rolId 
+      console.log("🔍 Debug Rol:", {
+        rolOriginal: data.rol,
+        rolId: rolId,
+        tipoRolId: typeof rolId
       });
       if (rolId !== null) {
         // Asegurar que sea un número entero
@@ -418,17 +419,17 @@ function RecursosHumanosContent() {
 
       const data = await response.json();
       let imageUrl = data?.IMAGE_URL || data?.image_url || null;
-      
+
       console.log("🔍 Datos recibidos del backend:", data);
       console.log("🔍 URL extraída:", imageUrl);
-      
+
       if (!imageUrl) {
         console.log("⚠️ No se encontró imagen para el colaborador");
         return null;
       }
-      
+
       console.log("✅ URL obtenida de BD:", imageUrl);
-      
+
       // Con no_encriptar, la URL ya viene completa y se puede usar directamente
       // Igual que en productos - no necesita procesamiento adicional
       return imageUrl;
@@ -501,10 +502,10 @@ function RecursosHumanosContent() {
 
       const data = await response.json();
       const mediosArray = Array.isArray(data) ? data : [];
-      
+
       // Guardar medios con IDs de la BD
       setMediosComunicacion(mediosArray);
-      
+
       // Mapear a formato para datosEditables
       const datosMapeados = mediosArray.map(medio => ({
         ID: medio.ID || medio.id,
@@ -518,7 +519,7 @@ function RecursosHumanosContent() {
         CONTENIDO: medio.CONTENIDO || medio.contenido || "",
         contenido: medio.CONTENIDO || medio.contenido || "",
       }));
-      
+
       setDatosEditables(datosMapeados);
     } catch (error) {
       console.error("Error al cargar medios de comunicación:", error);
@@ -538,12 +539,12 @@ function RecursosHumanosContent() {
     const onCommitRef = useRef(onCommit);
     const inputKey = useMemo(() => `input-${fieldKey}-${sectionKey}`, [fieldKey, sectionKey]);
     const isPastingRef = useRef(false);
-    
+
     // Mantener onCommit actualizado
     useEffect(() => {
       onCommitRef.current = onCommit;
     }, [onCommit]);
-    
+
     // Formatear fecha para display inicial
     const formatDateForDisplay = useCallback((val) => {
       if (!val || val === "No disponible" || val === "-") return "";
@@ -561,42 +562,42 @@ function RecursosHumanosContent() {
             const dia = String(date.getDate()).padStart(2, "0");
             return `${dia}/${mes}/${año}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
       return val || "";
     }, [type]);
-    
+
     // Formatear fecha completa (acepta múltiples formatos) - PRIORITARIO
     const formatCompleteDate = useCallback((val) => {
       if (!val || val.trim() === "") return "";
-      
+
       const trimmed = val.trim();
-      
+
       // Si ya está en formato DD/MM/YYYY, retornarlo
       if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
         return trimmed;
       }
-      
+
       // Si está en formato YYYY-MM-DD, convertir
       if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
         const [año, mes, dia] = trimmed.split("-");
         return `${dia}/${mes}/${año}`;
       }
-      
+
       // Extraer solo números
       const numbers = trimmed.replace(/\D/g, "");
-      
+
       // Si tiene 8 dígitos, formatear como DD/MM/YYYY
       if (numbers.length === 8) {
         return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
       }
-      
+
       // Si tiene más de 8 dígitos, tomar los primeros 8
       if (numbers.length > 8) {
         const limited = numbers.slice(0, 8);
         return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
       }
-      
+
       // Intentar parsear como fecha si tiene formato reconocible
       try {
         // Intentar con formato común
@@ -609,12 +610,12 @@ function RecursosHumanosContent() {
             return `${dia}/${mes}/${año}`;
           }
         }
-      } catch (e) {}
-      
+      } catch (e) { }
+
       // Si no se puede formatear, retornar el valor original (permitir escritura libre)
       return trimmed;
     }, []);
-    
+
     // Formatear fecha mientras se escribe (solo números) - SOLO para escritura incremental
     const formatDateInput = useCallback((val) => {
       const numbers = val.replace(/\D/g, "");
@@ -623,13 +624,13 @@ function RecursosHumanosContent() {
       if (limited.length <= 4) return `${limited.slice(0, 2)}/${limited.slice(2)}`;
       return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
     }, []);
-    
+
     // Valor inicial formateado
     const getInitialValue = useCallback(() => {
       const val = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
       return formatDateForDisplay(val);
     }, [initialValue, formatDateForDisplay]);
-    
+
     // Handler onPaste - Para pegar fechas completas - PRIORITARIO
     const handlePaste = useCallback((e) => {
       if (type === "date" && inputRef.current) {
@@ -648,17 +649,17 @@ function RecursosHumanosContent() {
         }, 50);
       }
     }, [type, formatCompleteDate]);
-    
+
     // Handler onChange - Formatea SOLO si no es un pegado
     const handleChange = useCallback((e) => {
       // Si se está pegando, NO hacer nada - el onPaste ya maneja el formateo
       if (isPastingRef.current) {
         return;
       }
-      
+
       if (type === "date" && inputRef.current) {
         const currentValue = e.target.value;
-        
+
         // Solo formateo incremental mientras se escribe (no para fechas completas)
         // Las fechas completas se formatearán en onBlur
         if (currentValue.length < 10) {
@@ -678,13 +679,13 @@ function RecursosHumanosContent() {
       }
       // NO hacer nada más - el input es completamente no controlado
     }, [type, formatDateInput]);
-    
+
     // Handler onBlur - COMMIT al padre y formatear fecha completa si es necesario
     const handleBlur = useCallback(() => {
       if (!inputRef.current) return;
-      
+
       let finalValue = inputRef.current.value;
-      
+
       if (type === "date") {
         finalValue = finalValue.trim();
         // Si tiene contenido pero no está formateado correctamente, formatearlo
@@ -704,14 +705,14 @@ function RecursosHumanosContent() {
           return;
         }
       }
-      
+
       // Commit al padre
       onCommitRef.current(fieldKey, finalValue);
     }, [type, fieldKey, getInitialValue, formatCompleteDate]);
-    
+
     const displayValue = initialValue === "No disponible" || initialValue === "-" ? "" : initialValue;
     const formattedDisplayValue = formatDateForDisplay(displayValue);
-    
+
     return (
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -728,8 +729,8 @@ function RecursosHumanosContent() {
                   }
                   return opt === e.target.value;
                 });
-                const valueToSave = selectedOption && typeof selectedOption === "object" 
-                  ? (selectedOption.nombre || selectedOption.NOMBRE) 
+                const valueToSave = selectedOption && typeof selectedOption === "object"
+                  ? (selectedOption.nombre || selectedOption.NOMBRE)
                   : e.target.value;
                 onCommitRef.current(fieldKey, valueToSave);
               }}
@@ -737,8 +738,8 @@ function RecursosHumanosContent() {
             >
               <option value="">Seleccionar {label}</option>
               {options.map((option, idx) => {
-                const optionValue = typeof option === "object" && option !== null 
-                  ? (option.nombre || option.NOMBRE || option) 
+                const optionValue = typeof option === "object" && option !== null
+                  ? (option.nombre || option.NOMBRE || option)
                   : option;
                 const optionKey = typeof option === "object" && option !== null
                   ? (option.id || option.ID || idx)
@@ -766,11 +767,10 @@ function RecursosHumanosContent() {
             />
           )
         ) : (
-          <p className={`text-sm px-3 py-2 rounded-lg border ${
-            formattedDisplayValue && formattedDisplayValue !== "" 
-              ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
-              : "bg-gray-50 border-gray-200 text-gray-500"
-          }`}>
+          <p className={`text-sm px-3 py-2 rounded-lg border ${formattedDisplayValue && formattedDisplayValue !== ""
+            ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium"
+            : "bg-gray-50 border-gray-200 text-gray-500"
+            }`}>
             {formattedDisplayValue || "No disponible"}
           </p>
         )}
@@ -784,7 +784,7 @@ function RecursosHumanosContent() {
     if (!nextProps.isEditing && prevProps.initialValue !== nextProps.initialValue) return false;
     return true;
   });
-  
+
   EditableField.displayName = 'EditableField';
 
   // ============================================
@@ -793,14 +793,14 @@ function RecursosHumanosContent() {
   // ============================================
 
   // Tab: Información Personal
-  const InformacionPersonalTab = memo(({ 
-    infoPersonal, 
-    isEditing, 
-    onEdit, 
-    onSave, 
+  const InformacionPersonalTab = memo(({
+    infoPersonal,
+    isEditing,
+    onEdit,
+    onSave,
     onCommit,
     getInitialValue,
-    tiposDocumento 
+    tiposDocumento
   }) => {
     return (
       <div>
@@ -831,75 +831,75 @@ function RecursosHumanosContent() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <EditableField 
-            label="Nombre" 
-            initialValue={getInitialValue("nombre", infoPersonal.nombre)} 
+          <EditableField
+            label="Nombre"
+            initialValue={getInitialValue("nombre", infoPersonal.nombre)}
             fieldKey="nombre"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="2do Nombre" 
-            initialValue={getInitialValue("segundoNombre", infoPersonal.segundoNombre)} 
+          <EditableField
+            label="2do Nombre"
+            initialValue={getInitialValue("segundoNombre", infoPersonal.segundoNombre)}
             fieldKey="segundoNombre"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Apellido" 
-            initialValue={getInitialValue("apellido", infoPersonal.apellido)} 
+          <EditableField
+            label="Apellido"
+            initialValue={getInitialValue("apellido", infoPersonal.apellido)}
             fieldKey="apellido"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="2do Apellido" 
-            initialValue={getInitialValue("segundoApellido", infoPersonal.segundoApellido)} 
+          <EditableField
+            label="2do Apellido"
+            initialValue={getInitialValue("segundoApellido", infoPersonal.segundoApellido)}
             fieldKey="segundoApellido"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Fecha Nac" 
-            initialValue={getInitialValue("fechaNacimiento", infoPersonal.fechaNacimiento)} 
+          <EditableField
+            label="Fecha Nac"
+            initialValue={getInitialValue("fechaNacimiento", infoPersonal.fechaNacimiento)}
             fieldKey="fechaNacimiento"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
             type="date"
           />
-          <EditableField 
-            label="Tipo Doc" 
-            initialValue={getInitialValue("tipoDocumento", infoPersonal.tipoDocumento)} 
+          <EditableField
+            label="Tipo Doc"
+            initialValue={getInitialValue("tipoDocumento", infoPersonal.tipoDocumento)}
             fieldKey="tipoDocumento"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
             options={tiposDocumento}
           />
-          <EditableField 
-            label="N° Doc" 
-            initialValue={getInitialValue("numeroDocumento", infoPersonal.numeroDocumento)} 
+          <EditableField
+            label="N° Doc"
+            initialValue={getInitialValue("numeroDocumento", infoPersonal.numeroDocumento)}
             fieldKey="numeroDocumento"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Estado civil" 
-            initialValue={getInitialValue("estadoCivil", infoPersonal.estadoCivil)} 
+          <EditableField
+            label="Estado civil"
+            initialValue={getInitialValue("estadoCivil", infoPersonal.estadoCivil)}
             fieldKey="estadoCivil"
             sectionKey="informacion-personal"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Estado" 
-            initialValue={getInitialValue("estado", infoPersonal.estado)} 
+          <EditableField
+            label="Estado"
+            initialValue={getInitialValue("estado", infoPersonal.estado)}
             fieldKey="estado"
             sectionKey="informacion-personal"
             isEditing={isEditing}
@@ -912,13 +912,13 @@ function RecursosHumanosContent() {
   InformacionPersonalTab.displayName = 'InformacionPersonalTab';
 
   // Tab: Información Familiar
-  const InformacionFamiliarTab = memo(({ 
-    infoFamiliar, 
-    isEditing, 
-    onEdit, 
-    onSave, 
+  const InformacionFamiliarTab = memo(({
+    infoFamiliar,
+    isEditing,
+    onEdit,
+    onSave,
     onCommit,
-    getInitialValue 
+    getInitialValue
   }) => {
     return (
       <div>
@@ -949,17 +949,17 @@ function RecursosHumanosContent() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <EditableField 
-            label="¿Tiene hijos?" 
-            initialValue={getInitialValue("tieneHijos", infoFamiliar.tieneHijos)} 
+          <EditableField
+            label="¿Tiene hijos?"
+            initialValue={getInitialValue("tieneHijos", infoFamiliar.tieneHijos)}
             fieldKey="tieneHijos"
             sectionKey="informacion-familiar"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Cant hijos" 
-            initialValue={getInitialValue("cantHijos", infoFamiliar.cantHijos)} 
+          <EditableField
+            label="Cant hijos"
+            initialValue={getInitialValue("cantHijos", infoFamiliar.cantHijos)}
             fieldKey="cantHijos"
             sectionKey="informacion-familiar"
             isEditing={isEditing}
@@ -973,13 +973,13 @@ function RecursosHumanosContent() {
   InformacionFamiliarTab.displayName = 'InformacionFamiliarTab';
 
   // Tab: Ubicación
-  const UbicacionTab = memo(({ 
-    ubicacion, 
-    isEditing, 
-    onEdit, 
-    onSave, 
+  const UbicacionTab = memo(({
+    ubicacion,
+    isEditing,
+    onEdit,
+    onSave,
     onCommit,
-    getInitialValue 
+    getInitialValue
   }) => {
     return (
       <div>
@@ -1010,17 +1010,17 @@ function RecursosHumanosContent() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <EditableField 
-            label="Dirección" 
-            initialValue={getInitialValue("direccion", ubicacion.direccion)} 
+          <EditableField
+            label="Dirección"
+            initialValue={getInitialValue("direccion", ubicacion.direccion)}
             fieldKey="direccion"
             sectionKey="ubicacion"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Google Maps" 
-            initialValue={getInitialValue("googleMaps", ubicacion.googleMaps)} 
+          <EditableField
+            label="Google Maps"
+            initialValue={getInitialValue("googleMaps", ubicacion.googleMaps)}
             fieldKey="googleMaps"
             sectionKey="ubicacion"
             isEditing={isEditing}
@@ -1033,15 +1033,15 @@ function RecursosHumanosContent() {
   UbicacionTab.displayName = 'UbicacionTab';
 
   // Tab: Información Laboral
-  const InformacionLaboralTab = memo(({ 
-    infoLaboral, 
-    isEditing, 
-    onEdit, 
-    onSave, 
+  const InformacionLaboralTab = memo(({
+    infoLaboral,
+    isEditing,
+    onEdit,
+    onSave,
     onCommit,
     getInitialValue,
     areasDisponibles,
-    rolesDisponibles 
+    rolesDisponibles
   }) => {
     return (
       <div>
@@ -1072,34 +1072,34 @@ function RecursosHumanosContent() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <EditableField 
-            label="Ocupación" 
-            initialValue={getInitialValue("ocupacion", infoLaboral.ocupacion)} 
+          <EditableField
+            label="Ocupación"
+            initialValue={getInitialValue("ocupacion", infoLaboral.ocupacion)}
             fieldKey="ocupacion"
             sectionKey="informacion-laboral"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Cargo" 
-            initialValue={getInitialValue("cargo", infoLaboral.cargo)} 
+          <EditableField
+            label="Cargo"
+            initialValue={getInitialValue("cargo", infoLaboral.cargo)}
             fieldKey="cargo"
             sectionKey="informacion-laboral"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Área" 
-            initialValue={getInitialValue("area", infoLaboral.area)} 
+          <EditableField
+            label="Área"
+            initialValue={getInitialValue("area", infoLaboral.area)}
             fieldKey="area"
             sectionKey="informacion-laboral"
             isEditing={isEditing}
             onCommit={onCommit}
             options={areasDisponibles}
           />
-          <EditableField 
-            label="Rol" 
-            initialValue={getInitialValue("rol", infoLaboral.rol)} 
+          <EditableField
+            label="Rol"
+            initialValue={getInitialValue("rol", infoLaboral.rol)}
             fieldKey="rol"
             sectionKey="informacion-laboral"
             isEditing={isEditing}
@@ -1113,13 +1113,13 @@ function RecursosHumanosContent() {
   InformacionLaboralTab.displayName = 'InformacionLaboralTab';
 
   // Tab: Seguros
-  const SegurosTab = memo(({ 
-    seguros, 
-    isEditing, 
-    onEdit, 
-    onSave, 
+  const SegurosTab = memo(({
+    seguros,
+    isEditing,
+    onEdit,
+    onSave,
     onCommit,
-    getInitialValue 
+    getInitialValue
   }) => {
     return (
       <div>
@@ -1150,26 +1150,26 @@ function RecursosHumanosContent() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <EditableField 
-            label="Seguro Vida Ley" 
-            initialValue={getInitialValue("seguroVidaLey", seguros.seguroVidaLey)} 
+          <EditableField
+            label="Seguro Vida Ley"
+            initialValue={getInitialValue("seguroVidaLey", seguros.seguroVidaLey)}
             fieldKey="seguroVidaLey"
             sectionKey="seguros"
             isEditing={isEditing}
             onCommit={onCommit}
           />
-          <EditableField 
-            label="Fecha vencimiento" 
-            initialValue={getInitialValue("fechaVencimiento", seguros.fechaVencimiento)} 
+          <EditableField
+            label="Fecha vencimiento"
+            initialValue={getInitialValue("fechaVencimiento", seguros.fechaVencimiento)}
             fieldKey="fechaVencimiento"
             sectionKey="seguros"
             isEditing={isEditing}
             onCommit={onCommit}
             type="date"
           />
-          <EditableField 
-            label="Fecha inicio" 
-            initialValue={getInitialValue("fechaInicio", seguros.fechaInicio)} 
+          <EditableField
+            label="Fecha inicio"
+            initialValue={getInitialValue("fechaInicio", seguros.fechaInicio)}
             fieldKey="fechaInicio"
             sectionKey="seguros"
             isEditing={isEditing}
@@ -1354,11 +1354,11 @@ function RecursosHumanosContent() {
 
         // Determinar si está activo
         const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
-        const isActivo = estadoValue !== false && 
-                        estadoValue !== "inactivo" && 
-                        estadoValue !== "INACTIVO" && 
-                        estadoValue !== 0 &&
-                        estadoValue !== "0";
+        const isActivo = estadoValue !== false &&
+          estadoValue !== "inactivo" &&
+          estadoValue !== "INACTIVO" &&
+          estadoValue !== 0 &&
+          estadoValue !== "0";
 
         return {
           id: getValue(colab, ["id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9),
@@ -1553,10 +1553,10 @@ function RecursosHumanosContent() {
       }
 
       const result = await response.json();
-      
+
       // Recargar medios de comunicación
       await fetchMediosComunicacion(colaboradorId);
-      
+
       return result;
     } catch (error) {
       console.error("Error al agregar medio:", error);
@@ -1731,6 +1731,7 @@ function RecursosHumanosContent() {
   const sections = [
     { id: "gestion-colaboradores", name: "Gestión de Colaboradores", icon: "users" },
     { id: "solicitudes-incidencias", name: "Solicitudes/Incidencias", icon: "solicitudes" },
+    { id: "gestion-permisos", name: "Gestión de Permisos", icon: "document" },
   ];
 
   const getIcon = (iconName) => {
@@ -1790,366 +1791,364 @@ function RecursosHumanosContent() {
       <>
         {/* Listado de Colaboradores */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    {getIcon("users")}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Listado de Colaboradores</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Gestiona los colaboradores activos del sistema</p>
-                  </div>
-                </div>
-                <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
-                  loadingColaboradores 
-                    ? "bg-yellow-50 border border-yellow-200" 
-                    : errorColaboradores 
-                      ? "bg-red-50 border border-red-200" 
-                      : "bg-green-50 border border-green-200"
-                }`}>
-                  {loadingColaboradores ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
-                      <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
-                    </>
-                  ) : errorColaboradores ? (
-                    <>
-                      <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      <span className="text-xs font-semibold text-red-700">Error</span>
-                    </>
-                  ) : (
-                    <>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                {getIcon("users")}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Listado de Colaboradores</h2>
+                <p className="text-xs text-gray-600 mt-0.5">Gestiona los colaboradores activos del sistema</p>
+              </div>
+            </div>
+            <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${loadingColaboradores
+              ? "bg-yellow-50 border border-yellow-200"
+              : errorColaboradores
+                ? "bg-red-50 border border-red-200"
+                : "bg-green-50 border border-green-200"
+              }`}>
+              {loadingColaboradores ? (
+                <>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
+                  <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                </>
+              ) : errorColaboradores ? (
+                <>
+                  <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="text-xs font-semibold text-red-700">Error</span>
+                </>
+              ) : (
+                <>
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {errorColaboradores && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-xs text-red-700">
-                    <strong>Error:</strong> {errorColaboradores}
-                  </p>
-                  <button
-                    onClick={fetchColaboradores}
-                    className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-                  >
-                    Intentar de nuevo
-                  </button>
-                </div>
+                </>
               )}
+            </div>
+          </div>
 
-              <button 
-                onClick={() => setIsAgregarColaboradorModalOpen(true)}
-                className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group"
+          {errorColaboradores && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-700">
+                <strong>Error:</strong> {errorColaboradores}
+              </p>
+              <button
+                onClick={fetchColaboradores}
+                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
               >
-                <span>+ Agregar Colaborador</span>
+                Intentar de nuevo
               </button>
+            </div>
+          )}
 
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {loadingColaboradores ? (
-                        <tr>
-                          <td colSpan={4} className="px-3 py-8 text-center">
-                            <div className="flex items-center justify-center space-x-2">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                              <span className="text-sm text-gray-600">Cargando colaboradores...</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : activos.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
-                            No hay colaboradores activos
-                          </td>
-                        </tr>
-                      ) : (
-                        activos.map((colaborador, index) => {
-                          // Encontrar el colaborador completo original
-                          const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                            const getValue = (obj, keys) => {
-                              for (const key of keys) {
-                                if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                  return obj[key];
-                                }
-                              }
-                              return "";
-                            };
-                            const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                            const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
-                            return (idOriginal && idOriginal === colaborador.id) || 
-                                   (nombreOriginal && nombreOriginal === colaborador.nombre);
-                          }) || colaboradoresCompletos[index] || null;
+          <button
+            onClick={() => setIsAgregarColaboradorModalOpen(true)}
+            className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm active:scale-[0.98] text-sm group"
+          >
+            <span>+ Agregar Colaborador</span>
+          </button>
 
-                          return (
-                            <tr key={colaborador.id || `colab-${index}`} className="hover:bg-slate-200 transition-colors">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-blue-700 border-b-2 border-blue-800">
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loadingColaboradores ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-8 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                          <span className="text-sm text-gray-600">Cargando colaboradores...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : activos.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
+                        No hay colaboradores activos
+                      </td>
+                    </tr>
+                  ) : (
+                    activos.map((colaborador, index) => {
+                      // Encontrar el colaborador completo original
+                      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                        const getValue = (obj, keys) => {
+                          for (const key of keys) {
+                            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                              return obj[key];
+                            }
+                          }
+                          return "";
+                        };
+                        const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                        const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                        return (idOriginal && idOriginal === colaborador.id) ||
+                          (nombreOriginal && nombreOriginal === colaborador.nombre);
+                      }) || colaboradoresCompletos[index] || null;
+
+                      return (
+                        <tr key={colaborador.id || `colab-${index}`} className="hover:bg-slate-200 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedColaboradorCompleto(colaboradorCompleto);
-                                      setIsVerDetallesModalOpen(true);
-                                    }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                    title="Ver detalles del colaborador"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      setSelectedColaboradorImagen(colaboradorCompleto);
-                                      setIsImagenModalOpen(true);
-                                      setImagenPreview(null);
-                                      setImagenActualGuardada(null);
-                                      setSelectedImageFile(null);
-                                      
-                                      // Obtener imagen actual del backend
-                                      const colaboradorId = getColaboradorId(colaboradorCompleto);
-                                      console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
-                                      if (colaboradorId) {
-                                        const imagenUrl = await fetchImagenColaborador(colaboradorId);
-                                        console.log("🔄 Imagen obtenida:", imagenUrl);
-                                        if (imagenUrl) {
-                                          setImagenActualGuardada(imagenUrl);
-                                          console.log("✅ Imagen actual guardada establecida:", imagenUrl);
-                                          // NO establecer imagenPreview aquí - solo para archivos nuevos
-                                        } else {
-                                          setImagenActualGuardada(null);
-                                          console.log("⚠️ No hay imagen guardada para este colaborador");
-                                        }
-                                      }
-                                    }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
-                                    title="Gestionar imagen del colaborador"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <button
+                                onClick={() => {
+                                  setSelectedColaboradorCompleto(colaboradorCompleto);
+                                  setIsVerDetallesModalOpen(true);
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                title="Ver detalles del colaborador"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  setSelectedColaboradorImagen(colaboradorCompleto);
+                                  setIsImagenModalOpen(true);
+                                  setImagenPreview(null);
+                                  setImagenActualGuardada(null);
+                                  setSelectedImageFile(null);
+
+                                  // Obtener imagen actual del backend
+                                  const colaboradorId = getColaboradorId(colaboradorCompleto);
+                                  console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
+                                  if (colaboradorId) {
+                                    const imagenUrl = await fetchImagenColaborador(colaboradorId);
+                                    console.log("🔄 Imagen obtenida:", imagenUrl);
+                                    if (imagenUrl) {
+                                      setImagenActualGuardada(imagenUrl);
+                                      console.log("✅ Imagen actual guardada establecida:", imagenUrl);
+                                      // NO establecer imagenPreview aquí - solo para archivos nuevos
+                                    } else {
+                                      setImagenActualGuardada(null);
+                                      console.log("⚠️ No hay imagen guardada para este colaborador");
+                                    }
+                                  }
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
+                                title="Gestionar imagen del colaborador"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span style={{ pointerEvents: 'none' }}>Imagen</span>
                               </button>
                             </div>
                           </td>
                         </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Primera página">
-                    «
-                  </button>
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página anterior">
-                    &lt;
-                  </button>
-                  <span className="text-[10px] text-gray-700 font-medium">
-                    Página 1 de 3
-                  </span>
-                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página siguiente">
-                    &gt;
-                  </button>
-                  <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Última página">
-                    »
-                  </button>
-                </div>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Primera página">
+                «
+              </button>
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página anterior">
+                &lt;
+              </button>
+              <span className="text-[10px] text-gray-700 font-medium">
+                Página 1 de 3
+              </span>
+              <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página siguiente">
+                &gt;
+              </button>
+              <button className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Última página">
+                »
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Colaboradores Inactivos */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                {getIcon("users")}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Colaboradores Inactivos</h2>
+                <p className="text-xs text-gray-600 mt-0.5">Sin acceso al sistema</p>
               </div>
             </div>
-
-            {/* Colaboradores Inactivos */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                    {getIcon("users")}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Colaboradores Inactivos</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Sin acceso al sistema</p>
-                  </div>
-                </div>
-                <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${
-                  loadingColaboradores 
-                    ? "bg-yellow-50 border border-yellow-200" 
-                    : errorColaboradores 
-                      ? "bg-red-50 border border-red-200" 
-                      : "bg-green-50 border border-green-200"
-                }`}>
-                  {loadingColaboradores ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
-                      <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
-                    </>
-                  ) : errorColaboradores ? (
-                    <>
-                      <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      <span className="text-xs font-semibold text-red-700">Error</span>
-                    </>
-                  ) : (
-                    <>
+            <div className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 ${loadingColaboradores
+              ? "bg-yellow-50 border border-yellow-200"
+              : errorColaboradores
+                ? "bg-red-50 border border-red-200"
+                : "bg-green-50 border border-green-200"
+              }`}>
+              {loadingColaboradores ? (
+                <>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
+                  <span className="text-xs font-semibold text-yellow-700">Cargando...</span>
+                </>
+              ) : errorColaboradores ? (
+                <>
+                  <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="text-xs font-semibold text-red-700">Error</span>
+                </>
+              ) : (
+                <>
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="text-xs font-semibold text-green-700">API Conectada</span>
-                    </>
-                  )}
-                </div>
-              </div>
+                </>
+              )}
+            </div>
+          </div>
 
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {loadingColaboradores ? (
-                        <tr>
-                          <td colSpan={4} className="px-3 py-8 text-center">
-                            <div className="flex items-center justify-center space-x-2">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
-                              <span className="text-sm text-gray-600">Cargando colaboradores...</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : inactivos.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
-                            No hay colaboradores inactivos
-                          </td>
-                        </tr>
-                      ) : (
-                        inactivos.map((colaborador, index) => {
-                          // Encontrar el colaborador completo original
-                          const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                            const getValue = (obj, keys) => {
-                              for (const key of keys) {
-                                if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                  return obj[key];
-                                }
-                              }
-                              return "";
-                            };
-                            const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                            const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
-                            return (idOriginal && idOriginal === colaborador.id) || 
-                                   (nombreOriginal && nombreOriginal === colaborador.nombre);
-                          }) || colaboradoresCompletos[colaboradores.length + index] || null;
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-blue-700 border-b-2 border-blue-800">
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">NOMBRE</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">APELLIDO</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ÁREA</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loadingColaboradores ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-8 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700"></div>
+                          <span className="text-sm text-gray-600">Cargando colaboradores...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : inactivos.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-8 text-center text-sm text-gray-500">
+                        No hay colaboradores inactivos
+                      </td>
+                    </tr>
+                  ) : (
+                    inactivos.map((colaborador, index) => {
+                      // Encontrar el colaborador completo original
+                      const colaboradorCompleto = colaboradoresCompletos.find(c => {
+                        const getValue = (obj, keys) => {
+                          for (const key of keys) {
+                            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                              return obj[key];
+                            }
+                          }
+                          return "";
+                        };
+                        const idOriginal = getValue(c, ["id", "ID", "Id"]);
+                        const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                        return (idOriginal && idOriginal === colaborador.id) ||
+                          (nombreOriginal && nombreOriginal === colaborador.nombre);
+                      }) || colaboradoresCompletos[colaboradores.length + index] || null;
 
-                          return (
-                            <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-slate-200 transition-colors">
+                      return (
+                        <tr key={colaborador.id || `colab-inactivo-${index}`} className="hover:bg-slate-200 transition-colors">
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{colaborador.nombre}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.apellido}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{colaborador.area}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedColaboradorCompleto(colaboradorCompleto);
-                                      setIsVerDetallesModalOpen(true);
-                                    }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                    title="Ver detalles del colaborador"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      setSelectedColaboradorImagen(colaboradorCompleto);
-                                      setIsImagenModalOpen(true);
-                                      setImagenPreview(null);
-                                      setImagenActualGuardada(null);
-                                      setSelectedImageFile(null);
-                                      
-                                      // Obtener imagen actual del backend
-                                      const colaboradorId = getColaboradorId(colaboradorCompleto);
-                                      console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
-                                      if (colaboradorId) {
-                                        const imagenUrl = await fetchImagenColaborador(colaboradorId);
-                                        console.log("🔄 Imagen obtenida:", imagenUrl);
-                                        if (imagenUrl) {
-                                          setImagenActualGuardada(imagenUrl);
-                                          console.log("✅ Imagen actual guardada establecida:", imagenUrl);
-                                          // NO establecer imagenPreview aquí - solo para archivos nuevos
-                                        } else {
-                                          setImagenActualGuardada(null);
-                                          console.log("⚠️ No hay imagen guardada para este colaborador");
-                                        }
-                                      }
-                                    }}
-                                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
-                                    title="Gestionar imagen del colaborador"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <button
+                                onClick={() => {
+                                  setSelectedColaboradorCompleto(colaboradorCompleto);
+                                  setIsVerDetallesModalOpen(true);
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                title="Ver detalles del colaborador"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
-                                    <span style={{ pointerEvents: 'none' }}>Imagen</span>
+                                <span style={{ pointerEvents: 'none' }}>Ver Detalles</span>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  setSelectedColaboradorImagen(colaboradorCompleto);
+                                  setIsImagenModalOpen(true);
+                                  setImagenPreview(null);
+                                  setImagenActualGuardada(null);
+                                  setSelectedImageFile(null);
+
+                                  // Obtener imagen actual del backend
+                                  const colaboradorId = getColaboradorId(colaboradorCompleto);
+                                  console.log("🔄 Abriendo modal para colaborador ID:", colaboradorId);
+                                  if (colaboradorId) {
+                                    const imagenUrl = await fetchImagenColaborador(colaboradorId);
+                                    console.log("🔄 Imagen obtenida:", imagenUrl);
+                                    if (imagenUrl) {
+                                      setImagenActualGuardada(imagenUrl);
+                                      console.log("✅ Imagen actual guardada establecida:", imagenUrl);
+                                      // NO establecer imagenPreview aquí - solo para archivos nuevos
+                                    } else {
+                                      setImagenActualGuardada(null);
+                                      console.log("⚠️ No hay imagen guardada para este colaborador");
+                                    }
+                                  }
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none bg-gradient-to-br from-green-500 to-green-600 text-white"
+                                title="Gestionar imagen del colaborador"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span style={{ pointerEvents: 'none' }}>Imagen</span>
                               </button>
                             </div>
                           </td>
                         </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Primera página">
-                    «
-                  </button>
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página anterior">
-                    &lt;
-                  </button>
-                  <span className="text-[10px] text-gray-700 font-medium">
-                    Página 1 de 1
-                  </span>
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página siguiente">
-                    &gt;
-                  </button>
-                  <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Última página">
-                    »
-                  </button>
-                </div>
-              </div>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
-        );
+            <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Primera página">
+                «
+              </button>
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página anterior">
+                &lt;
+              </button>
+              <span className="text-[10px] text-gray-700 font-medium">
+                Página 1 de 1
+              </span>
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Página siguiente">
+                &gt;
+              </button>
+              <button disabled className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" aria-label="Última página">
+                »
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
   };
 
   return (
@@ -2157,20 +2156,19 @@ function RecursosHumanosContent() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(to bottom, #f7f9fc, #ffffff)' }}>
           <div className="max-w-[95%] mx-auto px-4 py-4">
-            {/* Botón Volver */}
             <button
               onClick={() => router.push("/menu")}
-              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] text-white rounded-lg font-semibold hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+              style={{ fontFamily: 'var(--font-poppins)' }}
             >
-              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Volver al Menú</span>
@@ -2179,53 +2177,53 @@ function RecursosHumanosContent() {
             {/* Card contenedor blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
 
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>RECURSOS HUMANOS</h1>
-                  <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de personal y nómina</p>
+              {/* Header */}
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>RECURSOS HUMANOS</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de personal y nómina</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Secciones */}
-            <div className="space-y-3">
-              {sections.map((section) => (
-                <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                  {/* Header de Sección */}
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div className="text-white">{getIcon(section.icon)}</div>
-                      <h2 className="text-base font-bold text-white">{section.name}</h2>
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
+              {/* Secciones */}
+              <div className="space-y-3">
+                {sections.map((section) => (
+                  <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                    {/* Header de Sección */}
+                    <button
+                      onClick={() => toggleSection(section.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                      <div className="flex items-center space-x-2">
+                        <div className="text-white">{getIcon(section.icon)}</div>
+                        <h2 className="text-base font-bold text-white">{section.name}</h2>
+                      </div>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
 
-                  {/* Contenido de la Sección */}
-                  {expandedSections[section.id] && (
-                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
-                      {section.id === "gestion-colaboradores" ? (
+                    {/* Contenido de la Sección */}
+                    {expandedSections[section.id] && (
+                      <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
+                        {section.id === "gestion-colaboradores" ? (
                           <div className="grid gap-2.5 grid-cols-1">
                             <div
                               className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                              style={{ 
+                              style={{
                                 boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
                                 transform: 'translateY(0)'
                               }}
@@ -2239,39 +2237,87 @@ function RecursosHumanosContent() {
                               }}
                             >
                               <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                              
+
                               <div className="relative z-10">
                                 <div className="flex items-start justify-between mb-2">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                  {getIcon("users")}
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                    {getIcon("users")}
                                   </div>
                                 </div>
-                              <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Gestión de Colaboradores</h3>
-                              <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar colaboradores activos e inactivos</p>
-                                <button 
-                                type="button"
-                                onClick={() => router.push("/recursos-humanos/gestion-colaboradores")}
-                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
-                                style={{ fontFamily: 'var(--font-poppins)' }}
-                              >
-                                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
+                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Gestión de Colaboradores</h3>
+                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar colaboradores activos e inactivos</p>
+                                <button
+                                  type="button"
+                                  onClick={() => router.push("/recursos-humanos/gestion-colaboradores")}
+                                  className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
                                   <span className="relative z-10 flex items-center space-x-1.5">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
-                                  <span>Ver Colaboradores</span>
+                                    <span>Ver Colaboradores</span>
                                   </span>
                                 </button>
                               </div>
                             </div>
                           </div>
-                      ) : section.id === "solicitudes-incidencias" ? (
-                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
+                        ) : section.id === "solicitudes-incidencias" ? (
+                          <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl">
+                            <div className="grid gap-2.5 grid-cols-1">
+                              <div
+                                className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                                style={{
+                                  boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                  transform: 'translateY(0)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+
+                                <div className="relative z-10">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                  <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h3>
+                                  <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar Solicitudes/Incidencias</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => router.push("/recursos-humanos/solicitudes-incidencias")}
+                                    className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                  >
+                                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                    <span className="relative z-10 flex items-center space-x-1.5">
+                                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      <span>Ver Solicitudes/Incidencias</span>
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : section.id === "gestion-permisos" ? (
                           <div className="grid gap-2.5 grid-cols-1">
                             <div
                               className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                              style={{ 
+                              style={{
                                 boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
                                 transform: 'translateY(0)'
                               }}
@@ -2285,50 +2331,46 @@ function RecursosHumanosContent() {
                               }}
                             >
                               <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                              
+
                               <div className="relative z-10">
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                  </svg>
-                              </div>
-                                    </div>
-                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Solicitudes/Incidencias</h3>
-                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar Solicitudes/Incidencias</p>
+                                    {getIcon("document")}
+                                  </div>
+                                </div>
+                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Listado de Permisos</h3>
+                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Ver y gestionar los permisos del área</p>
                                 <button
                                   type="button"
-                                  onClick={() => router.push("/recursos-humanos/solicitudes-incidencias")}
+                                  onClick={() => router.push("/recursos-humanos/solicitudes-permisos")}
                                   className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
                                   style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
-                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
                                   <span className="relative z-10 flex items-center space-x-1.5">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                    <span>Ver Solicitudes/Incidencias</span>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>Ver Permisos</span>
                                   </span>
                                 </button>
                               </div>
-                                      </div>
-                                        </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm mx-auto mb-3">
-                            {getIcon(section.icon)}
+                            </div>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{section.name}</h3>
-                          <p className="text-gray-600">Esta sección estará disponible próximamente</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="w-12 h-12 bg-gradient-to-br from-[#155EEF] to-[#1D4ED8] rounded-xl flex items-center justify-center text-white shadow-sm mx-auto mb-3">
+                              {getIcon(section.icon)}
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{section.name}</h3>
+                            <p className="text-gray-600">Esta sección estará disponible próximamente</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </main>
@@ -2379,11 +2421,10 @@ function RecursosHumanosContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeTab === tab.id
-                      ? "text-[#002D5A] border-b-2 border-[#002D5A] bg-blue-50"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab.id
+                    ? "text-[#002D5A] border-b-2 border-[#002D5A] bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -2391,582 +2432,809 @@ function RecursosHumanosContent() {
             </div>
             {/* Contenido del Tab Activo */}
             <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            {(() => {
-              // Función helper para obtener valores
-              const getValue = (obj, keys) => {
-                for (const key of keys) {
-                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                    return obj[key];
+              {(() => {
+                // Función helper para obtener valores
+                const getValue = (obj, keys) => {
+                  for (const key of keys) {
+                    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+                      return obj[key];
+                    }
                   }
-                }
-                return null;
-              };
+                  return null;
+                };
 
-              const formatValue = (value) => {
-                if (value === null || value === undefined || value === "") {
-                  return "No disponible";
-                }
-                if (typeof value === "object") {
-                  return JSON.stringify(value, null, 2);
-                }
-                return String(value);
-              };
-
-              const formatDate = (dateValue) => {
-                if (!dateValue) return "No disponible";
-                try {
-                  const date = new Date(dateValue);
-                  if (!isNaN(date.getTime())) {
-                    const dia = String(date.getDate()).padStart(2, "0");
-                    const mes = String(date.getMonth() + 1).padStart(2, "0");
-                    const año = date.getFullYear();
-                    return `${dia}/${mes}/${año}`;
+                const formatValue = (value) => {
+                  if (value === null || value === undefined || value === "") {
+                    return "No disponible";
                   }
-                  return dateValue;
-                } catch (e) {
-                  return dateValue;
-                }
-              };
-
-              // Obtener todos los campos del objeto, excluyendo ID y ID_PERSONA
-              const campos = Object.keys(selectedColaboradorCompleto).filter(campo => {
-                const campoUpper = campo.toUpperCase();
-                return campoUpper !== "ID" && campoUpper !== "ID_PERSONA";
-              });
-              
-              // Función para formatear fechas
-              const formatDateValue = (value) => {
-                if (!value || value === null || value === undefined || value === "") {
-                  return "-";
-                }
-                // Si ya es una fecha formateada, retornarla
-                if (typeof value === "string" && value.includes("/")) {
-                  return value;
-                }
-                // Intentar parsear como fecha
-                try {
-                  const date = new Date(value);
-                  if (!isNaN(date.getTime())) {
-                    const dia = String(date.getDate()).padStart(2, "0");
-                    const mes = String(date.getMonth() + 1).padStart(2, "0");
-                    const año = date.getFullYear();
-                    return `${dia}/${mes}/${año}`;
+                  if (typeof value === "object") {
+                    return JSON.stringify(value, null, 2);
                   }
-                } catch (e) {
-                  // Si no es fecha, retornar el valor original
-                }
-                return String(value);
-              };
+                  return String(value);
+                };
 
-              // Organizar campos en secciones
-              const getFieldValue = (fieldKeys) => {
-                for (const key of fieldKeys) {
-                  const value = getValue(selectedColaboradorCompleto, [key, key.toUpperCase(), key.toLowerCase()]);
-                  if (value !== null && value !== undefined && value !== "") {
+                const formatDate = (dateValue) => {
+                  if (!dateValue) return "No disponible";
+                  try {
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                      const dia = String(date.getDate()).padStart(2, "0");
+                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      const año = date.getFullYear();
+                      return `${dia}/${mes}/${año}`;
+                    }
+                    return dateValue;
+                  } catch (e) {
+                    return dateValue;
+                  }
+                };
+
+                // Obtener todos los campos del objeto, excluyendo ID y ID_PERSONA
+                const campos = Object.keys(selectedColaboradorCompleto).filter(campo => {
+                  const campoUpper = campo.toUpperCase();
+                  return campoUpper !== "ID" && campoUpper !== "ID_PERSONA";
+                });
+
+                // Función para formatear fechas
+                const formatDateValue = (value) => {
+                  if (!value || value === null || value === undefined || value === "") {
+                    return "-";
+                  }
+                  // Si ya es una fecha formateada, retornarla
+                  if (typeof value === "string" && value.includes("/")) {
                     return value;
                   }
-                }
-                return null;
-              };
+                  // Intentar parsear como fecha
+                  try {
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                      const dia = String(date.getDate()).padStart(2, "0");
+                      const mes = String(date.getMonth() + 1).padStart(2, "0");
+                      const año = date.getFullYear();
+                      return `${dia}/${mes}/${año}`;
+                    }
+                  } catch (e) {
+                    // Si no es fecha, retornar el valor original
+                  }
+                  return String(value);
+                };
 
-              const formatFieldValue = (value) => {
-                if (value === null || value === undefined || value === "") {
-                  return "No disponible";
-                }
-                return String(value);
-              };
+                // Organizar campos en secciones
+                const getFieldValue = (fieldKeys) => {
+                  for (const key of fieldKeys) {
+                    const value = getValue(selectedColaboradorCompleto, [key, key.toUpperCase(), key.toLowerCase()]);
+                    if (value !== null && value !== undefined && value !== "") {
+                      return value;
+                    }
+                  }
+                  return null;
+                };
 
-              // Información Personal
-              const infoPersonal = {
-                nombre: formatFieldValue(getFieldValue(["nombre", "NOMBRE", "name", "NAME"])),
-                segundoNombre: formatFieldValue(getFieldValue(["segundo_nombre", "SEGUNDO_NOMBRE", "segundoNombre", "2do_nombre", "2DO_NOMBRE"])),
-                apellido: formatFieldValue(getFieldValue(["apellido", "APELLIDO", "lastname", "LASTNAME"])),
-                segundoApellido: formatFieldValue(getFieldValue(["segundo_apellido", "SEGUNDO_APELLIDO", "segundoApellido", "2do_apellido", "2DO_APELLIDO"])),
-                fechaNacimiento: formatDateValue(getFieldValue(["fecha_nacimiento", "FECHA_NACIMIENTO", "fechaNacimiento", "fecha_nac", "FECHA_NAC"])),
-                tipoDocumento: formatFieldValue(getFieldValue(["tipo_documento", "TIPO_DOCUMENTO", "tipoDocumento", "tipo_doc", "TIPO_DOC"])),
-                numeroDocumento: formatFieldValue(getFieldValue(["numero_documento", "NUMERO_DOCUMENTO", "numeroDocumento", "n_doc", "N_DOC", "documento", "DOCUMENTO"])),
-                estadoCivil: formatFieldValue(getFieldValue(["estado_civil", "ESTADO_CIVIL", "estadoCivil"])),
-                estado: formatFieldValue(getFieldValue(["estado", "ESTADO", "status", "STATUS"])),
-              };
+                const formatFieldValue = (value) => {
+                  if (value === null || value === undefined || value === "") {
+                    return "No disponible";
+                  }
+                  return String(value);
+                };
 
-              // Información Familiar
-              const infoFamiliar = {
-                tieneHijos: formatFieldValue(getFieldValue(["hijos_boolean", "HIJOS_BOOLEAN", "tieneHijos", "TIENE_HIJOS"])),
-                cantHijos: formatFieldValue(getFieldValue(["cant_hijos", "CANT_HIJOS", "cantidadHijos", "CANTIDAD_HIJOS"])),
-              };
+                // Información Personal
+                const infoPersonal = {
+                  nombre: formatFieldValue(getFieldValue(["nombre", "NOMBRE", "name", "NAME"])),
+                  segundoNombre: formatFieldValue(getFieldValue(["segundo_nombre", "SEGUNDO_NOMBRE", "segundoNombre", "2do_nombre", "2DO_NOMBRE"])),
+                  apellido: formatFieldValue(getFieldValue(["apellido", "APELLIDO", "lastname", "LASTNAME"])),
+                  segundoApellido: formatFieldValue(getFieldValue(["segundo_apellido", "SEGUNDO_APELLIDO", "segundoApellido", "2do_apellido", "2DO_APELLIDO"])),
+                  fechaNacimiento: formatDateValue(getFieldValue(["fecha_nacimiento", "FECHA_NACIMIENTO", "fechaNacimiento", "fecha_nac", "FECHA_NAC"])),
+                  tipoDocumento: formatFieldValue(getFieldValue(["tipo_documento", "TIPO_DOCUMENTO", "tipoDocumento", "tipo_doc", "TIPO_DOC"])),
+                  numeroDocumento: formatFieldValue(getFieldValue(["numero_documento", "NUMERO_DOCUMENTO", "numeroDocumento", "n_doc", "N_DOC", "documento", "DOCUMENTO"])),
+                  estadoCivil: formatFieldValue(getFieldValue(["estado_civil", "ESTADO_CIVIL", "estadoCivil"])),
+                  estado: formatFieldValue(getFieldValue(["estado", "ESTADO", "status", "STATUS"])),
+                };
 
-              // Ubicación
-              const ubicacion = {
-                direccion: formatFieldValue(getFieldValue(["direccion", "DIRECCION", "address", "ADDRESS"])),
-                googleMaps: formatFieldValue(getFieldValue(["google_maps", "GOOGLE_MAPS", "googleMaps"])),
-              };
+                // Información Familiar
+                const infoFamiliar = {
+                  tieneHijos: formatFieldValue(getFieldValue(["hijos_boolean", "HIJOS_BOOLEAN", "tieneHijos", "TIENE_HIJOS"])),
+                  cantHijos: formatFieldValue(getFieldValue(["cant_hijos", "CANT_HIJOS", "cantidadHijos", "CANTIDAD_HIJOS"])),
+                };
 
-              // Información Laboral
-              const infoLaboral = {
-                ocupacion: formatFieldValue(getFieldValue(["ocupacion", "OCUPACION", "occupation", "OCCUPATION"])),
-                cargo: formatFieldValue(getFieldValue(["cargo", "CARGO", "position", "POSITION"])),
-                area: formatFieldValue(getFieldValue(["area", "AREA", "departamento", "DEPARTAMENTO"])),
-                rol: formatFieldValue(getFieldValue(["rol", "ROL", "role", "ROLE"])),
-              };
+                // Ubicación
+                const ubicacion = {
+                  direccion: formatFieldValue(getFieldValue(["direccion", "DIRECCION", "address", "ADDRESS"])),
+                  googleMaps: formatFieldValue(getFieldValue(["google_maps", "GOOGLE_MAPS", "googleMaps"])),
+                };
 
-              // Seguros
-              const seguros = {
-                seguroVidaLey: formatFieldValue(getFieldValue(["seguro_vida_ley", "SEGURO_VIDA_LEY", "seguroVidaLey"])),
-                fechaVencimiento: formatDateValue(getFieldValue(["seguro_fecha_vencimiento", "SEGURO_FECHA_VENCIMIENTO", "fecha_vencimiento", "FECHA_VENCIMIENTO"])),
-                fechaInicio: formatDateValue(getFieldValue(["seguro_fecha_inicio", "SEGURO_FECHA_INICIO", "fecha_inicio", "FECHA_INICIO"])),
-              };
+                // Información Laboral
+                const infoLaboral = {
+                  ocupacion: formatFieldValue(getFieldValue(["ocupacion", "OCUPACION", "occupation", "OCCUPATION"])),
+                  cargo: formatFieldValue(getFieldValue(["cargo", "CARGO", "position", "POSITION"])),
+                  area: formatFieldValue(getFieldValue(["area", "AREA", "departamento", "DEPARTAMENTO"])),
+                  rol: formatFieldValue(getFieldValue(["rol", "ROL", "role", "ROLE"])),
+                };
 
-              const SeccionField = ({ label, value }) => {
-                const isAvailable = value !== "No disponible" && value !== "-";
-                      return (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                      {label}
-                          </label>
-                    <p className={`text-sm px-3 py-2 rounded-lg border ${
-                      isAvailable 
-                        ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium" 
+                // Seguros
+                const seguros = {
+                  seguroVidaLey: formatFieldValue(getFieldValue(["seguro_vida_ley", "SEGURO_VIDA_LEY", "seguroVidaLey"])),
+                  fechaVencimiento: formatDateValue(getFieldValue(["seguro_fecha_vencimiento", "SEGURO_FECHA_VENCIMIENTO", "fecha_vencimiento", "FECHA_VENCIMIENTO"])),
+                  fechaInicio: formatDateValue(getFieldValue(["seguro_fecha_inicio", "SEGURO_FECHA_INICIO", "fecha_inicio", "FECHA_INICIO"])),
+                };
+
+                const SeccionField = ({ label, value }) => {
+                  const isAvailable = value !== "No disponible" && value !== "-";
+                  return (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                        {label}
+                      </label>
+                      <p className={`text-sm px-3 py-2 rounded-lg border ${isAvailable
+                        ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-gray-900 font-medium"
                         : "bg-gray-50 border-gray-200 text-gray-500"
-                    }`}>
-                      {value}
-                          </p>
-                        </div>
+                        }`}>
+                        {value}
+                      </p>
+                    </div>
+                  );
+                };
+
+                const Seccion = ({ title, children }) => (
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-r from-[#002D5A] to-[#1D4ED8] px-4 py-3">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wide">{title}</h3>
+                    </div>
+                    <div className="p-4">
+                      {children}
+                    </div>
+                  </div>
                 );
-              };
 
-              const Seccion = ({ title, children }) => (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-[#002D5A] to-[#1D4ED8] px-4 py-3">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wide">{title}</h3>
-                  </div>
-                  <div className="p-4">
-                    {children}
-                  </div>
-                </div>
-              );
+                // EditableField ahora está definido fuera de esta función para evitar recreaciones
 
-              // EditableField ahora está definido fuera de esta función para evitar recreaciones
+                // Función para guardar cambios de una sección
+                const handleSaveSection = async () => {
+                  if (!selectedColaboradorCompleto) return;
 
-              // Función para guardar cambios de una sección
-              const handleSaveSection = async () => {
-                if (!selectedColaboradorCompleto) return;
-                
-                const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
-                if (!colaboradorId) {
-                  setNotification({
-                    show: true,
-                    message: "Error: No se pudo obtener el ID del colaborador",
-                    type: "error"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
-                  return;
-                }
+                  const colaboradorId = getColaboradorId(selectedColaboradorCompleto);
+                  if (!colaboradorId) {
+                    setNotification({
+                      show: true,
+                      message: "Error: No se pudo obtener el ID del colaborador",
+                      type: "error"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                    return;
+                  }
 
-                try {
-                  let response;
-                  let updatedColaborador = { ...selectedColaboradorCompleto };
+                  try {
+                    let response;
+                    let updatedColaborador = { ...selectedColaboradorCompleto };
+
+                    switch (activeTab) {
+                      case "informacion-personal":
+                        response = await actualizarInformacionPersonal(colaboradorId, editDataPersonal);
+                        // Actualizar selectedColaboradorCompleto con los datos editados
+                        if (editDataPersonal.nombre !== undefined) updatedColaborador.NOMBRE = editDataPersonal.nombre;
+                        if (editDataPersonal.segundoNombre !== undefined) updatedColaborador.SEGUNDO_NOMBRE = editDataPersonal.segundoNombre;
+                        if (editDataPersonal.apellido !== undefined) updatedColaborador.APELLIDO = editDataPersonal.apellido;
+                        if (editDataPersonal.segundoApellido !== undefined) updatedColaborador.SEGUNDO_APELLIDO = editDataPersonal.segundoApellido;
+                        if (editDataPersonal.fechaNacimiento !== undefined) updatedColaborador.FECHA_NACIMIENTO = editDataPersonal.fechaNacimiento;
+                        if (editDataPersonal.tipoDocumento !== undefined) updatedColaborador.TIPO_DOCUMENTO = editDataPersonal.tipoDocumento;
+                        if (editDataPersonal.numeroDocumento !== undefined) updatedColaborador.NUMERO_DOCUMENTO = editDataPersonal.numeroDocumento;
+                        if (editDataPersonal.estadoCivil !== undefined) updatedColaborador.ESTADO_CIVIL = editDataPersonal.estadoCivil;
+                        if (editDataPersonal.estado !== undefined) updatedColaborador.ESTADO = editDataPersonal.estado;
+                        break;
+                      case "informacion-familiar":
+                        response = await actualizarInformacionFamiliar(colaboradorId, editDataFamiliar);
+                        if (editDataFamiliar.tieneHijos !== undefined) updatedColaborador.HIJOS_BOOLEAN = editDataFamiliar.tieneHijos;
+                        if (editDataFamiliar.cantHijos !== undefined) updatedColaborador.CANT_HIJOS = editDataFamiliar.cantHijos;
+                        break;
+                      case "ubicacion":
+                        response = await actualizarUbicacion(colaboradorId, editDataUbicacion);
+                        if (editDataUbicacion.direccion !== undefined) updatedColaborador.DIRECCION = editDataUbicacion.direccion;
+                        if (editDataUbicacion.googleMaps !== undefined) updatedColaborador.GOOGLE_MAPS = editDataUbicacion.googleMaps;
+                        break;
+                      case "informacion-laboral":
+                        response = await actualizarInformacionLaboral(colaboradorId, editDataLaboral);
+                        if (editDataLaboral.ocupacion !== undefined) updatedColaborador.OCUPACION = editDataLaboral.ocupacion;
+                        if (editDataLaboral.cargo !== undefined) updatedColaborador.CARGO = editDataLaboral.cargo;
+                        if (editDataLaboral.area !== undefined) updatedColaborador.AREA = editDataLaboral.area;
+                        if (editDataLaboral.rol !== undefined) updatedColaborador.ROL = editDataLaboral.rol;
+                        break;
+                      case "seguros":
+                        response = await actualizarSeguros(colaboradorId, editDataSeguros);
+                        if (editDataSeguros.seguroVidaLey !== undefined) updatedColaborador.SEGURO_VIDA_LEY = editDataSeguros.seguroVidaLey;
+                        if (editDataSeguros.fechaVencimiento !== undefined) updatedColaborador.SEGURO_FECHA_VENCIMIENTO = editDataSeguros.fechaVencimiento;
+                        if (editDataSeguros.fechaInicio !== undefined) updatedColaborador.SEGURO_FECHA_INICIO = editDataSeguros.fechaInicio;
+                        break;
+                      default:
+                        return;
+                    }
+
+                    // Verificar si la actualización fue exitosa
+                    if (response && (response.filas_afectadas === 0 || response.filas_afectadas === undefined)) {
+                      console.warn("La actualización no afectó ninguna fila");
+                    }
+
+                    // Actualizar el estado local
+                    setSelectedColaboradorCompleto(updatedColaborador);
+
+                    // Cerrar modo de edición
+                    setEditingSections(prev => ({ ...prev, [activeTab]: false }));
+
+                    // Mostrar notificación de éxito
+                    setNotification({
+                      show: true,
+                      message: "Cambios guardados exitosamente",
+                      type: "success"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+                    // Recargar los datos del colaborador para asegurar sincronización
+                    await fetchColaboradores();
+                  } catch (error) {
+                    console.error("Error al guardar cambios:", error);
+                    setNotification({
+                      show: true,
+                      message: `Error al guardar: ${error.message || "Error desconocido"}`,
+                      type: "error"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                  }
+                };
+
+                // Función para obtener el valor inicial (editado si existe, sino original)
+                const getInitialValue = useCallback((fieldKey, originalValue) => {
+                  let editedValue = null;
+                  switch (activeTab) {
+                    case "informacion-personal":
+                      editedValue = editDataPersonal[fieldKey];
+                      break;
+                    case "informacion-familiar":
+                      editedValue = editDataFamiliar[fieldKey];
+                      break;
+                    case "ubicacion":
+                      editedValue = editDataUbicacion[fieldKey];
+                      break;
+                    case "informacion-laboral":
+                      editedValue = editDataLaboral[fieldKey];
+                      break;
+                    case "seguros":
+                      editedValue = editDataSeguros[fieldKey];
+                      break;
+                    default:
+                      break;
+                  }
+                  return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
+                }, [activeTab, editDataPersonal, editDataFamiliar, editDataUbicacion, editDataLaboral, editDataSeguros]);
+
+                // Renderizar contenido según el tab activo - USANDO COMPONENTES REALES
+                const renderTabContent = () => {
+                  const isEditing = editingSections[activeTab];
 
                   switch (activeTab) {
                     case "informacion-personal":
-                      response = await actualizarInformacionPersonal(colaboradorId, editDataPersonal);
-                      // Actualizar selectedColaboradorCompleto con los datos editados
-                      if (editDataPersonal.nombre !== undefined) updatedColaborador.NOMBRE = editDataPersonal.nombre;
-                      if (editDataPersonal.segundoNombre !== undefined) updatedColaborador.SEGUNDO_NOMBRE = editDataPersonal.segundoNombre;
-                      if (editDataPersonal.apellido !== undefined) updatedColaborador.APELLIDO = editDataPersonal.apellido;
-                      if (editDataPersonal.segundoApellido !== undefined) updatedColaborador.SEGUNDO_APELLIDO = editDataPersonal.segundoApellido;
-                      if (editDataPersonal.fechaNacimiento !== undefined) updatedColaborador.FECHA_NACIMIENTO = editDataPersonal.fechaNacimiento;
-                      if (editDataPersonal.tipoDocumento !== undefined) updatedColaborador.TIPO_DOCUMENTO = editDataPersonal.tipoDocumento;
-                      if (editDataPersonal.numeroDocumento !== undefined) updatedColaborador.NUMERO_DOCUMENTO = editDataPersonal.numeroDocumento;
-                      if (editDataPersonal.estadoCivil !== undefined) updatedColaborador.ESTADO_CIVIL = editDataPersonal.estadoCivil;
-                      if (editDataPersonal.estado !== undefined) updatedColaborador.ESTADO = editDataPersonal.estado;
-                      break;
+                      return (
+                        <InformacionPersonalTab
+                          infoPersonal={infoPersonal}
+                          isEditing={isEditing}
+                          onEdit={() => {
+                            setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                            setEditDataPersonal({
+                              nombre: infoPersonal.nombre !== "No disponible" ? infoPersonal.nombre : "",
+                              segundoNombre: infoPersonal.segundoNombre !== "No disponible" ? infoPersonal.segundoNombre : "",
+                              apellido: infoPersonal.apellido !== "No disponible" ? infoPersonal.apellido : "",
+                              segundoApellido: infoPersonal.segundoApellido !== "No disponible" ? infoPersonal.segundoApellido : "",
+                              fechaNacimiento: infoPersonal.fechaNacimiento !== "No disponible" && infoPersonal.fechaNacimiento !== "-" ? infoPersonal.fechaNacimiento : "",
+                              tipoDocumento: infoPersonal.tipoDocumento !== "No disponible" ? infoPersonal.tipoDocumento : "",
+                              numeroDocumento: infoPersonal.numeroDocumento !== "No disponible" ? infoPersonal.numeroDocumento : "",
+                              estadoCivil: infoPersonal.estadoCivil !== "No disponible" ? infoPersonal.estadoCivil : "",
+                              estado: infoPersonal.estado !== "No disponible" ? infoPersonal.estado : "",
+                            });
+                          }}
+                          onSave={handleSaveSection}
+                          onCommit={handleFieldCommit}
+                          getInitialValue={getInitialValue}
+                          tiposDocumento={tiposDocumento}
+                        />
+                      );
+
                     case "informacion-familiar":
-                      response = await actualizarInformacionFamiliar(colaboradorId, editDataFamiliar);
-                      if (editDataFamiliar.tieneHijos !== undefined) updatedColaborador.HIJOS_BOOLEAN = editDataFamiliar.tieneHijos;
-                      if (editDataFamiliar.cantHijos !== undefined) updatedColaborador.CANT_HIJOS = editDataFamiliar.cantHijos;
-                      break;
+                      return (
+                        <InformacionFamiliarTab
+                          infoFamiliar={infoFamiliar}
+                          isEditing={isEditing}
+                          onEdit={() => {
+                            setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                            setEditDataFamiliar({
+                              tieneHijos: infoFamiliar.tieneHijos !== "No disponible" ? infoFamiliar.tieneHijos : "",
+                              cantHijos: infoFamiliar.cantHijos !== "No disponible" ? infoFamiliar.cantHijos : "",
+                            });
+                          }}
+                          onSave={handleSaveSection}
+                          onCommit={handleFieldCommit}
+                          getInitialValue={getInitialValue}
+                        />
+                      );
+
                     case "ubicacion":
-                      response = await actualizarUbicacion(colaboradorId, editDataUbicacion);
-                      if (editDataUbicacion.direccion !== undefined) updatedColaborador.DIRECCION = editDataUbicacion.direccion;
-                      if (editDataUbicacion.googleMaps !== undefined) updatedColaborador.GOOGLE_MAPS = editDataUbicacion.googleMaps;
-                      break;
+                      return (
+                        <UbicacionTab
+                          ubicacion={ubicacion}
+                          isEditing={isEditing}
+                          onEdit={() => {
+                            setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                            setEditDataUbicacion({
+                              direccion: ubicacion.direccion !== "No disponible" ? ubicacion.direccion : "",
+                              googleMaps: ubicacion.googleMaps !== "No disponible" ? ubicacion.googleMaps : "",
+                            });
+                          }}
+                          onSave={handleSaveSection}
+                          onCommit={handleFieldCommit}
+                          getInitialValue={getInitialValue}
+                        />
+                      );
+
                     case "informacion-laboral":
-                      response = await actualizarInformacionLaboral(colaboradorId, editDataLaboral);
-                      if (editDataLaboral.ocupacion !== undefined) updatedColaborador.OCUPACION = editDataLaboral.ocupacion;
-                      if (editDataLaboral.cargo !== undefined) updatedColaborador.CARGO = editDataLaboral.cargo;
-                      if (editDataLaboral.area !== undefined) updatedColaborador.AREA = editDataLaboral.area;
-                      if (editDataLaboral.rol !== undefined) updatedColaborador.ROL = editDataLaboral.rol;
-                      break;
+                      return (
+                        <InformacionLaboralTab
+                          infoLaboral={infoLaboral}
+                          isEditing={isEditing}
+                          onEdit={() => {
+                            setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                            setEditDataLaboral({
+                              ocupacion: infoLaboral.ocupacion !== "No disponible" ? infoLaboral.ocupacion : "",
+                              cargo: infoLaboral.cargo !== "No disponible" ? infoLaboral.cargo : "",
+                              area: infoLaboral.area !== "No disponible" ? infoLaboral.area : "",
+                              rol: infoLaboral.rol !== "No disponible" ? infoLaboral.rol : "",
+                            });
+                          }}
+                          onSave={handleSaveSection}
+                          onCommit={handleFieldCommit}
+                          getInitialValue={getInitialValue}
+                          areasDisponibles={areasDisponibles}
+                          rolesDisponibles={rolesDisponibles}
+                        />
+                      );
+
                     case "seguros":
-                      response = await actualizarSeguros(colaboradorId, editDataSeguros);
-                      if (editDataSeguros.seguroVidaLey !== undefined) updatedColaborador.SEGURO_VIDA_LEY = editDataSeguros.seguroVidaLey;
-                      if (editDataSeguros.fechaVencimiento !== undefined) updatedColaborador.SEGURO_FECHA_VENCIMIENTO = editDataSeguros.fechaVencimiento;
-                      if (editDataSeguros.fechaInicio !== undefined) updatedColaborador.SEGURO_FECHA_INICIO = editDataSeguros.fechaInicio;
-                      break;
-                    default:
-                      return;
-                  }
+                      return (
+                        <SegurosTab
+                          seguros={seguros}
+                          isEditing={isEditing}
+                          onEdit={() => {
+                            setEditingSections(prev => ({ ...prev, [activeTab]: true }));
+                            setEditDataSeguros({
+                              seguroVidaLey: seguros.seguroVidaLey !== "No disponible" ? seguros.seguroVidaLey : "",
+                              fechaVencimiento: seguros.fechaVencimiento !== "No disponible" && seguros.fechaVencimiento !== "-" ? seguros.fechaVencimiento : "",
+                              fechaInicio: seguros.fechaInicio !== "No disponible" && seguros.fechaInicio !== "-" ? seguros.fechaInicio : "",
+                            });
+                          }}
+                          onSave={handleSaveSection}
+                          onCommit={handleFieldCommit}
+                          getInitialValue={getInitialValue}
+                        />
+                      );
 
-                  // Verificar si la actualización fue exitosa
-                  if (response && (response.filas_afectadas === 0 || response.filas_afectadas === undefined)) {
-                    console.warn("La actualización no afectó ninguna fila");
-                  }
+                    case "datos":
+                      // Sección DATOS con todas las subsecciones
+                      const seccionesDatos = [
+                        {
+                          id: "informacion-personal",
+                          nombre: "Información Personal",
+                          campos: [
+                            { key: "nombre", label: "Nombre", type: "text", required: true },
+                            { key: "segundoNombre", label: "2do Nombre", type: "text" },
+                            { key: "apellido", label: "Apellido", type: "text", required: true },
+                            { key: "segundoApellido", label: "2do Apellido", type: "text" },
+                            { key: "fechaNacimiento", label: "Fecha Nacimiento", type: "date" },
+                            { key: "tipoDocumento", label: "Tipo Documento", type: "select", options: tiposDocumento },
+                            { key: "numeroDocumento", label: "N° Documento", type: "text" },
+                            { key: "estadoCivil", label: "Estado Civil", type: "text" },
+                            { key: "estado", label: "Estado", type: "text" },
+                          ]
+                        },
+                        {
+                          id: "informacion-familiar",
+                          nombre: "Información Familiar",
+                          campos: [
+                            { key: "tieneHijos", label: "¿Tiene hijos?", type: "text" },
+                            { key: "cantHijos", label: "Cant hijos", type: "number" },
+                          ]
+                        },
+                        {
+                          id: "ubicacion",
+                          nombre: "Ubicación",
+                          campos: [
+                            { key: "direccion", label: "Dirección", type: "text" },
+                            { key: "googleMaps", label: "Google Maps", type: "text" },
+                          ]
+                        },
+                        {
+                          id: "informacion-laboral",
+                          nombre: "Información Laboral",
+                          campos: [
+                            { key: "ocupacion", label: "Ocupación", type: "text" },
+                            { key: "cargo", label: "Cargo", type: "text" },
+                            { key: "area", label: "Área", type: "select", options: areasDisponibles },
+                            { key: "rol", label: "Rol", type: "select", options: rolesDisponibles },
+                          ]
+                        },
+                        {
+                          id: "seguros",
+                          nombre: "Seguros",
+                          campos: [
+                            { key: "seguroVidaLey", label: "Seguro Vida Ley", type: "text" },
+                            { key: "fechaVencimiento", label: "Fecha Vencimiento", type: "date" },
+                            { key: "fechaInicio", label: "Fecha Inicio", type: "date" },
+                          ]
+                        },
+                      ];
 
-                  // Actualizar el estado local
-                  setSelectedColaboradorCompleto(updatedColaborador);
-                  
-                  // Cerrar modo de edición
-                  setEditingSections(prev => ({ ...prev, [activeTab]: false }));
-                  
-                  // Mostrar notificación de éxito
-                  setNotification({
-                    show: true,
-                    message: "Cambios guardados exitosamente",
-                    type: "success"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                      return (
+                        <div>
+                          {errorDatosSeccion && (
+                            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                              <p className="text-xs text-red-600">{errorDatosSeccion}</p>
+                            </div>
+                          )}
+                          {seccionesDatos.map((seccion) => {
+                            const datosSeccion = datosSecciones[seccion.id] || [];
 
-                  // Recargar los datos del colaborador para asegurar sincronización
-                  await fetchColaboradores();
-                } catch (error) {
-                  console.error("Error al guardar cambios:", error);
-                  setNotification({
-                    show: true,
-                    message: `Error al guardar: ${error.message || "Error desconocido"}`,
-                    type: "error"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
-                }
-              };
-
-              // Función para obtener el valor inicial (editado si existe, sino original)
-              const getInitialValue = useCallback((fieldKey, originalValue) => {
-                let editedValue = null;
-                switch (activeTab) {
-                  case "informacion-personal":
-                    editedValue = editDataPersonal[fieldKey];
-                    break;
-                  case "informacion-familiar":
-                    editedValue = editDataFamiliar[fieldKey];
-                    break;
-                  case "ubicacion":
-                    editedValue = editDataUbicacion[fieldKey];
-                    break;
-                  case "informacion-laboral":
-                    editedValue = editDataLaboral[fieldKey];
-                    break;
-                  case "seguros":
-                    editedValue = editDataSeguros[fieldKey];
-                    break;
-                  default:
-                    break;
-                }
-                return editedValue !== undefined && editedValue !== null ? editedValue : originalValue;
-              }, [activeTab, editDataPersonal, editDataFamiliar, editDataUbicacion, editDataLaboral, editDataSeguros]);
-
-              // Renderizar contenido según el tab activo - USANDO COMPONENTES REALES
-              const renderTabContent = () => {
-                const isEditing = editingSections[activeTab];
-
-                switch (activeTab) {
-                  case "informacion-personal":
-                    return (
-                      <InformacionPersonalTab
-                        infoPersonal={infoPersonal}
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                          setEditDataPersonal({
-                            nombre: infoPersonal.nombre !== "No disponible" ? infoPersonal.nombre : "",
-                            segundoNombre: infoPersonal.segundoNombre !== "No disponible" ? infoPersonal.segundoNombre : "",
-                            apellido: infoPersonal.apellido !== "No disponible" ? infoPersonal.apellido : "",
-                            segundoApellido: infoPersonal.segundoApellido !== "No disponible" ? infoPersonal.segundoApellido : "",
-                            fechaNacimiento: infoPersonal.fechaNacimiento !== "No disponible" && infoPersonal.fechaNacimiento !== "-" ? infoPersonal.fechaNacimiento : "",
-                            tipoDocumento: infoPersonal.tipoDocumento !== "No disponible" ? infoPersonal.tipoDocumento : "",
-                            numeroDocumento: infoPersonal.numeroDocumento !== "No disponible" ? infoPersonal.numeroDocumento : "",
-                            estadoCivil: infoPersonal.estadoCivil !== "No disponible" ? infoPersonal.estadoCivil : "",
-                            estado: infoPersonal.estado !== "No disponible" ? infoPersonal.estado : "",
-                          });
-                        }}
-                        onSave={handleSaveSection}
-                        onCommit={handleFieldCommit}
-                        getInitialValue={getInitialValue}
-                        tiposDocumento={tiposDocumento}
-                      />
-                    );
-
-                  case "informacion-familiar":
-                    return (
-                      <InformacionFamiliarTab
-                        infoFamiliar={infoFamiliar}
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                          setEditDataFamiliar({
-                            tieneHijos: infoFamiliar.tieneHijos !== "No disponible" ? infoFamiliar.tieneHijos : "",
-                            cantHijos: infoFamiliar.cantHijos !== "No disponible" ? infoFamiliar.cantHijos : "",
-                          });
-                        }}
-                        onSave={handleSaveSection}
-                        onCommit={handleFieldCommit}
-                        getInitialValue={getInitialValue}
-                      />
-                    );
-
-                  case "ubicacion":
-                    return (
-                      <UbicacionTab
-                        ubicacion={ubicacion}
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                          setEditDataUbicacion({
-                            direccion: ubicacion.direccion !== "No disponible" ? ubicacion.direccion : "",
-                            googleMaps: ubicacion.googleMaps !== "No disponible" ? ubicacion.googleMaps : "",
-                          });
-                        }}
-                        onSave={handleSaveSection}
-                        onCommit={handleFieldCommit}
-                        getInitialValue={getInitialValue}
-                      />
-                    );
-
-                  case "informacion-laboral":
-                    return (
-                      <InformacionLaboralTab
-                        infoLaboral={infoLaboral}
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                          setEditDataLaboral({
-                            ocupacion: infoLaboral.ocupacion !== "No disponible" ? infoLaboral.ocupacion : "",
-                            cargo: infoLaboral.cargo !== "No disponible" ? infoLaboral.cargo : "",
-                            area: infoLaboral.area !== "No disponible" ? infoLaboral.area : "",
-                            rol: infoLaboral.rol !== "No disponible" ? infoLaboral.rol : "",
-                          });
-                        }}
-                        onSave={handleSaveSection}
-                        onCommit={handleFieldCommit}
-                        getInitialValue={getInitialValue}
-                        areasDisponibles={areasDisponibles}
-                        rolesDisponibles={rolesDisponibles}
-                      />
-                    );
-
-                  case "seguros":
-                    return (
-                      <SegurosTab
-                        seguros={seguros}
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingSections(prev => ({ ...prev, [activeTab]: true }));
-                          setEditDataSeguros({
-                            seguroVidaLey: seguros.seguroVidaLey !== "No disponible" ? seguros.seguroVidaLey : "",
-                            fechaVencimiento: seguros.fechaVencimiento !== "No disponible" && seguros.fechaVencimiento !== "-" ? seguros.fechaVencimiento : "",
-                            fechaInicio: seguros.fechaInicio !== "No disponible" && seguros.fechaInicio !== "-" ? seguros.fechaInicio : "",
-                          });
-                        }}
-                        onSave={handleSaveSection}
-                        onCommit={handleFieldCommit}
-                        getInitialValue={getInitialValue}
-                      />
-                    );
-
-                  case "datos":
-                    // Sección DATOS con todas las subsecciones
-                    const seccionesDatos = [
-                      {
-                        id: "informacion-personal",
-                        nombre: "Información Personal",
-                        campos: [
-                          { key: "nombre", label: "Nombre", type: "text", required: true },
-                          { key: "segundoNombre", label: "2do Nombre", type: "text" },
-                          { key: "apellido", label: "Apellido", type: "text", required: true },
-                          { key: "segundoApellido", label: "2do Apellido", type: "text" },
-                          { key: "fechaNacimiento", label: "Fecha Nacimiento", type: "date" },
-                          { key: "tipoDocumento", label: "Tipo Documento", type: "select", options: tiposDocumento },
-                          { key: "numeroDocumento", label: "N° Documento", type: "text" },
-                          { key: "estadoCivil", label: "Estado Civil", type: "text" },
-                          { key: "estado", label: "Estado", type: "text" },
-                        ]
-                      },
-                      {
-                        id: "informacion-familiar",
-                        nombre: "Información Familiar",
-                        campos: [
-                          { key: "tieneHijos", label: "¿Tiene hijos?", type: "text" },
-                          { key: "cantHijos", label: "Cant hijos", type: "number" },
-                        ]
-                      },
-                      {
-                        id: "ubicacion",
-                        nombre: "Ubicación",
-                        campos: [
-                          { key: "direccion", label: "Dirección", type: "text" },
-                          { key: "googleMaps", label: "Google Maps", type: "text" },
-                        ]
-                      },
-                      {
-                        id: "informacion-laboral",
-                        nombre: "Información Laboral",
-                        campos: [
-                          { key: "ocupacion", label: "Ocupación", type: "text" },
-                          { key: "cargo", label: "Cargo", type: "text" },
-                          { key: "area", label: "Área", type: "select", options: areasDisponibles },
-                          { key: "rol", label: "Rol", type: "select", options: rolesDisponibles },
-                        ]
-                      },
-                      {
-                        id: "seguros",
-                        nombre: "Seguros",
-                        campos: [
-                          { key: "seguroVidaLey", label: "Seguro Vida Ley", type: "text" },
-                          { key: "fechaVencimiento", label: "Fecha Vencimiento", type: "date" },
-                          { key: "fechaInicio", label: "Fecha Inicio", type: "date" },
-                        ]
-                      },
-                    ];
-
-                    return (
-                      <div>
-                        {errorDatosSeccion && (
-                          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
-                            <p className="text-xs text-red-600">{errorDatosSeccion}</p>
-                          </div>
-                        )}
-                        {seccionesDatos.map((seccion) => {
-                          const datosSeccion = datosSecciones[seccion.id] || [];
-                          
-                          return (
-                            <div key={seccion.id} className="mb-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
-                                  {seccion.nombre}
-                                </h4>
-                                <button
-                                  onClick={() => {
-                                    const nuevoItem = {};
-                                    seccion.campos.forEach(campo => {
-                                      nuevoItem[campo.key] = "";
-                                    });
-                                    nuevoItem.id = `temp-${Date.now()}-${Math.random()}`;
-                                    nuevoItem.isNew = true;
-                                    setDatosSecciones(prev => ({
-                                      ...prev,
-                                      [seccion.id]: [...(prev[seccion.id] || []), nuevoItem]
-                                    }));
-                                    setErrorDatosSeccion(null);
-                                  }}
-                                  disabled={savingDatosSeccion || loadingAreas}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                  </svg>
-                                  <span>Agregar</span>
-                                </button>
-                              </div>
-                              <div className="space-y-3">
-                                {datosSeccion.map((item, itemIndex) => {
+                            return (
+                              <div key={seccion.id} className="mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
+                                    {seccion.nombre}
+                                  </h4>
+                                  <button
+                                    onClick={() => {
+                                      const nuevoItem = {};
+                                      seccion.campos.forEach(campo => {
+                                        nuevoItem[campo.key] = "";
+                                      });
+                                      nuevoItem.id = `temp-${Date.now()}-${Math.random()}`;
+                                      nuevoItem.isNew = true;
+                                      setDatosSecciones(prev => ({
+                                        ...prev,
+                                        [seccion.id]: [...(prev[seccion.id] || []), nuevoItem]
+                                      }));
+                                      setErrorDatosSeccion(null);
+                                    }}
+                                    disabled={savingDatosSeccion || loadingAreas}
+                                    className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Agregar</span>
+                                  </button>
+                                </div>
+                                <div className="space-y-3">
+                                  {datosSeccion.map((item, itemIndex) => {
                                     return (
+                                      <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded p-3 shadow-sm relative">
+                                        <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+                                          {item.id && !item.isNew ? (
+                                            // Botón Actualizar para items existentes
+                                            <button
+                                              onClick={async () => {
+                                                // Validar campos requeridos
+                                                const camposRequeridos = seccion.campos.filter(c => c.required);
+                                                const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
+                                                if (faltantes.length > 0) {
+                                                  setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
+                                                  return;
+                                                }
+                                                try {
+                                                  setSavingDatosSeccion(true);
+                                                  setErrorDatosSeccion(null);
+                                                  // TODO: Llamar a API para actualizar
+                                                  // await handleActualizarDatoSeccion(seccion.id, item.id, item);
+                                                  setNotification({
+                                                    show: true,
+                                                    message: "Datos actualizados exitosamente",
+                                                    type: "success"
+                                                  });
+                                                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                                                } catch (error) {
+                                                  setErrorDatosSeccion(error.message || "Error al actualizar");
+                                                } finally {
+                                                  setSavingDatosSeccion(false);
+                                                }
+                                              }}
+                                              disabled={savingDatosSeccion || loadingAreas}
+                                              className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              title="Actualizar"
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                              <span>Actualizar</span>
+                                            </button>
+                                          ) : (
+                                            // Botón Guardar para items nuevos (no temporales)
+                                            <button
+                                              onClick={async () => {
+                                                // Validar campos requeridos
+                                                const camposRequeridos = seccion.campos.filter(c => c.required);
+                                                const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
+                                                if (faltantes.length > 0) {
+                                                  setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
+                                                  return;
+                                                }
+                                                try {
+                                                  setSavingDatosSeccion(true);
+                                                  setErrorDatosSeccion(null);
+                                                  // TODO: Llamar a API para guardar
+                                                  // const nuevoId = await handleAgregarDatoSeccion(seccion.id, item);
+                                                  // Actualizar el item con el ID real
+                                                  const nuevosDatos = [...datosSeccion];
+                                                  nuevosDatos[itemIndex] = { ...item, id: `real-${Date.now()}`, isNew: false };
+                                                  setDatosSecciones(prev => ({
+                                                    ...prev,
+                                                    [seccion.id]: nuevosDatos
+                                                  }));
+                                                  setNotification({
+                                                    show: true,
+                                                    message: "Datos guardados exitosamente",
+                                                    type: "success"
+                                                  });
+                                                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                                                } catch (error) {
+                                                  setErrorDatosSeccion(error.message || "Error al guardar");
+                                                } finally {
+                                                  setSavingDatosSeccion(false);
+                                                }
+                                              }}
+                                              disabled={savingDatosSeccion || loadingAreas}
+                                              className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                              title="Guardar"
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                              <span>Guardar</span>
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => {
+                                              if (item.id && !item.isNew) {
+                                                // TODO: Llamar a API para eliminar
+                                                // handleEliminarDatoSeccion(seccion.id, item.id);
+                                              }
+                                              const nuevosDatos = datosSeccion.filter((_, idx) => idx !== itemIndex);
+                                              setDatosSecciones(prev => ({
+                                                ...prev,
+                                                [seccion.id]: nuevosDatos
+                                              }));
+                                              setErrorDatosSeccion(null);
+                                            }}
+                                            disabled={savingDatosSeccion || loadingAreas}
+                                            className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                            title="Eliminar"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            <span>Eliminar</span>
+                                          </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 pr-32">
+                                          {seccion.campos.map((campo) => (
+                                            <div key={campo.key} className="flex flex-col">
+                                              <label className="text-xs font-bold text-gray-700 mb-1">
+                                                {campo.label}
+                                                {campo.required && <span className="text-red-500 ml-1">*</span>}
+                                              </label>
+                                              {campo.type === "select" ? (
+                                                <select
+                                                  value={item[campo.key] || ""}
+                                                  onChange={(e) => {
+                                                    const nuevosDatos = [...datosSeccion];
+                                                    nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
+                                                    setDatosSecciones(prev => ({
+                                                      ...prev,
+                                                      [seccion.id]: nuevosDatos
+                                                    }));
+                                                    setErrorDatosSeccion(null);
+                                                  }}
+                                                  className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                  <option value="">Seleccionar...</option>
+                                                  {campo.options?.map((opt) => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                  ))}
+                                                </select>
+                                              ) : (
+                                                <input
+                                                  type={campo.type}
+                                                  value={item[campo.key] || ""}
+                                                  onChange={(e) => {
+                                                    const nuevosDatos = [...datosSeccion];
+                                                    nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
+                                                    setDatosSecciones(prev => ({
+                                                      ...prev,
+                                                      [seccion.id]: nuevosDatos
+                                                    }));
+                                                    setErrorDatosSeccion(null);
+                                                  }}
+                                                  placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+                                                  className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+
+                    case "correo":
+                      // Renderizar la sección CORREO (solo medios de comunicación tipo CORREO)
+                      const datosParaMostrar = datosEditables || [];
+
+                      // Filtrar solo CORREO y agrupar
+                      const agrupados = {};
+                      datosParaMostrar.forEach((item, idx) => {
+                        if (item && typeof item === "object") {
+                          const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
+                          // Solo mostrar CORREO
+                          if (medio === "CORREO") {
+                            const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
+                            const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                            const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+
+                            if (!agrupados[medio]) {
+                              agrupados[medio] = [];
+                            }
+                            agrupados[medio].push({
+                              tipo,
+                              nombre,
+                              contenido,
+                              medio,
+                              index: idx,
+                              originalItem: item,
+                              ID: getValue(item, ["ID", "id", "Id"]),
+                              id: getValue(item, ["ID", "id", "Id"])
+                            });
+                          }
+                        }
+                      });
+
+                      // Si no hay datos, mostrar al menos la opción de agregar para CORREO
+                      if (Object.keys(agrupados).length === 0) {
+                        agrupados["CORREO"] = [];
+                      }
+
+                      return (
+                        <div>
+                          {loadingMedios && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <span>Cargando...</span>
+                            </div>
+                          )}
+                          {errorSavingDatos && (
+                            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                              <p className="text-xs text-red-600">{errorSavingDatos}</p>
+                            </div>
+                          )}
+                          {Object.keys(agrupados).length > 0 ? (
+                            Object.keys(agrupados).map((medio, medioIndex) => (
+                              <div key={medioIndex} className="mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
+                                    {medio}
+                                  </h4>
+                                  <button
+                                    onClick={() => {
+                                      const nuevoItem = {
+                                        TIPO: "",
+                                        tipo: "",
+                                        MEDIO: medio,
+                                        medio: medio,
+                                        NOMBRE: "",
+                                        nombre: "",
+                                        CONTENIDO: "",
+                                        contenido: ""
+                                      };
+                                      const nuevosDatos = [...datosParaMostrar, nuevoItem];
+                                      setDatosEditables(nuevosDatos);
+                                      setErrorSavingDatos(null);
+                                    }}
+                                    disabled={savingDatos || loadingMedios}
+                                    className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Agregar</span>
+                                  </button>
+                                </div>
+                                <div className="space-y-3">
+                                  {agrupados[medio].map((item, itemIndex) => (
                                     <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded p-3 shadow-sm relative">
                                       <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
-                                        {item.id && !item.isNew ? (
-                                          // Botón Actualizar para items existentes
-                                          <button
-                                            onClick={async () => {
-                                              // Validar campos requeridos
-                                              const camposRequeridos = seccion.campos.filter(c => c.required);
-                                              const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
-                                              if (faltantes.length > 0) {
-                                                setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
-                                                return;
-                                              }
-                                              try {
-                                                setSavingDatosSeccion(true);
-                                                setErrorDatosSeccion(null);
-                                                // TODO: Llamar a API para actualizar
-                                                // await handleActualizarDatoSeccion(seccion.id, item.id, item);
-                                                setNotification({
-                                                  show: true,
-                                                  message: "Datos actualizados exitosamente",
-                                                  type: "success"
-                                                });
-                                                setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
-                                              } catch (error) {
-                                                setErrorDatosSeccion(error.message || "Error al actualizar");
-                                              } finally {
-                                                setSavingDatosSeccion(false);
-                                              }
-                                            }}
-                                            disabled={savingDatosSeccion || loadingAreas}
-                                            className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                            title="Actualizar"
-                                          >
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>Actualizar</span>
-                                          </button>
-                                        ) : (
-                                          // Botón Guardar para items nuevos (no temporales)
-                                          <button
-                                            onClick={async () => {
-                                              // Validar campos requeridos
-                                              const camposRequeridos = seccion.campos.filter(c => c.required);
-                                              const faltantes = camposRequeridos.filter(c => !item[c.key] || item[c.key] === "");
-                                              if (faltantes.length > 0) {
-                                                setErrorDatosSeccion(`Faltan campos requeridos: ${faltantes.map(c => c.label).join(", ")}`);
-                                                return;
-                                              }
-                                              try {
-                                                setSavingDatosSeccion(true);
-                                                setErrorDatosSeccion(null);
-                                                // TODO: Llamar a API para guardar
-                                                // const nuevoId = await handleAgregarDatoSeccion(seccion.id, item);
-                                                // Actualizar el item con el ID real
-                                                const nuevosDatos = [...datosSeccion];
-                                                nuevosDatos[itemIndex] = { ...item, id: `real-${Date.now()}`, isNew: false };
-                                                setDatosSecciones(prev => ({
-                                                  ...prev,
-                                                  [seccion.id]: nuevosDatos
-                                                }));
-                                                setNotification({
-                                                  show: true,
-                                                  message: "Datos guardados exitosamente",
-                                                  type: "success"
-                                                });
-                                                setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
-                                              } catch (error) {
-                                                setErrorDatosSeccion(error.message || "Error al guardar");
-                                              } finally {
-                                                setSavingDatosSeccion(false);
-                                              }
-                                            }}
-                                            disabled={savingDatosSeccion || loadingAreas}
-                                            className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                            title="Guardar"
-                                          >
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>Guardar</span>
-                                          </button>
-                                        )}
+                                        {(() => {
+                                          const medioId = item.ID || item.id || item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
+                                          const itemActual = datosParaMostrar[item.index] || {};
+                                          const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.medio || itemActual.MEDIO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
+
+                                          if (medioId) {
+                                            return (
+                                              <button
+                                                onClick={async () => {
+                                                  if (!tieneTodosLosCampos) {
+                                                    setErrorSavingDatos("Todos los campos son requeridos");
+                                                    return;
+                                                  }
+                                                  try {
+                                                    await handleActualizarMedio(medioId, itemActual);
+                                                    setErrorSavingDatos(null);
+                                                  } catch (error) {
+                                                    // Error ya se muestra en errorSavingDatos
+                                                  }
+                                                }}
+                                                disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
+                                                className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                                title="Actualizar"
+                                              >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Actualizar</span>
+                                              </button>
+                                            );
+                                          } else {
+                                            return (
+                                              <button
+                                                onClick={async () => {
+                                                  if (!tieneTodosLosCampos) {
+                                                    setErrorSavingDatos("Todos los campos son requeridos");
+                                                    return;
+                                                  }
+                                                  try {
+                                                    await handleAgregarMedio(itemActual);
+                                                    setErrorSavingDatos(null);
+                                                  } catch (error) {
+                                                    // Error ya se muestra en errorSavingDatos
+                                                  }
+                                                }}
+                                                disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
+                                                className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
+                                                title="Guardar"
+                                              >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Guardar</span>
+                                              </button>
+                                            );
+                                          }
+                                        })()}
+
                                         <button
-                                          onClick={() => {
-                                            if (item.id && !item.isNew) {
-                                              // TODO: Llamar a API para eliminar
-                                              // handleEliminarDatoSeccion(seccion.id, item.id);
+                                          onClick={async () => {
+                                            const medioId = item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
+                                            if (medioId) {
+                                              try {
+                                                await handleEliminarMedio(medioId);
+                                                setErrorSavingDatos(null);
+                                              } catch (error) {
+                                                // Error ya se muestra en errorSavingDatos
+                                              }
+                                            } else {
+                                              const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
+                                              setDatosEditables(nuevosDatos);
                                             }
-                                            const nuevosDatos = datosSeccion.filter((_, idx) => idx !== itemIndex);
-                                            setDatosSecciones(prev => ({
-                                              ...prev,
-                                              [seccion.id]: nuevosDatos
-                                            }));
-                                            setErrorDatosSeccion(null);
                                           }}
-                                          disabled={savingDatosSeccion || loadingAreas}
+                                          disabled={savingDatos || loadingMedios}
                                           className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
                                           title="Eliminar"
                                         >
@@ -2976,420 +3244,192 @@ function RecursosHumanosContent() {
                                           <span>Eliminar</span>
                                         </button>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-3 pr-32">
-                                        {seccion.campos.map((campo) => (
-                                          <div key={campo.key} className="flex flex-col">
-                                            <label className="text-xs font-bold text-gray-700 mb-1">
-                                              {campo.label}
-                                              {campo.required && <span className="text-red-500 ml-1">*</span>}
-                                            </label>
-                                            {campo.type === "select" ? (
-                                              <select
-                                                value={item[campo.key] || ""}
-                                                onChange={(e) => {
-                                                  const nuevosDatos = [...datosSeccion];
-                                                  nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
-                                                  setDatosSecciones(prev => ({
-                                                    ...prev,
-                                                    [seccion.id]: nuevosDatos
-                                                  }));
-                                                  setErrorDatosSeccion(null);
-                                                }}
-                                                className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                              >
-                                                <option value="">Seleccionar...</option>
-                                                {campo.options?.map((opt) => (
-                                                  <option key={opt} value={opt}>{opt}</option>
-                                                ))}
-                                              </select>
-                                            ) : (
+                                      <div className="space-y-2 pr-32">
+                                        <div className="flex items-start">
+                                          <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Tipo:</label>
+                                          <div className="flex-1 flex items-center space-x-3">
+                                            <label className="flex items-center space-x-1.5 cursor-pointer">
                                               <input
-                                                type={campo.type}
-                                                value={item[campo.key] || ""}
+                                                type="checkbox"
+                                                checked={item.tipo === "CORPORATIVO" || item.tipo === "corporativo" || item.TIPO === "CORPORATIVO"}
                                                 onChange={(e) => {
-                                                  const nuevosDatos = [...datosSeccion];
-                                                  nuevosDatos[itemIndex] = { ...nuevosDatos[itemIndex], [campo.key]: e.target.value };
-                                                  setDatosSecciones(prev => ({
-                                                    ...prev,
-                                                    [seccion.id]: nuevosDatos
-                                                  }));
-                                                  setErrorDatosSeccion(null);
+                                                  const nuevosDatos = [...datosParaMostrar];
+                                                  const itemActual = nuevosDatos[item.index] || {};
+                                                  const nuevoTipo = e.target.checked ? "CORPORATIVO" : "";
+                                                  nuevosDatos[item.index] = {
+                                                    ...itemActual,
+                                                    TIPO: nuevoTipo,
+                                                    tipo: nuevoTipo,
+                                                    MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                    medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
+                                                  };
+                                                  setDatosEditables(nuevosDatos);
+                                                  setErrorSavingDatos(null);
                                                 }}
-                                                placeholder={`Ingrese ${campo.label.toLowerCase()}`}
-                                                className="text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                                               />
-                                            )}
+                                              <span className="text-xs text-gray-700">CORPORATIVO</span>
+                                            </label>
+                                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                                              <input
+                                                type="checkbox"
+                                                checked={item.tipo === "PERSONAL" || item.tipo === "personal" || item.TIPO === "PERSONAL"}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosParaMostrar];
+                                                  const itemActual = nuevosDatos[item.index] || {};
+                                                  const nuevoTipo = e.target.checked ? "PERSONAL" : "";
+                                                  nuevosDatos[item.index] = {
+                                                    ...itemActual,
+                                                    TIPO: nuevoTipo,
+                                                    tipo: nuevoTipo,
+                                                    MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                    medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
+                                                  };
+                                                  setDatosEditables(nuevosDatos);
+                                                  setErrorSavingDatos(null);
+                                                }}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                              />
+                                              <span className="text-xs text-gray-700">PERSONAL</span>
+                                            </label>
                                           </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
+                                        </div>
 
-                  case "correo":
-                    // Renderizar la sección CORREO (solo medios de comunicación tipo CORREO)
-                    const datosParaMostrar = datosEditables || [];
-                    
-                    // Filtrar solo CORREO y agrupar
-                    const agrupados = {};
-                    datosParaMostrar.forEach((item, idx) => {
-                      if (item && typeof item === "object") {
-                        const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
-                        // Solo mostrar CORREO
-                        if (medio === "CORREO") {
-                        const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                        const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                        const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
-                        
-                        if (!agrupados[medio]) {
-                          agrupados[medio] = [];
-                        }
-                        agrupados[medio].push({
-                          tipo,
-                          nombre,
-                          contenido,
-                          medio,
-                          index: idx,
-                          originalItem: item,
-                          ID: getValue(item, ["ID", "id", "Id"]),
-                          id: getValue(item, ["ID", "id", "Id"])
-                        });
-                        }
-                      }
-                    });
-
-                    // Si no hay datos, mostrar al menos la opción de agregar para CORREO
-                    if (Object.keys(agrupados).length === 0) {
-                      agrupados["CORREO"] = [];
-                    }
-
-                      return (
-                      <div>
-                            {loadingMedios && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Cargando...</span>
-                              </div>
-                            )}
-                          {errorSavingDatos && (
-                          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
-                            <p className="text-xs text-red-600">{errorSavingDatos}</p>
-                            </div>
-                          )}
-                        {Object.keys(agrupados).length > 0 ? (
-                          Object.keys(agrupados).map((medio, medioIndex) => (
-                            <div key={medioIndex} className="mb-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-sm font-bold text-blue-800 uppercase border-b border-blue-200 pb-2">
-                                  {medio}
-                                </h4>
-                                <button
-                                  onClick={() => {
-                                    const nuevoItem = {
-                                      TIPO: "",
-                                      tipo: "",
-                                      MEDIO: medio,
-                                      medio: medio,
-                                      NOMBRE: "",
-                                      nombre: "",
-                                      CONTENIDO: "",
-                                      contenido: ""
-                                    };
-                                    const nuevosDatos = [...datosParaMostrar, nuevoItem];
-                                    setDatosEditables(nuevosDatos);
-                                    setErrorSavingDatos(null);
-                                  }}
-                                  disabled={savingDatos || loadingMedios}
-                                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                  </svg>
-                                  <span>Agregar</span>
-                                </button>
-                              </div>
-                              <div className="space-y-3">
-                                {agrupados[medio].map((item, itemIndex) => (
-                                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded p-3 shadow-sm relative">
-                                    <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
-                                      {(() => {
-                                        const medioId = item.ID || item.id || item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
-                                        const itemActual = datosParaMostrar[item.index] || {};
-                                        const tieneTodosLosCampos = (itemActual.tipo || itemActual.TIPO) && (itemActual.medio || itemActual.MEDIO) && (itemActual.nombre || itemActual.NOMBRE) && (itemActual.contenido || itemActual.CONTENIDO);
-                                        
-                                        if (medioId) {
-                                          return (
-                                            <button
-                                              onClick={async () => {
-                                                if (!tieneTodosLosCampos) {
-                                                  setErrorSavingDatos("Todos los campos son requeridos");
-                                                  return;
-                                                }
-                                                try {
-                                                  await handleActualizarMedio(medioId, itemActual);
+                                        <div className="flex items-start">
+                                          <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Medio:</label>
+                                          <div className="flex-1 flex items-center space-x-3">
+                                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`medio-${item.index}`}
+                                                checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosParaMostrar];
+                                                  const itemActual = nuevosDatos[item.index] || {};
+                                                  nuevosDatos[item.index] = {
+                                                    ...itemActual,
+                                                    MEDIO: "TELEFONO",
+                                                    medio: "TELEFONO"
+                                                  };
+                                                  setDatosEditables(nuevosDatos);
                                                   setErrorSavingDatos(null);
-                                                } catch (error) {
-                                                  // Error ya se muestra en errorSavingDatos
-                                                }
-                                              }}
-                                              disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
-                                              className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                              title="Actualizar"
-                                            >
-                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                              </svg>
-                                              <span>Actualizar</span>
-                                            </button>
-                                          );
-                                        } else {
-                                          return (
-                                            <button
-                                              onClick={async () => {
-                                                if (!tieneTodosLosCampos) {
-                                                  setErrorSavingDatos("Todos los campos son requeridos");
-                                                  return;
-                                                }
-                                                try {
-                                                  await handleAgregarMedio(itemActual);
+                                                }}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                              />
+                                              <span className="text-xs text-gray-700">TELEFONO</span>
+                                            </label>
+                                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`medio-${item.index}`}
+                                                checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosParaMostrar];
+                                                  const itemActual = nuevosDatos[item.index] || {};
+                                                  nuevosDatos[item.index] = {
+                                                    ...itemActual,
+                                                    MEDIO: "CORREO",
+                                                    medio: "CORREO"
+                                                  };
+                                                  setDatosEditables(nuevosDatos);
                                                   setErrorSavingDatos(null);
-                                                } catch (error) {
-                                                  // Error ya se muestra en errorSavingDatos
-                                                }
-                                              }}
-                                              disabled={savingDatos || loadingMedios || !tieneTodosLosCampos}
-                                              className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                              title="Guardar"
-                                            >
-                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                              </svg>
-                                              <span>Guardar</span>
-                                            </button>
-                                          );
-                                        }
-                                      })()}
-                                      
-                                      <button
-                                        onClick={async () => {
-                                          const medioId = item.originalItem?.ID || item.originalItem?.id || datosParaMostrar[item.index]?.ID || datosParaMostrar[item.index]?.id;
-                                          if (medioId) {
-                                            try {
-                                              await handleEliminarMedio(medioId);
+                                                }}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                              />
+                                              <span className="text-xs text-gray-700">CORREO</span>
+                                            </label>
+                                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`medio-${item.index}`}
+                                                checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
+                                                onChange={(e) => {
+                                                  const nuevosDatos = [...datosParaMostrar];
+                                                  const itemActual = nuevosDatos[item.index] || {};
+                                                  nuevosDatos[item.index] = {
+                                                    ...itemActual,
+                                                    MEDIO: "TELEFONO_EMERGENCIA",
+                                                    medio: "TELEFONO_EMERGENCIA"
+                                                  };
+                                                  setDatosEditables(nuevosDatos);
+                                                  setErrorSavingDatos(null);
+                                                }}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                              />
+                                              <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
+                                            </label>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-start">
+                                          <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Nombre:</label>
+                                          <input
+                                            type="text"
+                                            value={item.nombre || ""}
+                                            onChange={(e) => {
+                                              const nuevosDatos = [...datosParaMostrar];
+                                              const itemActual = nuevosDatos[item.index] || {};
+                                              nuevosDatos[item.index] = {
+                                                ...itemActual,
+                                                NOMBRE: e.target.value,
+                                                nombre: e.target.value,
+                                                MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
+                                                medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
+                                              };
+                                              setDatosEditables(nuevosDatos);
                                               setErrorSavingDatos(null);
-                                            } catch (error) {
-                                              // Error ya se muestra en errorSavingDatos
+                                            }}
+                                            placeholder="Ej: CORREO PERSONAL 1"
+                                            className="flex-1 text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          />
+                                        </div>
+                                        <div className="flex items-start">
+                                          <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Contenido:</label>
+                                          <input
+                                            type="text"
+                                            value={item.contenido || ""}
+                                            onChange={(e) => {
+                                              const nuevosDatos = [...datosParaMostrar];
+                                              const itemActual = nuevosDatos[item.index] || {};
+                                              nuevosDatos[item.index] = {
+                                                ...itemActual,
+                                                CONTENIDO: e.target.value,
+                                                contenido: e.target.value,
+                                                MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
+                                                medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
+                                              };
+                                              setDatosEditables(nuevosDatos);
+                                              setErrorSavingDatos(null);
+                                            }}
+                                            placeholder={
+                                              (item.medio === "CORREO" || item.MEDIO === "CORREO")
+                                                ? "Ej: correo@ejemplo.com"
+                                                : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
+                                                  ? "Ej: 987654321"
+                                                  : "Ej: 956224010"
                                             }
-                                          } else {
-                                            const nuevosDatos = datosParaMostrar.filter((_, idx) => idx !== item.index);
-                                            setDatosEditables(nuevosDatos);
-                                          }
-                                        }}
-                                        disabled={savingDatos || loadingMedios}
-                                        className="flex items-center space-x-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:cursor-not-allowed"
-                                        title="Eliminar"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        <span>Eliminar</span>
-                                      </button>
-                                    </div>
-                                    <div className="space-y-2 pr-32">
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Tipo:</label>
-                                        <div className="flex-1 flex items-center space-x-3">
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={item.tipo === "CORPORATIVO" || item.tipo === "corporativo" || item.TIPO === "CORPORATIVO"}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
-                                                const nuevoTipo = e.target.checked ? "CORPORATIVO" : "";
-                                                nuevosDatos[item.index] = {
-                                                  ...itemActual,
-                                                  TIPO: nuevoTipo,
-                                                  tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">CORPORATIVO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={item.tipo === "PERSONAL" || item.tipo === "personal" || item.TIPO === "PERSONAL"}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
-                                                const nuevoTipo = e.target.checked ? "PERSONAL" : "";
-                                                nuevosDatos[item.index] = {
-                                                  ...itemActual,
-                                                  TIPO: nuevoTipo,
-                                                  tipo: nuevoTipo,
-                                                  MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
-                                                  medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">PERSONAL</span>
-                                          </label>
+                                            className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
+                                          />
                                         </div>
                                       </div>
-                                      
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Medio:</label>
-                                        <div className="flex-1 flex items-center space-x-3">
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${item.index}`}
-                                              checked={(item.medio === "TELEFONO" || item.MEDIO === "TELEFONO")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
-                                                nuevosDatos[item.index] = {
-                                                  ...itemActual,
-                                                  MEDIO: "TELEFONO",
-                                                  medio: "TELEFONO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">TELEFONO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${item.index}`}
-                                              checked={(item.medio === "CORREO" || item.MEDIO === "CORREO")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
-                                                nuevosDatos[item.index] = {
-                                                  ...itemActual,
-                                                  MEDIO: "CORREO",
-                                                  medio: "CORREO"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">CORREO</span>
-                                          </label>
-                                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`medio-${item.index}`}
-                                              checked={(item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")}
-                                              onChange={(e) => {
-                                                const nuevosDatos = [...datosParaMostrar];
-                                                const itemActual = nuevosDatos[item.index] || {};
-                                                nuevosDatos[item.index] = {
-                                                  ...itemActual,
-                                                  MEDIO: "TELEFONO_EMERGENCIA",
-                                                  medio: "TELEFONO_EMERGENCIA"
-                                                };
-                                                setDatosEditables(nuevosDatos);
-                                                setErrorSavingDatos(null);
-                                              }}
-                                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs text-gray-700">TELEFONO EMERGENCIA</span>
-                                          </label>
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Nombre:</label>
-                                        <input
-                                          type="text"
-                                          value={item.nombre || ""}
-                                          onChange={(e) => {
-                                            const nuevosDatos = [...datosParaMostrar];
-                                            const itemActual = nuevosDatos[item.index] || {};
-                                            nuevosDatos[item.index] = {
-                                              ...itemActual,
-                                              NOMBRE: e.target.value,
-                                              nombre: e.target.value,
-                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "OTRO",
-                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "OTRO"
-                                            };
-                                            setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null);
-                                          }}
-                                          placeholder="Ej: CORREO PERSONAL 1"
-                                          className="flex-1 text-xs text-gray-900 bg-white px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                      </div>
-                                      <div className="flex items-start">
-                                        <label className="text-xs font-bold text-gray-700 min-w-[70px] pt-1.5">Contenido:</label>
-                                        <input
-                                          type="text"
-                                          value={item.contenido || ""}
-                                          onChange={(e) => {
-                                            const nuevosDatos = [...datosParaMostrar];
-                                            const itemActual = nuevosDatos[item.index] || {};
-                                            nuevosDatos[item.index] = {
-                                              ...itemActual,
-                                              CONTENIDO: e.target.value,
-                                              contenido: e.target.value,
-                                              MEDIO: itemActual.MEDIO || itemActual.medio || item.medio || "TELEFONO",
-                                              medio: itemActual.medio || itemActual.MEDIO || item.medio || "TELEFONO"
-                                            };
-                                            setDatosEditables(nuevosDatos);
-                                            setErrorSavingDatos(null);
-                                          }}
-                                          placeholder={
-                                            (item.medio === "CORREO" || item.MEDIO === "CORREO") 
-                                              ? "Ej: correo@ejemplo.com" 
-                                              : (item.medio === "TELEFONO_EMERGENCIA" || item.MEDIO === "TELEFONO_EMERGENCIA")
-                                              ? "Ej: 987654321"
-                                              : "Ej: 956224010"
-                                          }
-                                          className="flex-1 text-xs font-semibold text-blue-900 bg-white px-3 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent break-all"
-                                        />
-                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
-                        )}
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No hay datos de medios de comunicación registrados. Haz clic en "Agregar" para comenzar.</p>
+                          )}
                         </div>
                       );
 
-                  default:
-                    return <div>Tab no encontrado</div>;
-                }
-              };
+                    default:
+                      return <div>Tab no encontrado</div>;
+                  }
+                };
 
-              return renderTabContent();
-            })()}
+                return renderTabContent();
+              })()}
             </div>
           </div>
         )}
@@ -3444,9 +3484,8 @@ function RecursosHumanosContent() {
                 type="button"
                 onClick={() => !loadingAreas && setIsAreaSelectOpen(!isAreaSelectOpen)}
                 disabled={loadingAreas}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-left flex items-center justify-between transition-all duration-200 hover:border-gray-400 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border-gray-300 shadow-sm bg-white ${
-                  isAreaSelectOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-left flex items-center justify-between transition-all duration-200 hover:border-gray-400 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border-gray-300 shadow-sm bg-white ${isAreaSelectOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+                  }`}
               >
                 <span className={newColaboradorForm.areaPrincipal ? 'text-gray-900' : 'text-gray-500'}>
                   {newColaboradorForm.areaPrincipal
@@ -3454,15 +3493,14 @@ function RecursosHumanosContent() {
                     : 'Seleccione un área'}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-                    isAreaSelectOpen ? 'transform rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isAreaSelectOpen ? 'transform rotate-180' : ''
+                    }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
+                </svg>
               </button>
 
               {isAreaSelectOpen && !loadingAreas && (
@@ -3481,7 +3519,7 @@ function RecursosHumanosContent() {
                         const areaId = area.id || area.ID;
                         const areaNombre = area.nombre || area.NOMBRE;
                         const isSelected = newColaboradorForm.areaPrincipal == areaId;
-                        
+
                         return (
                           <button
                             key={areaId}
@@ -3490,11 +3528,10 @@ function RecursosHumanosContent() {
                               setNewColaboradorForm({ ...newColaboradorForm, areaPrincipal: String(areaId) });
                               setIsAreaSelectOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm transition-all duration-150 rounded-md ${
-                              isSelected
-                                ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-200'
-                                : 'text-gray-900 hover:bg-gray-50'
-                            }`}
+                            className={`w-full text-left px-3 py-2 text-sm transition-all duration-150 rounded-md ${isSelected
+                              ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-200'
+                              : 'text-gray-900 hover:bg-gray-50'
+                              }`}
                           >
                             {areaNombre}
                           </button>
@@ -3503,11 +3540,11 @@ function RecursosHumanosContent() {
                     ) : (
                       <div className="px-3 py-2 text-xs text-gray-500 text-center">
                         No hay áreas disponibles
-                              </div>
-                            )}
-                          </div>
-                            </div>
-                          )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {loadingAreas && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
@@ -3526,11 +3563,11 @@ function RecursosHumanosContent() {
             )}
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                            <button
-                              onClick={() => {
+            <button
+              onClick={() => {
                 setIsAgregarColaboradorModalOpen(false);
                 setNewColaboradorForm({
-                                  nombre: "",
+                  nombre: "",
                   apellido: "",
                   areaPrincipal: "",
                 });
@@ -3538,14 +3575,14 @@ function RecursosHumanosContent() {
               className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Cancelar
-                            </button>
-                                        <button
-                                          onClick={async () => {
+            </button>
+            <button
+              onClick={async () => {
                 // Validar campos requeridos
                 if (!newColaboradorForm.nombre || !newColaboradorForm.apellido || !newColaboradorForm.areaPrincipal) {
                   alert("Por favor, complete todos los campos requeridos");
-                                              return;
-                                            }
+                  return;
+                }
 
                 try {
                   setLoadingAgregarColaborador(true);
@@ -3578,14 +3615,14 @@ function RecursosHumanosContent() {
 
                   const data = await response.json();
                   console.log("Colaborador agregado exitosamente:", data);
-                  
+
                   // Mostrar notificación de éxito
                   setNotification({
                     show: true,
                     message: "Colaborador agregado exitosamente",
                     type: "success"
                   });
-                  
+
                   // Cerrar modal y resetear formulario
                   setIsAgregarColaboradorModalOpen(false);
                   setNewColaboradorForm({
@@ -3596,12 +3633,12 @@ function RecursosHumanosContent() {
 
                   // Recargar la lista de colaboradores
                   fetchColaboradores();
-                  
+
                   // Ocultar notificación después de 3 segundos
                   setTimeout(() => {
                     setNotification({ show: false, message: "", type: "success" });
                   }, 3000);
-                                            } catch (error) {
+                } catch (error) {
                   console.error("Error al agregar colaborador:", error);
                   // Mostrar notificación de error
                   setNotification({
@@ -3621,7 +3658,7 @@ function RecursosHumanosContent() {
               className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-blue-700 to-blue-800 hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingAgregarColaborador ? "Agregando..." : "Agregar Colaborador"}
-                                        </button>
+            </button>
           </div>
         </div>
       </Modal>
@@ -3650,9 +3687,9 @@ function RecursosHumanosContent() {
                 </div>
                 <div className="flex flex-col items-center space-y-4">
                   <div className="relative w-full max-w-lg bg-white rounded-xl p-4 shadow-inner border border-gray-100">
-                    <img 
-                      src={imagenActualGuardada} 
-                      alt="Imagen actual" 
+                    <img
+                      src={imagenActualGuardada}
+                      alt="Imagen actual"
                       className="w-full h-auto max-h-72 object-contain rounded-lg"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -3685,13 +3722,13 @@ function RecursosHumanosContent() {
                 <div className="space-y-4">
                   <div className="relative w-full max-w-lg mx-auto bg-white rounded-xl p-4 shadow-inner border border-gray-200">
                     <div className="relative h-56 rounded-lg overflow-hidden bg-gray-50">
-                      <img 
-                        src={imagenPreview} 
-                        alt="Vista previa" 
+                      <img
+                        src={imagenPreview}
+                        alt="Vista previa"
                         className="w-full h-full object-contain"
                       />
-                                      <button
-                                        onClick={() => {
+                      <button
+                        onClick={() => {
                           setSelectedImageFile(null);
                           setImagenPreview(null); // Limpiar preview para que se muestre imagenActualGuardada
                           const input = document.getElementById('imagen-input');
@@ -3701,11 +3738,11 @@ function RecursosHumanosContent() {
                         title="Eliminar imagen seleccionada"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                        </div>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-0.5">
@@ -3713,7 +3750,7 @@ function RecursosHumanosContent() {
                           <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                                      </div>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-gray-800 mb-1">Archivo seleccionado</p>
@@ -3731,7 +3768,7 @@ function RecursosHumanosContent() {
                   >
                     Cambiar Imagen
                   </button>
-                                        </div>
+                </div>
               ) : (
                 <label
                   htmlFor="imagen-input"
@@ -3745,11 +3782,11 @@ function RecursosHumanosContent() {
                       <span className="font-semibold">Hacer clic para seleccionar archivo</span>
                     </p>
                     <p className="text-xs text-gray-500">JPG, PNG, GIF (MAX. 10MB)</p>
-                                      </div>
-                                        <input
+                  </div>
+                  <input
                     type="file"
                     accept="image/*"
-                                          onChange={(e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
                         // Validar tamaño (máximo 10MB)
@@ -3763,7 +3800,7 @@ function RecursosHumanosContent() {
                           e.target.value = "";
                           return;
                         }
-                        
+
                         setSelectedImageFile(file);
                         const reader = new FileReader();
                         reader.onloadend = () => {
@@ -3778,139 +3815,137 @@ function RecursosHumanosContent() {
                   />
                 </label>
               )}
-                                      </div>
-                                      
+            </div>
+
             {/* Botones de acción */}
             <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setIsImagenModalOpen(false);
-                setSelectedColaboradorImagen(null);
-                setImagenPreview(null);
-                setImagenActualGuardada(null);
-                setSelectedImageFile(null);
-              }}
-              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={async () => {
-                if (!selectedImageFile) {
-                  setNotification({
-                    show: true,
-                    message: "Por favor, selecciona una imagen para subir.",
-                    type: "error"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
-                  return;
-                }
-
-                const colaboradorId = getColaboradorId(selectedColaboradorImagen);
-                if (!colaboradorId) {
-                  setNotification({
-                    show: true,
-                    message: "No se pudo obtener el ID del colaborador.",
-                    type: "error"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
-                  return;
-                }
-
-                try {
-                  setUploadingImage(true);
-                  
-                  // Crear FormData para enviar el archivo
-                  const formData = new FormData();
-                  formData.append('file', selectedImageFile);
-
-                  // Subir archivo a la API de storage (usando no_encriptar como en productos)
-                  const uploadResponse = await fetch(
-                    `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_colaboradores&folder_bucket=ZEUS_1&method=no_encriptar`,
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
-                  if (!uploadResponse.ok) {
-                    throw new Error(`Error al subir la imagen: ${uploadResponse.status}`);
-                  }
-
-                  const uploadData = await uploadResponse.json();
-                  const imageUrl = uploadData.url;
-
-                  if (!imageUrl) {
-                    throw new Error("La API no devolvió la URL de la imagen");
-                  }
-
-                  console.log("URL de imagen recibida:", imageUrl);
-
-                  // Guardar/actualizar en la base de datos
-                  await guardarImagenColaborador(colaboradorId, imageUrl);
-
-                  // Recargar la imagen actual desde el backend para mostrarla en el modal
-                  const imagenActualizada = await fetchImagenColaborador(colaboradorId);
-                  if (imagenActualizada) {
-                    setImagenActualGuardada(imagenActualizada);
-                    setImagenPreview(imagenActualizada);
-                    console.log("Imagen actualizada cargada desde BD:", imagenActualizada);
-                  } else {
-                    // Si no se encuentra, usar la URL que acabamos de subir
-                    setImagenActualGuardada(imageUrl);
-                    setImagenPreview(imageUrl);
-                  }
-
-                  // Limpiar el archivo seleccionado para que el botón se deshabilite
+              <button
+                onClick={() => {
+                  setIsImagenModalOpen(false);
+                  setSelectedColaboradorImagen(null);
+                  setImagenPreview(null);
+                  setImagenActualGuardada(null);
                   setSelectedImageFile(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!selectedImageFile) {
+                    setNotification({
+                      show: true,
+                      message: "Por favor, selecciona una imagen para subir.",
+                      type: "error"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                    return;
+                  }
 
-                  // Recargar la lista de colaboradores para obtener los datos actualizados
-                  await fetchColaboradores();
+                  const colaboradorId = getColaboradorId(selectedColaboradorImagen);
+                  if (!colaboradorId) {
+                    setNotification({
+                      show: true,
+                      message: "No se pudo obtener el ID del colaborador.",
+                      type: "error"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 3000);
+                    return;
+                  }
 
-                  setNotification({
-                    show: true,
-                    message: "Imagen subida y guardada exitosamente.",
-                    type: "success"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+                  try {
+                    setUploadingImage(true);
 
-                  // NO cerrar el modal automáticamente - dejar que el usuario vea la imagen guardada
-                  // El usuario puede cerrarlo manualmente con el botón Cancelar o la X
-                } catch (error) {
-                  console.error("Error al subir imagen:", error);
-                  setNotification({
-                    show: true,
-                    message: `Error al subir la imagen: ${error.message}`,
-                    type: "error"
-                  });
-                  setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 5000);
-                } finally {
-                  setUploadingImage(false);
-                }
-              }}
-              disabled={!selectedImageFile || uploadingImage}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-purple-500 to-purple-600 hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploadingImage ? "Subiendo..." : "Guardar Imagen"}
-            </button>
-                              </div>
-                        </div>
+                    // Crear FormData para enviar el archivo
+                    const formData = new FormData();
+                    formData.append('file', selectedImageFile);
+
+                    // Subir archivo a la API de storage (usando no_encriptar como en productos)
+                    const uploadResponse = await fetch(
+                      `https://api-subida-archivos-2946605267.us-central1.run.app?bucket_name=archivos_colaboradores&folder_bucket=ZEUS_1&method=no_encriptar`,
+                      {
+                        method: 'POST',
+                        body: formData,
+                      }
+                    );
+
+                    if (!uploadResponse.ok) {
+                      throw new Error(`Error al subir la imagen: ${uploadResponse.status}`);
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    const imageUrl = uploadData.url;
+
+                    if (!imageUrl) {
+                      throw new Error("La API no devolvió la URL de la imagen");
+                    }
+
+                    console.log("URL de imagen recibida:", imageUrl);
+
+                    // Guardar/actualizar en la base de datos
+                    await guardarImagenColaborador(colaboradorId, imageUrl);
+
+                    // Recargar la imagen actual desde el backend para mostrarla en el modal
+                    const imagenActualizada = await fetchImagenColaborador(colaboradorId);
+                    if (imagenActualizada) {
+                      setImagenActualGuardada(imagenActualizada);
+                      setImagenPreview(imagenActualizada);
+                      console.log("Imagen actualizada cargada desde BD:", imagenActualizada);
+                    } else {
+                      // Si no se encuentra, usar la URL que acabamos de subir
+                      setImagenActualGuardada(imageUrl);
+                      setImagenPreview(imageUrl);
+                    }
+
+                    // Limpiar el archivo seleccionado para que el botón se deshabilite
+                    setSelectedImageFile(null);
+
+                    // Recargar la lista de colaboradores para obtener los datos actualizados
+                    await fetchColaboradores();
+
+                    setNotification({
+                      show: true,
+                      message: "Imagen subida y guardada exitosamente.",
+                      type: "success"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+
+                    // NO cerrar el modal automáticamente - dejar que el usuario vea la imagen guardada
+                    // El usuario puede cerrarlo manualmente con el botón Cancelar o la X
+                  } catch (error) {
+                    console.error("Error al subir imagen:", error);
+                    setNotification({
+                      show: true,
+                      message: `Error al subir la imagen: ${error.message}`,
+                      type: "error"
+                    });
+                    setTimeout(() => setNotification({ show: false, message: "", type: "error" }), 5000);
+                  } finally {
+                    setUploadingImage(false);
+                  }
+                }}
+                disabled={!selectedImageFile || uploadingImage}
+                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-purple-500 to-purple-600 hover:shadow-md hover:scale-105 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadingImage ? "Subiendo..." : "Guardar Imagen"}
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
 
       {/* Notificación Toast */}
       {notification.show && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${
-            notification.type === "success" 
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
-              : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
-          } min-w-[320px] max-w-md`}>
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-              notification.type === "success" 
-                ? "bg-green-500" 
-                : "bg-red-500"
-            }`}>
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-xl border-2 ${notification.type === "success"
+            ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300"
+            : "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+            } min-w-[320px] max-w-md`}>
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${notification.type === "success"
+              ? "bg-green-500"
+              : "bg-red-500"
+              }`}>
               {notification.type === "success" ? (
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -3920,31 +3955,29 @@ function RecursosHumanosContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               )}
-                      </div>
+            </div>
             <div className="flex-1">
-              <p className={`text-sm font-semibold ${
-                notification.type === "success" 
-                  ? "text-green-800" 
-                  : "text-red-800"
-              }`}>
+              <p className={`text-sm font-semibold ${notification.type === "success"
+                ? "text-green-800"
+                : "text-red-800"
+                }`}>
                 {notification.message}
               </p>
             </div>
             <button
               onClick={() => setNotification({ show: false, message: "", type: notification.type })}
-              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${
-                notification.type === "success" 
-                  ? "hover:text-green-600" 
-                  : "hover:text-red-600"
-              }`}
+              className={`flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ${notification.type === "success"
+                ? "hover:text-green-600"
+                : "hover:text-red-600"
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

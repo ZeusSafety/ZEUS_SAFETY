@@ -17,6 +17,7 @@ export default function LogisticaPage() {
     "solicitudes-incidencias": false,
     "inventario": false,
     "gestion-movilidad": false,
+    "gestion-permisos": false,
   });
 
   useEffect(() => {
@@ -370,6 +371,33 @@ export default function LogisticaPage() {
         },
       ],
     },
+    {
+      id: "gestion-permisos",
+      title: "Gestión de Permisos",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "listado-permisos",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Listado de Permisos",
+          description: "Ver y gestionar los permisos del área",
+          buttonText: "Ver Permisos",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -377,9 +405,8 @@ export default function LogisticaPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -395,143 +422,145 @@ export default function LogisticaPage() {
               </svg>
               <span>Volver al Menú</span>
             </button>
-            
+
             {/* Card contenedor blanco */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
 
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>LOGÍSTICA</h1>
-                  <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de Incidencias Logísticas</p>
+              {/* Header */}
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>LOGÍSTICA</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5">Gestión de Incidencias Logísticas</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Secciones */}
-            <div className="space-y-3">
-              {sections
-                .map((section) => {
-                  // Filtrar cards permitidos en esta sección
-                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
-                  
-                  // Si no hay cards permitidos, no mostrar la sección
-                  if (allowedCards.length === 0) return null;
+              {/* Secciones */}
+              <div className="space-y-3">
+                {sections
+                  .map((section) => {
+                    // Filtrar cards permitidos en esta sección
+                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
 
-                  return {
-                    ...section,
-                    cards: allowedCards,
-                  };
-                })
-                .filter(section => section !== null)
-                .map((section) => (
-                <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                  {/* Header de Sección */}
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div className="text-white">{section.icon}</div>
-                      <h2 className="text-base font-bold text-white">{section.title}</h2>
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                    // Si no hay cards permitidos, no mostrar la sección
+                    if (allowedCards.length === 0) return null;
 
-                  {/* Cards de la Sección */}
-                    {expandedSections[section.id] && (
-                      <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
-                        <div className={`grid gap-2.5 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
-                          {section.cards.map((card) => (
-                            <div
-                              key={card.id}
-                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
-                              style={{ 
-                                boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
-                                transform: 'translateY(0)'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
-                              }}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
-                              
-                              <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-2">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
-                                  {card.icon}
+                    return {
+                      ...section,
+                      cards: allowedCards,
+                    };
+                  })
+                  .filter(section => section !== null)
+                  .map((section) => (
+                    <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                      {/* Header de Sección */}
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="text-white">{section.icon}</div>
+                          <h2 className="text-base font-bold text-white">{section.title}</h2>
+                        </div>
+                        <svg
+                          className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Cards de la Sección */}
+                      {expandedSections[section.id] && (
+                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
+                          <div className={`grid gap-2.5 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                            {section.cards.map((card) => (
+                              <div
+                                key={card.id}
+                                className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                                style={{
+                                  boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                  transform: 'translateY(0)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+
+                                <div className="relative z-10">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                      {card.icon}
+                                    </div>
+                                  </div>
+                                  <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">{card.title}</h3>
+                                  <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">{card.description}</p>
+                                  <button
+                                    onClick={() => {
+                                      if (card.id === "importaciones") {
+                                        router.push("/logistica/importaciones");
+                                      } else if (card.id === "incidencias-importaciones") {
+                                        router.push("/logistica/incidencias-importaciones");
+                                      } else if (card.id === "listado-solicitudes") {
+                                        router.push("/logistica/solicitudes-incidencias");
+                                      } else if (card.id === "proformas") {
+                                        router.push("/logistica/incidencias");
+                                      } else if (card.id === "incidencias") {
+                                        router.push("/logistica/registro-incidencias-importaciones");
+                                      } else if (card.id === "gestion-cajas-malvinas") {
+                                        router.push("/logistica/gestion-cajas-malvinas");
+                                      } else if (card.id === "historial-cajas-malvinas") {
+                                        router.push("/logistica/historial-cajas-malvinas");
+                                      } else if (card.id === "inventario-callao") {
+                                        router.push("/logistica/inventario/callao");
+                                      } else if (card.id === "inventario-malvinas") {
+                                        router.push("/logistica/inventario/malvinas");
+                                      } else if (card.id === "inventario-comparar") {
+                                        router.push("/logistica/inventario/comparar");
+                                      } else if (card.id === "inventario-consolidado") {
+                                        router.push("/logistica/inventario/consolidado");
+                                      } else if (card.id === "inventario-registro") {
+                                        router.push("/logistica/inventario/registro");
+                                      } else if (card.id === "inventario-proformas") {
+                                        router.push("/logistica/inventario/proformas");
+                                      } else if (card.id === "registro-movilidad") {
+                                        router.push("/logistica/registro-movilidad");
+                                      } else if (card.id === "listado-permisos") {
+                                        router.push("/logistica/solicitudes-permisos");
+                                      }
+                                    }}
+                                    className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
+                                  >
+                                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                    <span className="relative z-10 flex items-center space-x-1.5">
+                                      {card.buttonIcon}
+                                      <span>{card.buttonText}</span>
+                                    </span>
+                                  </button>
                                 </div>
                               </div>
-                              <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200">{card.title}</h3>
-                              <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2">{card.description}</p>
-                              <button
-                                onClick={() => {
-                                  if (card.id === "importaciones") {
-                                    router.push("/logistica/importaciones");
-                                  } else if (card.id === "incidencias-importaciones") {
-                                    router.push("/logistica/incidencias-importaciones");
-                                  } else if (card.id === "listado-solicitudes") {
-                                    router.push("/logistica/solicitudes-incidencias");
-                                  } else if (card.id === "proformas") {
-                                    router.push("/logistica/incidencias");
-                                  } else if (card.id === "incidencias") {
-                                    router.push("/logistica/registro-incidencias-importaciones");
-                                  } else if (card.id === "gestion-cajas-malvinas") {
-                                    router.push("/logistica/gestion-cajas-malvinas");
-                                  } else if (card.id === "historial-cajas-malvinas") {
-                                    router.push("/logistica/historial-cajas-malvinas");
-                                  } else if (card.id === "inventario-callao") {
-                                    router.push("/logistica/inventario/callao");
-                                  } else if (card.id === "inventario-malvinas") {
-                                    router.push("/logistica/inventario/malvinas");
-                                  } else if (card.id === "inventario-comparar") {
-                                    router.push("/logistica/inventario/comparar");
-                                  } else if (card.id === "inventario-consolidado") {
-                                    router.push("/logistica/inventario/consolidado");
-                                  } else if (card.id === "inventario-registro") {
-                                    router.push("/logistica/inventario/registro");
-                                  } else if (card.id === "inventario-proformas") {
-                                    router.push("/logistica/inventario/proformas");
-                                  } else if (card.id === "registro-movilidad") {
-                                    router.push("/logistica/registro-movilidad");
-                                  }
-                                }}
-                                className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
-                                >
-                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
-                                  <span className="relative z-10 flex items-center space-x-1.5">
-                                    {card.buttonIcon}
-                                    <span>{card.buttonText}</span>
-                                  </span>
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                </div>
-              ))}
-            </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         </main>
