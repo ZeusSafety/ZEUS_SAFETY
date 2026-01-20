@@ -77,4 +77,43 @@ export async function GET(request) {
   }
 }
 
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+    }
+
+    const authHeader = request.headers.get("authorization");
+    const apiUrl = `https://api-descuento-reservas-caja-logistica-2946605267.us-central1.run.app/productos/${id}`;
+
+    const headers = {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    };
+
+    if (authHeader && authHeader.trim() !== "") {
+      headers["Authorization"] = authHeader;
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return NextResponse.json({ error: text, status: response.status }, { status: response.status });
+    }
+
+    const data = await response.json().catch(() => ({ success: true }));
+    return NextResponse.json(data, { status: 200 });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 

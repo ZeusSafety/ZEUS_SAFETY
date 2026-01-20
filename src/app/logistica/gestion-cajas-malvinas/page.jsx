@@ -198,7 +198,7 @@ export default function GestionCajasMalvinasPage() {
       const matchBuscador = !buscadorProductos ||
         (p.producto && p.producto.toLowerCase().includes(buscadorProductos.toLowerCase())) ||
         (p.codigo && p.codigo.toString().toLowerCase().includes(buscadorProductos.toLowerCase()));
-      
+
       const matchStock = !conStock || (p.cantidadCajas && p.cantidadCajas > 0);
       const matchSinStock = !sinStock || !p.cantidadCajas || p.cantidadCajas <= 0;
       const matchCategoria = !categoria || p.categoria === categoria;
@@ -217,7 +217,7 @@ export default function GestionCajasMalvinasPage() {
   // Buscar productos con sugerencias
   const buscarProductoConSugerencias = (valor) => {
     setBuscadorProductos(valor);
-    
+
     if (valor.length < 2) {
       setSugerenciasProductos([]);
       setMostrarSugerencias(false);
@@ -326,8 +326,8 @@ export default function GestionCajasMalvinasPage() {
     // Solo se sale del modo edición cuando se cancela o se guarda todo
     setEstadoFilas(prev => ({
       ...prev,
-      [id]: { 
-        ...prev[id], 
+      [id]: {
+        ...prev[id],
         editando: true, // Mantener visible
         limite,
         cantidadCajas: cantidad,
@@ -418,12 +418,12 @@ export default function GestionCajasMalvinasPage() {
       setMostrarModalActualizacion(false);
       setMensajeConfirmacion(data.message || 'Cambios guardados correctamente');
       setMostrarModalConfirmacion(true);
-      
+
       // Limpiar datos
       setProductosEditados([]);
       setEstadoFilas({});
       setEditandoId(null);
-      
+
       // Recargar datos
       cargarDatos();
     } catch (error) {
@@ -438,10 +438,10 @@ export default function GestionCajasMalvinasPage() {
       const matchBuscador = !buscadorReservados ||
         (r.producto && r.producto.toLowerCase().includes(buscadorReservados.toLowerCase())) ||
         (r.responsable && r.responsable.toLowerCase().includes(buscadorReservados.toLowerCase()));
-      
+
       const matchCategoria = !categoriaReserva || r.categoria === categoriaReserva;
       const matchResponsable = !responsableReserva || r.responsable === responsableReserva;
-      
+
       let matchFecha = true;
       if (fechaInicio || fechaFin) {
         const fechaReserva = new Date(r.fechaHora);
@@ -558,6 +558,38 @@ export default function GestionCajasMalvinasPage() {
     }
   };
 
+  // Eliminar producto
+  const eliminarProducto = async (id) => {
+    if (!confirm('¿Está seguro de eliminar este producto? Esta acción no se puede deshacer.')) return;
+
+    try {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/descuento-cajas/productos?id=${id}`, {
+        method: 'DELETE',
+        headers: headers
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar');
+      }
+
+      setProductos(prev => prev.filter(p => String(p.id) !== String(id)));
+      setProductosFiltrados(prev => prev.filter(p => String(p.id) !== String(id)));
+      aplicarFiltros();
+      alert('Producto eliminado correctamente');
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      alert('Error al eliminar: ' + error.message);
+    }
+  };
+
   // Exportar a Excel
   const exportarExcel = async () => {
     setExportandoExcel(true);
@@ -657,17 +689,17 @@ export default function GestionCajasMalvinasPage() {
   const generarPDFReservados = async () => {
     try {
       if (typeof window === 'undefined') return;
-      
+
       const { default: jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
-      
+
       const doc = new jsPDF();
-      
+
       // Título
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('PRODUCTOS RESERVADOS', 14, 20);
-      
+
       // Fecha de generación
       const fecha = new Date();
       const fechaFormato = fecha.toLocaleString('es-PE', {
@@ -680,7 +712,7 @@ export default function GestionCajasMalvinasPage() {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text(`Generado el: ${fechaFormato}`, 14, 28);
-      
+
       // Datos de la tabla
       const datosTabla = productosReservadosFiltrados.map(r => [
         r.producto || '',
@@ -690,7 +722,7 @@ export default function GestionCajasMalvinasPage() {
         r.cantidadReservada || 0,
         r.unidadMedida || 'CAJAS'
       ]);
-      
+
       // Crear tabla
       autoTable(doc, {
         head: [['Producto', 'Categoría', 'Fecha y Hora', 'Responsable', 'Cantidad Reservada', 'Unidad']],
@@ -709,11 +741,11 @@ export default function GestionCajasMalvinasPage() {
           fillColor: [245, 245, 245],
         },
       });
-      
+
       // Guardar PDF
       const fechaArchivo = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
       doc.save(`Productos_Reservados_${fechaArchivo}.pdf`);
-      
+
       alert('✅ PDF generado exitosamente');
     } catch (error) {
       console.error('Error al generar PDF:', error);
@@ -787,9 +819,8 @@ export default function GestionCajasMalvinasPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -808,580 +839,591 @@ export default function GestionCajasMalvinasPage() {
 
             {/* Contenedor principal con fondo */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+              {/* Header */}
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Gestión de stock - Logistica
+                    </h1>
+                    <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+                      Gestión y control de stock de productos
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controles y Filtros */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 mb-6">
+                {/* Primera fila: Buscador, Checkboxes */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                  {/* Columna 1: Buscador (más ancho) */}
+                  <div className="relative md:col-span-2" ref={buscadorRef}>
+                    <input
+                      type="text"
+                      value={buscadorProductos}
+                      onChange={(e) => buscarProductoConSugerencias(e.target.value)}
+                      placeholder="Buscar productos por código, nombre, categoría..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-white hover:border-blue-300 transition-all duration-200 font-medium"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    />
+                    {mostrarSugerencias && sugerenciasProductos.length > 0 && (
+                      <div
+                        ref={sugerenciasRef}
+                        className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {sugerenciasProductos.map((prod, index) => (
+                          <button
+                            key={prod.id || index}
+                            type="button"
+                            onClick={() => seleccionarProducto(prod)}
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="text-sm font-medium text-gray-900">{prod.producto}</div>
+                            <div className="text-xs text-gray-500">
+                              Código: {prod.codigo} | Categoría: {prod.categoria}
+                            </div>
+                            <div className="text-xs text-blue-600 font-semibold mt-1">
+                              {prod.cantidadCajas || 0} cajas
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Columna 2: Checkbox CON STOCK */}
+                  <div className="flex items-center">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={conStock}
+                        onChange={(e) => setConStock(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>CON STOCK</span>
+                    </label>
+                  </div>
+
+                  {/* Columna 3: Checkbox SIN STOCK */}
+                  <div className="flex items-center">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sinStock}
+                        onChange={(e) => setSinStock(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>SIN STOCK</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Segunda fila: Categoría, Botones */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* Columna 1: Categoría (más ancho) */}
+                  <div className="md:col-span-2">
+                    <select
+                      value={categoria}
+                      onChange={(e) => setCategoria(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <option value="">Todas las categorías</option>
+                      {categorias.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Columna 2: Botón Generar IMG Stock */}
+                  <div>
+                    <button
+                      onClick={generarImagenStock}
+                      className="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>Generar IMG Stock</span>
+                    </button>
+                  </div>
+
+                  {/* Columna 3: Botón Exportar Excel */}
+                  <div>
+                    <button
+                      onClick={exportarExcel}
+                      disabled={exportandoExcel}
+                      className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+                      style={{ fontFamily: 'var(--font-poppins)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>{exportandoExcel ? 'Exportando...' : 'EXPORTAR A EXCEL'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla de Inventario */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mb-6">
+
+                {cargandoStock ? (
+                  <div className="text-center py-8 text-gray-600 p-4">Cargando stock...</div>
+                ) : errorProductos ? (
+                  <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="font-semibold">Error al cargar productos</p>
+                    <p className="text-sm mt-2">{errorProductos}</p>
+                    <button
+                      onClick={() => cargarDatos()}
+                      className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Botón Confirmar Todo - Solo aparece cuando hay múltiples filas editando */}
+                    {(() => {
+                      const filasEditando = Object.keys(estadoFilas).filter(id => estadoFilas[id].editando && !estadoFilas[id].confirmado);
+                      const hayMultiplesEditando = filasEditando.length > 1;
+
+                      if (!hayMultiplesEditando) return null;
+
+                      return (
+                        <div className="px-4 py-3 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-orange-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                            {filasEditando.length} producto(s) en edición
+                          </span>
+                          <button
+                            onClick={() => {
+                              filasEditando.forEach(id => confirmarEdicion(id));
+                            }}
+                            className="px-4 py-2 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] flex items-center gap-2 text-sm"
+                            style={{ fontFamily: 'var(--font-poppins)' }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            ✓ Confirmar Todo
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Código</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Producto</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Límite</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Categoría</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Cantidad (Cajas)</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Unidad</th>
+                            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {productosPagina.map((p) => {
+                            // Asegurar que el ID se compara como string para mantener consistencia entre páginas
+                            const productoId = String(p.id);
+                            const estado = estadoFilas[productoId];
+                            // Un producto está editando si tiene estado y está marcado como editando
+                            // Esto permite que persista entre páginas
+                            const editando = estado && estado.editando === true;
+
+                            return (
+                              <tr
+                                key={productoId}
+                                onClick={() => {
+                                  if (editando) {
+                                    cancelarEdicion(productoId);
+                                  } else {
+                                    editarFila(productoId);
+                                  }
+                                }}
+                                className={`hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${editando ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-500 shadow-sm' : ''}`}
+                              >
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{p.codigo}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.producto}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {editando ? (
+                                    <input
+                                      type="number"
+                                      value={estado.limite !== undefined && estado.limite !== null ? estado.limite : ''}
+                                      onChange={(e) => {
+                                        const valor = e.target.value;
+                                        setEstadoFilas(prev => ({
+                                          ...prev,
+                                          [productoId]: {
+                                            ...prev[productoId],
+                                            limite: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
+                                          }
+                                        }));
+                                      }}
+                                      onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                          setEstadoFilas(prev => ({
+                                            ...prev,
+                                            [productoId]: { ...prev[productoId], limite: 0 }
+                                          }));
+                                        }
+                                      }}
+                                      className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="0"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-900 font-medium flex items-center gap-1">
+                                      {p.limite ?? 0}
+                                      <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.categoria}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {editando ? (
+                                    <input
+                                      type="number"
+                                      value={estado.cantidadCajas !== undefined && estado.cantidadCajas !== null ? estado.cantidadCajas : ''}
+                                      onChange={(e) => {
+                                        const valor = e.target.value;
+                                        setEstadoFilas(prev => ({
+                                          ...prev,
+                                          [productoId]: {
+                                            ...prev[productoId],
+                                            cantidadCajas: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
+                                          }
+                                        }));
+                                      }}
+                                      onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                          setEstadoFilas(prev => ({
+                                            ...prev,
+                                            [productoId]: { ...prev[productoId], cantidadCajas: 0 }
+                                          }));
+                                        }
+                                      }}
+                                      className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="0"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-900">{p.cantidadCajas ?? 0}</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                  {editando ? (
+                                    <select
+                                      value={estado.unidadMedida || 'CAJAS'}
+                                      onChange={(e) => setEstadoFilas(prev => ({
+                                        ...prev,
+                                        [productoId]: { ...prev[productoId], unidadMedida: e.target.value }
+                                      }))}
+                                      className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <option value="CAJAS">CAJAS</option>
+                                      <option value="UNIDADES">UNIDADES</option>
+                                    </select>
+                                  ) : (
+                                    p.unidadMedida || 'CAJAS'
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
+                                  {editando ? (
+                                    <div className="flex items-center justify-center space-x-2">
+                                      <button
+                                        onClick={() => confirmarEdicion(productoId)}
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                        title="Confirmar"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => cancelarEdicion(productoId)}
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                        title="Cancelar"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center space-x-2">
+                                      <button
+                                        onClick={() => editarFila(productoId)}
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                        title="Editar"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => eliminarProducto(productoId)}
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                        title="Eliminar"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Paginación */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                      <button
+                        onClick={() => setPaginaActual(1)}
+                        disabled={paginaActual === 1}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}
+                        disabled={paginaActual === 1}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        &lt;
+                      </button>
+                      <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
+                        Página {paginaActual} de {totalPaginas || 1}
+                      </span>
+                      <button
+                        onClick={() => setPaginaActual(prev => Math.min(totalPaginas, prev + 1))}
+                        disabled={paginaActual >= totalPaginas}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        &gt;
+                      </button>
+                      <button
+                        onClick={() => setPaginaActual(totalPaginas)}
+                        disabled={paginaActual >= totalPaginas}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        »
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Sección Productos Reservados */}
+              {/* Header separado */}
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
-                    Gestión de stock - Logistica
-                  </h1>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
+                    Productos reservados
+                  </h2>
                   <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
-                    Gestión y control de stock de productos
+                    Productos actualmente reservados para ventas
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Controles y Filtros */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 mb-6">
-              {/* Primera fila: Buscador, Checkboxes */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                {/* Columna 1: Buscador (más ancho) */}
-                <div className="relative md:col-span-2" ref={buscadorRef}>
+              {/* Controles de filtros en cuadro */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 mb-4">
+                {/* Buscador */}
+                <div className="mb-4">
                   <input
                     type="text"
-                    value={buscadorProductos}
-                    onChange={(e) => buscarProductoConSugerencias(e.target.value)}
-                    placeholder="Buscar productos por código, nombre, categoría..."
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-white hover:border-blue-300 transition-all duration-200 font-medium"
+                    value={buscadorReservados}
+                    onChange={(e) => setBuscadorReservados(e.target.value)}
+                    placeholder="Buscar Producto/Responsable..."
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   />
-                  {mostrarSugerencias && sugerenciasProductos.length > 0 && (
-                    <div
-                      ref={sugerenciasRef}
-                      className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                    >
-                      {sugerenciasProductos.map((prod, index) => (
-                        <button
-                          key={prod.id || index}
-                          type="button"
-                          onClick={() => seleccionarProducto(prod)}
-                          className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="text-sm font-medium text-gray-900">{prod.producto}</div>
-                          <div className="text-xs text-gray-500">
-                            Código: {prod.codigo} | Categoría: {prod.categoria}
-                          </div>
-                          <div className="text-xs text-blue-600 font-semibold mt-1">
-                            {prod.cantidadCajas || 0} cajas
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                {/* Columna 2: Checkbox CON STOCK */}
-                <div className="flex items-center">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={conStock}
-                      onChange={(e) => setConStock(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>CON STOCK</span>
-                  </label>
-                </div>
-
-                {/* Columna 3: Checkbox SIN STOCK */}
-                <div className="flex items-center">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={sinStock}
-                      onChange={(e) => setSinStock(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>SIN STOCK</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Segunda fila: Categoría, Botones */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Columna 1: Categoría (más ancho) */}
-                <div className="md:col-span-2">
+                {/* Dropdowns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <select
-                    value={categoria}
-                    onChange={(e) => setCategoria(e.target.value)}
+                    value={categoriaReserva}
+                    onChange={(e) => setCategoriaReserva(e.target.value)}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
-                    <option value="">Todas las categorías</option>
-                    {categorias.map(cat => (
+                    <option value="">Todas las Categorías</option>
+                    {categoriasReservados.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={responsableReserva}
+                    onChange={(e) => setResponsableReserva(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <option value="">Todos los Responsables</option>
+                    {responsablesReservados.map(resp => (
+                      <option key={resp} value={resp}>{resp}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* Columna 2: Botón Generar IMG Stock */}
-                <div>
-                  <button
-                    onClick={generarImagenStock}
-                    className="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2 whitespace-nowrap"
-                    style={{ fontFamily: 'var(--font-poppins)' }}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>Generar IMG Stock</span>
-                  </button>
+                {/* Fechas con labels */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>De:</label>
+                    <div className="relative flex-1">
+                      <input
+                        type="date"
+                        value={fechaInicio}
+                        onChange={(e) => setFechaInicio(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      />
+                      <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>a:</label>
+                    <div className="relative flex-1">
+                      <input
+                        type="date"
+                        value={fechaFin}
+                        onChange={(e) => setFechaFin(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      />
+                      <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Columna 3: Botón Exportar Excel */}
-                <div>
+                {/* Botones */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
-                    onClick={exportarExcel}
-                    disabled={exportandoExcel}
-                    className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+                    onClick={() => aplicarFiltrosReservados()}
+                    className="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2"
                     style={{ fontFamily: 'var(--font-poppins)' }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <span>{exportandoExcel ? 'Exportando...' : 'EXPORTAR A EXCEL'}</span>
+                    <span>Aplicar Filtros</span>
+                  </button>
+                  <button
+                    onClick={generarPDFReservados}
+                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2"
+                    style={{ fontFamily: 'var(--font-poppins)' }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                      <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                    </svg>
+                    <span>Generar PDF</span>
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* Tabla de Inventario */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden mb-6">
+              {/* Contenedor de tabla */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
 
-              {cargandoStock ? (
-                <div className="text-center py-8 text-gray-600 p-4">Cargando stock...</div>
-              ) : errorProductos ? (
-                <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <p className="font-semibold">Error al cargar productos</p>
-                  <p className="text-sm mt-2">{errorProductos}</p>
-                  <button
-                    onClick={() => cargarDatos()}
-                    className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              ) : (
-                <>
-              {/* Botón Confirmar Todo - Solo aparece cuando hay múltiples filas editando */}
-              {(() => {
-                const filasEditando = Object.keys(estadoFilas).filter(id => estadoFilas[id].editando && !estadoFilas[id].confirmado);
-                const hayMultiplesEditando = filasEditando.length > 1;
-                
-                if (!hayMultiplesEditando) return null;
-                
-                return (
-                  <div className="px-4 py-3 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-orange-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      {filasEditando.length} producto(s) en edición
-                    </span>
+                {cargandoReservados ? (
+                  <div className="text-center py-8 text-gray-600 p-4">Cargando productos reservados...</div>
+                ) : errorReservados ? (
+                  <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="font-semibold">Error al cargar productos reservados</p>
+                    <p className="text-sm mt-2">{errorReservados}</p>
                     <button
-                      onClick={() => {
-                        filasEditando.forEach(id => confirmarEdicion(id));
-                      }}
-                      className="px-4 py-2 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] flex items-center gap-2 text-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
+                      onClick={() => cargarDatos()}
+                      className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      ✓ Confirmar Todo
+                      Reintentar
                     </button>
                   </div>
-                );
-              })()}
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Código</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Producto</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Límite</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Categoría</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Cantidad (Cajas)</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Unidad</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Acciones</th>
-                    </tr>
-                  </thead>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-blue-700 border-b-2 border-blue-800">
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Producto</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Categoría</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha y Hora</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Responsable</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Cantidad Reservada</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Unidad</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
+                        </tr>
+                      </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {productosPagina.map((p) => {
-                          // Asegurar que el ID se compara como string para mantener consistencia entre páginas
-                          const productoId = String(p.id);
-                          const estado = estadoFilas[productoId];
-                          // Un producto está editando si tiene estado y está marcado como editando
-                          // Esto permite que persista entre páginas
-                          const editando = estado && estado.editando === true;
-                          
-                          return (
-                            <tr
-                              key={productoId}
-                              onClick={() => {
-                                if (editando) {
-                                  cancelarEdicion(productoId);
-                                } else {
-                                  editarFila(productoId);
-                                }
-                              }}
-                              className={`hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${editando ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-500 shadow-sm' : ''}`}
-                            >
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{p.codigo}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.producto}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {editando ? (
-                                  <input
-                                    type="number"
-                                    value={estado.limite !== undefined && estado.limite !== null ? estado.limite : ''}
-                                    onChange={(e) => {
-                                      const valor = e.target.value;
-                                      setEstadoFilas(prev => ({
-                                        ...prev,
-                                        [productoId]: { 
-                                          ...prev[productoId], 
-                                          limite: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
-                                        }
-                                      }));
-                                    }}
-                                    onBlur={(e) => {
-                                      if (e.target.value === '') {
-                                        setEstadoFilas(prev => ({
-                                          ...prev,
-                                          [productoId]: { ...prev[productoId], limite: 0 }
-                                        }));
-                                      }
-                                    }}
-                                    className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
-                                    onClick={(e) => e.stopPropagation()}
-                                    placeholder="0"
-                                  />
-                                ) : (
-                                  <span className="text-gray-900 font-medium flex items-center gap-1">
-                                    {p.limite ?? 0}
-                                    <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.categoria}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {editando ? (
-                                  <input
-                                    type="number"
-                                    value={estado.cantidadCajas !== undefined && estado.cantidadCajas !== null ? estado.cantidadCajas : ''}
-                                    onChange={(e) => {
-                                      const valor = e.target.value;
-                                      setEstadoFilas(prev => ({
-                                        ...prev,
-                                        [productoId]: { 
-                                          ...prev[productoId], 
-                                          cantidadCajas: valor === '' ? '' : (isNaN(parseFloat(valor)) ? '' : parseFloat(valor))
-                                        }
-                                      }));
-                                    }}
-                                    onBlur={(e) => {
-                                      if (e.target.value === '') {
-                                        setEstadoFilas(prev => ({
-                                          ...prev,
-                                          [productoId]: { ...prev[productoId], cantidadCajas: 0 }
-                                        }));
-                                      }
-                                    }}
-                                    className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
-                                    onClick={(e) => e.stopPropagation()}
-                                    placeholder="0"
-                                  />
-                                ) : (
-                                  <span className="text-gray-900">{p.cantidadCajas ?? 0}</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {editando ? (
-                                  <select
-                                    value={estado.unidadMedida || 'CAJAS'}
-                                    onChange={(e) => setEstadoFilas(prev => ({
-                                      ...prev,
-                                      [productoId]: { ...prev[productoId], unidadMedida: e.target.value }
-                                    }))}
-                                    className="w-full px-2 py-1 border-2 border-yellow-500 rounded text-[10px] text-gray-900 font-semibold"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <option value="CAJAS">CAJAS</option>
-                                    <option value="UNIDADES">UNIDADES</option>
-                                  </select>
-                                ) : (
-                                  p.unidadMedida || 'CAJAS'
-                                )}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
-                                {editando ? (
-                                  <div className="flex items-center justify-center space-x-2">
-                                    <button
-                                      onClick={() => confirmarEdicion(productoId)}
-                                      className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                      title="Confirmar"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    </button>
-                                    <button
-                                      onClick={() => cancelarEdicion(productoId)}
-                                      className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                      title="Cancelar"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => editarFila(productoId)}
-                                    className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                    title="Editar"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                  </button>
-                                )}
+                        {productosReservadosFiltrados.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" className="px-4 py-3 text-center text-[10px] text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
+                              No se encontraron productos reservados que coincidan con los filtros.
+                            </td>
+                          </tr>
+                        ) : (
+                          productosReservadosFiltrados.map((r) => (
+                            <tr key={r.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.producto}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.categoria}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(r.fechaHora)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.responsable}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{r.cantidadReservada || 0}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.unidadMedida || 'CAJAS'}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <button
+                                  onClick={() => abrirModalGestionarReserva(r)}
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  title="Gestionar"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                  </svg>
+                                </button>
                               </td>
                             </tr>
-                          );
-                        })}
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Paginación */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                    <button
-                      onClick={() => setPaginaActual(1)}
-                      disabled={paginaActual === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}
-                      disabled={paginaActual === 1}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &lt;
-                    </button>
-                    <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: 'var(--font-poppins)' }}>
-                      Página {paginaActual} de {totalPaginas || 1}
-                    </span>
-                    <button
-                      onClick={() => setPaginaActual(prev => Math.min(totalPaginas, prev + 1))}
-                      disabled={paginaActual >= totalPaginas}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setPaginaActual(totalPaginas)}
-                      disabled={paginaActual >= totalPaginas}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    >
-                      »
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Sección Productos Reservados */}
-            {/* Header separado */}
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                )}
               </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>
-                  Productos reservados
-                </h2>
-                <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'var(--font-poppins)' }}>
-                  Productos actualmente reservados para ventas
-                </p>
-              </div>
-            </div>
-
-            {/* Controles de filtros en cuadro */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200/60 p-4 mb-4">
-              {/* Buscador */}
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={buscadorReservados}
-                  onChange={(e) => setBuscadorReservados(e.target.value)}
-                  placeholder="Buscar Producto/Responsable..."
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                />
-              </div>
-
-              {/* Dropdowns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <select
-                  value={categoriaReserva}
-                  onChange={(e) => setCategoriaReserva(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                >
-                  <option value="">Todas las Categorías</option>
-                  {categoriasReservados.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <select
-                  value={responsableReserva}
-                  onChange={(e) => setResponsableReserva(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                >
-                  <option value="">Todos los Responsables</option>
-                  {responsablesReservados.map(resp => (
-                    <option key={resp} value={resp}>{resp}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Fechas con labels */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>De:</label>
-                  <div className="relative flex-1">
-                    <input
-                      type="date"
-                      value={fechaInicio}
-                      onChange={(e) => setFechaInicio(e.target.value)}
-                      className="w-full px-3 py-2 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    />
-                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>a:</label>
-                  <div className="relative flex-1">
-                    <input
-                      type="date"
-                      value={fechaFin}
-                      onChange={(e) => setFechaFin(e.target.value)}
-                      className="w-full px-3 py-2 pr-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      style={{ fontFamily: 'var(--font-poppins)' }}
-                    />
-                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botones */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => aplicarFiltrosReservados()}
-                  className="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <span>Aplicar Filtros</span>
-                </button>
-                <button
-                  onClick={generarPDFReservados}
-                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center justify-center gap-2"
-                  style={{ fontFamily: 'var(--font-poppins)' }}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                    <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                  </svg>
-                  <span>Generar PDF</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Contenedor de tabla */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-
-              {cargandoReservados ? (
-                <div className="text-center py-8 text-gray-600 p-4">Cargando productos reservados...</div>
-              ) : errorReservados ? (
-                <div className="text-center py-8 text-red-600 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <svg className="w-12 h-12 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <p className="font-semibold">Error al cargar productos reservados</p>
-                  <p className="text-sm mt-2">{errorReservados}</p>
-                  <button
-                    onClick={() => cargarDatos()}
-                    className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200"
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Producto</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Categoría</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Fecha y Hora</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Responsable</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Cantidad Reservada</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Unidad</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {productosReservadosFiltrados.length === 0 ? (
-                        <tr>
-                          <td colSpan="7" className="px-4 py-3 text-center text-[10px] text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
-                            No se encontraron productos reservados que coincidan con los filtros.
-                          </td>
-                        </tr>
-                      ) : (
-                        productosReservadosFiltrados.map((r) => (
-                          <tr key={r.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.producto}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.categoria}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatearFecha(r.fechaHora)}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.responsable}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>{r.cantidadReservada || 0}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{r.unidadMedida || 'CAJAS'}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <button
-                                onClick={() => abrirModalGestionarReserva(r)}
-                                className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                title="Gestionar"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
             </div>
           </div>
         </main>
@@ -1602,6 +1644,47 @@ export default function GestionCajasMalvinasPage() {
           </button>
         </div>
       </Modal>
+      {/* Barra Flotante de Guardado */}
+      {productosEditados.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-5px_10px_-5px_rgba(0,0,0,0.1)] z-50 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+              </span>
+              <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-bold border border-orange-200">
+                {productosEditados.length} {productosEditados.length === 1 ? 'cambio pendiente' : 'cambios pendientes'}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 hidden sm:block">
+              Tiene cambios sin guardar en el inventario.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                if (confirm('¿Está seguro de descartar todos los cambios?')) {
+                  setProductosEditados([]);
+                  cargarDatos(); // Recargar para perder cambios locales
+                }
+              }}
+              className="flex-1 sm:flex-none px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition-colors text-sm"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={guardarCambiosStock}
+              className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

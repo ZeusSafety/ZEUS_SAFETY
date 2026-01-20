@@ -61,3 +61,41 @@ export async function GET(request) {
   }
 }
 
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+
+    // Obtener token
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Token no proporcionado" }, { status: 401 });
+    }
+    const token = authHeader.replace("Bearer ", "");
+
+    // URL específica para CRUD
+    const apiUrl = "https://api-permisoslaborales-2026-2946605267.us-central1.run.app/crud_permisos";
+
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return NextResponse.json({ error: text, status: response.status }, { status: response.status });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+
+  } catch (error) {
+    console.error("Error updating permiso:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
