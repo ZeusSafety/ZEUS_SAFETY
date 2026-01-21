@@ -108,6 +108,40 @@ export default function MarketingPage() {
       ),
       cards: [
         {
+          id: "registro-clientes",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          ),
+          title: "Registro de Clientes",
+          description: "Entrada de datos para nuevos clientes.",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "registro-ventas-online",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          ),
+          title: "Registro de Ventas Online",
+          description: "Acceso al formulario de ventas directas online.",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
           id: "gestion-clientes",
           icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -281,7 +315,8 @@ export default function MarketingPage() {
           buttonText: "Ver Permisos",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           ),
         },
@@ -450,6 +485,8 @@ export default function MarketingPage() {
                                     onClick={() => {
                                       if (card.id === "listado-importaciones") {
                                         router.push("/marketing/listado-importaciones");
+                                      } else if (card.id === "registro-clientes") {
+                                        router.push("/marketing/registro-clientes");
                                       } else if (card.id === "gestion-clientes") {
                                         router.push("/marketing/gestion-clientes");
                                       } else if (card.id === "listado-ventas") {
@@ -458,6 +495,8 @@ export default function MarketingPage() {
                                         router.push("/marketing/cotizaciones");
                                       } else if (card.id === "historial-cotizaciones") {
                                         router.push("/marketing/historial-cotizaciones");
+                                      } else if (card.id === "registro-ventas-online") {
+                                        router.push("/marketing/registro-ventas-online");
                                       } else if (card.id === "stock-precios-mayor") {
                                         router.push("/marketing/stock-precios-mayor");
                                       } else if (card.id === "listado-solicitudes") {
