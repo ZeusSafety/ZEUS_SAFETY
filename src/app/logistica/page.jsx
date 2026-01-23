@@ -369,6 +369,23 @@ export default function LogisticaPage() {
             </svg>
           ),
         },
+        {
+          id: "listado-movilidad",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 00-4-4H5m14 0h-2a4 4 0 00-4 4v2m-3-4h.01M9 16h6" />
+            </svg>
+          ),
+          title: "Listado de Movilidad",
+          description: "Ver historial de registros de movilidad",
+          buttonText: "Ver Listado",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
       ],
     },
     {
@@ -540,6 +557,8 @@ export default function LogisticaPage() {
                                         router.push("/logistica/inventario/proformas");
                                       } else if (card.id === "registro-movilidad") {
                                         router.push("/logistica/registro-movilidad");
+                                      } else if (card.id === "listado-movilidad") {
+                                        router.push("/logistica/listado-movilidad");
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/logistica/solicitudes-permisos");
                                       }

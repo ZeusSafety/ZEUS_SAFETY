@@ -152,7 +152,7 @@ export default function CotizacionesPage() {
   const [codigo, setCodigo] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
-  
+
   // Opciones de unidad de medida
   const opcionesUnidadMedida = [
     { value: "", label: "Seleccione Unidad de Medida" },
@@ -185,9 +185,13 @@ export default function CotizacionesPage() {
   const [preciosDisponibles, setPreciosDisponibles] = useState([]);
   const [cargandoPrecios, setCargandoPrecios] = useState(false);
   // Datos de prueba para la tabla de productos
-  const [productosLista, setProductosLista] = useState([
+  // Lista de productos agregados 
+  const [productosLista, setProductosLista] = useState([]);
 
-  ]);
+  // Estados para el modal de previsualización 
+  const [mostrarModalPreview, setMostrarModalPreview] = useState(false);
+  const [previewHTML, setPreviewHTML] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -703,7 +707,7 @@ export default function CotizacionesPage() {
     setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
-    setUnidadMedida("Seleccione Unidad de Medida"); 
+    setUnidadMedida("Seleccione Unidad de Medida");
     setPrecioVenta("");
     setTotal(0.00);
     setProductoSeleccionado(null);
@@ -877,12 +881,12 @@ export default function CotizacionesPage() {
             border-collapse: collapse;
             font-size: 11px;
             margin-bottom: 5px;
+            border: 1px solid #000;
         }
 
         th,
         td {
-            border: 1px solid #000;
-            /* Bordes negros sólidos */
+            border: 1px solid #000 !important;
             padding: 4px 5px;
             text-align: center;
             color: #000000;
@@ -894,12 +898,13 @@ export default function CotizacionesPage() {
             font-weight: bold;
             text-transform: uppercase;
             color: #ffffff;
+            border: 1px solid #000 !important;
         }
 
         .meta-table td {
             height: 20px;
-            /* Altura vacía */
             color: #000000;
+            border: 1px solid #000 !important;
         }
 
         /* Espaciador */
@@ -912,41 +917,25 @@ export default function CotizacionesPage() {
             background-color: #5b9bd5;
             text-transform: uppercase;
             color: #ffffff;
+            border: 1px solid #000 !important;
         }
 
         .product-table tr {
             height: 22px;
-            /* Altura de filas vacías */
         }
 
         .product-table td {
             color: #000000;
+            border: 1px solid #000 !important;
         }
 
         /* Column widths para imitar la imagen */
-        .col-cant {
-            width: 8%;
-        }
-
-        .col-uni {
-            width: 10%;
-        }
-
-        .col-cod {
-            width: 12%;
-        }
-
-        .col-prod {
-            width: 45%;
-        }
-
-        .col-punit {
-            width: 12%;
-        }
-
-        .col-sub {
-            width: 13%;
-        }
+        .col-cant { width: 8%; }
+        .col-uni { width: 10%; }
+        .col-cod { width: 12%; }
+        .col-prod { width: 45%; }
+        .col-punit { width: 12%; }
+        .col-sub { width: 13%; }
 
         /* --- Total Section --- */
         .total-section {
@@ -1253,41 +1242,61 @@ export default function CotizacionesPage() {
     }
   };
 
-  const handleRegistrarCotizacion = async () => {
+  const handleRegistrarCotizacion = () => {
     if (productosLista.length === 0) {
       alert("Debe agregar al menos un producto");
       return;
     }
 
+    if (!cliente) {
+      alert("Por favor ingrese el nombre del cliente");
+      return;
+    }
+
+    // Calcular código temporal
+    const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
+    const siguienteNumero = ultimoNumero + 1;
+    const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
+
+    // Generar HTML para previsualización
+    const html = generarHTMLCotizacion(codigoTemporal);
+    setPreviewHTML(html);
+    setMostrarModalPreview(true);
+  };
+
+  const handleConfirmarRegistro = async () => {
     try {
+      setIsSubmitting(true);
       const token = getAuthToken();
       if (!token) {
         alert('Error de autenticación. Inicie sesión.');
         return;
       }
 
-      // --- NUEVO: CALCULAR CÓDIGO TEMPORAL PARA EL DISEÑO ---
+      // Calcular código real (o temporal para el envío)
       const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
       const siguienteNumero = ultimoNumero + 1;
-      const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
+      const codigoDefinitivo = `C001-${String(siguienteNumero).padStart(8, '0')}`;
 
-      // --- PASO A: Generar el PDF con el código calculado ---
-      const pdfBlob = await generarPDFBlob(codigoTemporal);
+      // --- PASO A: Generar el PDF ---
+      const pdfBlob = await generarPDFBlob(codigoDefinitivo);
 
       if (!pdfBlob) {
         alert("Error al preparar el archivo PDF.");
+        setIsSubmitting(false);
         return;
       }
 
       // --- PASO B: Preparar FormData ---
       const formData = new FormData();
       formData.append("nombre_cliente", cliente || '');
-      formData.append("region", regionSeleccionada?.REGION || region || '');
-      formData.append("distrito", distritoSeleccionado?.DISTRITO || distrito || '');
+      formData.append("region", regionSeleccionada?.REGION || '');
+      formData.append("distrito", distritoSeleccionado?.DISTRITO || '');
       formData.append("monto_total", totalGeneral);
       formData.append("atendido_por", atendidoPor || '');
+
       // El archivo PDF físico que el backend espera como "pdf_file"
-      formData.append("pdf_file", pdfBlob, `${codigoTemporal}.pdf`);
+      formData.append("pdf_file", pdfBlob, `${codigoDefinitivo}.pdf`);
 
       const API_URL = "https://cotizaciones2026-2946605267.us-central1.run.app/cotizacion";
 
@@ -1307,7 +1316,6 @@ export default function CotizacionesPage() {
         alert(`Cotización ${numeroFinal} registrada y guardada con éxito.`);
 
         // --- PASO D: Descargar para el usuario ---
-        // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
         const link = document.createElement('a');
         link.href = URL.createObjectURL(pdfBlob);
         link.download = `Cotizacion_${numeroFinal}.pdf`;
@@ -1316,12 +1324,18 @@ export default function CotizacionesPage() {
         // Actualizar localStorage
         const numeroBackend = parseInt(numeroFinal.split('-')[1], 10);
         localStorage.setItem('lastCotizacionNumber', numeroBackend.toString());
+
+        // Cerrar modal y limpiar o redirigir
+        setMostrarModalPreview(false);
+        router.push("/marketing");
       } else {
         alert(`Error: ${data.error || 'No se pudo registrar'}`);
       }
     } catch (error) {
       console.error('Error general:', error);
       alert('Ocurrió un error al procesar la cotización.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1827,7 +1841,7 @@ export default function CotizacionesPage() {
               <div className="flex justify-end pt-2 mt-2 mb-4">
                 <button
                   onClick={handleRegistrarCotizacion}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 !text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
                   Registrar Cotización
                 </button>
@@ -1837,9 +1851,55 @@ export default function CotizacionesPage() {
         </main>
       </div>
 
+      {/* Modal de Previsualización */}
+      <Modal
+        isOpen={mostrarModalPreview}
+        onClose={() => setMostrarModalPreview(false)}
+        title="Previsualización de Cotización"
+        size="full"
+        hideFooter
+      >
+        <div className="flex flex-col h-full bg-white">
+          <div
+            className="flex-1 overflow-auto bg-gray-200/50 p-6 lg:p-10 rounded-xl border border-gray-200 shadow-inner"
+            style={{ minHeight: '600px' }}
+          >
+            <div
+              className="bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] mx-auto origin-top transition-transform duration-300"
+              style={{ width: '900px', minHeight: '1100px' }}
+              dangerouslySetInnerHTML={{ __html: previewHTML }}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200">
+            <button
+              onClick={() => setMostrarModalPreview(false)}
+              className="px-8 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 hover:border-gray-400 transition-all active:scale-95 text-base"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmarRegistro}
+              disabled={isSubmitting}
+              className="px-12 py-3 rounded-xl bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] text-white font-bold shadow-xl shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base min-w-[200px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Procesando PDF...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Registrar Cotización
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
-
-
-

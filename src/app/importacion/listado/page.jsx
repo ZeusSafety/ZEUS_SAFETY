@@ -188,10 +188,6 @@ export default function ListadoImportacionesPage() {
       filtered = filtered.filter((item) =>
         !item.fechaRecepcion || item.fechaRecepcion.trim() === "" || item.fechaRecepcion === "null" || item.fechaRecepcion === "-"
       );
-    } else {
-      filtered = filtered.filter((item) =>
-        item.fechaRecepcion && item.fechaRecepcion.trim() !== "" && item.fechaRecepcion !== "null" && item.fechaRecepcion !== "-"
-      );
     }
 
     setFilteredImportaciones(filtered);

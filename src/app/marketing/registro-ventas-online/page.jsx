@@ -24,6 +24,8 @@ export default function RegistroVentasOnlinePage() {
         salida: ""
     });
 
+    const isDistritoDisabled = !cabecera.region;
+
     // Estados de Detalle
     const [detalle, setDetalle] = useState({
         linea: "ZEUS SAFETY",
@@ -39,6 +41,7 @@ export default function RegistroVentasOnlinePage() {
     });
 
     const [itemsAgregados, setItemsAgregados] = useState([]);
+    const [montoDelivery, setMontoDelivery] = useState(0);
 
     // Estados para buscadores
     const [clientes, setClientes] = useState([]);
@@ -71,7 +74,7 @@ export default function RegistroVentasOnlinePage() {
             router.push("/login");
         } else if (user) {
             fetchInitialData();
-            setCabecera(prev => ({ ...prev, asesor: user.nombre || "DHILSEN" }));
+            setCabecera(prev => ({ ...prev, asesor: user.nombre || "" }));
         }
     }, [user, loading, router]);
 
@@ -149,9 +152,9 @@ export default function RegistroVentasOnlinePage() {
     const handleTipoComprobanteChange = (e) => {
         const tipo = e.target.value;
         let p = "";
-        if (tipo === "PROFORMA") p = "P";
-        else if (tipo === "FACTURA") p = "F";
-        else if (tipo === "BOLETA") p = "B";
+        if (tipo === "PROFORMA") p = "P ";
+        else if (tipo === "FACTURA") p = "F ";
+        else if (tipo === "BOLETA") p = "B ";
         setCabecera({ ...cabecera, tipo_comprobante: tipo, comprobante: p });
     };
 
@@ -179,16 +182,19 @@ export default function RegistroVentasOnlinePage() {
     useEffect(() => {
         const cant = parseFloat(detalle.cantidad) || 0;
         const prec = parseFloat(detalle.precio) || 0;
-        const deliv = parseFloat(detalle.delivery) || 0;
-        setDetalle(prev => ({ ...prev, total: (cant * prec) + deliv }));
-    }, [detalle.cantidad, detalle.precio, detalle.delivery]);
+        setDetalle(prev => ({ ...prev, total: (cant * prec) }));
+    }, [detalle.cantidad, detalle.precio]);
 
     const agregarItem = () => {
         if (!detalle.producto || !detalle.precio || !detalle.cantidad) {
             alert("Campos incompletos."); return;
         }
-        setItemsAgregados([...itemsAgregados, { ...detalle, id: Date.now() }]);
-        setDetalle({ ...detalle, producto: "", codigo: "", cantidad: 1, precio: "", delivery: 0, total: 0 });
+        setItemsAgregados([...itemsAgregados, {
+            ...detalle,
+            id: Date.now(),
+            comprobante_item: cabecera.comprobante
+        }]);
+        setDetalle({ ...detalle, producto: "", codigo: "", cantidad: 1, precio: "", total: 0 });
         setBusquedaProducto("");
     };
 
@@ -201,7 +207,12 @@ export default function RegistroVentasOnlinePage() {
         setIsSubmitting(true);
         try {
             const token = localStorage.getItem("token");
-            const payload = { cabecera, detalles: itemsAgregados };
+            const detallesConDelivery = itemsAgregados.map((item, idx) => ({
+                ...item,
+                delivery: idx === 0 ? parseFloat(montoDelivery || 0) : 0
+            }));
+
+            const payload = { cabecera, detalles: detallesConDelivery };
             const response = await fetch(apiBase, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -211,6 +222,7 @@ export default function RegistroVentasOnlinePage() {
             if (response.ok) {
                 setNotification({ show: true, message: "Venta registrada.", type: "success" });
                 setItemsAgregados([]);
+                setMontoDelivery(0);
                 setCabecera({ ...cabecera, id_cliente: "", cliente: "", tipo_comprobante: "", comprobante: "", region: "", distrito: "", forma_pago: "", salida: "" });
                 setBusquedaCliente("");
                 setSelectedRegionId("");
@@ -232,7 +244,7 @@ export default function RegistroVentasOnlinePage() {
                 <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
                 <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div className="max-w-[100%] mx-auto space-y-4">
+                    <div className="max-w-6xl mx-auto space-y-4">
 
                         {/* Botón Volver */}
                         <button
@@ -249,10 +261,33 @@ export default function RegistroVentasOnlinePage() {
                         {/* Contenedor Principal Blanco */}
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-10">
 
-                            {/* Cabecera Título Principal */}
-                            <div className="flex flex-col items-center space-y-2">
-                                <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Registro de Ventas Online</h1>
-                                <div className="w-24 h-1 bg-yellow-400 rounded-full"></div>
+                            {/* Header de la página */}
+                            <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
+                                <div className="flex items-center space-x-2 sm:space-x-3">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
+                                        <svg
+                                            className="w-5 h-5 sm:w-6 sm:h-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            strokeWidth={2.5}
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                            Registro de Ventas Online
+                                        </h1>
+                                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                            Gestiona y procesa tus ventas digitales en el sistema.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             {notification.show && (
@@ -261,16 +296,16 @@ export default function RegistroVentasOnlinePage() {
                                 </div>
                             )}
 
-                            {/* SECCIÓN CABECERA */}
-                            <div className="space-y-6">
-                                <div className="flex items-center space-x-3 pb-2 border-b-2 border-yellow-400/30">
-                                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-white">
-                                        <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <h2 className="text-lg font-bold text-[#002855]" style={{ fontFamily: 'var(--font-poppins)' }}>Ventas (Cabecera del Pedido)</h2>
-                                </div>
+
+
+                            {/* ESTE ES EL NUEVO CONTENEDOR QUE AGREGA EL CUADRO GRIS DETRÁS */}
+                            <div className="bg-slate-50 border-2 border-gray-100 p-8 rounded-3xl space-y-8 relative overflow-hidden">
+
+                                {/* Subtítulo opcional para mantener simetría con el de abajo */}
+                                <h3 className="text-[11px] font-black text-[#002855] flex items-center tracking-widest uppercase mb-4">
+                                    <div className="w-5 h-5 bg-[#002855] text-white rounded-full flex items-center justify-center mr-2 text-[10px] font-bold">i</div>
+                                    Ventas (Cabecera del Pedido)
+                                </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {/* FECHA */}
@@ -278,6 +313,7 @@ export default function RegistroVentasOnlinePage() {
                                         <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">FECHA</label>
                                         <input type="text" readOnly value={new Date().toLocaleDateString()} className="w-full px-5 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-semibold text-gray-500" />
                                     </div>
+
                                     {/* ASESOR */}
                                     <div className="space-y-2">
                                         <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">ASESOR</label>
@@ -287,14 +323,19 @@ export default function RegistroVentasOnlinePage() {
                                                 onChange={(e) => setCabecera({ ...cabecera, asesor: e.target.value })}
                                                 className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold text-gray-900 shadow-sm appearance-none"
                                             >
-                                                <option value="DHILSEN">DHILSEN</option>
+                                                <option value="Seleccione un asesor">Seleccione un asesor</option>
                                                 <option value="ALVARO">ALVARO</option>
+                                                <option value="EVELYN">EVELYN</option>
+                                                <option value="HERVIN">HERVIN</option>
+                                                <option value="KIMBERLY">KIMBERLY</option>
+                                                <option value="ZEUS">ZEUS</option>
                                             </select>
                                             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
                                     </div>
+
                                     {/* CLIENTE */}
                                     <div className="space-y-2 relative" ref={clienteRef}>
                                         <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">CLIENTE</label>
@@ -318,24 +359,48 @@ export default function RegistroVentasOnlinePage() {
 
                                     {/* COMPROBANTE SELECT + INPUT */}
                                     <div className="space-y-2">
-                                        <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">COMPROBANTE</label>
+                                        <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">
+                                            COMPROBANTE
+                                        </label>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <div className="relative">
+                                            {/* Contenedor del Select */}
+                                            <div className="relative group">
                                                 <select
                                                     value={cabecera.tipo_comprobante}
                                                     onChange={handleTipoComprobanteChange}
-                                                    className="w-full px-3 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-xs font-bold text-gray-900 shadow-sm appearance-none"
+                                                    /* 1. appearance-none quita la flecha nativa en la mayoría de casos */
+                                                    className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-blue-500 outline-none text-xs font-bold text-gray-900 shadow-sm appearance-none cursor-pointer pr-10"
+                                                    /* 2. Estilo inline para asegurar que desaparezca la flecha nativa en todos los navegadores */
+                                                    style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
                                                 >
-                                                    <option value="">TIPO</option>
+                                                    <option value="TIPO">TIPO</option>
                                                     <option value="PROFORMA">PROFORMA</option>
                                                     <option value="FACTURA">FACTURA</option>
                                                     <option value="BOLETA">BOLETA</option>
                                                 </select>
-                                                <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-gray-400">
-                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+
+                                                {/* 3. TU FLECHA PERSONALIZADA (Única) */}
+                                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-[#002855]">
+                                                    <svg
+                                                        className="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        strokeWidth={3}
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                    </svg>
                                                 </div>
                                             </div>
-                                            <input type="text" value={cabecera.comprobante} onChange={(e) => setCabecera({ ...cabecera, comprobante: e.target.value })} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-gray-900 shadow-sm" />
+
+                                            {/* Input de Número de Comprobante */}
+                                            <input
+                                                type="text"
+                                                value={cabecera.comprobante}
+                                                onChange={(e) => setCabecera({ ...cabecera, comprobante: e.target.value })}
+                                                className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-blue-400 outline-none text-sm font-bold text-gray-900 shadow-sm transition-all"
+                                                placeholder="Número..."
+                                            />
                                         </div>
                                     </div>
 
@@ -346,7 +411,7 @@ export default function RegistroVentasOnlinePage() {
                                             <select value={cabecera.salida} onChange={(e) => setCabecera({ ...cabecera, salida: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold text-gray-900 shadow-sm appearance-none">
                                                 <option value="">Seleccione...</option>
                                                 <option value="CALLAO">CALLAO</option>
-                                                <option value="CHORRILLOS">CHORRILLOS</option>
+                                                <option value="MALVINAS">MALVINAS</option>
                                             </select>
                                             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -372,7 +437,12 @@ export default function RegistroVentasOnlinePage() {
                                     <div className="space-y-2">
                                         <label className="flex items-center text-[10px] font-black text-[#002D5A] uppercase tracking-widest">DISTRITO</label>
                                         <div className="relative">
-                                            <select value={cabecera.distrito} onChange={(e) => setCabecera({ ...cabecera, distrito: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold text-gray-900 shadow-sm appearance-none disabled:bg-gray-50">
+                                            <select
+                                                value={cabecera.distrito}
+                                                onChange={(e) => setCabecera({ ...cabecera, distrito: e.target.value })}
+                                                disabled={isDistritoDisabled}
+                                                className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold text-gray-900 shadow-sm appearance-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                            >
                                                 <option value="">Seleccione...</option>
                                                 {distritos.map(d => <option key={d.ID_DISTRITO || d.id} value={d.DISTRITO || d.nombre}>{d.DISTRITO || d.nombre}</option>)}
                                             </select>
@@ -388,9 +458,12 @@ export default function RegistroVentasOnlinePage() {
                                         <div className="relative">
                                             <select value={cabecera.forma_pago} onChange={(e) => setCabecera({ ...cabecera, forma_pago: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold text-gray-900 shadow-sm appearance-none">
                                                 <option value="">Seleccione...</option>
-                                                <option value="TRANSFERENCIA BCP">TRANSFERENCIA BCP</option>
                                                 <option value="YAPE">YAPE</option>
+                                                <option value="PLIN">PLIN</option>
                                                 <option value="EFECTIVO">EFECTIVO</option>
+                                                <option value="TRANSFERENCIA BCP">TRANSFERENCIA BCP</option>
+                                                <option value="TRANSFERENCIA BBVA">TRANSFERENCIA BBVA</option>
+                                                <option value="TRANSFERENCIA INTERBANK">TRANSFERENCIA INTERBANK</option>
                                             </select>
                                             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -400,108 +473,116 @@ export default function RegistroVentasOnlinePage() {
                                 </div>
                             </div>
 
-                            {/* SECCIÓN DETALLE DE PRODUCTOS */}
-                            <div className="space-y-6 pt-4">
-                                <div className="flex items-center space-x-3 pb-2 border-b-2 border-yellow-400/30">
-                                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-white">
-                                        <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                        </svg>
+
+
+
+                            <div className="bg-slate-50 border-2 border-gray-100 p-8 rounded-3xl space-y-8 relative overflow-hidden">
+                                <h3 className="text-[11px] font-black text-[#002855] flex items-center tracking-widest uppercase mb-4">
+                                    <div className="w-5 h-5 bg-[#002855] text-white rounded-full flex items-center justify-center mr-2 text-[10px] font-bold">+</div>
+                                    Detalle de Productos
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Línea de Pedido</label>
+                                        <select value={detalle.linea} onChange={(e) => setDetalle({ ...detalle, linea: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]">
+                                            <option value="Seleccione una linea">Seleccione una linea</option>
+                                            <option value="ZEUS SAFETY">ZEUS SAFETY</option>
+                                            <option value="ZEUS ELECTRIC">ZEUS ELECTRIC</option>
+                                        </select>
                                     </div>
-                                    <h2 className="text-lg font-bold text-[#002855]" style={{ fontFamily: 'var(--font-poppins)' }}>Detalle de Productos</h2>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Canal de Venta</label>
+                                        <select value={detalle.canal} onChange={(e) => setDetalle({ ...detalle, canal: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]">
+                                            <option value="Seleccione un Canal de Venta">Seleccione un Canal de Venta</option>
+                                            <option value="FACEBOOK">FACEBOOK</option>
+                                            <option value="INSTRAGRAM">INSTAGRAM</option>
+                                            <option value="LLAMADA">LLAMADA</option>
+                                            <option value="META ADS">META ADS</option>
+                                            <option value="TIKTOK">TIKTOK</option>
+                                            <option value="WHATSAPP">WHATSAPP</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Clasificación</label>
+                                        <select value={detalle.clasificacion} onChange={(e) => setDetalle({ ...detalle, clasificacion: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]">
+                                            <option value="MALVINAS">MALVINAS</option>
+                                            <option value="FERRETERIA">FERRETERIA</option>
+                                            <option value="PROVINCIA">PROVINCIA</option>
+                                            <option value="ONLINE">ONLINE</option>
+                                            <option value="CONSTRUCTORA">CONSTRUCTORA</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2 relative" ref={productoRef}>
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Producto</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Nombre del producto..."
+                                            value={busquedaProducto}
+                                            onChange={(e) => { setBusquedaProducto(e.target.value); setMostrarSugerenciasProducto(true); }}
+                                            className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]"
+                                        />
+                                        {mostrarSugerenciasProducto && busquedaProducto.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-2 bg-white border-2 border-gray-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                                                {productos.filter(p => (p.NOMBRE || p.nombre || "").toLowerCase().includes(busquedaProducto.toLowerCase())).map((prod, idx) => (
+                                                    <div key={idx} onClick={() => handleProductoSelect(prod)} className="px-5 py-3 hover:bg-blue-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-50 last:border-0">
+                                                        {prod.NOMBRE || prod.nombre}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="bg-slate-50 border-2 border-gray-100 p-8 rounded-3xl space-y-8 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
-                                    <h3 className="text-[11px] font-black text-[#002D5A] flex items-center tracking-widest uppercase">
-                                        <span className="w-4 h-4 bg-yellow-400 text-gray-900 rounded-full flex items-center justify-center mr-2 text-[10px]">+</span>
-                                        AGREGAR NUEVO PRODUCTO
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Līnea de Pedido</label>
-                                            <select value={detalle.linea} onChange={(e) => setDetalle({ ...detalle, linea: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold">
-                                                <option value="ZEUS SAFETY">ZEUS SAFETY</option>
-                                                <option value="OTROS">OTROS</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Canal de Venta</label>
-                                            <select value={detalle.canal} onChange={(e) => setDetalle({ ...detalle, canal: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold">
-                                                <option value="FACEBOOK ADS">FACEBOOK ADS</option>
-                                                <option value="INSTRAGRAM">INSTAGRAM</option>
-                                                <option value="TIKTOK">TIKTOK</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Clasificación</label>
-                                            <select value={detalle.clasificacion} onChange={(e) => setDetalle({ ...detalle, clasificacion: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold">
-                                                <option value="ONLINE">ONLINE</option>
-                                                <option value="PROVINCIA">PROVINCIA</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2 relative" ref={productoRef}>
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Producto</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Nombre del producto..."
-                                                value={busquedaProducto}
-                                                onChange={(e) => { setBusquedaProducto(e.target.value); setMostrarSugerenciasProducto(true); }}
-                                                className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-semibold"
-                                            />
-                                            {mostrarSugerenciasProducto && busquedaProducto.length > 0 && (
-                                                <div className="absolute z-50 w-full mt-2 bg-white border-2 border-gray-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                                                    {productos.filter(p => (p.NOMBRE || p.nombre || "").toLowerCase().includes(busquedaProducto.toLowerCase())).map((prod, idx) => (
-                                                        <div key={idx} onClick={() => handleProductoSelect(prod)} className="px-5 py-3 hover:bg-blue-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-50 last:border-0">
-                                                            {prod.NOMBRE || prod.nombre}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Código</label>
+                                        <input type="text" readOnly value={detalle.codigo} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl text-xs font-bold text-[#002855] outline-none" />
                                     </div>
-
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Código</label>
-                                            <input type="text" readOnly value={detalle.codigo} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-xs font-bold text-gray-400" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Cantidad</label>
-                                            <input type="number" value={detalle.cantidad} onChange={(e) => setDetalle({ ...detalle, cantidad: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Medida</label>
-                                            <select value={detalle.unidad} onChange={(e) => setDetalle({ ...detalle, unidad: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-xs font-bold">
-                                                <option value="UNIDADES">UNIDADES</option>
-                                                <option value="PARES">PARES</option>
-                                                <option value="METROS">METROS</option>
-                                                <option value="DOCENAS">DOCENAS</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Precio Venta</label>
-                                            <input type="number" value={detalle.precio} onChange={(e) => setDetalle({ ...detalle, precio: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold" />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Cantidad</label>
+                                        <input type="number" value={detalle.cantidad} onChange={(e) => setDetalle({ ...detalle, cantidad: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]" />
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Delivery</label>
-                                            <input type="number" value={detalle.delivery} onChange={(e) => setDetalle({ ...detalle, delivery: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Total</label>
-                                            <input type="text" readOnly value={detalle.total.toFixed(2)} className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-2xl text-sm font-black text-gray-700" />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Medida</label>
+                                        <select value={detalle.unidad} onChange={(e) => setDetalle({ ...detalle, unidad: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-xs font-bold text-[#002855]">
+                                            <option value="Seleccione una medida">Seleccione una medida</option>
+                                            <option value="DOCENAS">DOCENAS</option>
+                                            <option value="METROS">METROS</option>
+                                            <option value="PAQUETES">PAQUETES</option>
+                                            <option value="PARES">PARES</option>
+                                            <option value="ROLLOS">ROLLOS</option>
+                                            <option value="UNIDADES">UNIDADES</option>
+                                        </select>
                                     </div>
-
-                                    <button onClick={agregarItem} className="w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black rounded-2xl transition-all shadow-lg text-xs uppercase tracking-widest flex items-center justify-center space-x-2">
-                                        <span>+ AGREGAR A LA LISTA</span>
-                                    </button>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Precio Venta</label>
+                                        <input type="number" value={detalle.precio} onChange={(e) => setDetalle({ ...detalle, precio: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]" />
+                                    </div>
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Delivery</label>
+                                        <input
+                                            type="number"
+                                            value={montoDelivery}
+                                            onChange={(e) => setMontoDelivery(e.target.value)}
+                                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-[#002D5A] uppercase tracking-widest">Total Producto</label>
+                                        <input type="text" readOnly value={detalle.total.toFixed(2)} className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-2xl text-sm font-black text-gray-700" />
+                                    </div>
+                                </div>
+
+                                <button onClick={agregarItem} className="w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black rounded-2xl transition-all shadow-lg text-xs uppercase tracking-widest flex items-center justify-center space-x-2">
+                                    <span>+ AGREGAR A LA LISTA</span>
+                                </button>
                             </div>
+
 
                             {/* TABLA DE ITEMS AGREGADOS */}
                             <div className="overflow-hidden rounded-3xl border-2 border-slate-50 shadow-sm">
@@ -520,7 +601,7 @@ export default function RegistroVentasOnlinePage() {
                                     <tbody className="divide-y divide-gray-100">
                                         {itemsAgregados.map((item) => (
                                             <tr key={item.id} className="hover:bg-slate-50 transition-colors bg-white">
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-600">{cabecera.comprobante}</td>
+                                                <td className="px-6 py-4 text-sm font-bold text-gray-600">{item.comprobante_item || cabecera.comprobante}</td>
                                                 <td className="px-6 py-4 text-sm font-black text-gray-800">{item.producto}</td>
                                                 <td className="px-6 py-4 text-sm font-bold text-gray-600 text-center">{item.cantidad}</td>
                                                 <td className="px-6 py-4 text-sm font-bold text-gray-600">{item.unidad}</td>
@@ -543,41 +624,50 @@ export default function RegistroVentasOnlinePage() {
                             </div>
 
                             {/* FOOTER DE TOTALES Y BOTONES FINAL */}
-                            <div className="pt-6 border-t-2 border-gray-50 flex flex-col md:flex-row items-center justify-between gap-8">
-                                <div className="flex flex-wrap gap-4">
+                            <div className="pt-6 border-t-2 border-gray-50 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
                                     <button
                                         onClick={handleFinalSubmit}
                                         disabled={isSubmitting}
-                                        className="px-12 py-4 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black rounded-2xl transition-all shadow-xl shadow-yellow-400/20 flex items-center space-x-3 disabled:opacity-50 active:scale-95"
+                                        className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black rounded-xl transition-all shadow-lg shadow-yellow-400/20 flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-95"
                                     >
-                                        {isSubmitting ? <div className="w-5 h-5 border-4 border-gray-900/20 border-t-gray-900 rounded-full animate-spin"></div> : (
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        {isSubmitting ? (
+                                            <div className="w-4 h-4 border-3 border-gray-900/20 border-t-gray-900 rounded-full animate-spin"></div>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
                                         )}
-                                        <span className="text-sm uppercase tracking-widest">Registrar Venta</span>
+                                        <span className="text-xs uppercase tracking-wider">Registrar Venta</span>
                                     </button>
+
                                     <button
                                         onClick={() => {
-                                            setCabecera({ asesor: "DHILSEN", id_cliente: "", cliente: "", tipo_comprobante: "", comprobante: "", region: "", distrito: "", forma_pago: "", salida: "" });
+                                            setCabecera({ asesor: "", id_cliente: "", cliente: "", tipo_comprobante: "", comprobante: "", region: "", distrito: "", forma_pago: "", salida: "" });
                                             setItemsAgregados([]);
                                             setBusquedaCliente("");
                                             setSelectedRegionId("");
                                         }}
-                                        className="px-10 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-2xl transition-all flex items-center space-x-2 text-sm uppercase tracking-widest"
+                                        className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-xl transition-all flex items-center justify-center space-x-2 text-xs uppercase tracking-wider"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                        <span>Limpiar Formulario</span>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span>Limpiar</span>
                                     </button>
                                 </div>
 
-                                <div className="bg-slate-50 px-10 py-5 rounded-3xl border-2 border-gray-100 flex items-center space-x-10 shadow-sm">
+                                <div className="bg-slate-50 px-8 py-3 rounded-2xl border-2 border-gray-100 flex items-center space-x-12 shadow-sm">
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total a Pagar</p>
-                                        <p className="text-3xl font-black text-[#002855]">S/ {totalGeneral.toFixed(2)}</p>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.1em] mb-0.5">SUBTOTAL PRODUCTOS</p>
+                                        <p className="text-xl font-black text-[#002855]">S/ {totalGeneral.toFixed(2)}</p>
                                     </div>
-                                    <div className="w-px h-12 bg-gray-200"></div>
+
+                                    <div className="w-px h-10 bg-gray-200"></div>
+
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Delivery Incl.</p>
-                                        <p className="text-xl font-bold text-gray-400">S/ {itemsAgregados.reduce((a, b) => a + parseFloat(b.delivery || 0), 0).toFixed(2)}</p>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.1em] mb-0.5">Monto Delivery</p>
+                                        <p className="text-lg font-bold text-gray-400">S/ {parseFloat(montoDelivery || 0).toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
