@@ -14,6 +14,7 @@ export default function MarketingPage() {
   const [expandedSections, setExpandedSections] = useState({
     "listados": false,
     "ventas-marketing": false,
+    "reportes-marketing": false,
     "gestion-descuento": false,
     "solicitudes-incidencias": false,
     "franja-precios": false,
@@ -209,6 +210,51 @@ export default function MarketingPage() {
             </svg>
           ),
         }
+      ],
+    },
+    {
+      id: "reportes-marketing",
+      title: "Reportes Marketing",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "reporte-general-1",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Reporte General 1",
+          description: "Analítica avanzada de Marketing: KPIs, canales, productos y tendencia.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "reporte-general-2",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Reporte General 2",
+          description: "Analítica avanzada: clientes, productos por cliente, pagos, geografía y comprobantes.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
       ],
     },
     {
@@ -505,6 +551,10 @@ export default function MarketingPage() {
                                         router.push("/marketing/solicitudes-permisos");
                                       } else if (card.id === "listado-precios") {
                                         router.push("/gerencia/listado-precios");
+                                      } else if (card.id === "reporte-general-1") {
+                                        router.push("/marketing/reporte-general-1");
+                                      } else if (card.id === "reporte-general-2") {
+                                        router.push("/marketing/reporte-general-2");
                                       } else if (card.id === "subida-archivos") {
                                         router.push("/marketing/subida-archivos");
                                       } else if (card.id === "listado-archivos") {

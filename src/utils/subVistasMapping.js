@@ -114,6 +114,19 @@ export const subVistasToCardsMap = {
   "REGISTRO DE VENTAS ONLINE": "registro-ventas-online",
   "REGISTRO_DE_VENTAS_ONLINE": "registro-ventas-online",
 
+  // ========== MARKETING (REPORTES) ==========
+  "REPORTES MARKETING": "reporte-general-1",
+  "REPORTES_MARKETING": "reporte-general-1",
+  "REPORTE GENERAL 1 - MARKETING": "reporte-general-1",
+  "REPORTE_GENERAL_1_MARKETING": "reporte-general-1",
+  "REPORTE GENERAL 1": "reporte-general-1",
+  "REPORTE_GENERAL_1": "reporte-general-1",
+
+  "REPORTE GENERAL 2 - MARKETING": "reporte-general-2",
+  "REPORTE_GENERAL_2_MARKETING": "reporte-general-2",
+  "REPORTE GENERAL 2": "reporte-general-2",
+  "REPORTE_GENERAL_2": "reporte-general-2",
+
   // ========== SISTEMAS ==========
   "PAGOS": "gestion-pagos",
   "GESTION DE PAGOS": "gestion-pagos",
