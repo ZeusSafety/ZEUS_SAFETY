@@ -62,6 +62,8 @@ export default function GestionClientesMarketingPage() {
   const [isHistorialLoading, setIsHistorialLoading] = useState(false);
   const [productosVenta, setProductosVenta] = useState([]);
   const [isProductosLoading, setIsProductosLoading] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(2026);
+  const [availableYears, setAvailableYears] = useState([2025, 2026, 2027]);
   const metaMensual = 10000;
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function GestionClientesMarketingPage() {
       loadClientes();
       loadChartData();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, selectedYear]);
 
   const loadClientes = async () => {
     try {
@@ -102,7 +104,7 @@ export default function GestionClientesMarketingPage() {
   const loadChartData = async () => {
     try {
       setIsChartLoading(true);
-      const res = await fetch(`https://asesoresventas-2946605267.us-central1.run.app?method=total_por_mes&variable=ZEUS`);
+      const res = await fetch(`https://asesoresventas-2946605267.us-central1.run.app?method=total_por_mes&variable=ZEUS&year=${selectedYear}`);
       if (res.ok) {
         const data = await res.json();
         // Ordenar meses
@@ -115,7 +117,7 @@ export default function GestionClientesMarketingPage() {
         setChartData({
           labels,
           datasets: [{
-            label: 'Ventas (S/)',
+            label: `Ventas (S/) - ${selectedYear}`,
             data: valores,
             borderColor: '#002D5A',
             backgroundColor: 'rgba(0, 45, 90, 0.1)',
@@ -331,11 +333,26 @@ export default function GestionClientesMarketingPage() {
                     </svg>
                     <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>Ventas por Mes</h2>
                   </div>
-                  <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargado</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-blue-50 border border-blue-200">
+                      <label className="text-sm font-semibold text-blue-700" style={{ fontFamily: 'var(--font-poppins)' }}>Año:</label>
+                      <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="bg-white text-sm font-semibold text-blue-700 border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer hover:border-blue-400 transition-colors"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        {availableYears.map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center space-x-2 rounded-lg px-3 py-1.5 bg-green-50 border border-green-200">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-green-700" style={{ fontFamily: 'var(--font-poppins)' }}>Cargado</span>
+                    </div>
                   </div>
                 </div>
 
@@ -397,19 +414,27 @@ export default function GestionClientesMarketingPage() {
                       <div className="flex items-center space-x-2.5">
                         <div className="w-3 h-3 rounded-full bg-[#002D5A] shadow-sm"></div>
                         <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Promedio mensual: <strong className="text-gray-900 font-bold">S/ 11,000</strong>
+                          Promedio mensual {selectedYear}: <strong className="text-gray-900 font-bold">S/ {(ventasTotales / 12).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</strong>
                         </span>
                       </div>
                       <div className="flex items-center space-x-2.5">
                         <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
                         <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Mejor mes: <strong className="text-gray-900 font-bold">Julio (S/ 28,000)</strong>
+                          Mejor mes: <strong className="text-gray-900 font-bold">{(() => {
+                            const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                            if (chartData && chartData.datasets[0].data.length > 0) {
+                              const maxValue = Math.max(...chartData.datasets[0].data);
+                              const maxIndex = chartData.datasets[0].data.indexOf(maxValue);
+                              return `${nombresMeses[maxIndex]} (S/ ${maxValue.toLocaleString('es-PE')})`;
+                            }
+                            return 'N/A';
+                          })()}</strong>
                         </span>
                       </div>
                       <div className="flex items-center space-x-2.5">
                         <div className="w-3 h-3 rounded-full bg-orange-500 shadow-sm"></div>
                         <span className="text-gray-600" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Tendencia: <strong className="text-gray-900 font-bold">Estable</strong>
+                          Total anual: <strong className="text-gray-900 font-bold">S/ {ventasTotales.toLocaleString('es-PE')}</strong>
                         </span>
                       </div>
                     </div>
@@ -433,13 +458,13 @@ export default function GestionClientesMarketingPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="text-xs text-gray-500 mb-1 font-medium" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Ventas Totales
+                          Ventas Totales {selectedYear}
                         </p>
                         <p className="text-xl font-bold text-[#002D5A] mb-0.5" style={{ fontFamily: 'var(--font-poppins)' }}>
                           S/ {ventasTotales.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
-                          Año actual
+                          Año {selectedYear}
                         </p>
                       </div>
                       <div className="w-10 h-10 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
