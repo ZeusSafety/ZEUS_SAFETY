@@ -8,6 +8,61 @@ import Modal from "../ui/Modal";
 // Nueva API de permisos por área (Proxy)
 const API_PERMISOS_URL = "/api/permisos-area";
 
+const AREAS_MAP = {
+    1: "MARKETING",
+    2: "IMPORTACION",
+    3: "SISTEMAS",
+    4: "FACTURACION",
+    5: "LOGISTICA",
+    6: "GERENCIA",
+    7: "ADMINISTRACION",
+    8: "VENTAS",
+    9: "RECURSOS HUMANOS"
+};
+
+const COLABORADORES_MAP = {
+    1: "HERVIN",
+    2: "KIMBERLY",
+    3: "EVELYN",
+    4: "ERIK",
+    5: "ANAI",
+    6: "JOSEPH",
+    7: "JHONSON",
+    8: "WALTER",
+    9: "FRANKLIN",
+    10: "JAVIER",
+    11: "FRANCHESCA",
+    12: "FRETH",
+    13: "MIGUEL",
+    14: "RENZO",
+    15: "ALVARO",
+    16: "VICTOR",
+    17: "MANUEL",
+    18: "FERNANDO",
+    19: "ELIAS",
+    20: "JAIR",
+    21: "SEBASTIÁN",
+    22: "SANDRA",
+    23: "JOAQUIN",
+    24: "EDGAR",
+    34: "ALFONSO",
+    35: "JOSELYN",
+    36: "ZEUS",
+    37: "DAYANA",
+    38: "YEIMI",
+    39: "JOSE",
+    40: "LIZETH",
+    67: "PEDRO",
+    68: "LARITZA",
+    69: "DHILSEN"
+};
+
+const getLabelFromMap = (map, id) => {
+    if (id === undefined || id === null || id === "") return null;
+    const strId = String(id).trim();
+    return map[strId] || map[Number(strId)];
+};
+
 export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
     const router = useRouter();
     const { user, loading } = useAuth();
@@ -31,6 +86,57 @@ export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
     const [textoModal, setTextoModal] = useState("");
     const [tituloModal, setTituloModal] = useState("");
     const [archivosSeleccionados, setArchivosSeleccionados] = useState([]);
+
+    // Actualización de estado
+    const [modalActualizarEstadoOpen, setModalActualizarEstadoOpen] = useState(false);
+    const [updateData, setUpdateData] = useState({
+        id_permiso: null,
+        estado_solicitud: 'PENDIENTE',
+        horas_cumplidas: 0,
+        horas_faltantess: 0,
+        estado_completado: 'PENDIENTE'
+    });
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+
+    const handleOpenUpdateModal = (permiso) => {
+        setUpdateData({
+            id_permiso: permiso.ID || permiso.id,
+            estado_solicitud: permiso.ESTADO_SOLICITUD || permiso.estado_solicitud || 'PENDIENTE',
+            horas_cumplidas: permiso.HORAS_CUMPLIDAS || permiso.horas_cumplidas || 0,
+            horas_faltantess: permiso.HORAS_FALTANTESS || permiso.horas_faltantess || 0,
+            estado_completado: permiso.ESTADO_COMPLETADO || permiso.estado_completado || 'PENDIENTE',
+        });
+        setModalActualizarEstadoOpen(true);
+    };
+
+    const handleUpdateStatus = async () => {
+        setUpdatingStatus(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/permisos-laborales', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token?.startsWith('Bearer') ? token : `Bearer ${token}`
+                },
+                body: JSON.stringify(updateData),
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al actualizar estado');
+            }
+
+            await cargarPermisos();
+            setModalActualizarEstadoOpen(false);
+            setUpdateData({});
+            alert('Estado del permiso actualizado correctamente');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al actualizar estado: ' + error.message);
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
 
     useEffect(() => {
         if (!loading && !user) {
@@ -262,18 +368,18 @@ export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
                         <table className="w-full text-center whitespace-nowrap">
                             <thead>
                                 <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900 text-white">
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Registro</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Area Recepción</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Colaborador</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Inicio</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Fecha Fin</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Tipo Permiso</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Motivo</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado Solicitud</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Solicitadas</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Cumplidas</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Horas Faltantes</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>Estado Completado</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA REGISTRO</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>AREA RECEPCIÓN</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>COLABORADOR</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA INICIO</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>FECHA FIN</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>TIPO PERMISO</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>MOTIVO</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ESTADO SOLICITUD</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>HORAS SOLICITADAS</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>HORAS CUMPLIDAS</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>HORAS FALTANTES</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>ESTADO COMPLETADO</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -285,29 +391,27 @@ export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
                                     permisosPaginados.map((p, i) => (
                                         <tr key={p.ID || i} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(p.FECHA_REGISTRO)}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.NOMBRE_AREA_RECEPCION || p.AREA_RECEPCION || '-'}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                                {getLabelFromMap(AREAS_MAP, p.ID_AREA_RECEPCION || p.id_area_recep || p.id_area_recepcion || p.ID_AREA || p.id_area || p.id_area_peticion || p.ID_AREA_PETICION) || p.NOMBRE_AREA_RECEPCION || p.AREA_RECEPCION || '-'}
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-blue-800" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                                {p.NOMBRE_COLABORADOR || p.nombre_colaborador || p.REGISTRADO_POR || p.registrado_por || p.NOMBRE || p.nombre || p.USUARIO_ID || p.usuario_id || '-'}
+                                                {getLabelFromMap(COLABORADORES_MAP, p.ID_COLABORADOR || p.id_colaborador || p.ID_PERSONA || p.id_persona || p.id_usuario || p.USUARIO_ID) || p.NOMBRE_COLABORADOR || p.nombre_colaborador || p.REGISTRADO_POR || p.registrado_por || p.NOMBRE || p.nombre || '-'}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(p.FECHA_INICIO)}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{formatFecha(p.FECHA_FIN)}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.TIPO_PERMISO}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                            <td className="px-4 py-3 text-[10px] text-gray-700 text-center">
                                                 {(p.MOTIVO || p.motivo) ? (
-                                                    <div className="flex items-center space-x-1">
-                                                        <button
-                                                            onClick={() => { setTituloModal("Detalle del Motivo"); setTextoModal(p.MOTIVO || p.motivo); setModalDetalleOpen(true); }}
-                                                            className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm"
-                                                            title="Ver Motivo Completo"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                                        </button>
-                                                        {(p.ARCHIVOS) && parseArchivos(p.ARCHIVOS).length > 0 && (
-                                                            <button onClick={() => { setArchivosSeleccionados(parseArchivos(p.ARCHIVOS)); setModalArchivosOpen(true); }} className="px-2 py-1 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded text-[9px] hover:opacity-90 shadow-sm">
-                                                                Adjuntos
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    <button
+                                                        onClick={() => { setTituloModal("Detalle del Motivo"); setTextoModal(p.MOTIVO || p.motivo); setModalDetalleOpen(true); }}
+                                                        className="inline-flex items-center justify-center p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
+                                                        title="Ver motivo"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </button>
                                                 ) : '-'}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px]">
@@ -318,7 +422,21 @@ export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.HORAS_SOLICITADAS || '-'}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.HORAS_CUMPLIDAS || '-'}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.HORAS_FALTANTES || p.HORAS_FALTANTESS || '-'}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>{p.ESTADO_COMPLETADO || '-'}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700 text-center">
+                                                <button
+                                                    onClick={() => handleOpenUpdateModal(p)}
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${(p.ESTADO_COMPLETADO || p.estado_completado) === 'COMPLETADO'
+                                                        ? 'bg-blue-100 text-blue-700'
+                                                        : 'bg-gray-100 text-gray-700'
+                                                        }`}
+                                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                                    title="Clic para actualizar"
+                                                >
+                                                    <span className="mr-2 uppercase">{p.ESTADO_COMPLETADO || p.estado_completado || 'PENDIENTE'}</span>
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    </svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))
                                 )}
@@ -357,6 +475,100 @@ export default function ListadoPermisosArea({ moduloArea, tituloModulo }) {
             <Modal isOpen={modalProcedimientosOpen} onClose={() => setModalProcedimientosOpen(false)} title="Procedimientos" size="md">
                 <div className="p-4 text-sm text-gray-700">
                     <p>Aquí se mostrarían los procedimientos del área.</p>
+                </div>
+            </Modal>
+
+            {/* Modal para actualizar el estado del permiso */}
+            <Modal
+                isOpen={modalActualizarEstadoOpen}
+                onClose={() => setModalActualizarEstadoOpen(false)}
+                title="Actualizar Estado de Permiso"
+                size="md"
+            >
+                <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 gap-6">
+                        {/* Estado Solicitud */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                Estado Solicitud
+                            </label>
+                            <select
+                                value={updateData.estado_solicitud}
+                                onChange={(e) => setUpdateData({ ...updateData, estado_solicitud: e.target.value })}
+                                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-semibold text-gray-700"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                            >
+                                <option value="PENDIENTE">PENDIENTE</option>
+                                <option value="APROBADO">APROBADO</option>
+                                <option value="RECHAZADO">RECHAZADO</option>
+                            </select>
+                        </div>
+
+                        {/* Horas Cumplidas */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                Horas Cumplidas
+                            </label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={updateData.horas_cumplidas}
+                                onChange={(e) => setUpdateData({ ...updateData, horas_cumplidas: parseFloat(e.target.value) || 0 })}
+                                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-semibold text-gray-700"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                            />
+                        </div>
+
+                        {/* Horas Faltantes */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                Horas Faltantes
+                            </label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={updateData.horas_faltantess}
+                                onChange={(e) => setUpdateData({ ...updateData, horas_faltantess: parseFloat(e.target.value) || 0 })}
+                                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-semibold text-gray-700"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                            />
+                        </div>
+
+                        {/* Estado Completado */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                Estado Completado
+                            </label>
+                            <select
+                                value={updateData.estado_completado}
+                                onChange={(e) => setUpdateData({ ...updateData, estado_completado: e.target.value })}
+                                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-semibold text-gray-700"
+                                style={{ fontFamily: 'var(--font-poppins)' }}
+                            >
+                                <option value="PENDIENTE">PENDIENTE</option>
+                                <option value="INCOMPLETO">INCOMPLETO</option>
+                                <option value="COMPLETADO">COMPLETADO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <button
+                            onClick={() => setModalActualizarEstadoOpen(false)}
+                            className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all uppercase text-xs"
+                            style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleUpdateStatus}
+                            disabled={updatingStatus}
+                            className="px-6 py-2.5 bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-blue-200 uppercase text-xs disabled:opacity-50"
+                            style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                            {updatingStatus ? 'Guardando...' : 'Guardar Cambios'}
+                        </button>
+                    </div>
                 </div>
             </Modal>
         </div >

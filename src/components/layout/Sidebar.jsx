@@ -96,6 +96,10 @@ export function Sidebar({ isOpen, onClose }) {
     "SOLICITUDES ADMIN-GERENCIA": "listado-solicitudes",
     "GESTION DESCUENTO DE CAJAS MALVINAS": "gestion-precios",
     "HISTORIAL GESTION DESCUENTO DE CAJAS MALVINAS": "listado-precios",
+
+    // Logística
+    "LISTADO DE MOVILIDAD": "listado-movilidad-log",
+    "LISTADO_MOVILIDAD": "listado-movilidad-log",
   };
 
   // Mapeo de items principales (con submenÃºs) a sus subItems
@@ -332,6 +336,15 @@ export function Sidebar({ isOpen, onClose }) {
       subItems: [
         { id: "incidencias-importaciones", name: "Incidencias Importaciones", icon: "warning" },
         { id: "importaciones-log", name: "Listado de Importaciones", icon: "ship" },
+      ],
+    },
+    {
+      id: "movilidad-logistica",
+      name: "Movilidad",
+      icon: "truck",
+      hasSubmenu: true,
+      subItems: [
+        { id: "listado-movilidad-log", name: "Listado de Movilidad", icon: "list" },
       ],
     },
     {

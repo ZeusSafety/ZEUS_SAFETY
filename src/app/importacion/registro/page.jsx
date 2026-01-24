@@ -347,7 +347,10 @@ export default function RegistroImportacionesPage() {
   const convertirImagenABase64 = (url) => {
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      // Solo usar crossOrigin para URLs externas
+      if (url.startsWith('http') && !url.includes(window.location.host)) {
+        img.crossOrigin = 'anonymous';
+      }
 
       // Timeout para evitar esperas infinitas
       const timeout = setTimeout(() => {
@@ -501,7 +504,7 @@ export default function RegistroImportacionesPage() {
         }
 
         .logo-container img {
-            width: 200px;
+            width: 175px;
             height: auto;
         }
 
@@ -657,6 +660,7 @@ export default function RegistroImportacionesPage() {
             .no-print { display: none; }
         }
     </style>
+    <base href="${window.location.origin}/">
 </head>
 <body>
 <div class="document-page">   
@@ -670,7 +674,8 @@ export default function RegistroImportacionesPage() {
             TELEFONO: 944767397
         </div>
         <div class="logo-container">
-            ${logoBase64 ? `<img src="${logoBase64}" alt="Zeus Safety Logo">` : '<div style="width: 200px; height: 60px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">LOGO ZEUS</div>'}
+            <img src="${logoBase64 || (window.location.origin + '/images/zeus.logooo.png?v=' + Date.now())}" alt="Zeus Safety Logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div style="width: 200px; height: 60px; background-color: #f0f0f0; display: none; align-items: center; justify-content: center; font-size: 12px; color: #666; border: 1px solid #ddd;">LOGO ZEUS</div>
         </div>
     </div>
 
@@ -732,7 +737,7 @@ export default function RegistroImportacionesPage() {
       setGenerandoPDF(true);
 
       // Convertir el logo a base64 antes de generar el HTML
-      const logoUrl = "https://system-integration-rosy.vercel.app/Logo%20de%20Zeus.png";
+      const logoUrl = "/images/zeus.logooo.png";
       let logoBase64 = null;
       try {
         logoBase64 = await convertirImagenABase64(logoUrl);
@@ -848,7 +853,7 @@ export default function RegistroImportacionesPage() {
     // Intentar cargar el logo, pero si falla, continuar sin él
     const cargarPreview = async () => {
       try {
-        const logoUrl = "https://system-integration-rosy.vercel.app/Logo%20de%20Zeus.png";
+        const logoUrl = "/images/zeus.logooo.png";
         const logoBase64 = await convertirImagenABase64(logoUrl);
         const html = generarHTMLPlantilla(logoBase64);
         setPreviewHTML(html);
