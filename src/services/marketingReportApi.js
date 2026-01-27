@@ -98,15 +98,37 @@ export async function getDetalleProductoCliente({ inicio, fin, cliente, signal }
   return await fetchJson(url, token, signal);
 }
 
+// === REPORTE GENERAL 1 (FULL, estilo Postman) ===
+// GET ?modo=dashboard&tipo=full_reporte_1&mes=&producto=&canal=&clasificacion=&linea=&inicio=&fin=
+export async function getReporte1Full({ inicio, fin, mes, producto, canal, clasificacion, linea, signal } = {}) {
+  const token = getToken();
+  if (!token) throw new Error("Token de autenticación no encontrado. Por favor, inicie sesión.");
+
+  const url = buildUrlWithParams({
+    tipo: "full_reporte_1",
+    // si inicio/fin están vacíos, NO se envían (backend devuelve histórico total)
+    inicio: inicio && String(inicio).trim() !== "" ? inicio : undefined,
+    fin: fin && String(fin).trim() !== "" ? fin : undefined,
+    extra: {
+      mes: mes && String(mes).trim() !== "" ? mes : undefined,
+      producto: producto && String(producto).trim() !== "" ? producto : undefined,
+      canal: canal && String(canal).trim() !== "" ? canal : undefined,
+      clasificacion: clasificacion && String(clasificacion).trim() !== "" ? clasificacion : undefined,
+      linea: linea && String(linea).trim() !== "" ? linea : undefined,
+    },
+  });
+
+  return await fetchJson(url, token, signal);
+}
+
 // === REPORTE GENERAL 2 (FULL, estilo Postman) ===
 // GET ?modo=dashboard&tipo=full_reporte_2&cliente=&inicio=&fin=
-export async function getReporte2Full({ inicio, fin, cliente, region, pago, comprobante, almacen, signal } = {}) {
+export async function getReporte2Full({ inicio, fin, cliente, region, pago, comprobante, almacen, distrito, signal } = {}) {
   const token = getToken();
   if (!token) throw new Error("Token de autenticación no encontrado. Por favor, inicie sesión.");
 
   const url = buildUrlWithParams({
     tipo: "full_reporte_2",
-    // si inicio/fin están vacíos, NO se envían (backend devuelve histórico total)
     inicio: inicio && String(inicio).trim() !== "" ? inicio : undefined,
     fin: fin && String(fin).trim() !== "" ? fin : undefined,
     extra: {
@@ -115,6 +137,57 @@ export async function getReporte2Full({ inicio, fin, cliente, region, pago, comp
       pago: pago && String(pago).trim() !== "" ? pago : undefined,
       comprobante: comprobante && String(comprobante).trim() !== "" ? comprobante : undefined,
       almacen: almacen && String(almacen).trim() !== "" ? almacen : undefined,
+      distrito: distrito && String(distrito).trim() !== "" ? distrito : undefined,
+    },
+  });
+
+  return await fetchJson(url, token, signal);
+}
+
+// === REPORTE ZEUS ELECTRIC (FULL) ===
+// GET ?modo=dashboard&tipo=zeus_electric_report&producto=&mes=&canal=&clasificacion=&linea=&cliente=&pago=&region=&inicio=&fin=
+export async function getZeusElectricReport({ inicio, fin, mes, producto, canal, clasificacion, linea, cliente, pago, region, signal } = {}) {
+  const token = getToken();
+  if (!token) throw new Error("Token de autenticación no encontrado. Por favor, inicie sesión.");
+
+  const url = buildUrlWithParams({
+    tipo: "zeus_electric_report",
+    inicio: inicio && String(inicio).trim() !== "" ? inicio : undefined,
+    fin: fin && String(fin).trim() !== "" ? fin : undefined,
+    extra: {
+      mes: mes && String(mes).trim() !== "" ? mes : undefined,
+      producto: producto && String(producto).trim() !== "" ? producto : undefined,
+      canal: canal && String(canal).trim() !== "" ? canal : undefined,
+      clasificacion: clasificacion && String(clasificacion).trim() !== "" ? clasificacion : undefined,
+      linea: linea && String(linea).trim() !== "" ? linea : undefined,
+      cliente: cliente && String(cliente).trim() !== "" ? cliente : undefined,
+      pago: pago && String(pago).trim() !== "" ? pago : undefined,
+      region: region && String(region).trim() !== "" ? region : undefined,
+    },
+  });
+
+  return await fetchJson(url, token, signal);
+}
+
+// === REPORTE ZEUS SAFETY (FULL) ===
+// GET ?modo=dashboard&tipo=zeus_safety_report&producto=&mes=&canal=&clasificacion=&linea=&cliente=&pago=&region=&inicio=&fin=
+export async function getZeusSafetyReport({ inicio, fin, mes, producto, canal, clasificacion, linea, cliente, pago, region, signal } = {}) {
+  const token = getToken();
+  if (!token) throw new Error("Token de autenticación no encontrado. Por favor, inicie sesión.");
+
+  const url = buildUrlWithParams({
+    tipo: "zeus_safety_report",
+    inicio: inicio && String(inicio).trim() !== "" ? inicio : undefined,
+    fin: fin && String(fin).trim() !== "" ? fin : undefined,
+    extra: {
+      mes: mes && String(mes).trim() !== "" ? mes : undefined,
+      producto: producto && String(producto).trim() !== "" ? producto : undefined,
+      canal: canal && String(canal).trim() !== "" ? canal : undefined,
+      clasificacion: clasificacion && String(clasificacion).trim() !== "" ? clasificacion : undefined,
+      linea: linea && String(linea).trim() !== "" ? linea : undefined,
+      cliente: cliente && String(cliente).trim() !== "" ? cliente : undefined,
+      pago: pago && String(pago).trim() !== "" ? pago : undefined,
+      region: region && String(region).trim() !== "" ? region : undefined,
     },
   });
 

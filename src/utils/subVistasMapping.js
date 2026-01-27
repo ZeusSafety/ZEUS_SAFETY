@@ -127,6 +127,16 @@ export const subVistasToCardsMap = {
   "REPORTE GENERAL 2": "reporte-general-2",
   "REPORTE_GENERAL_2": "reporte-general-2",
 
+  "ZEUS ELECTRIC": "zeus-electric",
+  "ZEUS_ELECTRIC": "zeus-electric",
+  "ZEUS ELECTRIC - MARKETING": "zeus-electric",
+  "ZEUS_ELECTRIC_MARKETING": "zeus-electric",
+
+  "ZEUS SAFETY": "zeus-safety",
+  "ZEUS_SAFETY": "zeus-safety",
+  "ZEUS SAFETY - MARKETING": "zeus-safety",
+  "ZEUS_SAFETY_MARKETING": "zeus-safety",
+
   // ========== SISTEMAS ==========
   "PAGOS": "gestion-pagos",
   "GESTION DE PAGOS": "gestion-pagos",
