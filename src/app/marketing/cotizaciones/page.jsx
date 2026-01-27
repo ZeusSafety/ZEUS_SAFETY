@@ -1114,7 +1114,10 @@ export default function CotizacionesPage() {
             </thead>
             <tbody>
                 <tr>
-                    <td>${fechaEmision ? new Date(fechaEmision).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}</td>
+                    <td>${fechaEmision ? (() => {
+                      const [año, mes, día] = fechaEmision.split('-');
+                      return `${día}/${mes}/${año}`;
+                    })() : ''}</td>
                     <td>${formaPago || ''}</td>
                     <td>${regionSeleccionada?.REGION || ''}</td>
                     <td>${distritoSeleccionado?.DISTRITO || ''}</td>
@@ -1273,6 +1276,31 @@ export default function CotizacionesPage() {
     }
   };
 
+  const limpiarCamposSelectivos = () => {
+    // Limpiar campos EXCEPTO: Fecha Emisión, Cliente, RUC, Dirección, DNI, CEL, Campaña
+    setFormaPago("");
+    setRegion("");
+    setDistrito("");
+    setMoneda("");
+    setAtendidoPor("");
+    
+    // Limpiar productos de la tabla
+    setProductosLista([]);
+    
+    // Limpiar campos del formulario de productos
+    setProducto("");
+    setCodigo("");
+    setCantidad(1);
+    setUnidadMedida("Seleccione Unidad de Medida");
+    setPrecioVenta("");
+    setTotal(0.00);
+    setProductoBusqueda("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    setProductoSeleccionado(null);
+    setClasificacion("");
+  };
+
   const handleRegistrarCotizacion = async (opts = {}) => {
     if (productosLista.length === 0) {
       alert("Debe agregar al menos un producto");
@@ -1370,6 +1398,9 @@ export default function CotizacionesPage() {
         if (mostrarModalPreview) {
           handleCerrarPreviewCotizacion();
         }
+
+        // Limpiar campos selectivos después de registrar exitosamente
+        limpiarCamposSelectivos();
       } else {
         alert(`Error: ${data.error || 'No se pudo registrar'}`);
       }
@@ -1931,6 +1962,23 @@ export default function CotizacionesPage() {
                 hideFooter={true}
               >
                 <div className="space-y-4">
+                  
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+                    {previewHtml ? (
+                      <iframe
+                        title="Previsualización HTML"
+                        srcDoc={previewHtml}
+                        className="w-full"
+                        style={{ height: "70vh" }}
+                      />
+                    ) : (
+                      <div className="py-10 text-center text-sm text-gray-600">
+                        No hay previsualización disponible.
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm text-gray-700">
                       Código: <span className="font-semibold">{previewCodigoTemporal || "—"}</span>
@@ -1962,21 +2010,6 @@ export default function CotizacionesPage() {
                         {isSubmitting ? "Creando PDF..." : "Registrar"}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
-                    {previewHtml ? (
-                      <iframe
-                        title="Previsualización HTML"
-                        srcDoc={previewHtml}
-                        className="w-full"
-                        style={{ height: "70vh" }}
-                      />
-                    ) : (
-                      <div className="py-10 text-center text-sm text-gray-600">
-                        No hay previsualización disponible.
-                      </div>
-                    )}
                   </div>
                 </div>
               </Modal>

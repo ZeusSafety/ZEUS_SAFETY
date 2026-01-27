@@ -23,7 +23,7 @@ export default function PosiblesClientesPage() {
 
   // Filtros
   const [searchNombre, setSearchNombre] = useState("");
-  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaInicio, setFechaInicio] = useState(""); 
   const [fechaFin, setFechaFin] = useState("");
   const [filterEstado, setFilterEstado] = useState("");
 
@@ -160,6 +160,17 @@ export default function PosiblesClientesPage() {
     return "bg-yellow-500 border-yellow-600 text-white";
   };
 
+  const getEstadoSelectClasses = (estado) => {
+    const e = (estado || "PENDIENTE").toUpperCase();
+    if (e === "CLIENTE") {
+      return "bg-green-600 border-green-700 text-white";
+    }
+    if (e === "CLIENTE PERDIDO") {
+      return "bg-red-600 border-red-700 text-white";
+    }
+    return "bg-yellow-500 border-yellow-600 text-white";
+  };
+
   const renderEstadoSelector = (item) => {
     const estadoActual = (item?.ESTADO || "PENDIENTE").toUpperCase();
 
@@ -171,8 +182,8 @@ export default function PosiblesClientesPage() {
           className={`
             inline-flex items-center px-3 py-1 rounded-full
             text-[10px] font-bold border-2 transition-all duration-200
-            hover:shadow-md active:scale-95 text-center bg-white
-            ${getBadge(estadoActual)}
+            hover:shadow-md active:scale-95 text-center
+            ${getEstadoSelectClasses(estadoActual)}
           `}
           style={{ textAlignLast: "center", paddingRight: "0.5rem" }}
         >
@@ -477,7 +488,23 @@ export default function PosiblesClientesPage() {
                             <td className="px-3 py-3 text-xs text-gray-700 whitespace-nowrap">{item.REGION || ""}</td>
                             <td className="px-3 py-3 text-xs text-gray-700 whitespace-nowrap">{item.DISTRITO || ""}</td>
                             <td className="px-3 py-3 text-xs text-gray-700">{item.PRODUCTO_INTERESADO || ""}</td>
-                            <td className="px-3 py-3 text-xs text-gray-700 whitespace-nowrap">{item.CAMPANIA || ""}</td>
+                            <td className="px-3 py-3 text-xs text-gray-700 whitespace-nowrap">
+                              {item.CAMPANIA ? (
+                                item.CAMPANIA.startsWith("CM") ? (
+                                  <span className="px-2 py-1 rounded-full bg-blue-700 text-white font-semibold text-[10px]">
+                                    {item.CAMPANIA}
+                                  </span>
+                                ) : item.CAMPANIA.startsWith("OR") ? (
+                                  <span className="px-2 py-1 rounded-full bg-green-700 text-white font-semibold text-[10px]">
+                                    {item.CAMPANIA}
+                                  </span>
+                                ) : (
+                                  item.CAMPANIA
+                                )
+                              ) : (
+                                ""
+                              )}
+                            </td>
                             <td className="px-3 py-3 text-xs text-gray-700">{item.OBSERVACIONES || ""}</td>
                             <td className="px-3 py-3 text-xs text-gray-700 whitespace-nowrap">
                               {typeof item.MONTO_TOTAL === "number" ? item.MONTO_TOTAL.toFixed(2) : ""}
@@ -487,9 +514,12 @@ export default function PosiblesClientesPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleAbrirPDF(item.RUTA_PDF)}
-                                  className="px-2 py-1 rounded-md text-white text-[11px] font-semibold bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition-all"
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-white font-semibold bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all hover:shadow-md"
+                                  title="Descargar PDF"
                                 >
-                                  Abrir
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 12c0 .55.45 1 1 1h18c.55 0 1-.45 1-1V8H1v4zm20-8H4c-1.1 0-2 .9-2 2v4h2V9h17V4zm-4 15.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5-2.5 1.12-2.5 2.5z"/> 
+                                  </svg>
                                 </button>
                               ) : (
                                 <span className="text-gray-400 text-[11px]">—</span>

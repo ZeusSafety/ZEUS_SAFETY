@@ -237,26 +237,28 @@ export default function RegistroVentasOnlinePage() {
     const totalGeneral = itemsAgregados.reduce((a, b) => a + b.total, 0);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-[#F7FAFF]">
+        <div className="flex h-screen overflow-hidden" style={{ background: "#F7FAFF" }}>
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"}`}>
+            <div
+                className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+                    }`}
+            >
                 <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
                 <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                    {/* Botón Volver */}
+                    <button
+                        onClick={() => router.push("/marketing")}
+                        className="mb-4 flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+                        style={{ fontFamily: "var(--font-poppins)" }}
+                    >
+                        <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span>Volver a Marketing</span>
+                    </button>
                     <div className="max-w-6xl mx-auto space-y-4">
-
-                        {/* Botón Volver */}
-                        <button
-                            onClick={() => router.push("/marketing")}
-                            className="flex items-center space-x-1.5 px-4 py-2 bg-[#002855] text-white rounded-lg font-bold hover:bg-[#001D3D] transition-all duration-200 shadow-md text-sm group"
-                            style={{ fontFamily: 'var(--font-poppins)' }}
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                            </svg>
-                            <span>Volver a Marketing</span>
-                        </button>
 
                         {/* Contenedor Principal Blanco */}
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-10">
