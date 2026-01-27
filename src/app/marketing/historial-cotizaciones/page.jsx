@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
 
 export default function HistorialCotizacionesPage() {
   const router = useRouter();
@@ -15,6 +16,12 @@ export default function HistorialCotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState([]);
   const [filteredCotizaciones, setFilteredCotizaciones] = useState([]);
   const [cargandoDatos, setCargandoDatos] = useState(false);
+
+  // Modal para completar datos de cliente (solo cuando se acepta y es cliente NUEVO)
+  const [isClienteModalOpen, setIsClienteModalOpen] = useState(false);
+  const [clienteModalData, setClienteModalData] = useState({ idCoti: null, nuevoEstado: "" });
+  const [tipoCliente, setTipoCliente] = useState("");
+  const [canalOrigen, setCanalOrigen] = useState("");
 
   // Filtros
   const [searchNombre, setSearchNombre] = useState("");
@@ -212,7 +219,7 @@ export default function HistorialCotizacionesPage() {
           value={estadoActual}
           onChange={(e) => handleCambiarEstado(item.ID_COTI, e.target.value)}
           className={`
-          appearance-none cursor-pointer
+          
           inline-flex items-center px-3 py-1 rounded-full 
           text-[10px] font-bold border-2 transition-all duration-200
           hover:shadow-md active:scale-95 text-center
@@ -220,7 +227,7 @@ export default function HistorialCotizacionesPage() {
         `}
           style={{
             textAlignLast: "center", // Centra el texto dentro del select en algunos navegadores
-            paddingRight: "1.5rem",   // Espacio para la flechita personalizada si quisieras
+            paddingRight: "0.5rem",   // Espacio para la flechita personalizada si quisieras
           }}
         >
           <option value="PENDIENTE" className="bg-white text-gray-900">PENDIENTE</option>
@@ -230,7 +237,7 @@ export default function HistorialCotizacionesPage() {
 
         {/* Icono de flechita pequeña para indicar que es desplegable */}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 5 5">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
@@ -260,6 +267,15 @@ export default function HistorialCotizacionesPage() {
 
       const data = await response.json();
 
+      // Caso especial: el backend detectó cliente nuevo y solicita datos extra
+      if (data?.success && data?.action === "SHOW_MODAL") {
+        setClienteModalData({ idCoti, nuevoEstado });
+        setTipoCliente("");
+        setCanalOrigen("");
+        setIsClienteModalOpen(true);
+        return;
+      }
+
       if (data.success) {
         // Actualizamos el estado local para que la UI se refresque instantáneamente
         setCotizaciones((prev) =>
@@ -275,6 +291,69 @@ export default function HistorialCotizacionesPage() {
       console.error("Error al actualizar estado:", error);
       alert("Error de conexión al actualizar el estado");
     }
+  };
+
+  const handleConfirmarClienteNuevo = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    if (!clienteModalData?.idCoti || !clienteModalData?.nuevoEstado) {
+      alert("No se encontró la cotización a actualizar.");
+      return;
+    }
+
+    if (!tipoCliente || !canalOrigen) {
+      alert("Completa Tipo de Cliente y Canal de Origen.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://cotizaciones2026-2946605267.us-central1.run.app/actualizar_estado_cotizacion",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            id_coti: clienteModalData.idCoti,
+            estado: clienteModalData.nuevoEstado,
+            tipo_cliente: tipoCliente,
+            canal_origen: canalOrigen,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data?.success) {
+        setCotizaciones((prev) =>
+          prev.map((item) =>
+            item.ID_COTI === clienteModalData.idCoti
+              ? { ...item, ESTADO: clienteModalData.nuevoEstado }
+              : item
+          )
+        );
+        setIsClienteModalOpen(false);
+        setClienteModalData({ idCoti: null, nuevoEstado: "" });
+        setTipoCliente("");
+        setCanalOrigen("");
+        alert(`Estado actualizado a ${clienteModalData.nuevoEstado}`);
+      } else {
+        alert("Error al actualizar: " + (data?.error || "Error desconocido"));
+      }
+    } catch (error) {
+      console.error("Error al confirmar cliente nuevo:", error);
+      alert("Error de conexión al actualizar el estado");
+    }
+  };
+
+  const handleCerrarClienteModal = () => {
+    setIsClienteModalOpen(false);
+    setClienteModalData({ idCoti: null, nuevoEstado: "" });
+    setTipoCliente("");
+    setCanalOrigen("");
   };
 
   if (loading) {
@@ -450,7 +529,7 @@ export default function HistorialCotizacionesPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-blue-700 border-b-2 border-blue-800">
+                      <tr className="bg-blue-700 border-b-2 border-blue-800 text-center">
                         <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           FECHA EMISIÓN
                         </th>
@@ -473,15 +552,18 @@ export default function HistorialCotizacionesPage() {
                           PDF
                         </th>
                         <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                          ORIGEN
+                        </th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           ESTADO
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 text-center">
                       {cargandoDatos ? (
                         <tr>
                           <td
-                            colSpan={8}
+                            colSpan={9}
                             className="px-3 py-6 text-center text-[10px] sm:text-sm text-gray-500"
                           >
                             <div className="flex items-center justify-center gap-2">
@@ -511,7 +593,7 @@ export default function HistorialCotizacionesPage() {
                             <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
                               {item.ATENDIDO_POR}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
+                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">
                               S/{" "}
                               {Number(item.MONTO_TOTAL || 0).toFixed(2)}
                             </td>
@@ -543,6 +625,27 @@ export default function HistorialCotizacionesPage() {
                                 </span>
                               )}
                             </td>
+                            <td>
+                              <span
+                                className={`
+                                    px-4 py-2 
+                                    whitespace-nowrap 
+                                    text-sm font-semibold 
+                                    text-center 
+                                    rounded-md
+                                    text-[11px]
+                                  ${item.CAMPANIA?.startsWith("CM")
+                                    ? "bg-blue-600 text-gray-100" // Campañas publicitarias
+                                    : item.CAMPANIA?.startsWith("OR")
+                                      ? "bg-green-600 text-white"   // Clientes orgánicos
+                                      : "bg-gray-100 text-gray-600" // N/A u otros
+                                  }
+                                `}
+                              >
+                                {item.CAMPANIA || "N/A"}
+                              </span>
+                            </td>
+
                             <td className="px-3 py-2 whitespace-nowrap text-center">
                               {renderEstadoSelector(item)}
                             </td>
@@ -551,7 +654,7 @@ export default function HistorialCotizacionesPage() {
                       ) : (
                         <tr>
                           <td
-                            colSpan={8}
+                            colSpan={9}
                             className="px-3 py-8 text-center text-[10px] text-gray-500"
                           >
                             No se encontraron cotizaciones con los filtros
@@ -608,6 +711,59 @@ export default function HistorialCotizacionesPage() {
                   </div>
                 )}
               </div>
+
+              {/* Modal: completar datos de cliente nuevo */}
+              <Modal
+                isOpen={isClienteModalOpen}
+                onClose={handleCerrarClienteModal}
+                title="Cliente nuevo detectado"
+                primaryButtonText="Guardar y Aceptar"
+                secondaryButtonText="Cancelar"
+                onPrimaryButtonClick={handleConfirmarClienteNuevo}
+                onSecondaryButtonClick={handleCerrarClienteModal}
+                size="md"
+              >
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-700">
+                    Para registrar este cliente en <b>clientes_ventas</b>, completa los campos faltantes.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                      Tipo de Cliente
+                    </label>
+                    <select
+                      value={tipoCliente}
+                      onChange={(e) => setTipoCliente(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-gray-700 bg-white"
+                    >
+                      <option value="">Seleccione un Tipo de Cliente</option>
+                      <option value="PERSONA">PERSONA</option>
+                      <option value="EMPRESA">EMPRESA</option>
+                      <option value="MAYORISTA">MAYORISTA</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                      Canal de Origen
+                    </label>
+                    <select
+                      value={canalOrigen}
+                      onChange={(e) => setCanalOrigen(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-gray-700 bg-white"
+                    >
+                      <option value="">Seleccione un Canal de Origen</option>
+                      <option value="WHATSAPP">WHATSAPP</option>
+                      <option value="LLAMADA">LLAMADA</option>
+                      <option value="META ADS">META ADS</option>
+                      <option value="FACEBOOK">FACEBOOK</option>
+                      <option value="TIKTOK">TIKTOK</option>
+                      <option value="INSTRAGRAM">INSTRAGRAM</option>
+                    </select>
+                  </div>
+                </div>
+              </Modal>
             </div>
           </div>
         </main>

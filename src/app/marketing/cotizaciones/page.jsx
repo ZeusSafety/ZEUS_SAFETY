@@ -127,6 +127,7 @@ export default function CotizacionesPage() {
   const [direccion, setDireccion] = useState("");
   const [dni, setDni] = useState("");
   const [cel, setCel] = useState("");
+  const [campania, setCampania] = useState("");
   const [buscandoRuc, setBuscandoRuc] = useState(false);
   // Inicializar fecha de emisión con la fecha actual en formato yyyy-mm-dd para el input type="date"
   const getCurrentDate = () => {
@@ -152,7 +153,7 @@ export default function CotizacionesPage() {
   const [codigo, setCodigo] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
-
+  
   // Opciones de unidad de medida
   const opcionesUnidadMedida = [
     { value: "", label: "Seleccione Unidad de Medida" },
@@ -184,14 +185,17 @@ export default function CotizacionesPage() {
   const [modalPreciosAbierto, setModalPreciosAbierto] = useState(false);
   const [preciosDisponibles, setPreciosDisponibles] = useState([]);
   const [cargandoPrecios, setCargandoPrecios] = useState(false);
-  // Datos de prueba para la tabla de productos
-  // Lista de productos agregados 
-  const [productosLista, setProductosLista] = useState([]);
 
-  // Estados para el modal de previsualización 
+  // Modal de previsualización (PDF)
   const [mostrarModalPreview, setMostrarModalPreview] = useState(false);
-  const [previewHTML, setPreviewHTML] = useState("");
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewCodigoTemporal, setPreviewCodigoTemporal] = useState("");
+  const [previewSiguienteNumero, setPreviewSiguienteNumero] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Datos de prueba para la tabla de productos
+  const [productosLista, setProductosLista] = useState([
+
+  ]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -707,7 +711,7 @@ export default function CotizacionesPage() {
     setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
-    setUnidadMedida("Seleccione Unidad de Medida");
+    setUnidadMedida("Seleccione Unidad de Medida"); 
     setPrecioVenta("");
     setTotal(0.00);
     setProductoSeleccionado(null);
@@ -881,16 +885,28 @@ export default function CotizacionesPage() {
             border-collapse: collapse;
             font-size: 11px;
             margin-bottom: 5px;
-            border: 1px solid #000;
         }
 
         th,
         td {
-            border: 1px solid #000 !important;
+            border: 1px solid #000;
+            /* Bordes negros sólidos */
             padding: 4px 5px;
             text-align: center;
             color: #000000;
         }
+
+        td {
+            padding-bottom: 13px;
+            padding-top: 7px;
+        }
+
+        th {
+            padding-bottom: 6px;
+            padding-top: 5px;
+        }
+        
+
 
         /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
         .meta-table th {
@@ -898,13 +914,12 @@ export default function CotizacionesPage() {
             font-weight: bold;
             text-transform: uppercase;
             color: #ffffff;
-            border: 1px solid #000 !important;
         }
 
         .meta-table td {
             height: 20px;
+            /* Altura vacía */
             color: #000000;
-            border: 1px solid #000 !important;
         }
 
         /* Espaciador */
@@ -917,25 +932,41 @@ export default function CotizacionesPage() {
             background-color: #5b9bd5;
             text-transform: uppercase;
             color: #ffffff;
-            border: 1px solid #000 !important;
         }
 
         .product-table tr {
             height: 22px;
+            /* Altura de filas vacías */
         }
 
         .product-table td {
             color: #000000;
-            border: 1px solid #000 !important;
         }
 
         /* Column widths para imitar la imagen */
-        .col-cant { width: 8%; }
-        .col-uni { width: 10%; }
-        .col-cod { width: 12%; }
-        .col-prod { width: 45%; }
-        .col-punit { width: 12%; }
-        .col-sub { width: 13%; }
+        .col-cant {
+            width: 8%;
+        }
+
+        .col-uni {
+            width: 10%;
+        }
+
+        .col-cod {
+            width: 12%;
+        }
+
+        .col-prod {
+            width: 45%;
+        }
+
+        .col-punit {
+            width: 12%;
+        }
+
+        .col-sub {
+            width: 13%;
+        }
 
         /* --- Total Section --- */
         .total-section {
@@ -1074,7 +1105,7 @@ export default function CotizacionesPage() {
             <thead>
                 <tr>
                     <th style="width: 15%; font-size: 13px;">FECHA DE EMISIÓN</th>
-                        <th style="width: 20%; font-size: 13px;">FORMA DE PAGO</th>
+                        <th style="width: 20%; font-size: 13px;">FORMA <br>DE PAGO</th>
                         <th style="width: 15%; font-size: 13px;">REGIÓN</th>
                         <th style="width: 20%; font-size: 13px;">DISTRITO</th>
                         <th style="width: 10%; font-size: 13px;">MONEDA</th>
@@ -1083,7 +1114,10 @@ export default function CotizacionesPage() {
             </thead>
             <tbody>
                 <tr>
-                    <td>${fechaEmision ? new Date(fechaEmision).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}</td>
+                    <td>${fechaEmision ? (() => {
+                      const [año, mes, día] = fechaEmision.split('-');
+                      return `${día}/${mes}/${año}`;
+                    })() : ''}</td>
                     <td>${formaPago || ''}</td>
                     <td>${regionSeleccionada?.REGION || ''}</td>
                     <td>${distritoSeleccionado?.DISTRITO || ''}</td>
@@ -1139,41 +1173,41 @@ export default function CotizacionesPage() {
         <table class="bank-table">
             <thead>
                 <tr>
-                    <th>CUENTA</th>
-                    <th>BANCO</th>
-                    <th>NOMBRE DE LA CUENTA</th>
-                    <th>NRO. CUENTA</th>
-                    <th>CCI</th>
+                    <th style="font-size: 13px;">CUENTA</th>
+                    <th style="font-size: 13px;">BANCO</th>
+                    <th style="font-size: 13px;">NOMBRE DE <br>LA CUENTA</th>
+                    <th style="font-size: 13px;">NRO. CUENTA</th>
+                    <th style="font-size: 13px;">CCI</th>
                 </tr>
             </thead>
             <tbody>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BCP Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">191-2233941-0-59</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">00219100223394105953</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BCP Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">191-2233941-0-59</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00219100223394105953</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BBVA Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">0011-0364-01000453-46</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">011-364-000100045346-72</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BBVA Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">0011-0364-01000453-46</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">011-364-000100045346-72</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">INTERBANK Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">2003006034134</td>
-                        <td style="border: 1px solid #000; font-size: 12px;"></td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">INTERBANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">2003006034134</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">SCOTIABANK Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">000-4024129</td>
-                        <td style="border: 1px solid #000; font-size: 12px;">00908100000402412911</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">SCOTIABANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">000-4024129</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00908100000402412911</td>
                     </tr>
                 </tbody>
         </table>
@@ -1242,61 +1276,83 @@ export default function CotizacionesPage() {
     }
   };
 
-  const handleRegistrarCotizacion = () => {
+  const limpiarCamposSelectivos = () => {
+    // Limpiar campos EXCEPTO: Fecha Emisión, Cliente, RUC, Dirección, DNI, CEL, Campaña
+    setFormaPago("");
+    setRegion("");
+    setDistrito("");
+    setMoneda("");
+    setAtendidoPor("");
+    
+    // Limpiar productos de la tabla
+    setProductosLista([]);
+    
+    // Limpiar campos del formulario de productos
+    setProducto("");
+    setCodigo("");
+    setCantidad(1);
+    setUnidadMedida("Seleccione Unidad de Medida");
+    setPrecioVenta("");
+    setTotal(0.00);
+    setProductoBusqueda("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    setProductoSeleccionado(null);
+    setClasificacion("");
+  };
+
+  const handleRegistrarCotizacion = async (opts = {}) => {
     if (productosLista.length === 0) {
       alert("Debe agregar al menos un producto");
       return;
     }
 
-    if (!cliente) {
-      alert("Por favor ingrese el nombre del cliente");
-      return;
-    }
-
-    // Calcular código temporal
-    const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
-    const siguienteNumero = ultimoNumero + 1;
-    const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
-
-    // Generar HTML para previsualización
-    const html = generarHTMLCotizacion(codigoTemporal);
-    setPreviewHTML(html);
-    setMostrarModalPreview(true);
-  };
-
-  const handleConfirmarRegistro = async () => {
     try {
+      if (isSubmitting) return;
       setIsSubmitting(true);
+
       const token = getAuthToken();
       if (!token) {
         alert('Error de autenticación. Inicie sesión.');
         return;
       }
 
-      // Calcular código real (o temporal para el envío)
+      // --- CALCULAR CÓDIGO TEMPORAL PARA EL DISEÑO ---
       const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
-      const siguienteNumero = ultimoNumero + 1;
-      const codigoDefinitivo = `C001-${String(siguienteNumero).padStart(8, '0')}`;
+      const siguienteNumero = opts?.siguienteNumero || (ultimoNumero + 1);
+      const codigoTemporal = opts?.codigoTemporal || `C001-${String(siguienteNumero).padStart(8, '0')}`;
 
-      // --- PASO A: Generar el PDF ---
-      const pdfBlob = await generarPDFBlob(codigoDefinitivo);
+      // --- PASO A: Generar el PDF (o usar previsualización) ---
+      const pdfBlob = opts?.pdfBlob || (await generarPDFBlob(codigoTemporal));
 
       if (!pdfBlob) {
         alert("Error al preparar el archivo PDF.");
-        setIsSubmitting(false);
         return;
       }
 
       // --- PASO B: Preparar FormData ---
       const formData = new FormData();
       formData.append("nombre_cliente", cliente || '');
-      formData.append("region", regionSeleccionada?.REGION || '');
-      formData.append("distrito", distritoSeleccionado?.DISTRITO || '');
+      formData.append("region", regionSeleccionada?.REGION || region || '');
+      formData.append("distrito", distritoSeleccionado?.DISTRITO || distrito || '');
       formData.append("monto_total", totalGeneral);
       formData.append("atendido_por", atendidoPor || '');
 
+      // Datos extra para completar posibles_clientes (se guardan en posibles_clientes por backend)
+      formData.append("cel", cel || "");
+      formData.append("ruc", ruc || "");
+      formData.append("dni", dni || "");
+
+      // Producto interesado: el producto con mayor cantidad dentro de la cotización
+      const productoInteresado =
+        (Array.isArray(productosLista) && productosLista.length > 0)
+          ? (productosLista.reduce((best, p) => (Number(p?.cantidad || 0) > Number(best?.cantidad || 0) ? p : best), productosLista[0])?.producto || "No especificado")
+          : "No especificado";
+      formData.append("producto_interesado", productoInteresado);
+
       // El archivo PDF físico que el backend espera como "pdf_file"
-      formData.append("pdf_file", pdfBlob, `${codigoDefinitivo}.pdf`);
+      formData.append("pdf_file", pdfBlob, `${codigoTemporal}.pdf`);
+      formData.append("campania", campania || '');
 
       const API_URL = "https://cotizaciones2026-2946605267.us-central1.run.app/cotizacion";
 
@@ -1312,22 +1368,39 @@ export default function CotizacionesPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        const numeroFinal = data.codigo_cotizacion;
+        // El backend puede o no devolver el código. Si no lo devuelve, usamos el código temporal
+        const numeroFinal = data?.codigo_cotizacion || data?.COD_COTIZACION || codigoTemporal;
         alert(`Cotización ${numeroFinal} registrada y guardada con éxito.`);
 
         // --- PASO D: Descargar para el usuario ---
+        // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
         const link = document.createElement('a');
         link.href = URL.createObjectURL(pdfBlob);
         link.download = `Cotizacion_${numeroFinal}.pdf`;
         link.click();
 
         // Actualizar localStorage
-        const numeroBackend = parseInt(numeroFinal.split('-')[1], 10);
-        localStorage.setItem('lastCotizacionNumber', numeroBackend.toString());
+        // Si el código viene en formato C001-00000001, extraemos el correlativo; si no, usamos el siguienteNumero calculado
+        let correlativo = siguienteNumero;
+        if (typeof numeroFinal === "string" && numeroFinal.includes("-")) {
+          const parts = numeroFinal.split("-");
+          const maybe = parseInt(parts[1], 10);
+          if (!Number.isNaN(maybe)) correlativo = maybe;
+        }
+        localStorage.setItem('lastCotizacionNumber', correlativo.toString());
 
-        // Cerrar modal y limpiar o redirigir
-        setMostrarModalPreview(false);
-        router.push("/marketing");
+        // Confirmación (debug): si el backend devolvió URL pública, la mostramos en consola
+        if (data?.url) {
+          console.log("URL PDF (backend):", data.url);
+        }
+
+        // Si venimos desde previsualización, cerramos modal y limpiamos
+        if (mostrarModalPreview) {
+          handleCerrarPreviewCotizacion();
+        }
+
+        // Limpiar campos selectivos después de registrar exitosamente
+        limpiarCamposSelectivos();
       } else {
         alert(`Error: ${data.error || 'No se pudo registrar'}`);
       }
@@ -1337,6 +1410,29 @@ export default function CotizacionesPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleAbrirPreviewCotizacion = async () => {
+    if (productosLista.length === 0) {
+      alert("Debe agregar al menos un producto");
+      return;
+    }
+
+    const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
+    const siguienteNumero = ultimoNumero + 1;
+    const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
+
+    setPreviewCodigoTemporal(codigoTemporal);
+    setPreviewSiguienteNumero(siguienteNumero);
+    setPreviewHtml(generarHTMLCotizacion(codigoTemporal));
+    setMostrarModalPreview(true);
+  };
+
+  const handleCerrarPreviewCotizacion = () => {
+    setPreviewHtml("");
+    setPreviewCodigoTemporal("");
+    setPreviewSiguienteNumero(0);
+    setMostrarModalPreview(false);
   };
 
   if (loading) {
@@ -1427,7 +1523,7 @@ export default function CotizacionesPage() {
                 <h2 className="text-sm font-bold text-gray-900 mb-4">Cliente:</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Nombre del Cliente</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">NOMBRE DEL CLIENTE</label>
                     <input
                       type="text"
                       value={cliente}
@@ -1497,6 +1593,16 @@ export default function CotizacionesPage() {
                       onChange={(e) => setCel(e.target.value)}
                       className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
                       placeholder="Celular del cliente"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">ORIGEN DEL CLIENTE:</label>
+                    <input
+                      type="text"
+                      value={campania}
+                      onChange={(e) => setCampania(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      placeholder="Codigo Ejemplo CM001 o OR001"
                     />
                   </div>
                 </div>
@@ -1614,7 +1720,7 @@ export default function CotizacionesPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                   <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Producto:</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">PRODUCTO:</label>
                     <div className="relative">
                       <input
                         ref={productoInputRef}
@@ -1655,7 +1761,7 @@ export default function CotizacionesPage() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Código:</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">CÓDIGO:</label>
                     <input
                       type="text"
                       value={codigo}
@@ -1680,7 +1786,7 @@ export default function CotizacionesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Cantidad:</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">CANTIDAD:</label>
                     <input
                       type="number"
                       value={cantidad}
@@ -1699,7 +1805,7 @@ export default function CotizacionesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Precio de Venta:</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">PRECIO DE VENTA:</label>
                     <input
                       type="number"
                       value={precioVenta}
@@ -1710,7 +1816,7 @@ export default function CotizacionesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Total:</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">TOTAL:</label>
                     <input
                       type="text"
                       value={`S/ ${total.toFixed(2)}`}
@@ -1840,66 +1946,81 @@ export default function CotizacionesPage() {
               {/* Botón Registrar */}
               <div className="flex justify-end pt-2 mt-2 mb-4">
                 <button
-                  onClick={handleRegistrarCotizacion}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 !text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                  onClick={handleAbrirPreviewCotizacion}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
-                  Registrar Cotización
+                  Previsualizar y Registrar
                 </button>
               </div>
+
+              {/* Modal: Previsualización PDF */}
+              <Modal
+                isOpen={mostrarModalPreview}
+                onClose={handleCerrarPreviewCotizacion}
+                title="Previsualización de Cotización"
+                size="6xl"
+                hideFooter={true}
+              >
+                <div className="space-y-4">
+                  
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+                    {previewHtml ? (
+                      <iframe
+                        title="Previsualización HTML"
+                        srcDoc={previewHtml}
+                        className="w-full"
+                        style={{ height: "70vh" }}
+                      />
+                    ) : (
+                      <div className="py-10 text-center text-sm text-gray-600">
+                        No hay previsualización disponible.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-gray-700">
+                      Código: <span className="font-semibold">{previewCodigoTemporal || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCerrarPreviewCotizacion}
+                        className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+                        disabled={isSubmitting}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (isSubmitting) return;
+                          if (!previewCodigoTemporal || !previewSiguienteNumero) {
+                            alert("No se pudo preparar la previsualización. Intente nuevamente.");
+                            return;
+                          }
+                          await handleRegistrarCotizacion({
+                            codigoTemporal: previewCodigoTemporal,
+                            siguienteNumero: previewSiguienteNumero,
+                          });
+                        }}
+                        className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                      >
+                        {isSubmitting ? "Creando PDF..." : "Registrar"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Modal>
             </div>
           </div>
         </main>
       </div>
 
-      {/* Modal de Previsualización */}
-      <Modal
-        isOpen={mostrarModalPreview}
-        onClose={() => setMostrarModalPreview(false)}
-        title="Previsualización de Cotización"
-        size="full"
-        hideFooter
-      >
-        <div className="flex flex-col h-full bg-white">
-          <div
-            className="flex-1 overflow-auto bg-gray-200/50 p-6 lg:p-10 rounded-xl border border-gray-200 shadow-inner"
-            style={{ minHeight: '600px' }}
-          >
-            <div
-              className="bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] mx-auto origin-top transition-transform duration-300"
-              style={{ width: '900px', minHeight: '1100px' }}
-              dangerouslySetInnerHTML={{ __html: previewHTML }}
-            />
-          </div>
-
-          <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={() => setMostrarModalPreview(false)}
-              className="px-8 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 hover:border-gray-400 transition-all active:scale-95 text-base"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmarRegistro}
-              disabled={isSubmitting}
-              className="px-12 py-3 rounded-xl bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] text-white font-bold shadow-xl shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base min-w-[200px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Procesando PDF...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Registrar Cotización
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
+
+
+
