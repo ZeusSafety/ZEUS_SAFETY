@@ -160,7 +160,7 @@ export default function GestionClientesMarketingPage() {
   // Filtrar clientes según el término de búsqueda
   const filteredClientes = clientes.filter((cliente) =>
     cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.id.toLowerCase().includes(searchTerm.toLowerCase())
+    String(cliente.id).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Calcular paginación
@@ -784,7 +784,7 @@ export default function GestionClientesMarketingPage() {
               type="text"
               value={editForm.nombre}
               onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black text-sm"
             />
           </div>
           <div>
@@ -792,7 +792,7 @@ export default function GestionClientesMarketingPage() {
             <select
               value={editForm.tipo}
               onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black text-sm"
             >
               <option value="">Seleccionar tipo</option>
               <option value="PERSONA">PERSONA</option>
@@ -805,7 +805,7 @@ export default function GestionClientesMarketingPage() {
               type="text"
               value={editForm.origen}
               onChange={(e) => setEditForm({ ...editForm, origen: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black text-sm"
             />
           </div>
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
