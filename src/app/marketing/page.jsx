@@ -14,6 +14,7 @@ export default function MarketingPage() {
   const [expandedSections, setExpandedSections] = useState({
     "listados": false,
     "ventas-marketing": false,
+    "reportes-marketing": false,
     "gestion-descuento": false,
     "solicitudes-incidencias": false,
     "franja-precios": false,
@@ -227,6 +228,85 @@ export default function MarketingPage() {
             </svg>
           ),
         }
+      ],
+    },
+    {
+      id: "reportes-marketing",
+      title: "Reportes Marketing",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "reporte-general-1",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Reporte General 1",
+          description: "Analítica avanzada de Marketing: Canales y productos.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "reporte-general-2",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2V7m3 10v-4m3 6H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Reporte General 2",
+          description: "Analítica avanzada: Productos por cliente, pagos y geografía.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "zeus-electric",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          ),
+          title: "Zeus Electric",
+          description: "Analítica específica de Zeus Electric: Ventas y regiones.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "zeus-safety",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          ),
+          title: "Zeus Safety",
+          description: "Analítica específica de Zeus Safety: Ventas y regiones.",
+          buttonText: "Abrir Reporte",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
       ],
     },
     {
@@ -525,6 +605,14 @@ export default function MarketingPage() {
                                         router.push("/marketing/solicitudes-permisos");
                                       } else if (card.id === "listado-precios") {
                                         router.push("/gerencia/listado-precios");
+                                      } else if (card.id === "reporte-general-1") {
+                                        router.push("/marketing/reporte-general-1");
+                                      } else if (card.id === "reporte-general-2") {
+                                        router.push("/marketing/reporte-general-2");
+                                      } else if (card.id === "zeus-electric") {
+                                        router.push("/marketing/zeus-electric");
+                                      } else if (card.id === "zeus-safety") {
+                                        router.push("/marketing/zeus-safety");
                                       } else if (card.id === "subida-archivos") {
                                         router.push("/marketing/subida-archivos");
                                       } else if (card.id === "listado-archivos") {

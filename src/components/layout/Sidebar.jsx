@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -432,6 +432,16 @@ export function Sidebar({ isOpen, onClose }) {
         { id: "listado-ventas-marketing", name: "Listado de Ventas", icon: "document-list" },
         { id: "recencia-clientes", name: "Recencia de Clientes", icon: "clock" },
         { id: "cotizaciones-marketing", name: "Cotizaciones", icon: "document" },
+      ],
+    },
+    {
+      id: "reportes-marketing",
+      name: "Reportes Marketing",
+      icon: "chart-line",
+      hasSubmenu: true,
+      subItems: [
+        { id: "reporte-general-1-marketing", name: "Reporte General 1", icon: "chart-line" },
+        { id: "reporte-general-2-marketing", name: "Reporte General 2", icon: "chart-line" },
       ],
     },
     {
@@ -1052,6 +1062,18 @@ export function Sidebar({ isOpen, onClose }) {
 
     if (itemId === "listado-solicitudes-incidencias-marketing") {
       router.push("/marketing/solicitudes-incidencias");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-general-1-marketing") {
+      router.push("/marketing/reporte-general-1");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "reporte-general-2-marketing") {
+      router.push("/marketing/reporte-general-2");
       setSelectedItem(itemId);
       return;
     }
