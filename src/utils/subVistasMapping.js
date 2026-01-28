@@ -79,7 +79,17 @@ export const subVistasToCardsMap = {
   "SOLICITUDES ADMIN-FACTURACION": "listado-solicitudes",
   "FRANJA_DE_PRECIOS": "listado-precios",
   "FRANJA DE PRECIOS": "listado-precios",
+  "LISTADO DE PRECIOS - FACTURACION": "listado-precios",
+  "LISTADO_DE_PRECIOS_FACTURACION": "listado-precios",
   "FACTURACION_LISTADO_PERMISOS": "listado-permisos",
+
+  // ========== VENTAS ==========
+  "LISTADO DE PRECIOS - VENTAS": "listado-precios",
+  "LISTADO_DE_PRECIOS_VENTAS": "listado-precios",
+  "LISTADO DE PRECIOS": "listado-precios",
+  "LISTADO_DE_PRECIOS": "listado-precios",
+  "SOLICITUDES ADMIN-VENTAS": "listado-solicitudes",
+  "VENTAS_LISTADO_PERMISOS": "listado-permisos",
 
   // ========== MARKETING ==========
   "GESTION DE CLIENTES": "gestion-clientes",
@@ -117,6 +127,10 @@ export const subVistasToCardsMap = {
   "MARKETING_LISTADO_PERMISOS": "listado-permisos",
   "REGISTRO DE VENTAS ONLINE": "registro-ventas-online",
   "REGISTRO_DE_VENTAS_ONLINE": "registro-ventas-online",
+  "LISTADO DE PRECIOS": "listado-precios",
+  "LISTADO_DE_PRECIOS": "listado-precios",
+  "LISTADO DE PRECIOS - MARKETING": "listado-precios",
+  "LISTADO_DE_PRECIOS_MARKETING": "listado-precios",
 
   // ========== MARKETING (REPORTES) ==========
   "REPORTES MARKETING": "reporte-general-1",

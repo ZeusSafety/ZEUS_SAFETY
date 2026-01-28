@@ -185,6 +185,18 @@ export default function CrearVentaPage() {
     precioVenta: "",
   });
 
+  // Estados para edición de productos en la tabla
+  const [editingProductoId, setEditingProductoId] = useState(null);
+  const [editingProducto, setEditingProducto] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productoToDelete, setProductoToDelete] = useState(null);
+  const [busquedaProductoEdicion, setBusquedaProductoEdicion] = useState("");
+  const [mostrarSugerenciasProductoEdicion, setMostrarSugerenciasProductoEdicion] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const productoEdicionRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const todosLosProductos = useRef([]);
+
   // Estados para opciones de combos
   const [opcionesAsesor, setOpcionesAsesor] = useState([]);
   const [opcionesClasificacion, setOpcionesClasificacion] = useState([]);
@@ -238,6 +250,57 @@ export default function CrearVentaPage() {
       cargarRegiones();
     }
   }, [user]);
+
+  // Manejar posición del dropdown de productos en edición
+  useEffect(() => {
+    if (mostrarSugerenciasProductoEdicion && productoEdicionRef.current) {
+      const updatePosition = () => {
+        if (productoEdicionRef.current) {
+          const rect = productoEdicionRef.current.getBoundingClientRect();
+          setDropdownPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [mostrarSugerenciasProductoEdicion]);
+
+  // Manejar clics fuera del dropdown de edición
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Para el dropdown principal de productos
+      if (productoInputRef.current && !productoInputRef.current.contains(event.target)) {
+        if (productoSuggestionsRef.current && !productoSuggestionsRef.current.contains(event.target)) {
+          setMostrarSugerenciasProductos(false);
+        }
+      }
+      
+      // Para el dropdown de edición en la tabla
+      if (mostrarSugerenciasProductoEdicion) {
+        if (productoEdicionRef.current && 
+            !productoEdicionRef.current.contains(event.target) && 
+            dropdownRef.current && 
+            !dropdownRef.current.contains(event.target)) {
+          setTimeout(() => {
+            setMostrarSugerenciasProductoEdicion(false);
+          }, 100);
+        }
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [mostrarSugerenciasProductoEdicion]);
 
   // Cargar configuración desde API
   const cargarConfiguracion = async () => {
@@ -379,6 +442,9 @@ export default function CrearVentaPage() {
       if (response.ok) {
         const data = await response.json();
         const productosMap = {};
+        
+        // Guardar también la lista completa de productos para el buscador de edición
+        todosLosProductos.current = data.filter(p => p.NOMBRE && p.CODIGO);
         
         data.forEach(producto => {
           if (producto.NOMBRE && producto.CODIGO) {
@@ -594,8 +660,74 @@ export default function CrearVentaPage() {
     });
   };
 
-  const eliminarProducto = (id) => {
-    setProductos(productos.filter((p) => p.id !== id));
+  const iniciarEdicionProducto = (prod) => {
+    setEditingProductoId(prod.id);
+    setEditingProducto({ ...prod });
+    setBusquedaProductoEdicion(prod.producto || "");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const cancelarEdicionProducto = () => {
+    setEditingProductoId(null);
+    setEditingProducto(null);
+    setBusquedaProductoEdicion("");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const guardarEdicionProducto = () => {
+    if (!editingProducto) return;
+    
+    // Validar campos requeridos
+    if (!editingProducto.producto || !editingProducto.precioVenta || !editingProducto.cantidad) {
+      alert("Campos incompletos.");
+      return;
+    }
+
+    // Actualizar el producto en la lista
+    setProductos(productos.map(item => 
+      item.id === editingProductoId 
+        ? { 
+            ...editingProducto,
+            codigo: editingProducto.codigo || item.codigo || "",
+            precioVenta: parseFloat(editingProducto.precioVenta),
+            cantidad: parseFloat(editingProducto.cantidad)
+          }
+        : item
+    ));
+
+    // Limpiar estados de edición
+    setEditingProductoId(null);
+    setEditingProducto(null);
+    setBusquedaProductoEdicion("");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const handleProductoSelectEdicion = (prod) => {
+    const nombreProducto = prod.NOMBRE || prod.nombre;
+    const codigoProducto = prod.CODIGO || prod.codigo;
+    
+    setEditingProducto(prev => {
+      if (!prev) return prev;
+      return { ...prev, producto: nombreProducto, codigo: codigoProducto };
+    });
+    setBusquedaProductoEdicion(nombreProducto);
+    
+    setTimeout(() => {
+      setMostrarSugerenciasProductoEdicion(false);
+    }, 50);
+  };
+
+  const confirmarEliminarProducto = (id) => {
+    setProductoToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const eliminarProducto = () => {
+    if (productoToDelete) {
+      setProductos(productos.filter((p) => p.id !== productoToDelete));
+      setShowDeleteModal(false);
+      setProductoToDelete(null);
+    }
   };
 
   const limpiarFormulario = () => {
@@ -1119,28 +1251,146 @@ export default function CrearVentaPage() {
                           </tr>
                         ) : (
                           productos.map((producto, index) => {
-                            const igv = (producto.cantidad * producto.precioVenta * 0.18).toFixed(2);
-                            const total = (producto.cantidad * producto.precioVenta * 1.18).toFixed(2);
+                            const isEditing = editingProductoId === producto.id;
+                            const displayProd = isEditing ? editingProducto : producto;
+                            
+                            // Calcular IGV y Total
+                            const cantidad = parseFloat(displayProd.cantidad) || 0;
+                            const precio = parseFloat(displayProd.precioVenta) || 0;
+                            const igv = (cantidad * precio * 0.18).toFixed(2);
+                            const total = (cantidad * precio * 1.18).toFixed(2);
+                            
                             return (
-                              <tr key={producto.id} className="hover:bg-slate-200 transition-colors">
+                              <tr key={producto.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
+                                {/* ID DETALLE */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">DET_{2635 + index + 1}</td>
+                                
+                                {/* N° COMPROBANTE */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formData.comprobanteNumero}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.codigo}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.producto}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto.cantidad}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {producto.precioVenta.toFixed(2)}</td>
+                                
+                                {/* CÓDIGO - Solo lectura, se actualiza automáticamente */}
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{displayProd.codigo || ''}</td>
+                                
+                                {/* PRODUCTO */}
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <div className="relative" ref={productoEdicionRef}>
+                                      <input
+                                        type="text"
+                                        placeholder="Buscar producto..."
+                                        value={busquedaProductoEdicion}
+                                        onChange={(e) => {
+                                          const nuevoValor = e.target.value;
+                                          setBusquedaProductoEdicion(nuevoValor);
+                                          setEditingProducto(prev => ({ ...prev, producto: nuevoValor }));
+                                          
+                                          // Buscar productos
+                                          const textoLower = nuevoValor.toLowerCase();
+                                          const sugerencias = todosLosProductos.current
+                                            .filter(p => (p.NOMBRE || "").toLowerCase().includes(textoLower))
+                                            .slice(0, 10);
+                                          
+                                          if (sugerencias.length > 0 && nuevoValor.length > 0) {
+                                            setMostrarSugerenciasProductoEdicion(true);
+                                          } else {
+                                            setMostrarSugerenciasProductoEdicion(false);
+                                          }
+                                        }}
+                                        onFocus={() => {
+                                          if (busquedaProductoEdicion.length > 0) {
+                                            setMostrarSugerenciasProductoEdicion(true);
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span className="text-[10px] text-gray-700">{producto.producto}</span>
+                                  )}
+                                </td>
+                                
+                                {/* CANTIDAD */}
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      value={displayProd.cantidad || ''}
+                                      onChange={(e) => setEditingProducto({ ...editingProducto, cantidad: e.target.value })}
+                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] text-gray-700">{producto.cantidad}</span>
+                                  )}
+                                </td>
+                                
+                                {/* PRECIO VENTA */}
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={displayProd.precioVenta || ''}
+                                      onChange={(e) => setEditingProducto({ ...editingProducto, precioVenta: e.target.value })}
+                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] text-gray-700">S/ {producto.precioVenta.toFixed(2)}</span>
+                                  )}
+                                </td>
+                                
+                                {/* IGV (18%) - Calculado automáticamente */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {igv}</td>
+                                
+                                {/* TOTAL - Calculado automáticamente */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">S/ {total}</td>
+                                
+                                {/* ACCIONES */}
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
-                                  <button
-                                    onClick={() => eliminarProducto(producto.id)}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    <span>Eliminar</span>
-                                  </button>
+                                  <div className="flex items-center justify-center gap-2">
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          onClick={guardarEdicionProducto}
+                                          className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-500 hover:text-white rounded-lg transition-all"
+                                          title="Guardar cambios"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={cancelarEdicionProducto}
+                                          className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-500 hover:text-white rounded-lg transition-all"
+                                          title="Cancelar edición"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => iniciarEdicionProducto(producto)}
+                                          className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
+                                          title="Editar"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => confirmarEliminarProducto(producto.id)}
+                                          className="flex items-center space-x-1 px-2.5 py-1 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                          title="Eliminar"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -1186,6 +1436,110 @@ export default function CrearVentaPage() {
           </div>
         </main>
       </div>
+
+      {/* Dropdown de Productos en Edición - Renderizado fuera de la tabla */}
+      {editingProductoId && mostrarSugerenciasProductoEdicion && busquedaProductoEdicion.length > 0 && productoEdicionRef.current && dropdownPosition.width > 0 && (
+        <div 
+          ref={dropdownRef}
+          className="fixed z-[9999] bg-white border-2 border-blue-300 rounded-lg shadow-2xl max-h-48 overflow-y-auto"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            position: 'fixed'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {todosLosProductos.current.filter(p => {
+            const nombre = (p.NOMBRE || "").toLowerCase();
+            const codigo = (p.CODIGO || "").toLowerCase();
+            const busqueda = busquedaProductoEdicion.toLowerCase();
+            return nombre.includes(busqueda) || codigo.includes(busqueda);
+          }).slice(0, 10).map((prod, idx) => (
+            <div 
+              key={idx} 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleProductoSelectEdicion(prod);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleProductoSelectEdicion(prod);
+              }}
+              className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-50 last:border-0 transition-colors"
+            >
+              {prod.NOMBRE || prod.nombre}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-red-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  ¿Estás seguro de eliminar?
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setProductoToDelete(null);
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Contenido */}
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: 'var(--font-poppins)' }}>
+                Esta acción no se puede deshacer. El producto será eliminado permanentemente de la lista.
+              </p>
+              
+              {/* Botones */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setProductoToDelete(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={eliminarProducto}
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

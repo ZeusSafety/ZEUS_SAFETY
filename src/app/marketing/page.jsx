@@ -274,14 +274,14 @@ export default function MarketingPage() {
           ),
         },
         {
-          id: "zeus-electric",
+          id: "zeus-safety",
           icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           ),
-          title: "Zeus Electric",
-          description: "Analítica específica de Zeus Electric: Ventas y regiones.",
+          title: "Zeus Safety",
+          description: "Analítica específica de Zeus Safety: Ventas y regiones.",
           buttonText: "Abrir Reporte",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -291,14 +291,14 @@ export default function MarketingPage() {
           ),
         },
         {
-          id: "zeus-safety",
+          id: "zeus-electric",
           icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           ),
-          title: "Zeus Safety",
-          description: "Analítica específica de Zeus Safety: Ventas y regiones.",
+          title: "Zeus Electric",
+          description: "Analítica específica de Zeus Electric: Ventas y regiones.",
           buttonText: "Abrir Reporte",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -604,7 +604,7 @@ export default function MarketingPage() {
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/marketing/solicitudes-permisos");
                                       } else if (card.id === "listado-precios") {
-                                        router.push("/gerencia/listado-precios");
+                                        router.push("/marketing/franja-precios/listado-precios");
                                       } else if (card.id === "reporte-general-1") {
                                         router.push("/marketing/reporte-general-1");
                                       } else if (card.id === "reporte-general-2") {

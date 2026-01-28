@@ -29,11 +29,47 @@ const ACCENT = "#FACC15";
 const ZEUS_BLUE = "#002D5A";
 const ZEUS_GOLD = "#E5A017";
 
+const CLASIFICACION_COLORS = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
+const LINEA_COLORS = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
+
 function clampNumber(n) {
   if (typeof n === "string") {
-    // soporta "125,268.50" o "125.268,50" en respuestas
-    const cleaned = n.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-    const x2 = Number(cleaned);
+    // Soporta formatos comunes:
+    // - "1.600,00" (es-PE) => 1600.00
+    // - "1,600.00" (en-US) => 1600.00
+    // - "600.00" => 600.00
+    // - "58600" => 58600
+    const s = n.replace(/\s/g, "");
+    const lastDot = s.lastIndexOf(".");
+    const lastComma = s.lastIndexOf(",");
+
+    // Si contiene ambos, el separador decimal es el que aparece al final
+    if (lastDot !== -1 && lastComma !== -1) {
+      const decimalIsComma = lastComma > lastDot;
+      const cleaned = decimalIsComma
+        ? s.replace(/\./g, "").replace(",", ".") // miles con '.' y decimal con ','
+        : s.replace(/,/g, ""); // miles con ',' y decimal con '.'
+      const x = Number(cleaned);
+      if (Number.isFinite(x)) return x;
+    }
+
+    // Solo coma: asumir decimal si hay 1-2 dígitos al final, si no, miles
+    if (lastComma !== -1 && lastDot === -1) {
+      const decimals = s.length - lastComma - 1;
+      const cleaned = decimals >= 1 && decimals <= 2 ? s.replace(",", ".") : s.replace(/,/g, "");
+      const x = Number(cleaned);
+      if (Number.isFinite(x)) return x;
+    }
+
+    // Solo punto: asumir decimal si hay 1-2 dígitos al final, si no, miles
+    if (lastDot !== -1 && lastComma === -1) {
+      const decimals = s.length - lastDot - 1;
+      const cleaned = decimals >= 1 && decimals <= 2 ? s : s.replace(/\./g, "");
+      const x = Number(cleaned);
+      if (Number.isFinite(x)) return x;
+    }
+
+    const x2 = Number(s);
     if (Number.isFinite(x2)) return x2;
   }
   const x = Number(n);
@@ -82,6 +118,27 @@ const currencyFormatter = new Intl.NumberFormat("es-PE", {
   maximumFractionDigits: 0,
 });
 
+// Moneda con decimales opcionales (muestra decimales si existen)
+const currencyFlexibleFormatter = new Intl.NumberFormat("es-PE", {
+  style: "currency",
+  currency: "PEN",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+// Moneda con 2 decimales fijos (para Ticket Promedio)
+const currency2Formatter = new Intl.NumberFormat("es-PE", {
+  style: "currency",
+  currency: "PEN",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+// Formato entero con separador de miles (es-PE => 1.600 / 58.600)
+const intFormatter = new Intl.NumberFormat("es-PE", {
+  maximumFractionDigits: 0,
+});
+
 function formatCurrency(value) {
   let n = Math.round(clampNumber(value));
   if (n >= 1e6) n = Math.round(n / 100);
@@ -92,9 +149,21 @@ function formatCurrency(value) {
     .join("");
 }
 
+function formatCurrencyFlexible(value) {
+  const n = clampNumber(value);
+  // Mantener separadores peruanos y decimales si los hay
+  return currencyFlexibleFormatter.format(n);
+}
+
+function formatCurrency2(value) {
+  const n = clampNumber(value);
+  return currency2Formatter.format(n);
+}
+
 function formatInt(value) {
   const n = clampNumber(value);
-  return Math.round(n).toLocaleString("es-PE");
+  // Sin redondeos agresivos: solo entero para cantidades físicas
+  return intFormatter.format(n);
 }
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -200,6 +269,11 @@ export default function ReporteGeneral1MarketingPage() {
     setLoading(true);
     setError("");
 
+    // Debug: mostrar filtros activos
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[ReporteGeneral1] Filtros activos:", filters);
+    }
+
     getReporte1Full({
       inicio: filters.inicio,
       fin: filters.fin,
@@ -237,7 +311,8 @@ export default function ReporteGeneral1MarketingPage() {
   const ticketPromedio = volumenVentas > 0 ? ventaTotal / volumenVentas : 0;
 
   // Mapear canales de venta (solo con datos: value > 0)
-  const canales = (data.canales_venta || [])
+  // Ojo: el gráfico debe ir en % (0–100) como antes, pero conservamos el valor bruto para cálculos.
+  const canalesRaw = (data.canales_venta || [])
     .map((r) => ({
       name: r?.CANAL_VENTA || r?.canal_venta || "—",
       value: clampNumber(r?.total || r?.TOTAL || 0),
@@ -245,32 +320,125 @@ export default function ReporteGeneral1MarketingPage() {
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  // Mapear clasificación de pedidos (solo con datos)
-  const clasificaciones = (data.clasificacion_pedidos || [])
-    .map((r) => ({
-      name: r?.clasificacion_pedido || r?.CLASIFICACION_PEDIDO || "—",
-      value: clampNumber(r?.total || r?.TOTAL || 0),
-    }))
-    .filter((x) => x.value > 0)
-    .sort((a, b) => b.value - a.value);
-
-  // Mapear líneas (solo con datos)
-  const lineas = (data.lineas || [])
-    .map((r) => ({
-      name: r?.LINEA || r?.linea || "—",
-      value: clampNumber(r?.total || r?.TOTAL || 0),
-    }))
-    .filter((x) => x.value > 0)
-    .sort((a, b) => b.value - a.value);
-
-  // Mapear productos top (varias posibles claves para unidades/docenas)
-  const productosBase = data.productos_top || [];
-  const productos = productosBase.map((p) => ({
-    producto: p?.producto || p?.PRODUCTO || p?.descripcion || p?.nombre || "—",
-    unidades: pickNumber(p, ["unidades", "UNIDADES", "cantidad_unidad", "CANTIDAD_UNIDAD", "cant_unidad", "CANT_UNIDAD", "cantidad", "CANTIDAD", "total_unidades", "TOTAL_UNIDADES"]),
-    docenas: pickNumber(p, ["docenas", "DOCENAS", "cantidad_docena", "CANTIDAD_DOCENA", "cant_docena", "CANT_DOCENA", "total_docenas", "TOTAL_DOCENAS", "docena", "DOCENA", "docenas_vendidas", "num_docenas", "total_docena"]),
-    monto: pickNumber(p, ["monto", "MONTO", "total", "TOTAL", "total_venta", "TOTAL_VENTA", "importe", "IMPORTE"]),
+  const canalesTotal = canalesRaw.reduce((sum, x) => sum + x.value, 0);
+  const canales = canalesRaw.map((c) => ({
+    ...c,
+    percent: canalesTotal > 0 ? Number(((c.value / canalesTotal) * 100).toFixed(1)) : 0,
   }));
+
+  // Mapear clasificación de pedidos (solo con datos, sin nombres sintéticos)
+  const clasificaciones = (data.clasificacion_pedidos || [])
+    .map((r) => {
+      // Intentamos todas las variantes posibles que pueda devolver el SP
+      const rawName =
+        r?.clasificacion_pedido ||
+        r?.CLASIFICACION_PEDIDO ||
+        r?.clasificacion ||
+        r?.CLASIFICACION ||
+        r?.tipo_clasificacion ||
+        r?.TIPO_CLASIFICACION ||
+        r?.CLASIFICACION_PEDIDOS ||
+        "";
+
+      const name = rawName.toString().trim();
+      if (!name) return null; // si no hay nombre real, lo excluimos del gráfico
+
+      return {
+        name,
+        value: clampNumber(r?.total || r?.TOTAL || 0),
+      };
+    })
+    .filter((x) => x && x.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  // Mapear líneas (solo con datos, sin nombres sintéticos)
+  const lineas = (data.lineas || [])
+    .map((r) => {
+      const rawName = r?.LINEA || r?.linea || r?.nombre_linea || r?.NOMBRE_LINEA || "";
+      const name = rawName.toString().trim();
+      if (!name) return null;
+
+      return {
+        name,
+        value: clampNumber(r?.total || r?.TOTAL || 0),
+      };
+    })
+    .filter((x) => x && x.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  // Mapear productos top
+  // La BD maneja UNIDAD_MEDIDA (UNIDADES / DOCENAS / PARES). Aquí agrupamos por producto y
+  // colocamos el TOTAL/CANTIDAD en la columna correcta según la unidad de medida.
+  const productosBase = data.productos_top || [];
+
+  const normalizeUnidadMedida = (raw) => {
+    const u = String(raw || "").toUpperCase().trim();
+    if (u.includes("DOCENA")) return "DOCENAS";
+    if (u.includes("PAR")) return "PARES";
+    if (u.includes("UNIDAD")) return "UNIDADES";
+    return "";
+  };
+
+  const getProductoNombre = (p, idx) =>
+    (p?.producto || p?.PRODUCTO || p?.descripcion || p?.DESCRIPCION || p?.nombre || p?.NOMBRE || "")
+      .toString()
+      .trim() || `SIN_PRODUCTO_${idx}`;
+
+  const getUnidadMedida = (p) =>
+    normalizeUnidadMedida(
+      p?.unidad_medida ||
+        p?.UNIDAD_MEDIDA ||
+        p?.unidad_medida_venta ||
+        p?.UNIDAD_MEDIDA_VENTA ||
+        p?.medida ||
+        p?.MEDIDA
+    );
+
+  const getCantidad = (p) =>
+    pickNumber(p, [
+      // cantidad / total (pero entendido como cantidad física, no monto)
+      "cantidad",
+      "CANTIDAD",
+      "total",
+      "TOTAL",
+      "cantidad_total",
+      "CANTIDAD_TOTAL",
+      // si el backend ya manda columnas separadas, también las soportamos
+      "unidades",
+      "UNIDADES",
+      "docenas",
+      "DOCENAS",
+      "pares",
+      "PARES",
+    ]);
+
+  const productosAggMap = new Map();
+  productosBase.forEach((row, idx) => {
+    const nombre = getProductoNombre(row, idx);
+    const unidad = getUnidadMedida(row);
+
+    // Si ya vienen columnas separadas, las usamos directo.
+    const unidadesDirect = pickNumber(row, ["unidades", "UNIDADES", "total_unidades", "TOTAL_UNIDADES"]);
+    const docenasDirect = pickNumber(row, ["docenas", "DOCENAS", "total_docenas", "TOTAL_DOCENAS"]);
+    const paresDirect = pickNumber(row, ["pares", "PARES", "total_pares", "TOTAL_PARES"]);
+
+    const base = productosAggMap.get(nombre) || { producto: nombre, unidades: 0, docenas: 0, pares: 0 };
+
+    if (unidadesDirect || docenasDirect || paresDirect) {
+      base.unidades += unidadesDirect;
+      base.docenas += docenasDirect;
+      base.pares += paresDirect;
+    } else {
+      const qty = getCantidad(row);
+      if (unidad === "DOCENAS") base.docenas += qty;
+      else if (unidad === "PARES") base.pares += qty;
+      else base.unidades += qty; // default UNIDADES
+    }
+
+    productosAggMap.set(nombre, base);
+  });
+
+  const productos = Array.from(productosAggMap.values());
   const totalProductosPaginas = Math.max(1, Math.ceil((productos?.length || 0) / productosPorPagina));
   const productosPaginados = productos.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
@@ -432,8 +600,8 @@ export default function ReporteGeneral1MarketingPage() {
                         Venta Total
                       </p>
                       {loading ? <Skeleton className="h-7 w-36" /> : (
-                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrency(ventaTotal)}>
-                          {formatCurrency(ventaTotal)}
+                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrencyFlexible(ventaTotal)}>
+                          {formatCurrencyFlexible(ventaTotal)}
                         </p>
                       )}
                       <p className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -476,8 +644,8 @@ export default function ReporteGeneral1MarketingPage() {
                         Ticket Promedio
                       </p>
                       {loading ? <Skeleton className="h-7 w-28" /> : (
-                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrency(ticketPromedio)}>
-                          {formatCurrency(ticketPromedio)}
+                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrency2(ticketPromedio)}>
+                          {formatCurrency2(ticketPromedio)}
                         </p>
                       )}
                       <p className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -511,16 +679,28 @@ export default function ReporteGeneral1MarketingPage() {
                           margin={{ left: 8, right: 80, top: 8, bottom: 8 }}
                           cursor="pointer"
                         >
-                          <XAxis type="number" tick={{ fill: "rgba(17,24,39,0.65)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <XAxis 
+                            type="number" 
+                            tick={{ fill: "rgba(17,24,39,0.65)", fontSize: 11 }} 
+                            axisLine={false} 
+                            tickLine={false}
+                            tickFormatter={(v) => formatInt(v)}
+                          />
                           <YAxis type="category" dataKey="name" width={100} tick={{ fill: "rgba(17,24,39,0.75)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8 }} formatter={(v) => formatInt(v)} />
+                          <Tooltip 
+                            contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8 }} 
+                            formatter={(v) => formatInt(v)}
+                          />
                           <Bar
                             dataKey="value"
                             radius={[10, 10, 10, 10]}
                             activeBar={{ stroke: "none" }}
-                            onClick={(data) => {
-                              const name = data?.name;
+                            onClick={(data, index) => {
+                              const name = data?.name || canales?.[index]?.name;
                               if (name) {
+                                if (process.env.NODE_ENV !== "production") {
+                                  console.log("[ReporteGeneral1] Click en canal:", name);
+                                }
                                 setFilters((prev) => ({
                                   ...prev,
                                   canal: prev.canal === name ? null : name,
@@ -598,7 +778,7 @@ export default function ReporteGeneral1MarketingPage() {
                             </svg>
                           </div>
                           <div className="text-base font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-                            {formatInt(canales.reduce((sum, x) => sum + x.value, 0))}
+                            100%
                           </div>
                         </div>
 
@@ -614,9 +794,8 @@ export default function ReporteGeneral1MarketingPage() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             {(() => {
-                              const total = canales.reduce((sum, x) => sum + x.value, 0);
-                              const lider = canales.reduce((max, c) => (c.value > max.value ? c : max), canales[0]);
-                              const percent = total > 0 ? ((lider.value / total) * 100).toFixed(1) : 0;
+                              const lider = canales.reduce((max, c) => (c.percent > max.percent ? c : max), canales[0]);
+                              const percent = Number(lider?.percent || 0).toFixed(1);
                               const isWa = String(lider.name).toUpperCase().includes("WHATSAPP");
                               return (
                                 <>
@@ -650,7 +829,7 @@ export default function ReporteGeneral1MarketingPage() {
                             </svg>
                           </div>
                           <div className="text-base font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-                            {formatInt(canales.length > 0 ? canales.reduce((sum, x) => sum + x.value, 0) / canales.length : 0)}
+                            {canales.length > 0 ? `${(100 / canales.length).toFixed(1)}%` : "0%"}
                           </div>
                         </div>
                       </div>
@@ -695,24 +874,26 @@ export default function ReporteGeneral1MarketingPage() {
                           <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
                           <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDADES</th>
                           <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">DOCENAS</th>
-                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MONTO</th>
+                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PARES</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {productosPaginados.map((p, idx) => {
                           const producto = p?.producto ?? "—";
-                          const rawU = clampNumber(p?.unidades ?? 0);
-                          const rawD = clampNumber(p?.docenas ?? 0);
-                          const unidades = rawU >= 1000 ? Math.round(rawU / 1000) : Math.round(rawU);
-                          const docenas = rawD >= 1000 ? Math.round(rawD / 1000) : Math.round(rawD);
-                          const monto = clampNumber(p?.monto ?? 0);
+                          const unidades = clampNumber(p?.unidades ?? 0);
+                          const docenas = clampNumber(p?.docenas ?? 0);
+                          const pares = clampNumber(p?.pares ?? 0);
                           const isSelected = filters.producto === producto;
 
                           return (
                             <tr
                               key={`${producto}-${idx}`}
                               className={`transition-all cursor-pointer ${isSelected ? "bg-amber-50 border-l-4 border-l-[#E5A017]" : "hover:bg-slate-100"} ${filters.producto && !isSelected ? "opacity-50" : ""}`}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (process.env.NODE_ENV !== "production") {
+                                  console.log("[ReporteGeneral1] Click en producto:", producto);
+                                }
                                 setFilters((prev) => ({
                                   ...prev,
                                   producto: prev.producto === producto ? null : producto,
@@ -721,9 +902,9 @@ export default function ReporteGeneral1MarketingPage() {
                               title="Click para filtrar"
                             >
                               <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{unidades}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{docenas}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatCurrency(monto)}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold tabular-nums">{unidades > 0 ? formatInt(unidades) : ""}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold tabular-nums">{docenas > 0 ? formatInt(docenas) : ""}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold tabular-nums">{pares > 0 ? formatInt(pares) : ""}</td>
                             </tr>
                           );
                         })}
@@ -813,12 +994,16 @@ export default function ReporteGeneral1MarketingPage() {
                               stroke="white"
                               strokeWidth={2}
                               activeShape={{ stroke: "none" }}
-                              onClick={(_, idx) => {
-                                const it = clasificaciones?.[idx];
-                                if (it?.name) {
+                              onClick={(data, idx) => {
+                                const it = clasificaciones?.[idx] || data;
+                                const name = it?.name || it?.payload?.name;
+                                if (name) {
+                                  if (process.env.NODE_ENV !== "production") {
+                                    console.log("[ReporteGeneral1] Click en clasificación:", name);
+                                  }
                                   setFilters((prev) => ({
                                     ...prev,
-                                    clasificacion: prev.clasificacion === it.name ? null : it.name,
+                                    clasificacion: prev.clasificacion === name ? null : name,
                                   }));
                                 }
                               }}
@@ -845,11 +1030,10 @@ export default function ReporteGeneral1MarketingPage() {
                               labelLine={false}
                             >
                               {clasificaciones.map((c, i) => {
-                                const colors = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
-                                const color = colors[i % colors.length];
+                                const color = CLASIFICACION_COLORS[i % CLASIFICACION_COLORS.length];
                                 const isSelected = filters.clasificacion === c.name;
                                 const opacity = isSelected ? 1 : (filters.clasificacion ? 0.35 : 1);
-                                return <Cell key={i} fill={hexToRgba(color, opacity)} />;
+                                return <Cell key={`${c.name}-${i}`} fill={hexToRgba(color, opacity)} />;
                               })}
                             </Pie>
                           </PieChart>
@@ -861,13 +1045,16 @@ export default function ReporteGeneral1MarketingPage() {
                         {clasificaciones.map((c, idx) => {
                           const total = clasificaciones.reduce((sum, x) => sum + x.value, 0);
                           const percent = total > 0 ? ((c.value / total) * 100).toFixed(1) : 0;
-                          const colors = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
                           return (
                             <div
-                              key={c.name}
+                              key={`${c.name}-${idx}`}
                               role="button"
                               tabIndex={0}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (process.env.NODE_ENV !== "production") {
+                                  console.log("[ReporteGeneral1] Click en leyenda clasificación:", c.name);
+                                }
                                 setFilters((prev) => ({
                                   ...prev,
                                   clasificacion: prev.clasificacion === c.name ? null : c.name,
@@ -882,12 +1069,11 @@ export default function ReporteGeneral1MarketingPage() {
                               style={{ opacity: filters.clasificacion && filters.clasificacion !== c.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[idx % colors.length] }} />
+                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: CLASIFICACION_COLORS[idx % CLASIFICACION_COLORS.length] }} />
                                 <span className="text-xs font-semibold text-gray-700">{c.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(c.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-xs font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );
@@ -934,12 +1120,16 @@ export default function ReporteGeneral1MarketingPage() {
                               stroke="white"
                               strokeWidth={2}
                               activeShape={{ stroke: "none" }}
-                              onClick={(_, idx) => {
-                                const it = lineas?.[idx];
-                                if (it?.name) {
+                              onClick={(data, idx) => {
+                                const it = lineas?.[idx] || data;
+                                const name = it?.name || it?.payload?.name;
+                                if (name) {
+                                  if (process.env.NODE_ENV !== "production") {
+                                    console.log("[ReporteGeneral1] Click en línea:", name);
+                                  }
                                   setFilters((prev) => ({
                                     ...prev,
-                                    linea: prev.linea === it.name ? null : it.name,
+                                    linea: prev.linea === name ? null : name,
                                   }));
                                 }
                               }}
@@ -966,11 +1156,10 @@ export default function ReporteGeneral1MarketingPage() {
                               labelLine={false}
                             >
                               {lineas.map((l, i) => {
-                                const colors = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
-                                const color = colors[i % colors.length];
+                                const color = LINEA_COLORS[i % LINEA_COLORS.length];
                                 const isSelected = filters.linea === l.name;
                                 const opacity = isSelected ? 1 : (filters.linea ? 0.35 : 1);
-                                return <Cell key={i} fill={hexToRgba(color, opacity)} />;
+                                return <Cell key={`${l.name}-${i}`} fill={hexToRgba(color, opacity)} />;
                               })}
                             </Pie>
                           </PieChart>
@@ -982,13 +1171,16 @@ export default function ReporteGeneral1MarketingPage() {
                         {lineas.map((l, idx) => {
                           const total = lineas.reduce((sum, x) => sum + x.value, 0);
                           const percent = total > 0 ? ((l.value / total) * 100).toFixed(1) : 0;
-                          const colors = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
                           return (
                             <div
-                              key={l.name}
+                              key={`${l.name}-${idx}`}
                               role="button"
                               tabIndex={0}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (process.env.NODE_ENV !== "production") {
+                                  console.log("[ReporteGeneral1] Click en leyenda línea:", l.name);
+                                }
                                 setFilters((prev) => ({
                                   ...prev,
                                   linea: prev.linea === l.name ? null : l.name,
@@ -1003,12 +1195,11 @@ export default function ReporteGeneral1MarketingPage() {
                               style={{ opacity: filters.linea && filters.linea !== l.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[idx % colors.length] }} />
+                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: LINEA_COLORS[idx % LINEA_COLORS.length] }} />
                                 <span className="text-xs font-semibold text-gray-700">{l.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(l.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-xs font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );
@@ -1075,9 +1266,12 @@ export default function ReporteGeneral1MarketingPage() {
                               radius={[8, 8, 0, 0]}
                               maxBarSize={48}
                               activeBar={{ stroke: "none" }}
-                              onClick={(data) => {
-                                const mes = data?.mes;
+                              onClick={(data, index) => {
+                                const mes = data?.mes || mensual?.[index]?.mes;
                                 if (mes && mes !== "—") {
+                                  if (process.env.NODE_ENV !== "production") {
+                                    console.log("[ReporteGeneral1] Click en mes:", mes);
+                                  }
                                   setFilters((prev) => ({
                                     ...prev,
                                     mes: prev.mes === mes ? null : mes,

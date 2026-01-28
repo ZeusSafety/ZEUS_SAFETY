@@ -436,7 +436,7 @@ export default function FacturacionPage() {
                                         } else if (card.id === "gestionar-configuracion") {
                                           router.push("/facturacion/configuracion");
                                         } else if (card.id === "listado-precios") {
-                                          router.push("/gerencia/listado-precios");
+                                          router.push("/facturacion/franja-precios/listado-precios");
                                         } else if (card.id === "listado-solicitudes") {
                                           router.push("/facturacion/solicitudes-incidencias");
                                         } else if (card.id === "listado-permisos") {

@@ -42,6 +42,15 @@ export default function RegistroVentasOnlinePage() {
 
     const [itemsAgregados, setItemsAgregados] = useState([]);
     const [montoDelivery, setMontoDelivery] = useState(0);
+    const [editingItemId, setEditingItemId] = useState(null);
+    const [editingItem, setEditingItem] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [busquedaProductoEdicion, setBusquedaProductoEdicion] = useState("");
+    const [mostrarSugerenciasProductoEdicion, setMostrarSugerenciasProductoEdicion] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const productoEdicionRef = useRef(null);
+    const dropdownRef = useRef(null);
 
     // Estados para buscadores
     const [clientes, setClientes] = useState([]);
@@ -92,10 +101,43 @@ export default function RegistroVentasOnlinePage() {
         const handleClickOutside = (event) => {
             if (clienteRef.current && !clienteRef.current.contains(event.target)) setMostrarSugerenciasCliente(false);
             if (productoRef.current && !productoRef.current.contains(event.target)) setMostrarSugerenciasProducto(false);
+            
+            // Para el dropdown de edición, verificar tanto el input como el dropdown
+            if (productoEdicionRef.current && 
+                !productoEdicionRef.current.contains(event.target) && 
+                dropdownRef.current && 
+                !dropdownRef.current.contains(event.target)) {
+                setMostrarSugerenciasProductoEdicion(false);
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (mostrarSugerenciasProductoEdicion && productoEdicionRef.current) {
+            const updatePosition = () => {
+                if (productoEdicionRef.current) {
+                    const rect = productoEdicionRef.current.getBoundingClientRect();
+                    setDropdownPosition({
+                        top: rect.bottom + window.scrollY,
+                        left: rect.left + window.scrollX,
+                        width: rect.width
+                    });
+                }
+            };
+            
+            updatePosition();
+            // Solo actualizar posición cuando se muestra por primera vez o cuando cambia el tamaño de la ventana
+            window.addEventListener('scroll', updatePosition, true);
+            window.addEventListener('resize', updatePosition);
+            
+            return () => {
+                window.removeEventListener('scroll', updatePosition, true);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [mostrarSugerenciasProductoEdicion]);
 
     const fetchInitialData = async () => {
         fetchClientes();
@@ -198,7 +240,74 @@ export default function RegistroVentasOnlinePage() {
         setBusquedaProducto("");
     };
 
-    const eliminarItem = (id) => setItemsAgregados(itemsAgregados.filter(i => i.id !== id));
+    const iniciarEdicion = (item) => {
+        setEditingItemId(item.id);
+        // Asegurar que el código se mantenga al iniciar edición
+        setEditingItem({ ...item, codigo: item.codigo || "" });
+        setBusquedaProductoEdicion(item.producto || "");
+        setMostrarSugerenciasProductoEdicion(false);
+    };
+
+    const handleProductoSelectEdicion = (prod) => {
+        const nombreProducto = prod.NOMBRE || prod.nombre;
+        const codigoProducto = prod.CODIGO || prod.codigo;
+        
+        setEditingItem(prev => ({ ...prev, producto: nombreProducto, codigo: codigoProducto }));
+        setBusquedaProductoEdicion(nombreProducto);
+        setMostrarSugerenciasProductoEdicion(false);
+    };
+
+    const cancelarEdicion = () => {
+        setEditingItemId(null);
+        setEditingItem(null);
+        setBusquedaProductoEdicion("");
+        setMostrarSugerenciasProductoEdicion(false);
+    };
+
+    const guardarEdicion = () => {
+        if (!editingItem) return;
+        
+        // Validar campos requeridos
+        if (!editingItem.producto || !editingItem.precio || !editingItem.cantidad) {
+            alert("Campos incompletos.");
+            return;
+        }
+
+        // Recalcular total
+        const cantidad = parseFloat(editingItem.cantidad) || 0;
+        const precio = parseFloat(editingItem.precio) || 0;
+        const nuevoTotal = cantidad * precio;
+
+        // Actualizar el item en la lista, asegurando que el código se mantenga
+        setItemsAgregados(itemsAgregados.map(item => 
+            item.id === editingItemId 
+                ? { 
+                    ...editingItem, 
+                    total: nuevoTotal,
+                    codigo: editingItem.codigo || item.codigo || "" // Mantener código existente si no se actualizó
+                }
+                : item
+        ));
+
+        // Limpiar estados de edición
+        setEditingItemId(null);
+        setEditingItem(null);
+        setBusquedaProductoEdicion("");
+        setMostrarSugerenciasProductoEdicion(false);
+    };
+
+    const confirmarEliminar = (id) => {
+        setItemToDelete(id);
+        setShowDeleteModal(true);
+    };
+
+    const eliminarItem = () => {
+        if (itemToDelete) {
+            setItemsAgregados(itemsAgregados.filter(i => i.id !== itemToDelete));
+            setShowDeleteModal(false);
+            setItemToDelete(null);
+        }
+    };
 
     const handleFinalSubmit = async () => {
         if (!cabecera.cliente || itemsAgregados.length === 0) {
@@ -587,7 +696,8 @@ export default function RegistroVentasOnlinePage() {
 
 
                             {/* TABLA DE ITEMS AGREGADOS */}
-                            <div className="overflow-hidden rounded-3xl border-2 border-slate-50 shadow-sm">
+                            <div className="rounded-3xl border-2 border-slate-50 shadow-sm overflow-visible">
+                                <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-[#002855] text-white uppercase text-[10px] font-black tracking-widest">
                                         <tr>
@@ -601,21 +711,164 @@ export default function RegistroVentasOnlinePage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {itemsAgregados.map((item) => (
-                                            <tr key={item.id} className="hover:bg-slate-50 transition-colors bg-white">
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-600">{item.comprobante_item || cabecera.comprobante}</td>
-                                                <td className="px-6 py-4 text-sm font-black text-gray-800">{item.producto}</td>
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-600 text-center">{item.cantidad}</td>
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-600">{item.unidad}</td>
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-600">S/ {parseFloat(item.precio).toFixed(2)}</td>
-                                                <td className="px-6 py-4 text-sm font-black text-blue-700">S/ {item.total.toFixed(2)}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <button onClick={() => eliminarItem(item.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all mx-auto">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {itemsAgregados.map((item) => {
+                                            const isEditing = editingItemId === item.id;
+                                            const displayItem = isEditing ? editingItem : item;
+                                            
+                                            return (
+                                                <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${isEditing ? 'bg-blue-50' : 'bg-white'}`}>
+                                                    {/* N° Comprobante */}
+                                                    <td className="px-6 py-4">
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                value={displayItem.comprobante_item || ''}
+                                                                onChange={(e) => setEditingItem({ ...editingItem, comprobante_item: e.target.value })}
+                                                                className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm font-bold text-gray-900 focus:border-blue-500 outline-none"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-gray-600">{item.comprobante_item || cabecera.comprobante}</span>
+                                                        )}
+                                                    </td>
+                                                    
+                                                    {/* Producto */}
+                                                    <td className="px-6 py-4">
+                                                        {isEditing ? (
+                                                            <div className="relative" ref={productoEdicionRef}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Buscar producto..."
+                                                                    value={busquedaProductoEdicion}
+                                                                    onChange={(e) => {
+                                                                        const nuevoValor = e.target.value;
+                                                                        setBusquedaProductoEdicion(nuevoValor);
+                                                                        // Mantener el código existente cuando se escribe manualmente
+                                                                        setEditingItem(prev => ({ ...prev, producto: nuevoValor }));
+                                                                        setMostrarSugerenciasProductoEdicion(true);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm font-bold text-gray-900 focus:border-blue-500 outline-none"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm font-black text-gray-800">{item.producto}</span>
+                                                        )}
+                                                    </td>
+                                                    
+                                                    {/* Cantidad */}
+                                                    <td className="px-6 py-4 text-center">
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="number"
+                                                                value={displayItem.cantidad || ''}
+                                                                onChange={(e) => {
+                                                                    const nuevaCantidad = e.target.value;
+                                                                    const precio = parseFloat(editingItem.precio) || 0;
+                                                                    const nuevoTotal = parseFloat(nuevaCantidad) * precio;
+                                                                    setEditingItem({ ...editingItem, cantidad: nuevaCantidad, total: nuevoTotal });
+                                                                }}
+                                                                className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm font-bold text-gray-900 text-center focus:border-blue-500 outline-none"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-gray-600">{item.cantidad}</span>
+                                                        )}
+                                                    </td>
+                                                    
+                                                    {/* Medida */}
+                                                    <td className="px-6 py-4">
+                                                        {isEditing ? (
+                                                            <select
+                                                                value={displayItem.unidad || ''}
+                                                                onChange={(e) => setEditingItem({ ...editingItem, unidad: e.target.value })}
+                                                                className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm font-bold text-gray-900 focus:border-blue-500 outline-none"
+                                                            >
+                                                                <option value="DOCENAS">DOCENAS</option>
+                                                                <option value="METROS">METROS</option>
+                                                                <option value="PAQUETES">PAQUETES</option>
+                                                                <option value="PARES">PARES</option>
+                                                                <option value="ROLLOS">ROLLOS</option>
+                                                                <option value="UNIDADES">UNIDADES</option>
+                                                            </select>
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-gray-600">{item.unidad}</span>
+                                                        )}
+                                                    </td>
+                                                    
+                                                    {/* Precio Venta */}
+                                                    <td className="px-6 py-4">
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={displayItem.precio || ''}
+                                                                onChange={(e) => {
+                                                                    const nuevoPrecio = e.target.value;
+                                                                    const cantidad = parseFloat(editingItem.cantidad) || 0;
+                                                                    const nuevoTotal = cantidad * parseFloat(nuevoPrecio);
+                                                                    setEditingItem({ ...editingItem, precio: nuevoPrecio, total: nuevoTotal });
+                                                                }}
+                                                                className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm font-bold text-gray-900 focus:border-blue-500 outline-none"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-gray-600">S/ {parseFloat(item.precio).toFixed(2)}</span>
+                                                        )}
+                                                    </td>
+                                                    
+                                                    {/* Total */}
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-black text-blue-700">S/ {displayItem.total.toFixed(2)}</span>
+                                                    </td>
+                                                    
+                                                    {/* Acciones */}
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {isEditing ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={guardarEdicion}
+                                                                        className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-500 hover:text-white rounded-lg transition-all"
+                                                                        title="Guardar cambios"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={cancelarEdicion}
+                                                                        className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-500 hover:text-white rounded-lg transition-all"
+                                                                        title="Cancelar edición"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => iniciarEdicion(item)}
+                                                                        className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
+                                                                        title="Editar"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => confirmarEliminar(item.id)}
+                                                                        className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all"
+                                                                        title="Eliminar"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                         {itemsAgregados.length === 0 && (
                                             <tr>
                                                 <td colSpan="7" className="px-6 py-12 text-center text-gray-400 font-bold italic text-sm">No hay ítems registrados</td>
@@ -623,6 +876,7 @@ export default function RegistroVentasOnlinePage() {
                                         )}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
 
                             {/* FOOTER DE TOTALES Y BOTONES FINAL */}
@@ -678,6 +932,100 @@ export default function RegistroVentasOnlinePage() {
                     </div>
                 </main>
             </div>
+
+            {/* Dropdown de Productos en Edición - Renderizado fuera de la tabla */}
+            {editingItemId && mostrarSugerenciasProductoEdicion && busquedaProductoEdicion.length > 0 && productoEdicionRef.current && dropdownPosition.width > 0 && (
+                <div 
+                    ref={dropdownRef}
+                    className="fixed z-[9999] bg-white border-2 border-blue-300 rounded-lg shadow-2xl max-h-48 overflow-y-auto"
+                    style={{
+                        top: `${dropdownPosition.top}px`,
+                        left: `${dropdownPosition.left}px`,
+                        width: `${dropdownPosition.width}px`,
+                        position: 'fixed'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
+                    {productos.filter(p => (p.NOMBRE || p.nombre || "").toLowerCase().includes(busquedaProductoEdicion.toLowerCase())).map((prod, idx) => (
+                        <div 
+                            key={idx} 
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleProductoSelectEdicion(prod);
+                            }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleProductoSelectEdicion(prod);
+                            }}
+                            className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-50 last:border-0 transition-colors"
+                        >
+                            {prod.NOMBRE || prod.nombre}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Modal de Confirmación de Eliminación */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-red-50 to-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                    ¿Estás seguro de eliminar?
+                                </h2>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setItemToDelete(null);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        {/* Contenido */}
+                        <div className="p-6">
+                            <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                Esta acción no se puede deshacer. El ítem será eliminado permanentemente de la lista.
+                            </p>
+                            
+                            {/* Botones */}
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteModal(false);
+                                        setItemToDelete(null);
+                                    }}
+                                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={eliminarItem}
+                                    className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all"
+                                    style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

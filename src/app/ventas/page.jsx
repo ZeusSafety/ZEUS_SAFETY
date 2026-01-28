@@ -295,7 +295,7 @@ export default function VentasPage() {
                                       if (card.id === "listado-importaciones") {
                                         router.push("/ventas/listado-importaciones");
                                       } else if (card.id === "listado-precios") {
-                                        router.push("/gerencia/listado-precios");
+                                        router.push("/ventas/franja-precios/listado-precios");
                                       } else if (card.id === "listado-solicitudes") {
                                         router.push("/ventas/solicitudes-incidencias");
                                       } else if (card.id === "listado-permisos") {
