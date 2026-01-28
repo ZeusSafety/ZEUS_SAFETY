@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -89,6 +89,12 @@ export function Sidebar({ isOpen, onClose }) {
     "RECENCIA DE CLIENTES": "recencia-clientes",
     "SOLICITUDES ADMIN-MARKETING": "listado-solicitudes-incidencias-marketing",
     "STOCK MALVINAS POR MAYOR CAJAS": "stock-precios-mayor",
+    "REGISTRO DE CLIENTES": "registro-clientes-marketing",
+    "REGISTRO DE CLIENTES - MARKETING": "registro-clientes-marketing",
+    "REGISTRO DE VENTAS ONLINE": "registro-ventas-online-marketing",
+    "REGISTRO DE VENTAS ONLINE - MARKETING": "registro-ventas-online-marketing",
+    "POSIBLES CLIENTES": "posibles-clientes-marketing",
+    "POSIBLES CLIENTES - MARKETING": "posibles-clientes-marketing",
 
     // Gerencia
     "GESTION DE USUARIOS": "accesibilidad-credenciales",
@@ -429,7 +435,10 @@ export function Sidebar({ isOpen, onClose }) {
       hasSubmenu: true,
       subItems: [
         { id: "gestion-clientes-marketing", name: "GestiÃ³n de Clientes", icon: "users" },
+        { id: "registro-clientes-marketing", name: "Registro de Clientes", icon: "plus-circle" },
+        { id: "registro-ventas-online-marketing", name: "Registro de Ventas Online", icon: "plus-circle" },
         { id: "listado-ventas-marketing", name: "Listado de Ventas", icon: "document-list" },
+        { id: "posibles-clientes-marketing", name: "Posibles Clientes", icon: "users" },
         { id: "recencia-clientes", name: "Recencia de Clientes", icon: "clock" },
         { id: "cotizaciones-marketing", name: "Cotizaciones", icon: "document" },
       ],
@@ -1050,6 +1059,24 @@ export function Sidebar({ isOpen, onClose }) {
 
     if (itemId === "recencia-clientes") {
       router.push("/marketing/recencia-clientes");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "registro-clientes-marketing") {
+      router.push("/marketing/registro-clientes");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "registro-ventas-online-marketing") {
+      router.push("/marketing/registro-ventas-online");
+      setSelectedItem(itemId);
+      return;
+    }
+
+    if (itemId === "posibles-clientes-marketing") {
+      router.push("/marketing/posibles-clientes");
       setSelectedItem(itemId);
       return;
     }

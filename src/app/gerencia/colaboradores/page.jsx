@@ -7,6 +7,36 @@ import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
 
+/**
+ * Función robusta para obtener valores de objetos anidados o simples.
+ * Busca primero en el nivel actual y luego profundiza recursivamente.
+ */
+const getValorColab = (obj, keys, defaultValue = "", visited = new Set()) => {
+  if (!obj || (typeof obj === "object" && visited.has(obj))) return defaultValue;
+  if (typeof obj === "object") {
+    visited.add(obj);
+  } else {
+    return defaultValue;
+  }
+
+  // 1. Prioridad: Buscar en el nivel actual todas las llaves posibles
+  for (const key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+      return obj[key];
+    }
+  }
+
+  // 2. Buscar en objetos o arrays anidados
+  for (const prop in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, prop) && obj[prop] && typeof obj[prop] === "object") {
+      const nested = getValorColab(obj[prop], keys, defaultValue, visited);
+      if (nested !== defaultValue) return nested;
+    }
+  }
+
+  return defaultValue;
+};
+
 export default function ColaboradoresPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -27,16 +57,7 @@ export default function ColaboradoresPage() {
   // Inicializar datosEditables cuando se abre el modal
   useEffect(() => {
     if (isVerDetallesModalOpen && selectedColaboradorCompleto) {
-      const getValue = (obj, keys) => {
-        for (const key of keys) {
-          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-            return obj[key];
-          }
-        }
-        return null;
-      };
-
-      const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
+      const datosField = getValorColab(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"], null);
       let datosArray = null;
 
       if (typeof datosField === "string") {
@@ -488,25 +509,7 @@ export default function ColaboradoresPage() {
 
         const baseObj = colaboradorCompleto || colaboradorBasico || {};
 
-        const getValue = (obj, keys) => {
-          if (!obj) return "";
-          for (const key of keys) {
-            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-              return obj[key];
-            }
-            const upperKey = key.toUpperCase();
-            if (
-              obj[upperKey] !== undefined &&
-              obj[upperKey] !== null &&
-              obj[upperKey] !== ""
-            ) {
-              return obj[upperKey];
-            }
-          }
-          return "";
-        };
-
-        const correoBase = getValue(baseObj, [
+        const correoBase = getValorColab(baseObj, [
           "correo",
           "CORREO",
           "email",
@@ -514,7 +517,7 @@ export default function ColaboradoresPage() {
           "correo_electronico",
           "CORREO_ELECTRONICO",
         ]);
-        const usuarioBase = getValue(baseObj, [
+        const usuarioBase = getValorColab(baseObj, [
           "usuario",
           "USUARIO",
           "username",
@@ -625,10 +628,8 @@ export default function ColaboradoresPage() {
           throw new Error("La API de perfil no devolvió información del usuario");
         }
 
-        const getValPerfil = (keys) => getValue(perfilUsuario, keys);
-
         const usuarioPerfil =
-          getValPerfil([
+          getValorColab(perfilUsuario, [
             "usuario",
             "USUARIO",
             "username",
@@ -636,10 +637,10 @@ export default function ColaboradoresPage() {
             "login",
             "LOGIN",
           ]) ||
-          getValPerfil(["correo", "CORREO", "email", "EMAIL"]) ||
+          getValorColab(perfilUsuario, ["correo", "CORREO", "email", "EMAIL"]) ||
           userParam;
 
-        const correoPerfil = getValPerfil([
+        const correoPerfil = getValorColab(perfilUsuario, [
           "correo",
           "CORREO",
           "email",
@@ -648,7 +649,7 @@ export default function ColaboradoresPage() {
           "CORREO_ELECTRONICO",
         ]);
 
-        const passwordPerfil = getValPerfil([
+        const passwordPerfil = getValorColab(perfilUsuario, [
           "password",
           "PASSWORD",
           "contrasena",
@@ -657,7 +658,7 @@ export default function ColaboradoresPage() {
           "CLAVE",
         ]);
 
-        const imgUrlPerfil = getValPerfil([
+        const imgUrlPerfil = getValorColab(perfilUsuario, [
           "IMG_URL",
           "img_url",
           "IMGURL",
@@ -774,18 +775,9 @@ export default function ColaboradoresPage() {
       // Mapear los datos de la API al formato esperado
       // La API puede devolver diferentes estructuras, así que intentamos varias opciones
       const colaboradoresMapeados = Array.isArray(data) ? data.map((colab, index) => {
-        // Intentar obtener los campos con diferentes nombres posibles
-        const getValue = (obj, keys) => {
-          for (const key of keys) {
-            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-              return obj[key];
-            }
-          }
-          return "";
-        };
 
         // Formatear fecha de cumpleaños
-        const fechaNac = getValue(colab, ["fecha_nacimiento", "fechaNacimiento", "fecha_cumpleanos", "fechaCumpleanos", "FECHA_NACIMIENTO", "FECHA_CUMPLEANOS"]);
+        const fechaNac = getValorColab(colab, ["fecha_nacimiento", "fechaNacimiento", "fecha_cumpleanos", "fechaCumpleanos", "FECHA_NACIMIENTO", "FECHA_CUMPLEANOS"]);
         let fechaFormateada = "";
         if (fechaNac) {
           try {
@@ -812,7 +804,7 @@ export default function ColaboradoresPage() {
         // DEBUG: Log para ver la estructura completa del colaborador (solo los primeros 3)
         if (index < 3) {
           console.log(`🔍 DEBUG Colaborador ${index}:`, {
-            nombreCompleto: `${getValue(colab, ["NOMBRE", "nombre"])} ${getValue(colab, ["APELLIDO", "apellido"])}`,
+            nombreCompleto: `${getValorColab(colab, ["NOMBRE", "nombre"])} ${getValorColab(colab, ["APELLIDO", "apellido"])}`,
             todasLasClaves: Object.keys(colab),
             objetoCompleto: colab,
             // Buscar todas las claves que contengan "area" o "AREA"
@@ -849,7 +841,7 @@ export default function ColaboradoresPage() {
         if (!areaValue) {
           for (const key in colab) {
             if (typeof colab[key] === "object" && colab[key] !== null) {
-              const nestedArea = getValue(colab[key], ["NOMBRE", "nombre", "NOMBRE_AREA", "nombre_area", "name", "NAME"]);
+              const nestedArea = getValorColab(colab[key], ["NOMBRE", "nombre", "NOMBRE_AREA", "nombre_area", "name", "NAME"]);
               if (nestedArea && typeof nestedArea === "string") {
                 areaValue = nestedArea;
                 if (index < 3) {
@@ -862,7 +854,7 @@ export default function ColaboradoresPage() {
         }
         // 4. Solo si no se encontró en objetos anidados, buscar en campos directos (excluyendo IDs)
         if (!areaValue) {
-          areaValue = getValue(colab, ["AREA_NOMBRE", "area_nombre", "areaNombre", "area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
+          areaValue = getValorColab(colab, ["AREA_NOMBRE", "area_nombre", "areaNombre", "area", "AREA", "Area", "departamento", "DEPARTAMENTO", "department", "DEPARTMENT"]);
           if (areaValue && index < 3) {
             console.log(`✅ Área encontrada en campo directo:`, areaValue);
           }
@@ -875,7 +867,7 @@ export default function ColaboradoresPage() {
 
 
         // Determinar si está activo
-        const estadoValue = getValue(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
+        const estadoValue = getValorColab(colab, ["activo", "ACTIVO", "Activo", "estado", "ESTADO", "status", "STATUS"]);
         const isActivo = estadoValue !== false &&
           estadoValue !== "inactivo" &&
           estadoValue !== "INACTIVO" &&
@@ -884,7 +876,7 @@ export default function ColaboradoresPage() {
 
         // Obtener usuario - puede venir como null, undefined, o no existir
         // IMPORTANTE: Si el colaborador no tiene credenciales, el campo puede venir como null, undefined, o string vacío
-        const usuarioRaw = getValue(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]);
+        const usuarioRaw = getValorColab(colab, ["USUARIO", "usuario", "Usuario", "username", "USERNAME", "login", "LOGIN"]);
 
         // Verificar explícitamente si el valor es null, undefined, o string vacío
         let usuarioFinal = "";
@@ -896,9 +888,9 @@ export default function ColaboradoresPage() {
         }
 
         // Log para depuración de TODOS los colaboradores para encontrar los sin usuario
-        console.log(`🔍 Colaborador ${index} (${getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"])} ${getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"])}):`, {
-          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]),
-          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]),
+        console.log(`🔍 Colaborador ${index} (${getValorColab(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"])} ${getValorColab(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"])}):`, {
+          nombre: getValorColab(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]),
+          apellido: getValorColab(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]),
           usuarioRaw: usuarioRaw,
           usuarioRawType: typeof usuarioRaw,
           usuarioRawValue: JSON.stringify(usuarioRaw),
@@ -919,13 +911,13 @@ export default function ColaboradoresPage() {
         });
 
         return {
-          id: getValue(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
-          nombre: getValue(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
-          apellido: getValue(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
+          id: getValorColab(colab, ["ID_PERSONA", "id", "ID", "Id"]) || Math.random().toString(36).substr(2, 9), // Generar ID temporal si no existe
+          nombre: getValorColab(colab, ["NOMBRE", "nombre", "Nombre", "name", "NAME"]) || "",
+          apellido: getValorColab(colab, ["APELLIDO", "apellido", "Apellido", "apellidos", "APELLIDOS", "lastname", "LASTNAME"]) || "",
           area: areaValue || "Sin área asignada",
           usuario: usuarioFinal,
           fechaCumpleanos: fechaFormateada,
-          activo: getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValue(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
+          activo: getValorColab(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === "1" || getValorColab(colab, ["ESTADO", "estado", "Estado", "status", "STATUS"]) === 1,
         };
       }) : [];
       console.log("Colaboradores mapeados:", colaboradoresMapeados);
@@ -1117,17 +1109,8 @@ export default function ColaboradoresPage() {
 
     try {
       // Buscar el colaborador completo para obtener el correo
-      const getValue = (obj, keys) => {
-        for (const key of keys) {
-          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-            return obj[key];
-          }
-        }
-        return null;
-      };
-
       const colaboradorCompleto = colaboradoresCompletos.find(c => {
-        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        const idOriginal = getValorColab(c, ["ID_PERSONA", "id", "ID", "Id"], null);
         return idOriginal && String(idOriginal) === String(selectedColaborador.id);
       });
 
@@ -1301,15 +1284,7 @@ export default function ColaboradoresPage() {
     try {
       // Buscar el colaborador completo para obtener el correo
       const colaboradorCompleto = colaboradoresCompletos.find(c => {
-        const getValue = (obj, keys) => {
-          for (const key of keys) {
-            if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-              return obj[key];
-            }
-          }
-          return "";
-        };
-        const idOriginal = getValue(c, ["ID_PERSONA", "id", "ID", "Id"]);
+        const idOriginal = getValorColab(c, ["ID_PERSONA", "id", "ID", "Id"], null);
         return idOriginal && idOriginal === colaborador.id;
       });
 
@@ -1429,33 +1404,7 @@ export default function ColaboradoresPage() {
   // Derivados para el modal de permisos (usuario / contraseña / avatar)
   const colaboradorInfo = selectedColaboradorCompleto || selectedColaborador || null;
 
-  const getValorColab = (obj, keys) => {
-    if (!obj) return "";
-
-    // Buscar en el nivel actual
-    for (const key of keys) {
-      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-        return obj[key];
-      }
-    }
-
-    // Buscar de forma recursiva en objetos anidados
-    for (const prop in obj) {
-      if (
-        Object.prototype.hasOwnProperty.call(obj, prop) &&
-        obj[prop] &&
-        typeof obj[prop] === "object" &&
-        !Array.isArray(obj[prop])
-      ) {
-        const nested = getValorColab(obj[prop], keys);
-        if (nested !== "") {
-          return nested;
-        }
-      }
-    }
-
-    return "";
-  };
+  const getValorColabLocal = (obj, keys) => getValorColab(obj, keys, "");
 
   // Valor fijo de ejemplo solicitado por el usuario
   const usuarioValue = "Hervin Zeus";
@@ -1635,16 +1584,8 @@ export default function ColaboradoresPage() {
                               paginatedActivos.map((colaborador, index) => {
                                 // Encontrar el colaborador completo original
                                 const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                                  const getValue = (obj, keys) => {
-                                    for (const key of keys) {
-                                      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                        return obj[key];
-                                      }
-                                    }
-                                    return "";
-                                  };
-                                  const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                                  const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                                  const idOriginal = getValorColab(c, ["id", "ID", "Id"]);
+                                  const nombreOriginal = getValorColab(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
                                   return (idOriginal && idOriginal === colaborador.id) ||
                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
                                 }) || colaboradoresCompletos[index] || null;
@@ -1820,16 +1761,8 @@ export default function ColaboradoresPage() {
                               paginatedInactivos.map((colaborador, index) => {
                                 // Encontrar el colaborador completo original
                                 const colaboradorCompleto = colaboradoresCompletos.find(c => {
-                                  const getValue = (obj, keys) => {
-                                    for (const key of keys) {
-                                      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                                        return obj[key];
-                                      }
-                                    }
-                                    return "";
-                                  };
-                                  const idOriginal = getValue(c, ["id", "ID", "Id"]);
-                                  const nombreOriginal = getValue(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"]);
+                                  const idOriginal = getValorColab(c, ["id", "ID", "Id"], "");
+                                  const nombreOriginal = getValorColab(c, ["nombre", "NOMBRE", "Nombre", "name", "NAME"], "");
                                   return (idOriginal && idOriginal === colaborador.id) ||
                                     (nombreOriginal && nombreOriginal === colaborador.nombre);
                                 }) || colaboradoresCompletos[colaboradores.length + index] || null;
@@ -2568,14 +2501,6 @@ export default function ColaboradoresPage() {
           <div className="space-y-4">
             {/* Función helper para obtener valores */}
             {(() => {
-              const getValue = (obj, keys) => {
-                for (const key of keys) {
-                  if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
-                    return obj[key];
-                  }
-                }
-                return null;
-              };
 
               const formatValue = (value) => {
                 if (value === null || value === undefined || value === "") {
@@ -2635,7 +2560,7 @@ export default function ColaboradoresPage() {
                   {/* Campos principales */}
                   <div className="grid grid-cols-2 gap-4">
                     {camposPrincipales.map((campo, index) => {
-                      const value = getValue(selectedColaboradorCompleto, campo.keys);
+                      const value = getValorColab(selectedColaboradorCompleto, campo.keys, null);
                       const displayValue = campo.isDate ? formatDate(value) : formatValue(value);
 
                       return (
@@ -2681,7 +2606,7 @@ export default function ColaboradoresPage() {
 
                   {/* Campo DATOS especial - Array de teléfonos, correos, etc. */}
                   {(() => {
-                    const datosField = getValue(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"]);
+                    const datosField = getValorColab(selectedColaboradorCompleto, ["DATOS", "datos", "Datos"], null);
 
                     // Usar datosEditables (ya inicializados en useEffect)
                     const datosParaMostrar = datosEditables;
@@ -2691,10 +2616,10 @@ export default function ColaboradoresPage() {
                       const agrupados = {};
                       datosParaMostrar.forEach((item, idx) => {
                         if (item && typeof item === "object") {
-                          const medio = getValue(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
-                          const tipo = getValue(item, ["TIPO", "tipo", "Tipo"]) || "";
-                          const nombre = getValue(item, ["NOMBRE", "nombre", "Nombre"]) || "";
-                          const contenido = getValue(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
+                          const medio = getValorColab(item, ["MEDIO", "medio", "Medio"]) || "OTRO";
+                          const tipo = getValorColab(item, ["TIPO", "tipo", "Tipo"]) || "";
+                          const nombre = getValorColab(item, ["NOMBRE", "nombre", "Nombre"]) || "";
+                          const contenido = getValorColab(item, ["CONTENIDO", "contenido", "Contenido"]) || "";
 
                           if (!agrupados[medio]) {
                             agrupados[medio] = [];
