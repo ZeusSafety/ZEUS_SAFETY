@@ -150,7 +150,7 @@ export default function ReporteGeneral1MarketingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  
+
   // Estado de filtros global (Omni-filter)
   const [filters, setFilters] = useState({
     mes: null,
@@ -248,7 +248,7 @@ export default function ReporteGeneral1MarketingPage() {
   // Mapear clasificación de pedidos (solo con datos)
   const clasificaciones = (data.clasificacion_pedidos || [])
     .map((r) => ({
-      name: r?.clasificacion_pedido || r?.CLASIFICACION_PEDIDO || "—",
+      name: r?.clasificacion_pedido || r?.CLASIFICACION_PEDIDO || r?.clasificacion || r?.CLASIFICACION || r?.tipo || r?.TIPO || r?.nombre || r?.NOMBRE || "—",
       value: clampNumber(r?.total || r?.TOTAL || 0),
     }))
     .filter((x) => x.value > 0)
@@ -257,7 +257,7 @@ export default function ReporteGeneral1MarketingPage() {
   // Mapear líneas (solo con datos)
   const lineas = (data.lineas || [])
     .map((r) => ({
-      name: r?.LINEA || r?.linea || "—",
+      name: r?.LINEA || r?.linea || r?.nombre || r?.NOMBRE || r?.descripcion || r?.DESCRIPCION || "—",
       value: clampNumber(r?.total || r?.TOTAL || 0),
     }))
     .filter((x) => x.value > 0)
@@ -343,7 +343,7 @@ export default function ReporteGeneral1MarketingPage() {
 
               {/* Barra de filtros activos */}
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                        {[
+                {[
                   ["mes", filters.mes, "Mes", formatMonthLabel(filters.mes) || filters.mes],
                   ["producto", filters.producto, "Producto", filters.producto],
                   ["canal", filters.canal, "Canal", filters.canal],
@@ -379,7 +379,7 @@ export default function ReporteGeneral1MarketingPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 block" style={{ fontFamily: "var(--font-poppins)" }}>
                   Rango de fechas
                 </label>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                   {/* Desde - Separado */}
                   <div className="flex items-center gap-3">
@@ -416,7 +416,7 @@ export default function ReporteGeneral1MarketingPage() {
                 </div>
               </div>
 
-              
+
               {error && (
                 <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -660,117 +660,118 @@ export default function ReporteGeneral1MarketingPage() {
 
                 {/* Tabla productos - Header como Reporte General 1 (icono con fondo + título + subtítulo) */}
                 <div>
-                <div className="mb-3 flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: "var(--font-poppins)" }}>
-                      Productos más vendidos
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
-                      Productos más vendidos
-                    </p>
-                  </div>
-                </div>
-
-                {/* Contenedor de tabla */}
-                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden">
-
-                {loading ? (
-                  <div className="p-4 space-y-3">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : productos.length === 0 ? (
-                  <div className="p-6 text-sm text-gray-600">No hay datos para esta combinación de filtros</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDADES</th>
-                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">DOCENAS</th>
-                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MONTO</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {productosPaginados.map((p, idx) => {
-                          const producto = p?.producto ?? "—";
-                          const rawU = clampNumber(p?.unidades ?? 0);
-                          const rawD = clampNumber(p?.docenas ?? 0);
-                          const unidades = rawU >= 1000 ? Math.round(rawU / 1000) : Math.round(rawU);
-                          const docenas = rawD >= 1000 ? Math.round(rawD / 1000) : Math.round(rawD);
-                          const monto = clampNumber(p?.monto ?? 0);
-                          const isSelected = filters.producto === producto;
-
-                          return (
-                            <tr
-                              key={`${producto}-${idx}`}
-                              className={`transition-all cursor-pointer ${isSelected ? "bg-amber-50 border-l-4 border-l-[#E5A017]" : "hover:bg-slate-100"} ${filters.producto && !isSelected ? "opacity-50" : ""}`}
-                              onClick={() => {
-                                setFilters((prev) => ({
-                                  ...prev,
-                                  producto: prev.producto === producto ? null : producto,
-                                }));
-                              }}
-                              title="Click para filtrar"
-                            >
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{unidades}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{docenas}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatCurrency(monto)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                  {/* Paginación (estilo GENERAL 2) */}
-                  {!loading && productos.length > 0 && (
-                    <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                      <button
-                        onClick={() => setProductosPage(1)}
-                        disabled={productosPage === 1}
-                        className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Primera página"
-                      >
-                        «
-                      </button>
-                      <button
-                        onClick={() => setProductosPage((p) => Math.max(1, p - 1))}
-                        disabled={productosPage === 1}
-                        className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Página anterior"
-                      >
-                        &lt;
-                      </button>
-                      <span className="text-[10px] text-gray-700 font-medium">Página {productosPage} de {totalProductosPaginas}</span>
-                      <button
-                        onClick={() => setProductosPage((p) => Math.min(totalProductosPaginas, p + 1))}
-                        disabled={productosPage === totalProductosPaginas}
-                        className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Página siguiente"
-                      >
-                        &gt;
-                      </button>
-                      <button
-                        disabled={productosPage === totalProductosPaginas}
-                        onClick={() => setProductosPage(totalProductosPaginas)}
-                        className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Última página"
-                      >
-                        »
-                      </button>
+                  <div className="mb-3 flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: "var(--font-poppins)" }}>
+                        Productos más vendidos
+                      </h2>
+                      <p className="text-sm text-gray-600 mt-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
+                        Productos más vendidos
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Contenedor de tabla */}
+                  <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden">
+
+                    {loading ? (
+                      <div className="p-4 space-y-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : productos.length === 0 ? (
+                      <div className="p-6 text-sm text-gray-600">No hay datos para esta combinación de filtros</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
+                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDADES</th>
+                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">DOCENAS</th>
+                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PARES</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {productosPaginados.map((p, idx) => {
+                              const producto = p?.producto ?? "—";
+                              const rawU = clampNumber(p?.unidades ?? 0);
+                              const rawD = clampNumber(p?.docenas ?? 0);
+                              const unidades = rawU >= 1000 ? Math.round(rawU / 1000) : Math.round(rawU);
+                              const docenas = rawD >= 1000 ? Math.round(rawD / 1000) : Math.round(rawD);
+                              // Calculo de pares: (docenas * 12) + unidades
+                              const pares = (docenas * 12) + unidades;
+                              const isSelected = filters.producto === producto;
+
+                              return (
+                                <tr
+                                  key={`${producto}-${idx}`}
+                                  className={`transition-all cursor-pointer ${isSelected ? "bg-amber-50 border-l-4 border-l-[#E5A017]" : "hover:bg-slate-100"} ${filters.producto && !isSelected ? "opacity-50" : ""}`}
+                                  onClick={() => {
+                                    setFilters((prev) => ({
+                                      ...prev,
+                                      producto: prev.producto === producto ? null : producto,
+                                    }));
+                                  }}
+                                  title="Click para filtrar"
+                                >
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{producto}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{unidades}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{docenas}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(pares)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Paginación (estilo GENERAL 2) */}
+                    {!loading && productos.length > 0 && (
+                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                        <button
+                          onClick={() => setProductosPage(1)}
+                          disabled={productosPage === 1}
+                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Primera página"
+                        >
+                          «
+                        </button>
+                        <button
+                          onClick={() => setProductosPage((p) => Math.max(1, p - 1))}
+                          disabled={productosPage === 1}
+                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Página anterior"
+                        >
+                          &lt;
+                        </button>
+                        <span className="text-[10px] text-gray-700 font-medium">Página {productosPage} de {totalProductosPaginas}</span>
+                        <button
+                          onClick={() => setProductosPage((p) => Math.min(totalProductosPaginas, p + 1))}
+                          disabled={productosPage === totalProductosPaginas}
+                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Página siguiente"
+                        >
+                          &gt;
+                        </button>
+                        <button
+                          disabled={productosPage === totalProductosPaginas}
+                          onClick={() => setProductosPage(totalProductosPaginas)}
+                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Última página"
+                        >
+                          »
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -874,11 +875,10 @@ export default function ReporteGeneral1MarketingPage() {
                                 }));
                               }}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, clasificacion: prev.clasificacion === c.name ? null : c.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                filters.clasificacion === c.name
-                                  ? "border-[#E5A017] bg-amber-50"
-                                  : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.clasificacion === c.name
+                                ? "border-[#E5A017] bg-amber-50"
+                                : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                               style={{ opacity: filters.clasificacion && filters.clasificacion !== c.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">
@@ -995,11 +995,10 @@ export default function ReporteGeneral1MarketingPage() {
                                 }));
                               }}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, linea: prev.linea === l.name ? null : l.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                filters.linea === l.name
-                                  ? "border-[#E5A017] bg-amber-50"
-                                  : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.linea === l.name
+                                ? "border-[#E5A017] bg-amber-50"
+                                : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                               style={{ opacity: filters.linea && filters.linea !== l.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">

@@ -82,8 +82,8 @@ function formatCurrency(value) {
 }
 
 function formatInt(value) {
-  const n = clampNumber(value);
-  return Math.round(n).toLocaleString("es-PE");
+  const n = Math.round(clampNumber(value));
+  return new Intl.NumberFormat("de-DE").format(n);
 }
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -114,7 +114,7 @@ export default function ZeusSafetyPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  
+
   const [filters, setFilters] = useState({
     mes: null,
     producto: null,
@@ -139,6 +139,8 @@ export default function ZeusSafetyPage() {
     ventas_region: [],
     tipos_pago: [],
     ventas_por_mes: [],
+    almacenes: [],
+    comprobantes: [],
   });
 
   const abortRef = useRef(null);
@@ -184,12 +186,14 @@ export default function ZeusSafetyPage() {
       .then((res) => {
         setData({
           kpis: res.kpis || { total_generado: 0, cantidad_ventas: 0 },
-          clientes: Array.isArray(res.clientes) ? res.clientes : [],
-          productos_vendidos: Array.isArray(res.productos_vendidos) ? res.productos_vendidos : [],
-          canal_ventas: Array.isArray(res.canal_ventas) ? res.canal_ventas : [],
-          ventas_region: Array.isArray(res.ventas_region) ? res.ventas_region : [],
-          tipos_pago: Array.isArray(res.tipos_pago) ? res.tipos_pago : [],
+          clientes: Array.isArray(res.clientes) ? res.clientes : (Array.isArray(res.ranking) ? res.ranking : (Array.isArray(res.bloque1) ? res.bloque1 : [])),
+          productos_vendidos: Array.isArray(res.productos_vendidos) ? res.productos_vendidos : (Array.isArray(res.productos) ? res.productos : (Array.isArray(res.bloque2) ? res.bloque2 : [])),
+          canal_ventas: Array.isArray(res.canal_ventas) ? res.canal_ventas : (Array.isArray(res.canales) ? res.canales : (Array.isArray(res.metodos_pago) ? res.metodos_pago : (Array.isArray(res.bloque3) ? res.bloque3 : []))),
+          ventas_region: Array.isArray(res.ventas_region) ? res.ventas_region : (Array.isArray(res.geografia) ? res.geografia : (Array.isArray(res.bloque6) ? res.bloque6 : [])),
+          tipos_pago: Array.isArray(res.tipos_pago) ? res.tipos_pago : (Array.isArray(res.metodos_pago) ? res.metodos_pago : (Array.isArray(res.pagos) ? res.pagos : (Array.isArray(res.bloque3) ? res.bloque3 : []))),
           ventas_por_mes: Array.isArray(res.ventas_por_mes) ? res.ventas_por_mes : [],
+          almacenes: Array.isArray(res.almacenes) ? res.almacenes : (Array.isArray(res.bloque5) ? res.bloque5 : []),
+          comprobantes: Array.isArray(res.comprobantes) ? res.comprobantes : (Array.isArray(res.bloque4) ? res.bloque4 : []),
         });
       })
       .catch((e) => {
@@ -202,8 +206,8 @@ export default function ZeusSafetyPage() {
   }, [filters, user]);
 
   const kpis = data.kpis || {};
-  const ventaTotal = clampNumber(kpis.total_generado || kpis.TOTAL_GENERADO || 0);
-  const volumenVentas = clampNumber(kpis.cantidad_ventas || kpis.CANTIDAD_VENTAS || 0);
+  const ventaTotal = clampNumber(kpis.total_generado || kpis.TOTAL_GENERADO || kpis.monto_total || kpis.total || 0);
+  const volumenVentas = clampNumber(kpis.cantidad_ventas || kpis.CANTIDAD_VENTAS || kpis.cantidad || kpis.total_ventas || 0);
 
   const clientes = (data.clientes || []).map((r) => ({
     name: r?.cliente || r?.CLIENTE || r?.nombre || r?.NOMBRE || "—",
@@ -212,18 +216,58 @@ export default function ZeusSafetyPage() {
   const totalClientesPaginas = Math.max(1, Math.ceil((clientes.length || 0) / clientesPorPagina));
   const clientesPaginados = clientes.slice((clientesPage - 1) * clientesPorPagina, clientesPage * clientesPorPagina);
 
-  const productos = (data.productos_vendidos || []).map((p) => ({
-    producto: p?.producto || p?.PRODUCTO || p?.descripcion || p?.nombre || "—",
-    cantidad: pickNumber(p, ["cantidad", "CANTIDAD", "unidades", "UNIDADES", "total", "TOTAL"]),
-    monto: pickNumber(p, ["monto", "MONTO", "total", "TOTAL", "importe", "IMPORTE"]),
-  }));
+  const productos = (data.productos_vendidos || []).map((p) => {
+    // Buscador avanzado de claves (igual que en General 2)
+    const findNumeric = (searchTerms = []) => {
+      for (const term of searchTerms) {
+        if (p[term] !== undefined && p[term] !== null) {
+          return clampNumber(p[term]);
+        }
+      }
+      return 0;
+    };
+
+    // LLAVES COMPATIBLES CON EL NUEVO SP (CANT_UNIDAD) Y EL FORMATO DE GENERAL 2 (CANT. UNIDAD)
+    const cantU = findNumeric(["CANT_UNIDAD", "CANT. UNIDAD", "CANTIDAD_UNIDAD", "cantidad_unidad", "UNIDADES", "cantidad"]);
+    const totU = findNumeric(["TOTAL_UNIDAD", "TOTAL UNIDAD", "MONTO_UNIDAD", "total_unidad", "monto_unidad", "TOTAL", "monto"]);
+
+    const cantD = findNumeric(["CANT_DOCENA", "CANT. DOCENA", "CANTIDAD_DOCENA", "cantidad_docena", "DOCENAS"]);
+    const totD = findNumeric(["TOTAL_DOCENA", "TOTAL DOCENA", "MONTO_DOCENA", "total_docena", "monto_docena"]);
+
+    const cantP = findNumeric(["CANT_PARES", "CANT. PARES", "CANTIDAD_PARES", "cantidad_pares", "PARES"]);
+    const totP = findNumeric(["TOTAL_PARES", "TOTAL PARES", "MONTO_PARES", "total_pares", "monto_pares"]);
+
+    // Si todo es 0 y hay un campo 'unidad_medida' plano, intentar rescate manual
+    let finalCantU = cantU, finalCantD = cantD, finalCantP = cantP;
+    let finalTotU = totU, finalTotD = totD, finalTotP = totP;
+
+    if (cantU === 0 && cantD === 0 && cantP === 0 && p.unidad_medida) {
+      const um = String(p.unidad_medida).toUpperCase();
+      const val = clampNumber(p.cantidad || p.CANTIDAD || 0);
+      const mnt = clampNumber(p.total || p.TOTAL || p.monto || 0);
+      if (um.includes("UNID")) { finalCantU = val; finalTotU = mnt; }
+      else if (um.includes("DOC")) { finalCantD = val; finalTotD = mnt; }
+      else if (um.includes("PAR")) { finalCantP = val; finalTotP = mnt; }
+    }
+
+    return {
+      producto: p?.producto || p?.PRODUCTO || p?.descripcion || p?.nombre || "—",
+      cantUnidad: finalCantU,
+      totalUnidad: finalTotU,
+      cantDocena: finalCantD,
+      totalDocena: finalTotD,
+      cantPares: finalCantP,
+      totalPares: finalTotP,
+    };
+  });
   const totalProductosPaginas = Math.max(1, Math.ceil((productos.length || 0) / productosPorPagina));
   const productosPaginados = productos.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
   const canales = (data.canal_ventas || [])
     .map((r) => ({
       name: r?.canal_venta || r?.CANAL_VENTA || r?.canal || r?.CANAL || "—",
-      value: clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0),
+      // Priorizar cantidad de pedidos sobre montos para que se vea como el sistema antiguo (ej. 86)
+      value: clampNumber(r?.cantidad || r?.CANTIDAD || r?.cant || r?.total || r?.TOTAL || 0),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
@@ -238,8 +282,9 @@ export default function ZeusSafetyPage() {
 
   const tiposPago = (data.tipos_pago || [])
     .map((r) => ({
-      name: r?.tipo_pago || r?.TIPO_PAGO || r?.pago || r?.PAGO || r?.forma_pago || r?.FORMA_DE_PAGO || "—",
-      value: clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0),
+      name: r?.tipo_pago || r?.TIPO_PAGO || r?.pago || r?.PAGO || r?.forma_pago || r?.FORMA_DE_PAGO || r?.metodo || r?.METODO || r?.forma || "—",
+      // Priorizar campos monetarios sobre cantidad (cantidad de ventas)
+      value: clampNumber(r?.monto_total || r?.MONTO_TOTAL || r?.monto || r?.MONTO || r?.total || r?.TOTAL || r?.importe || r?.IMPORTE || r?.valor || r?.VALOR || r?.cantidad || r?.CANTIDAD || 0),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
@@ -252,6 +297,21 @@ export default function ZeusSafetyPage() {
       total: clampNumber(r?.total || r?.TOTAL || r?.monto || r?.MONTO || 0),
     };
   });
+
+  const almacenesFull = (data.almacenes || []).map(r => ({
+    name: r?.almacen || r?.ALMACEN || "MALVINAS",
+    value: clampNumber(r?.total || r?.TOTAL || 0)
+  }));
+  const valMalvinas = almacenesFull.find(x => x.name === "MALVINAS")?.value || 0;
+  const valCallao = almacenesFull.find(x => x.name === "CALLAO")?.value || 0;
+  const totalAlmacen = valMalvinas + valCallao;
+  const pctMalvinas = totalAlmacen > 0 ? ((valMalvinas / totalAlmacen) * 100).toFixed(1) : 0;
+  const pctCallao = totalAlmacen > 100 ? ((valCallao / totalAlmacen) * 100).toFixed(1) : 0;
+
+  const comprobantesData = (data.comprobantes || []).map(r => ({
+    name: r?.tipo || r?.TIPO || "—",
+    value: clampNumber(r?.cantidad || r?.CANTIDAD || 0)
+  })).sort((a, b) => b.value - a.value);
 
   useEffect(() => {
     setClientesPage(1);
@@ -344,7 +404,7 @@ export default function ZeusSafetyPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 block" style={{ fontFamily: "var(--font-poppins)" }}>
                   Rango de fechas
                 </label>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -378,7 +438,7 @@ export default function ZeusSafetyPage() {
                   {filters.inicio !== "2025-01-01" || filters.fin !== today ? "Filtrando por rango seleccionado" : "Mostrando todo el histórico"}
                 </div>
               </div>
-              
+
               {error && (
                 <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -394,8 +454,8 @@ export default function ZeusSafetyPage() {
                         Total
                       </p>
                       {loading ? <Skeleton className="h-7 w-36" /> : (
-                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrency(ventaTotal)}>
-                          {formatCurrency(ventaTotal)}
+                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatInt(ventaTotal)}>
+                          {formatInt(ventaTotal)}
                         </p>
                       )}
                       <p className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -420,7 +480,7 @@ export default function ZeusSafetyPage() {
                         </p>
                       )}
                       <p className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
-                        Cantidad total
+                        Rango seleccionado
                       </p>
                     </div>
                     <div className="w-10 h-10 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
@@ -541,7 +601,7 @@ export default function ZeusSafetyPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: "var(--font-poppins)" }}>
-                        Productos Vendidos
+                        PRODUCTOS VENDIDOS
                       </h2>
                       <p className="text-sm text-gray-600 mt-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
                         Productos vendidos
@@ -562,17 +622,18 @@ export default function ZeusSafetyPage() {
                         <div className="overflow-x-auto">
                           <table className="w-full">
                             <thead>
-                              <tr className="bg-[#002D5A] border-b-2 border-[#3B82F6]">
+                              <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
                                 <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">MONTO</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. UNIDAD</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. DOCENA</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. PARES</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                               {productosPaginados.map((p, idx) => (
                                 <tr
                                   key={`${p.producto}-${idx}`}
-                                  className={`transition-all cursor-pointer ${filters.producto === p.producto ? "bg-blue-50 border-l-4 border-l-[#3B82F6]" : "hover:bg-slate-100"} ${filters.producto && filters.producto !== p.producto ? "opacity-50" : ""}`}
+                                  className={`hover:bg-slate-200 transition-colors ${filters.producto === p.producto ? "bg-blue-50" : ""}`}
                                   onClick={() => {
                                     setFilters((prev) => ({
                                       ...prev,
@@ -581,8 +642,15 @@ export default function ZeusSafetyPage() {
                                   }}
                                 >
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{p.producto}</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(p.cantidad)}</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatCurrency(p.monto)}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-bold">
+                                    {p.cantUnidad > 0 ? formatInt(p.cantUnidad) : "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-bold">
+                                    {p.cantDocena > 0 ? formatInt(p.cantDocena) : "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-bold">
+                                    {p.cantPares > 0 ? formatInt(p.cantPares) : "-"}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -700,7 +768,10 @@ export default function ZeusSafetyPage() {
                           <PieChart cursor="pointer">
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}
-                              formatter={(v) => [formatCurrency(v), "MONTO"]}
+                              formatter={(v, name, props) => {
+                                const pct = props?.payload?.percent ?? 0;
+                                return [`${pct}%`, "Participación"];
+                              }}
                             />
                             <Pie
                               data={tiposPago.map((t) => {
@@ -776,11 +847,10 @@ export default function ZeusSafetyPage() {
                                   pago: prev.pago === t.name ? null : t.name,
                                 }));
                               }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                filters.pago === t.name
-                                  ? "border-[#3B82F6] bg-blue-50"
-                                  : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.pago === t.name
+                                ? "border-[#3B82F6] bg-blue-50"
+                                : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                               style={{ opacity: filters.pago && filters.pago !== t.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">
@@ -788,8 +858,7 @@ export default function ZeusSafetyPage() {
                                 <span className="text-xs font-semibold text-gray-700">{t.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(t.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-sm font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );
@@ -798,6 +867,8 @@ export default function ZeusSafetyPage() {
                     </div>
                   )}
                 </div>
+
+
               </div>
 
               {/* Ventas por Región (Mapa de Calor) */}
@@ -840,7 +911,7 @@ export default function ZeusSafetyPage() {
                       Ventas por Mes
                     </h2>
                     <p className="text-sm text-gray-600 mt-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
-                      Evolución mensual en soles
+                      Evolución mensual de ventas
                     </p>
                   </div>
                 </div>
@@ -869,11 +940,11 @@ export default function ZeusSafetyPage() {
                               tick={{ fill: "rgba(17,24,39,0.55)", fontSize: 10 }}
                               axisLine={false}
                               tickLine={false}
-                              tickFormatter={(v) => formatCurrency(v)}
+                              tickFormatter={(v) => formatInt(v)}
                             />
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8, fontFamily: "var(--font-poppins)" }}
-                              formatter={(v) => formatCurrency(v)}
+                              formatter={(v) => formatInt(v)}
                               labelFormatter={(label) => label}
                             />
                             <Bar
@@ -920,7 +991,7 @@ export default function ZeusSafetyPage() {
                                         fontWeight="bold"
                                         fontFamily="var(--font-poppins)"
                                       >
-                                        {formatCurrency(value)}
+                                        {formatInt(value)}
                                       </text>
                                     </g>
                                   );

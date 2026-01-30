@@ -83,7 +83,8 @@ function formatCurrency(value) {
 
 function formatInt(value) {
   const n = clampNumber(value);
-  return Math.round(n).toLocaleString("es-PE");
+  // Usar formato alemán para forzar puntos como separadores de miles
+  return new Intl.NumberFormat("de-DE").format(Math.round(n));
 }
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -114,7 +115,7 @@ export default function ZeusElectricPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  
+
   const [filters, setFilters] = useState({
     mes: null,
     producto: null,
@@ -212,11 +213,16 @@ export default function ZeusElectricPage() {
   const totalClientesPaginas = Math.max(1, Math.ceil((clientes.length || 0) / clientesPorPagina));
   const clientesPaginados = clientes.slice((clientesPage - 1) * clientesPorPagina, clientesPage * clientesPorPagina);
 
-  const productos = (data.productos_vendidos || []).map((p) => ({
-    producto: p?.producto || p?.PRODUCTO || p?.descripcion || p?.nombre || "—",
-    cantidad: pickNumber(p, ["cantidad", "CANTIDAD", "unidades", "UNIDADES", "total", "TOTAL"]),
-    monto: pickNumber(p, ["monto", "MONTO", "total", "TOTAL", "importe", "IMPORTE"]),
-  }));
+  const productos = (data.productos_vendidos || []).map((p) => {
+    const cantidad = pickNumeric(p, ["cantidad", "CANTIDAD", "unidades", "UNIDADES", "total", "TOTAL", "CANT. UNIDAD", "CANT_UNIDAD"]);
+    const monto = pickNumeric(p, ["monto", "MONTO", "total", "TOTAL", "importe", "IMPORTE", "TOTAL UNIDAD", "TOTAL_UNIDAD"]);
+
+    return {
+      producto: p?.producto || p?.PRODUCTO || p?.descripcion || p?.nombre || "—",
+      cantidad,
+      monto,
+    };
+  });
   const totalProductosPaginas = Math.max(1, Math.ceil((productos.length || 0) / productosPorPagina));
   const productosPaginados = productos.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
@@ -344,7 +350,7 @@ export default function ZeusElectricPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 block" style={{ fontFamily: "var(--font-poppins)" }}>
                   Rango de fechas
                 </label>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-gray-700 whitespace-nowrap" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -378,7 +384,7 @@ export default function ZeusElectricPage() {
                   {filters.inicio !== "2025-01-01" || filters.fin !== today ? "Filtrando por rango seleccionado" : "Mostrando todo el histórico"}
                 </div>
               </div>
-              
+
               {error && (
                 <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -581,8 +587,12 @@ export default function ZeusElectricPage() {
                                   }}
                                 >
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{p.producto}</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(p.cantidad)}</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatCurrency(p.monto)}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
+                                    {p.cantidad > 0 ? formatInt(p.cantidad) : "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
+                                    {p.monto > 0 ? formatInt(p.monto) : "-"}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -776,11 +786,10 @@ export default function ZeusElectricPage() {
                                   pago: prev.pago === t.name ? null : t.name,
                                 }));
                               }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                filters.pago === t.name
-                                  ? "border-[#E5A017] bg-amber-50"
-                                  : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.pago === t.name
+                                ? "border-[#E5A017] bg-amber-50"
+                                : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                               style={{ opacity: filters.pago && filters.pago !== t.name ? 0.5 : 1 }}
                             >
                               <div className="flex items-center gap-2">

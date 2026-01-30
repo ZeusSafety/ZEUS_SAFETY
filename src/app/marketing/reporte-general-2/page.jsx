@@ -62,8 +62,8 @@ function pickNumeric(obj, keys = []) {
 }
 
 const ALMACEN_KEYS = [
-  "cantidad", "CANTIDAD", "total", "TOTAL", "monto", "MONTO",
-  "valor", "VALOR", "count", "COUNT", "num", "NUM", "pedidos", "PEDIDOS",
+  "record_count", "RECORD_COUNT", "cantidad", "CANTIDAD", "count", "COUNT", "total", "TOTAL",
+  "monto", "MONTO", "valor", "VALOR", "num", "NUM", "pedidos", "PEDIDOS",
   "salida", "SALIDA", "almacen_cant", "ALMACEN_CANT",
 ];
 const COMPROBANTE_VAL_KEYS = [
@@ -90,7 +90,8 @@ function formatCurrency(value) {
 
 function formatInt(value) {
   const n = clampNumber(value);
-  return Math.round(n).toLocaleString("es-PE");
+  // dots for thousands
+  return new Intl.NumberFormat("de-DE").format(Math.round(n));
 }
 
 function Skeleton({ className }) {
@@ -245,17 +246,39 @@ export default function ReporteGeneral2MarketingPage() {
     ? _productos
     : _productos != null && typeof _productos === "object" && !Array.isArray(_productos)
       ? Object.entries(_productos).map(([k, v]) => {
-          const o = typeof v === "object" && v !== null ? v : { cantidad: v, total: v, CANTIDAD: v, TOTAL: v };
-          return { producto: k, PRODUCTO: k, ...o };
-        })
+        const o = typeof v === "object" && v !== null ? v : { cantidad: v, total: v, CANTIDAD: v, TOTAL: v };
+        return { producto: k, PRODUCTO: k, ...o };
+      })
       : [];
   const pagosRaw = Array.isArray(dashboardData?.pagos) ? dashboardData.pagos : [];
-  const _comp = dashboardData?.comprobantes;
-  const comprobantesRaw = _comp != null && (Array.isArray(_comp) || (typeof _comp === "object" && !Array.isArray(_comp))) ? _comp : [];
   const _alm = dashboardData?.almacenes;
-  const almacenesRaw = _alm != null && (Array.isArray(_alm) || (typeof _alm === "object" && !Array.isArray(_alm))) ? _alm : [];
-  const regionesRaw = Array.isArray(dashboardData?.geografia?.regiones) ? dashboardData.geografia.regiones : [];
-  const distritosRaw = Array.isArray(dashboardData?.geografia?.distritos) ? dashboardData.geografia.distritos : [];
+  const almacenesRaw = Array.isArray(_alm)
+    ? _alm
+    : _alm != null && typeof _alm === "object"
+      ? Object.entries(_alm).map(([k, v]) => {
+        const o = typeof v === "object" && v !== null ? v : { count: v, total: v, quantity: v };
+        return { almacen: k, ...o };
+      })
+      : [];
+
+  const _comp = dashboardData?.comprobantes;
+  const comprobantesRaw = Array.isArray(_comp)
+    ? _comp
+    : _comp != null && typeof _comp === "object"
+      ? Object.entries(_comp).map(([k, v]) => {
+        const o = typeof v === "object" && v !== null ? v : { count: v, total: v };
+        return { comprobante: k, ...o };
+      })
+      : [];
+  const geografiaRaw = Array.isArray(dashboardData?.geografia)
+    ? dashboardData.geografia
+    : Array.isArray(dashboardData?.geografia?.regiones)
+      ? dashboardData.geografia.regiones // Fallback porsi el backend antiguo estructura asi
+      : [];
+
+  // El SP nuevo devuelve un solo array con region y distrito mezclados. Usamos ese mismo array para ambos.
+  const regionesRaw = geografiaRaw;
+  const distritosRaw = geografiaRaw;
 
   /** Normaliza string para comparación (region/distrito). */
   const norm = (s) => (s ?? "").toString().trim().toUpperCase().replace(/\s+/g, " ");
@@ -311,9 +334,8 @@ export default function ReporteGeneral2MarketingPage() {
   const clientes = rankingFiltered.map((r) => ({
     name: r?.cliente ?? r?.CLIENTE ?? r?.nombre ?? r?.NOMBRE ?? "—",
     compras: pickNumeric(r, [
-      "cantidad", "CANTIDAD", "compras", "COMPRAS", "cantidad_compras", "CANTIDAD_COMPRAS",
-      "total_compras", "TOTAL_COMPRAS", "num_compras", "NUM_COMPRAS", "total", "TOTAL",
-      "monto_total", "MONTO_TOTAL", "count", "COUNT",
+      "cantidad", "CANTIDAD", "cantidad_ventas", "num_ventas", "ventas", "frecuencia", "FRECUENCIA",
+      "count", "COUNT"
     ]),
   }));
 
@@ -331,24 +353,27 @@ export default function ReporteGeneral2MarketingPage() {
     }
     return "—";
   };
-  const productosCliente = productosParaTabla.map((r) => ({
-    producto: pickProductoName(r),
-    cantUnidad: pickNumeric(r, [
-      "cantidad_unidad", "CANTIDAD_UNIDAD", "cant_unidad", "CANT_UNIDAD", "unidades", "UNIDADES",
-      "cantidad", "CANTIDAD", "total_unidades", "TOTAL_UNIDADES", "cantidad_unidades", "CANTIDAD_UNIDADES",
-    ]),
-    totalUnidad: pickNumeric(r, [
-      "total_unidad", "TOTAL_UNIDAD", "monto_unidad", "MONTO_UNIDAD", "total", "TOTAL", "monto", "MONTO",
-      "precio_venta", "PRECIO_VENTA", "importe_unidad", "IMPORTE_UNIDAD",
-    ]),
-    cantDocena: pickNumeric(r, [
-      "cantidad_docena", "CANTIDAD_DOCENA", "cant_docena", "CANT_DOCENA", "docenas", "DOCENAS",
-      "total_docenas", "TOTAL_DOCENAS", "num_docenas", "docena", "DOCENA", "cantidad_docenas", "CANTIDAD_DOCENAS",
-    ]),
-    totalDocena: pickNumeric(r, ["total_docena", "TOTAL_DOCENA", "monto_docena", "MONTO_DOCENA", "total", "TOTAL", "monto", "MONTO"]),
-    cantPares: pickNumeric(r, ["cantidad_pares", "CANTIDAD_PARES", "cant_pares", "CANT_PARES", "pares", "PARES"]),
-    totalPares: pickNumeric(r, ["total_pares", "TOTAL_PARES", "monto_pares", "MONTO_PARES", "total", "TOTAL"]),
-  }));
+  const productosCliente = productosParaTabla.map((r) => {
+    // LLAVES ESTRICTAS DEL SP (para evitar que se inflen los números por fallbacks)
+    const cantU = clampNumber(r?.["CANT. UNIDAD"] || 0);
+    const totalU = clampNumber(r?.["TOTAL UNIDAD"] || 0);
+
+    const cantD = clampNumber(r?.["CANT. DOCENA"] || 0);
+    const totalD = clampNumber(r?.["TOTAL DOCENA"] || 0);
+
+    const cantP = clampNumber(r?.["CANT. PARES"] || 0);
+    const totalP = clampNumber(r?.["TOTAL PARES"] || 0);
+
+    return {
+      producto: pickProductoName(r),
+      cantUnidad: cantU,
+      totalUnidad: totalU,
+      cantDocena: cantD,
+      totalDocena: totalD,
+      cantPares: cantP,
+      totalPares: totalP,
+    };
+  });
   const totalProductosPaginas = Math.max(1, Math.ceil((productosCliente.length || 0) / productosPorPagina));
   const productosClientePaginados = productosCliente.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
@@ -379,7 +404,7 @@ export default function ReporteGeneral2MarketingPage() {
   ];
   const distritosByKey = new Map();
   distritosRaw.forEach((r) => {
-    const n = (r?.distrito ?? r?.DISTRITO ?? "").toString().toUpperCase().trim();
+    const n = (r?.distrito ?? r?.DISTRITO ?? r?.nombre ?? r?.NOMBRE ?? "").toString().toUpperCase().trim();
     if (!n) return;
     const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
     distritosByKey.set(n, v);
@@ -387,27 +412,27 @@ export default function ReporteGeneral2MarketingPage() {
 
   const distritos = filters.region
     ? (() => {
-        const byName = new Map();
-        distritosRaw.forEach((r) => {
-          const name = (r?.distrito ?? r?.DISTRITO ?? "—").toString().trim() || "—";
-          if (name === "—") return;
-          const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
-          byName.set(name, (byName.get(name) || 0) + v);
-        });
-        return [...byName.entries()]
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 20);
-      })()
-    : TOP_10_DISTRITOS_ORDER.map((d) => {
-        let value = distritosByKey.get(d) ?? 0;
-        if (value === 0) {
-          for (const [k, v] of distritosByKey) {
-            if (k.includes(d) || d.includes(k)) { value = v; break; }
-          }
-        }
-        return { name: d, value };
+      const byName = new Map();
+      distritosRaw.forEach((r) => {
+        const name = (r?.distrito ?? r?.DISTRITO ?? r?.nombre ?? r?.NOMBRE ?? "—").toString().trim() || "—";
+        if (name === "—") return;
+        const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
+        byName.set(name, (byName.get(name) || 0) + v);
       });
+      return [...byName.entries()]
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 20);
+    })()
+    : TOP_10_DISTRITOS_ORDER.map((d) => {
+      let value = distritosByKey.get(d) ?? 0;
+      if (value === 0) {
+        for (const [k, v] of distritosByKey) {
+          if (k.includes(d) || d.includes(k)) { value = v; break; }
+        }
+      }
+      return { name: d, value };
+    });
 
   /** Normaliza nombre de comprobante a Factura / Boleta / Proforma para mostrar siempre. */
   const comprobanteLabel = (raw) => {
@@ -438,27 +463,34 @@ export default function ReporteGeneral2MarketingPage() {
     else if (label !== "—" && val > 0)
       comprobantesBase.push({ name: label, nameRaw: raw, value: val });
   });
+  const totalComp = comprobantesBase.reduce((s, c) => s + (c.value || 0), 0);
   const comprobantes = comprobantesBase
     .filter((c) => c.value > 0)
     .sort((a, b) => b.value - a.value)
-    .map((c) => ({ ...c, valueDisplay: c.value }));
+    .map((c) => {
+      const pct = totalComp > 0 ? ((c.value / totalComp) * 100).toFixed(2).replace(".", ",") : "0,00";
+      return { ...c, valueDisplay: c.value, percent: pct };
+    });
 
-  const almacenesArr = Array.isArray(almacenesRaw)
-    ? almacenesRaw.map((r) => ({
-        name: (r?.almacen ?? r?.ALMACEN ?? r?.salida ?? r?.SALIDA_DE_PEDIDO ?? r?.nombre ?? "").toString().trim() || "—",
-        value: pickNumeric(r, ALMACEN_KEYS),
-      }))
-    : typeof almacenesRaw === "object" && almacenesRaw !== null
-      ? Object.entries(almacenesRaw).map(([k, v]) => ({
-          name: String(k).trim() || "—",
-          value: pickNumeric({ total: v, cantidad: v, TOTAL: v, CANTIDAD: v }, ALMACEN_KEYS),
-        }))
-      : [];
-  const valMalvinas = almacenesArr.find((a) => String(a.name).toUpperCase().includes("MALVIN"))?.value ?? 0;
-  const valCallao = almacenesArr.find((a) => String(a.name).toUpperCase().includes("CALLAO"))?.value ?? 0;
+  const almacenesArr = almacenesRaw.map((r) => {
+    // El SP devuelve 'almacen' y 'total'. Aseguramos que 'total' sea capturado.
+    const name = (r?.almacen ?? r?.ALMACEN ?? r?.salida ?? r?.SALIDA_DE_PEDIDO ?? r?.nombre ?? r?.nombre_almacen ?? "").toString().trim().toUpperCase();
+    const value = pickNumeric(r, ALMACEN_KEYS);
+    return { name, value };
+  });
+
+  // ACUMULACIÓN EXCLUSIVA: Solo MALVINAS y CALLAO. Ignora fechas y basura.
+  const valMalvinas = almacenesArr
+    .filter(a => a.name.includes("MALVINAS") && !a.name.match(/[0-9]{4}/))
+    .reduce((sum, item) => sum + item.value, 0);
+
+  const valCallao = almacenesArr
+    .filter(a => a.name.includes("CALLAO") && !a.name.match(/[0-9]{4}/))
+    .reduce((sum, item) => sum + item.value, 0);
+
   const totalAlmacen = valMalvinas + valCallao;
-  const pctMalvinas = totalAlmacen > 0 ? Math.round((valMalvinas / totalAlmacen) * 1000) / 10 : 0;
-  const pctCallao = totalAlmacen > 0 ? Math.round((valCallao / totalAlmacen) * 1000) / 10 : 0;
+  const pctMalvinas = totalAlmacen > 0 ? Number(((valMalvinas / totalAlmacen) * 100).toFixed(1)) : 0;
+  const pctCallao = totalAlmacen > 0 ? Number(((valCallao / totalAlmacen) * 100).toFixed(1)) : 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50" style={{ background: BG }}>
@@ -546,7 +578,7 @@ export default function ReporteGeneral2MarketingPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 block" style={{ fontFamily: "var(--font-poppins)" }}>
                   Rango de fechas
                 </label>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                   {/* Desde - Separado */}
                   <div className="flex items-center gap-3">
@@ -618,9 +650,9 @@ export default function ReporteGeneral2MarketingPage() {
                   </button>
                 )}
 
-              {error && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-</div>
-            {/* Fila 1: SOLO 2 tablas */}
+                {error && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+              </div>
+              {/* Fila 1: SOLO 2 tablas */}
               <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* COMPRAS POR CLIENTE - Solo título dentro de la card */}
                 <div>
@@ -629,77 +661,77 @@ export default function ReporteGeneral2MarketingPage() {
                   </h2>
                   <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden">
 
-                  {loading ? (
-                    <TableSkeleton rows={5} />
-                  ) : clientes.length === 0 ? (
-                    <div className="px-4 pb-4 text-sm text-gray-600">Sin datos.</div>
-                  ) : (
-                    <>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CLIENTE</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {clientesPaginados.map((c, idx) => (
-                              <tr
-                                key={`${c.name}-${idx}`}
-                                className={`hover:bg-slate-200 transition-colors cursor-pointer ${filters.cliente === c.name ? "bg-yellow-50" : ""}`}
-                                onClick={() => {
-                                  // si haces click al mismo cliente -> toggle off (histórico total)
-                                  setFilters((prev) => ({ ...prev, cliente: prev.cliente === c.name ? null : c.name }));
-                                  setProductosPage(1);
-                                }}
-                                title="Click para ver productos del cliente"
-                              >
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{c.name}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(c.compras)}</td>
+                    {loading ? (
+                      <TableSkeleton rows={5} />
+                    ) : clientes.length === 0 ? (
+                      <div className="px-4 pb-4 text-sm text-gray-600">Sin datos.</div>
+                    ) : (
+                      <>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
+                                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CLIENTE</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {clientesPaginados.map((c, idx) => (
+                                <tr
+                                  key={`${c.name}-${idx}`}
+                                  className={`hover:bg-slate-200 transition-colors cursor-pointer ${filters.cliente === c.name ? "bg-yellow-50" : ""}`}
+                                  onClick={() => {
+                                    // si haces click al mismo cliente -> toggle off (histórico total)
+                                    setFilters((prev) => ({ ...prev, cliente: prev.cliente === c.name ? null : c.name }));
+                                    setProductosPage(1);
+                                  }}
+                                  title="Click para ver productos del cliente"
+                                >
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{c.name}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(c.compras)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
 
-                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                        <button
-                          disabled={clientesPage === 1}
-                          onClick={() => setClientesPage(1)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Primera página"
-                        >
-                          «
-                        </button>
-                        <button
-                          onClick={() => setClientesPage((p) => Math.max(1, p - 1))}
-                          disabled={clientesPage === 1}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Página anterior"
-                        >
-                          &lt;
-                        </button>
-                        <span className="text-[10px] text-gray-700 font-medium">Página {clientesPage} de {totalClientesPaginas}</span>
-                        <button
-                          onClick={() => setClientesPage((p) => Math.min(totalClientesPaginas, p + 1))}
-                          disabled={clientesPage === totalClientesPaginas}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Página siguiente"
-                        >
-                          &gt;
-                        </button>
-                        <button
-                          disabled={clientesPage === totalClientesPaginas}
-                          onClick={() => setClientesPage(totalClientesPaginas)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Última página"
-                        >
-                          »
-                        </button>
-                      </div>
-                    </>
-                  )}
+                        <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                          <button
+                            disabled={clientesPage === 1}
+                            onClick={() => setClientesPage(1)}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Primera página"
+                          >
+                            «
+                          </button>
+                          <button
+                            onClick={() => setClientesPage((p) => Math.max(1, p - 1))}
+                            disabled={clientesPage === 1}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Página anterior"
+                          >
+                            &lt;
+                          </button>
+                          <span className="text-[10px] text-gray-700 font-medium">Página {clientesPage} de {totalClientesPaginas}</span>
+                          <button
+                            onClick={() => setClientesPage((p) => Math.min(totalClientesPaginas, p + 1))}
+                            disabled={clientesPage === totalClientesPaginas}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Página siguiente"
+                          >
+                            &gt;
+                          </button>
+                          <button
+                            disabled={clientesPage === totalClientesPaginas}
+                            onClick={() => setClientesPage(totalClientesPaginas)}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Última página"
+                          >
+                            »
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -710,80 +742,96 @@ export default function ReporteGeneral2MarketingPage() {
                   </h2>
                   <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden">
 
-                  {loading ? (
-                    <TableSkeleton rows={5} />
-                  ) : productosCliente.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center text-sm text-gray-600">
-                      Sin datos.
-                    </div>
-                  ) : (
-                    <>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
-                              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. UNIDAD</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL UNIDAD</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. DOCENA</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL DOCENA</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. PARES</th>
-                              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL PARES</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {productosClientePaginados.map((p, idx) => (
-                              <tr key={`${p.producto}-${idx}`} className="hover:bg-slate-200 transition-colors">
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{p.producto}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(p.cantUnidad)}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">{formatCurrency(Math.round(p.totalUnidad || 0))}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(p.cantDocena)}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">{formatCurrency(Math.round(p.totalDocena || 0))}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">{formatInt(p.cantPares)}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">{formatCurrency(Math.round(p.totalPares || 0))}</td>
+                    {loading ? (
+                      <TableSkeleton rows={5} />
+                    ) : productosCliente.length === 0 ? (
+                      <div className="h-64 flex items-center justify-center text-sm text-gray-600">
+                        Sin datos.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
+                                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. UNIDAD</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL UNIDAD</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. DOCENA</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL DOCENA</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. PARES</th>
+                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL PARES</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {productosClientePaginados.map((p, idx) => (
+                                <tr key={`${p.producto}-${idx}`} className="hover:bg-slate-200 transition-colors">
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{p.producto}</td>
+                                  {/* Cantidades: Formato 1.600 (con puntos) y SIN símbolo S/ */}
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
+                                    {p.cantUnidad > 0 ? formatInt(p.cantUnidad) : "-"}
+                                  </td>
+                                  {/* Totales: SI llevan símbolo de moneda S/ */}
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
+                                    {p.totalUnidad > 0 ? formatInt(p.totalUnidad) : "-"}
+                                  </td>
 
-                      <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-                        <button
-                          disabled={productosPage === 1}
-                          onClick={() => setProductosPage(1)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Primera página"
-                        >
-                          «
-                        </button>
-                        <button
-                          onClick={() => setProductosPage((p) => Math.max(1, p - 1))}
-                          disabled={productosPage === 1}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Página anterior"
-                        >
-                          &lt;
-                        </button>
-                        <span className="text-[10px] text-gray-700 font-medium">Página {productosPage} de {totalProductosPaginas}</span>
-                        <button
-                          onClick={() => setProductosPage((p) => Math.min(totalProductosPaginas, p + 1))}
-                          disabled={productosPage === totalProductosPaginas}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Página siguiente"
-                        >
-                          &gt;
-                        </button>
-                        <button
-                          disabled={productosPage === totalProductosPaginas}
-                          onClick={() => setProductosPage(totalProductosPaginas)}
-                          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Última página"
-                        >
-                          »
-                        </button>
-                      </div>
-                    </>
-                  )}
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
+                                    {p.cantDocena > 0 ? formatInt(p.cantDocena) : "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
+                                    {p.totalDocena > 0 ? formatInt(p.totalDocena) : "-"}
+                                  </td>
+
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
+                                    {p.cantPares > 0 ? formatInt(p.cantPares) : "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
+                                    {p.totalPares > 0 ? formatInt(p.totalPares) : "-"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
+                          <button
+                            disabled={productosPage === 1}
+                            onClick={() => setProductosPage(1)}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Primera página"
+                          >
+                            «
+                          </button>
+                          <button
+                            onClick={() => setProductosPage((p) => Math.max(1, p - 1))}
+                            disabled={productosPage === 1}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Página anterior"
+                          >
+                            &lt;
+                          </button>
+                          <span className="text-[10px] text-gray-700 font-medium">Página {productosPage} de {totalProductosPaginas}</span>
+                          <button
+                            onClick={() => setProductosPage((p) => Math.min(totalProductosPaginas, p + 1))}
+                            disabled={productosPage === totalProductosPaginas}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Página siguiente"
+                          >
+                            &gt;
+                          </button>
+                          <button
+                            disabled={productosPage === totalProductosPaginas}
+                            onClick={() => setProductosPage(totalProductosPaginas)}
+                            className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Última página"
+                          >
+                            »
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -809,7 +857,7 @@ export default function ReporteGeneral2MarketingPage() {
                           <PieChart>
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}
-                              formatter={(v) => [formatCurrency(v), "MONTO"]}
+                              formatter={(v) => [formatInt(v), "Record Count"]}
                             />
                             <Pie
                               activeShape={{ stroke: "none" }}
@@ -877,17 +925,15 @@ export default function ReporteGeneral2MarketingPage() {
                               tabIndex={0}
                               onClick={() => setFilters((prev) => ({ ...prev, pago: prev.pago === p.name ? null : p.name }))}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, pago: prev.pago === p.name ? null : p.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                isSelected ? "border-[#E5A017] bg-amber-50" : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${isSelected ? "border-[#E5A017] bg-amber-50" : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: hashColor(`pago:${p.name}`) }} />
                                 <span className="text-xs font-semibold text-gray-700">{p.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(p.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-[10px] font-bold text-gray-900">{formatInt(p.value)} · {percent}%</div>
                               </div>
                             </div>
                           );
@@ -911,7 +957,11 @@ export default function ReporteGeneral2MarketingPage() {
                           <PieChart>
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}
-                              formatter={(v, n, p) => [formatInt(p?.payload?.value ?? v), "VENTAS"]}
+                              formatter={(v, name, props) => {
+                                const val = props?.payload?.value ?? v;
+                                const pct = props?.payload?.percent ?? 0;
+                                return [`${formatInt(val)} (${pct}%)`, "Record Count"];
+                              }}
                             />
                             <Pie
                               activeShape={{ stroke: "none" }}
@@ -920,13 +970,13 @@ export default function ReporteGeneral2MarketingPage() {
                                   name: "MALVINAS",
                                   value: valMalvinas,
                                   valueDisplay: totalAlmacen === 0 && valMalvinas === 0 ? 1 : valMalvinas,
-                                  percent: totalAlmacen > 0 ? Number(((valMalvinas / totalAlmacen) * 100).toFixed(1)) : 0,
+                                  percent: pctMalvinas,
                                 },
                                 {
                                   name: "CALLAO",
                                   value: valCallao,
                                   valueDisplay: totalAlmacen === 0 && valCallao === 0 ? 1 : valCallao,
-                                  percent: totalAlmacen > 0 ? Number(((valCallao / totalAlmacen) * 100).toFixed(1)) : 0,
+                                  percent: pctCallao,
                                 },
                               ]}
                               dataKey="valueDisplay"
@@ -992,20 +1042,20 @@ export default function ReporteGeneral2MarketingPage() {
                               tabIndex={0}
                               onClick={() => setFilters((prev) => ({ ...prev, almacen: prev.almacen === a.name ? null : a.name }))}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, almacen: prev.almacen === a.name ? null : a.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${
-                                isSelected ? "border-[#E5A017] bg-amber-50" : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${isSelected ? "border-[#E5A017] bg-amber-50" : "border-gray-100 bg-gray-50 hover:bg-gray-100"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
                                 <span className="text-xs font-semibold text-gray-700">{a.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">
-                                  {totalAlmacen === 0 && a.value === 0 ? "—" : formatInt(a.value)}
+                                <div className="text-xs font-bold text-gray-900 flex flex-col items-end">
+                                  <span>{formatInt(a.value)}</span>
+                                  <span className="text-[9px] text-gray-400 font-normal">Record Count</span>
                                 </div>
-                                <div className="text-[10px] text-gray-500">
-                                  {totalAlmacen === 0 && a.value === 0 ? "" : `${a.pct}%`}
+                                <div className="text-[10px] text-[#002D5A] font-bold">
+                                  {`${a.pct}%`}
                                 </div>
                               </div>
                             </div>
@@ -1032,17 +1082,29 @@ export default function ReporteGeneral2MarketingPage() {
                     ) : (
                       <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={comprobantes} layout="vertical" margin={{ left: 10, right: 28, top: 10, bottom: 10 }}>
-                            <XAxis type="number" domain={[0, "auto"]} tick={{ fill: "rgba(17,24,39,0.65)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <YAxis type="category" dataKey="name" width={140} tick={{ fill: "rgba(17,24,39,0.9)", fontSize: 13, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                          <BarChart data={comprobantes} layout="vertical" margin={{ left: 10, right: 35, top: 10, bottom: 10 }}>
+                            <XAxis type="number" domain={[0, "auto"]} hide />
+                            <YAxis
+                              type="category"
+                              dataKey="name"
+                              width={180}
+                              tickFormatter={(v) => {
+                                const it = comprobantes.find(c => c.name === v);
+                                return it ? `${v.toUpperCase()} (${it.percent} %)` : v;
+                              }}
+                              tick={{ fill: "rgba(17,24,39,0.9)", fontSize: 11, fontWeight: 700 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
                             <Tooltip
                               cursor={false}
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8 }}
-                              formatter={(v, name, props) => [formatCurrency(props?.payload?.value ?? v), "MONTO"]}
+                              formatter={(v) => [formatInt(v), "Record Count"]}
                             />
                             <Bar
                               dataKey="valueDisplay"
-                              radius={[10, 10, 10, 10]}
+                              radius={[0, 4, 4, 0]}
+                              barSize={40}
                               activeBar={{ stroke: "none" }}
                               cursor="pointer"
                               onClick={(data) => {
@@ -1056,7 +1118,7 @@ export default function ReporteGeneral2MarketingPage() {
                                 const color = colors[idx % colors.length];
                                 return <Cell key={`comp-${idx}-${String(c?.name ?? "")}`} fill={color} stroke="none" style={{ cursor: "pointer" }} />;
                               })}
-                              <LabelList dataKey="value" position="right" formatter={(v, name, props) => formatCurrency(props?.payload?.value ?? v)} style={{ fontSize: 10, fontWeight: 600, fill: "#1f2937" }} />
+                              <LabelList dataKey="value" position="right" formatter={(v) => formatInt(v)} style={{ fontSize: 10, fontWeight: 700, fill: "#1f2937" }} />
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
@@ -1081,7 +1143,7 @@ export default function ReporteGeneral2MarketingPage() {
                               <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                               <span className="text-xs font-bold text-gray-700">{c.name}</span>
                             </div>
-                            <span className="text-sm font-bold text-gray-900">{formatCurrency(c.value)}</span>
+                            <span className="text-sm font-bold text-gray-900">{formatInt(c.value)}</span>
                           </button>
                         );
                       })}
@@ -1090,7 +1152,7 @@ export default function ReporteGeneral2MarketingPage() {
                   {!loading && comprobantes.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                       <span className="text-xs font-semibold text-gray-500 uppercase" style={{ fontFamily: "var(--font-poppins)" }}>Total emitido</span>
-                      <span className="text-sm font-bold text-[#002D5A]">{formatCurrency(comprobantes.reduce((s, c) => s + (c.value || 0), 0))}</span>
+                      <span className="text-sm font-bold text-[#002D5A]">{formatInt(comprobantes.reduce((s, c) => s + (c.value || 0), 0))}</span>
                     </div>
                   )}
                 </div>
