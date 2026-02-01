@@ -172,7 +172,7 @@ export default function PeruSVGMap({ regiones = [], loading, selectedRegion, onS
                 strokeWidth={isSelected ? 2.5 : 0.8}
                 opacity={0.9}
                 className="transition-all duration-200 hover:opacity-100 hover:stroke-[#002D5A]"
-                onClick={() => onSelectRegion?.(norm(selectedRegion) === norm(region.name) ? null : region.name)}
+                onClick={() => onSelectRegion?.(region.name)}
                 style={{ cursor: "pointer" }}
               />
             </g>

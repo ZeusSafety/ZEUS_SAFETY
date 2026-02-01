@@ -27,6 +27,7 @@ export default function GestionPreciosPage() {
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const [tablasDisponibles, setTablasDisponibles] = useState([
     { value: "MALVINAS", label: "Malvinas", disponible: true },
     { value: "PROVINCIA", label: "Provincia", disponible: true },
@@ -620,6 +621,36 @@ export default function GestionPreciosPage() {
     setMostrarSugerencias(false);
   };
 
+  // Función para copiar texto al portapapeles
+  const copyToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => {
+        setCopiedIndex(null);
+      }, 2000); // Mostrar feedback por 2 segundos
+    } catch (err) {
+      console.error("Error al copiar al portapapeles:", err);
+      // Fallback para navegadores antiguos
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopiedIndex(index);
+        setTimeout(() => {
+          setCopiedIndex(null);
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error("Error en fallback de copia:", fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   const handleAgregar = () => {
     setModalType("create");
     setSelectedPrecio(null);
@@ -739,11 +770,13 @@ export default function GestionPreciosPage() {
     // Asegurar que el ID sea un número entero
     const finalId = typeof idValue === 'number' ? idValue : parseInt(idValue, 10);
 
+    // Almacenar el objeto completo para no perder campos dinámicos (CAJA 1, DOCENA 1, etc.)
     const formDataToSet = {
+      ...precio,
       ID: finalId,
-      id: finalId, // También enviar como 'id' por si la API lo requiere
+      id: finalId,
       CODIGO: getField(["CODIGO", "codigo"]),
-      NOMBRE: nombreValue || "", // Si no hay nombre, usar string vacío
+      NOMBRE: nombreValue || "",
       UNIDAD_MEDIDA_VENTA: getField(["UNIDAD_MEDIDA_VENTA", "unidad_medida_venta"]) || "UNIDAD",
       CANTIDAD_UNIDAD_MEDIDA_VENTA: parseFloat(getField(["CANTIDAD_UNIDAD_MEDIDA_VENTA", "cantidad_unidad_medida_venta"])) || 1,
       PRECIO_UNIDAD_MEDIDA_VENTA: parseFloat(getField(["PRECIO_UNIDAD_MEDIDA_VENTA", "precio_unidad_medida_venta"])) || 0,
@@ -753,10 +786,9 @@ export default function GestionPreciosPage() {
       TEXTO_COPIAR: getField(["TEXTO_COPIAR", "texto_copiar", "textoCopiar"]) || ""
     };
 
-    console.log("✅ FormData a enviar (con ID válido):", formDataToSet);
+    console.log("✅ FormData a enviar (con ID válido y campos dinámicos):", formDataToSet);
 
     setFormData(formDataToSet);
-    // Sincronizar el campo de búsqueda con el nombre del producto
     setProductoBusqueda(nombreValue || "");
     setSugerenciasProductos([]);
     setMostrarSugerencias(false);
@@ -957,51 +989,40 @@ export default function GestionPreciosPage() {
       const apiMethod = modalType === "create" ? "CREAR_FRANJA_PRECIO" : "ACTUALIZAR_FRANJA_PRECIO";
       const apiUrl = `/api/franja-precios?method=${apiMethod}&id=${encodeURIComponent(activeTab)}`;
 
-      // Preparar el body con todos los datos necesarios
-      const textoCopiarValue = formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "";
-
-      // Para actualizar, el nombre viene de PRODUCTO (campo que devuelve el backend)
-      // El backend protege el CODIGO y el nombre, así que solo necesitamos enviarlo si es creación
       const nombreValue = modalType === "create"
         ? (formData.NOMBRE || formData.nombre || "")
         : (formData.NOMBRE || formData.nombre || selectedPrecio?.PRODUCTO || selectedPrecio?.producto || selectedPrecio?.NOMBRE || selectedPrecio?.nombre || "");
 
-      const requestBody = {
-        CODIGO: formData.CODIGO || formData.codigo,
-        // El backend protege el nombre en actualización, pero lo enviamos por si acaso
-        NOMBRE: nombreValue,
-        UNIDAD_MEDIDA_VENTA: formData.UNIDAD_MEDIDA_VENTA || formData.unidad_medida_venta || "UNIDAD",
-        CANTIDAD_UNIDAD_MEDIDA_VENTA: formData.CANTIDAD_UNIDAD_MEDIDA_VENTA || formData.cantidad_unidad_medida_venta || 1,
-        PRECIO_UNIDAD_MEDIDA_VENTA: formData.PRECIO_UNIDAD_MEDIDA_VENTA || formData.precio_unidad_medida_venta || formData.precio || 0,
-        UNIDAD_MEDIDA_CAJA: formData.UNIDAD_MEDIDA_CAJA || formData.unidad_medida_caja || "UNIDAD",
-        CANTIDAD_CAJA: formData.CANTIDAD_CAJA || formData.cantidad_caja || 0,
-        CLASIFICACION: formData.CLASIFICACION || activeTab,
-        // Enviar en ambos formatos para mayor compatibilidad
-        TEXTO_COPIAR: textoCopiarValue,
-        texto_copiar: textoCopiarValue,
-        texto: textoCopiarValue,
-        // Asegurar que el ID esté presente en ambos formatos para actualizar
-        ...(modalType === "update" && {
-          ID: formData.ID || formData.id,
-          id: formData.ID || formData.id
-        })
-      };
-
       // Validar campos críticos
-      if (!requestBody.CODIGO || requestBody.CODIGO === "") {
+      if (!formData.CODIGO && !formData.codigo) {
         setErrorMessage("Error: El campo Código es requerido");
         setShowErrorModal(true);
         setSaving(false);
         return;
       }
 
-      // Solo validar NOMBRE si es creación; en actualización puede estar vacío si el producto no existe en la tabla productos
-      if (modalType === "create" && (!requestBody.NOMBRE || requestBody.NOMBRE === "")) {
+      if (modalType === "create" && !nombreValue) {
         setErrorMessage("Error: El campo Nombre es requerido");
         setShowErrorModal(true);
         setSaving(false);
         return;
       }
+
+      const requestBody = {
+        ...formData,
+        NOMBRE: nombreValue,
+        CLASIFICACION: activeTab,
+        TEXTO_COPIAR: formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "",
+      };
+
+      // Si es actualización, asegurar el ID
+      if (modalType === "update") {
+        requestBody.ID = formData.ID || formData.id;
+        requestBody.id = formData.ID || formData.id;
+      }
+
+      // Limpiar campos duplicados o con nombres diferentes que refieren a lo mismo si es necesario
+      // pero por ahora enviamos todo lo que vino en el registro original + los cambios del form
 
       console.log("=== ENVIANDO REQUEST ===");
       console.log("Method:", method);
@@ -1306,9 +1327,6 @@ export default function GestionPreciosPage() {
                               <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 PRODUCTO
                               </th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                CANTIDAD EN CAJA
-                              </th>
                               {getPriceColumns.map((columna) => (
                                 <th
                                   key={columna}
@@ -1327,9 +1345,14 @@ export default function GestionPreciosPage() {
                             {preciosPaginados.map((precio, index) => {
                               const globalIndex = startIndex + index;
                               const getField = (variations) => {
+                                const keys = Object.keys(precio);
                                 for (const variation of variations) {
                                   if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
                                     return precio[variation];
+                                  }
+                                  const foundKey = keys.find(k => k.toLowerCase() === variation.toLowerCase());
+                                  if (foundKey && precio[foundKey] !== undefined && precio[foundKey] !== null && precio[foundKey] !== "") {
+                                    return precio[foundKey];
                                   }
                                 }
                                 return null;
@@ -1340,15 +1363,13 @@ export default function GestionPreciosPage() {
                                 if (typeof value === "number" && isNaN(value)) return { text: "-", isZero: false };
                                 const num = parseFloat(value);
                                 if (isNaN(num)) return { text: "-", isZero: false };
-                                if (num === 0) return { text: "", isZero: true }; // Retornar vacío si es 0
+                                if (num === 0) return { text: "", isZero: true };
                                 return { text: `S/.${num.toFixed(2)}`, isZero: false };
                               };
 
-                              const codigo = getField(["CODIGO", "codigo"]);
-                              // El backend devuelve el nombre en PRODUCTO (priorizar este campo)
-                              const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre"]);
-                              const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]);
-                              const fichaTecnica = getField(["FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", "FICHA_TECNICA", "ficha_tecnica"]);
+                              const codigo = getField(["CODIGO", "codigo", "Codigo"]);
+                              const producto = getField(["PRODUCTO", "producto", "NOMBRE", "nombre", "Producto"]);
+                              const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
 
                               return (
                                 <tr key={globalIndex} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
@@ -1357,9 +1378,6 @@ export default function GestionPreciosPage() {
                                   </td>
                                   <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     {producto || "-"}
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                    {cantidadCaja || "-"}
                                   </td>
                                   {getPriceColumns.map((columna) => {
                                     const precioValue = formatPrice(precio[columna]);
@@ -1374,33 +1392,53 @@ export default function GestionPreciosPage() {
                                     );
                                   })}
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
-                                    <div className="flex items-center justify-center gap-1.5">
+                                    {textoCopiar ? (
                                       <button
-                                        onClick={() => {
-                                          console.log("=== CLICK EN ACTUALIZAR ===");
-                                          console.log("Precio completo:", precio);
-                                          console.log("ID disponible:", precio.ID || precio.id || precio.Id || precio._id);
-                                          handleActualizar(precio);
-                                        }}
-                                        className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                        title="Actualizar"
+                                        onClick={() => copyToClipboard(textoCopiar, globalIndex)}
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] ${copiedIndex === globalIndex
+                                          ? "bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                                          : "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                                          }`}
+                                        title="Copiar texto al portapapeles"
                                         style={{ fontFamily: 'var(--font-poppins)' }}
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                        {copiedIndex === globalIndex ? (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="currentColor"
+                                              viewBox="0 0 20 20"
+                                            >
+                                              <path
+                                                fillRule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clipRule="evenodd"
+                                              />
+                                            </svg>
+                                            Copiado
+                                          </>
+                                        ) : (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            Copiar
+                                          </>
+                                        )}
                                       </button>
-                                      <button
-                                        onClick={() => handleEliminar(precio)}
-                                        className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                        title="Eliminar"
-                                        style={{ fontFamily: 'var(--font-poppins)' }}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ pointerEvents: 'none' }}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                      </button>
-                                    </div>
+                                    ) : (
+                                      <span className="text-gray-400 text-[10px]">-</span>
+                                    )}
                                   </td>
                                 </tr>
                               );
@@ -1701,6 +1739,36 @@ export default function GestionPreciosPage() {
                   </div>
                 </div>
 
+                {/* Campos Dinámicos de Precios (Caja 1, Docena 1, etc.) */}
+                {getPriceColumns.length > 0 && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-[#002D5A] mb-4 uppercase tracking-wider">
+                      Precios por Rango
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {getPriceColumns.map((columna) => (
+                        <div key={columna}>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                            {columna.replace(/_/g, ' ')}
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData[columna] ?? ""}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                              setFormData({ ...formData, [columna]: value });
+                            }}
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 shadow-sm"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Texto a copiar */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1918,16 +1986,16 @@ export default function GestionPreciosPage() {
       {notification.show && (
         <div className="fixed top-4 left-4 z-[60] animate-slide-in-left">
           <div className={`rounded-3xl shadow-xl border max-w-md w-full overflow-hidden ${notification.type === "success"
-              ? "bg-white border-green-200"
-              : "bg-white border-red-200"
+            ? "bg-white border-green-200"
+            : "bg-white border-red-200"
             }`}>
             <div className={`flex items-center gap-3 px-5 py-4 ${notification.type === "success"
-                ? "bg-gradient-to-r from-green-50 to-white"
-                : "bg-gradient-to-r from-red-50 to-white"
+              ? "bg-gradient-to-r from-green-50 to-white"
+              : "bg-gradient-to-r from-red-50 to-white"
               }`}>
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${notification.type === "success"
-                  ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
-                  : "bg-gradient-to-br from-red-500 to-red-600 text-white"
+                ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+                : "bg-gradient-to-br from-red-500 to-red-600 text-white"
                 }`}>
                 {notification.type === "success" ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

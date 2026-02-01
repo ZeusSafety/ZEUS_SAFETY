@@ -1,284 +1,105 @@
 import { NextResponse } from "next/server";
 
-// Función auxiliar para hacer peticiones a la API externa de franja de precios
-async function fetchFromAPI(method, request, tablaId) {
+const BASE_URL = "https://api-franja-precios-2946605267.us-central1.run.app";
+
+// Mapeo EXACTO según el nuevo esquema SQL proporcionado
+const getMercadoName = (id) => {
+  if (!id) return "Malvinas_online";
+
+  const upperId = String(id).toUpperCase().trim();
+
+  const mapping = {
+    "MALVINAS": "Malvinas_online",
+    "MALVINAS_ONLINE": "Malvinas_online",
+    "PROVINCIA": "Provincia_online",
+    "PROVINCIA_ONLINE": "Provincia_online",
+    "FERRETERIA": "Ferreteria_online",
+    "FERRETERÍA": "Ferreteria_online",
+    "FERRETERIA_ONLINE": "Ferreteria_online",
+    "CLIENTES_FINALES": "Clientes_finales_online",
+    "CLIENTES FINALES": "Clientes_finales_online",
+    "CLIENTES_FINALES_ONLINE": "Clientes_finales_online",
+    "JICAMARCA": "Jicamarca",
+    "ONLINE": "Online"
+  };
+
+  return mapping[upperId] || "Malvinas_online";
+};
+
+async function fetchFromAPI(method, request) {
   try {
-    // Obtener el token de los headers de la petición
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id") || "MALVINAS";
+    const mercado = getMercadoName(id);
+    const apiMethod = searchParams.get("method");
+
     const authHeader = request.headers.get("authorization");
-    const token = authHeader ? authHeader.replace("Bearer ", "") : null;
-    
-    // Construir la URL con los parámetros correctos
-    // Usar franja_precios para obtener los datos con precios dinámicos
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=franja_precios&id=${encodeURIComponent(tablaId)}`;
-    
-    // Preparar headers para la petición a la API externa
+
+    let apiUrl = `${BASE_URL}`;
+
+    if (method === "GET") {
+      apiUrl += `?mercado=${encodeURIComponent(mercado)}`;
+    } else {
+      let methodQuery = "";
+      if (apiMethod) {
+        if (apiMethod === "CREAR_FRANJA_PRECIO" || apiMethod === "crear_producto_base") methodQuery = "crear_producto_base";
+        else if (apiMethod === "ACTUALIZAR_FRANJA_PRECIO" || apiMethod === "actualizar_precios_mercado") methodQuery = "actualizar_precios_mercado";
+        else if (apiMethod === "ELIMINAR_FRANJA_PRECIO" || apiMethod === "eliminar_producto") methodQuery = "eliminar_producto";
+        else methodQuery = apiMethod.toLowerCase();
+      } else {
+        if (method === "POST") methodQuery = "crear_producto_base";
+        if (method === "PUT" || method === "PATCH") methodQuery = "actualizar_precios_mercado";
+        if (method === "DELETE") methodQuery = "eliminar_producto";
+      }
+      apiUrl += `?method=${methodQuery}`;
+    }
+
+    console.log(`[API PROXY] ${method} a: ${apiUrl} (mercado: ${mercado})`);
+
     const headers = {
       "Accept": "application/json",
       "Content-Type": "application/json",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
-    
-    // Incluir token si está disponible
-    if (token && token.trim() !== "") {
-      headers["Authorization"] = `Bearer ${token}`;
+
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
     }
-    
-    // Realizar la petición
-    const response = await fetch(apiUrl, {
+
+    const fetchOptions = {
       method: method,
       headers: headers,
-    });
-    
-    // Manejar errores de respuesta
-    if (!response.ok) {
-      if (response.status === 401) {
-        return NextResponse.json(
-          { 
-            error: "token expirado",
-            message: "El token de autenticación ha expirado o es inválido. Por favor, inicie sesión nuevamente.",
-            status: 401
-          },
-          { status: 401 }
-        );
-      }
-      
-      const errorText = await response.text().catch(() => "");
-      let errorJson = null;
+    };
+
+    if (method !== "GET") {
+      let body = {};
       try {
-        errorJson = JSON.parse(errorText);
+        body = await request.json();
       } catch (e) {
-        // No es JSON, usar texto directamente
+        body = {};
       }
-      
-      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status} en la operación`;
-      
-      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
-      if (typeof errorMessage === 'number') {
-        if (errorMessage === 0) {
-          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
-        } else {
-          errorMessage = `Error ${errorMessage}`;
-        }
-      }
-      
-      return NextResponse.json(
-        { 
-          error: errorMessage,
-          details: errorText || "No se pudo completar la operación",
-          status: response.status
-        },
-        { status: response.status }
-      );
+      const processedBody = { ...body };
+      processedBody.mercado = mercado;
+      fetchOptions.body = JSON.stringify(processedBody);
     }
-    
-    // Parsear la respuesta como JSON directamente
-    const data = await response.json();
-    
-    return NextResponse.json(data, { status: 200 });
-    
-  } catch (error) {
-    console.error("Error en API franja precios:", error.message);
-    
-    return NextResponse.json(
-      { 
-        error: error.message || "Error al procesar la solicitud",
-        details: error.stack 
-      },
-      { status: 500 }
-    );
-  }
-}
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const tablaId = searchParams.get("id") || "MALVINAS";
-  
-  return fetchFromAPI("GET", request, tablaId);
-}
+    const response = await fetch(apiUrl, fetchOptions);
+    const responseText = await response.text();
 
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const tablaId = body.CLASIFICACION || body.clasificacion || "MALVINAS";
-    
-    // Obtener el token de los headers
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader ? authHeader.replace("Bearer ", "") : null;
-    
-    // Construir la URL con los parámetros correctos
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=CREAR_FRANJA_PRECIO&id=${encodeURIComponent(tablaId)}`;
-    
-    const headers = {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    };
-    
-    if (token && token.trim() !== "") {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(body),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      let errorJson = null;
-      try {
-        errorJson = JSON.parse(errorText);
-      } catch (e) {}
-      
-      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
-      
-      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
-      if (typeof errorMessage === 'number') {
-        if (errorMessage === 0) {
-          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
-        } else {
-          errorMessage = `Error ${errorMessage}`;
-        }
-      }
-      
-      return NextResponse.json({ error: errorMessage }, { status: response.status });
-    }
-    
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
-  } catch (error) {
-    console.error("Error en POST franja precios:", error.message);
-    return NextResponse.json({ error: error.message || "Error al procesar la solicitud" }, { status: 500 });
-  }
-}
-
-export async function PUT(request) {
-  try {
-    const body = await request.json();
-    const tablaId = body.CLASIFICACION || body.clasificacion || "MALVINAS";
-    
-    // Obtener el token de los headers
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader ? authHeader.replace("Bearer ", "") : null;
-    
-    // Construir la URL con los parámetros correctos
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=ACTUALIZAR_FRANJA_PRECIO&id=${encodeURIComponent(tablaId)}`;
-    
-    const headers = {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    };
-    
-    if (token && token.trim() !== "") {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(apiUrl, {
-      method: "PUT",
-      headers: headers,
-      body: JSON.stringify(body),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      let errorJson = null;
-      try {
-        errorJson = JSON.parse(errorText);
-      } catch (e) {}
-      
-      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
-      
-      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
-      if (typeof errorMessage === 'number') {
-        if (errorMessage === 0) {
-          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
-        } else {
-          errorMessage = `Error ${errorMessage}`;
-        }
-      }
-      
-      return NextResponse.json({ error: errorMessage }, { status: response.status });
-    }
-    
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
-  } catch (error) {
-    console.error("Error en PUT franja precios:", error.message);
-    return NextResponse.json({ error: error.message || "Error al procesar la solicitud" }, { status: 500 });
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    let body = {};
+    let responseData;
     try {
-      body = await request.json();
+      responseData = JSON.parse(responseText);
     } catch (e) {
-      // Si no hay body, está bien
+      responseData = { error: "No JSON", details: responseText };
     }
-    
-    const id = body.ID || body.id;
-    const tablaId = body.clasificacion || body.CLASIFICACION || "MALVINAS";
-    
-    // Validar que el ID esté presente
-    if (!id) {
-      return NextResponse.json({ error: "ID es requerido" }, { status: 400 });
-    }
-    
-    // Obtener el token de los headers
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader ? authHeader.replace("Bearer ", "") : null;
-    
-    // Construir la URL con los parámetros correctos
-    const apiUrl = `https://api-productos-zeus-2946605267.us-central1.run.app?method=ELIMINAR_FRANJA_PRECIO&id=${encodeURIComponent(tablaId)}`;
-    
-    const headers = {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    };
-    
-    if (token && token.trim() !== "") {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    // Enviar el ID en el body
-    const response = await fetch(apiUrl, {
-      method: "DELETE",
-      headers: headers,
-      body: JSON.stringify({
-        ID: id,
-        id: id,
-        CLASIFICACION: tablaId,
-        clasificacion: tablaId
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      let errorJson = null;
-      try {
-        errorJson = JSON.parse(errorText);
-      } catch (e) {}
-      
-      let errorMessage = errorJson?.error || errorJson?.message || errorText || `Error ${response.status}`;
-      
-      // Si el error es un número (como 0), convertirlo a un mensaje más descriptivo
-      if (typeof errorMessage === 'number') {
-        if (errorMessage === 0) {
-          errorMessage = "Error desconocido. Verifique que todos los campos estén completos.";
-        } else {
-          errorMessage = `Error ${errorMessage}`;
-        }
-      }
-      
-      return NextResponse.json({ error: errorMessage }, { status: response.status });
-    }
-    
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
+
+    return NextResponse.json(responseData, { status: response.status });
+
   } catch (error) {
-    console.error("Error en DELETE franja precios:", error.message);
-    return NextResponse.json({ error: error.message || "Error al procesar la solicitud" }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
+export async function GET(request) { return fetchFromAPI("GET", request); }
+export async function POST(request) { return fetchFromAPI("POST", request); }
+export async function PUT(request) { return fetchFromAPI("PUT", request); }
+export async function DELETE(request) { return fetchFromAPI("DELETE", request); }

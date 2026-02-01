@@ -160,6 +160,12 @@ export default function ZeusSafetyPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const handleSelectRegion = (name) => {
+    const norm = (s) => (!s ? "" : String(s).toUpperCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim());
+    const match = norm(filters.region) === norm(name);
+    setFilters((prev) => ({ ...prev, region: match ? null : name }));
+  };
+
   useEffect(() => {
     if (!user) return;
 
@@ -191,7 +197,7 @@ export default function ZeusSafetyPage() {
           canal_ventas: Array.isArray(res.canal_ventas) ? res.canal_ventas : (Array.isArray(res.canales) ? res.canales : (Array.isArray(res.metodos_pago) ? res.metodos_pago : (Array.isArray(res.bloque3) ? res.bloque3 : []))),
           ventas_region: Array.isArray(res.ventas_region) ? res.ventas_region : (Array.isArray(res.geografia) ? res.geografia : (Array.isArray(res.bloque6) ? res.bloque6 : [])),
           tipos_pago: Array.isArray(res.tipos_pago) ? res.tipos_pago : (Array.isArray(res.metodos_pago) ? res.metodos_pago : (Array.isArray(res.pagos) ? res.pagos : (Array.isArray(res.bloque3) ? res.bloque3 : []))),
-          ventas_por_mes: Array.isArray(res.ventas_por_mes) ? res.ventas_por_mes : [],
+          ventas_por_mes: Array.isArray(res.ventas_por_mes) ? res.ventas_por_mes : (Array.isArray(res.temporal) ? res.temporal : []),
           almacenes: Array.isArray(res.almacenes) ? res.almacenes : (Array.isArray(res.bloque5) ? res.bloque5 : []),
           comprobantes: Array.isArray(res.comprobantes) ? res.comprobantes : (Array.isArray(res.bloque4) ? res.bloque4 : []),
         });
@@ -274,7 +280,7 @@ export default function ZeusSafetyPage() {
 
   const regiones = (data.ventas_region || [])
     .map((r) => ({
-      name: r?.region || r?.REGION || r?.nombre || r?.NOMBRE || "—",
+      name: r?.region || r?.REGION || r?.distrito || r?.DISTRITO || r?.ciudad || r?.CIUDAD || r?.nombre || r?.NOMBRE || "—",
       value: clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0),
     }))
     .filter((x) => x.value > 0)
@@ -289,14 +295,24 @@ export default function ZeusSafetyPage() {
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  const mensual = (data.ventas_por_mes || []).map((r) => {
-    const raw = r?.mes || r?.MES || r?.periodo || r?.PERIODO || "";
-    return {
-      mes: raw || "—",
-      mesLabel: formatMonthLabel(raw) || "—",
-      total: clampNumber(r?.total || r?.TOTAL || r?.monto || r?.MONTO || 0),
-    };
-  });
+  const mensual = useMemo(() => {
+    if (filters.region) {
+      // Si hay región, mostramos el desglose por distritos/ciudades
+      return regiones.map((r) => ({
+        mes: r.name,
+        mesLabel: r.name,
+        total: r.value,
+      }));
+    }
+    return (data.ventas_por_mes || []).map((r) => {
+      const raw = r?.mes || r?.MES || r?.periodo || r?.PERIODO || "";
+      return {
+        mes: raw || "—",
+        mesLabel: formatMonthLabel(raw) || "—",
+        total: clampNumber(r?.total || r?.TOTAL || r?.monto || r?.MONTO || 0),
+      };
+    });
+  }, [data.ventas_por_mes, filters.region, regiones]);
 
   const almacenesFull = (data.almacenes || []).map(r => ({
     name: r?.almacen || r?.ALMACEN || "MALVINAS",
@@ -893,7 +909,7 @@ export default function ZeusSafetyPage() {
                     regiones={regiones}
                     loading={loading}
                     selectedRegion={filters.region}
-                    onSelectRegion={(name) => setFilters((prev) => ({ ...prev, region: prev.region === name ? null : name }))}
+                    onSelectRegion={handleSelectRegion}
                   />
                 </div>
               </div>
@@ -908,10 +924,10 @@ export default function ZeusSafetyPage() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: "var(--font-poppins)" }}>
-                      Ventas por Mes
+                      {filters.region ? `Ventas por Ciudad en ${filters.region}` : "Ventas por Mes"}
                     </h2>
                     <p className="text-sm text-gray-600 mt-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
-                      Evolución mensual de ventas
+                      {filters.region ? "Desglose por distritos/ciudades" : "Evolución mensual en soles"}
                     </p>
                   </div>
                 </div>
