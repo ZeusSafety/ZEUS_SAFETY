@@ -209,8 +209,7 @@ export default function MarketingPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           ),
-        }
-        ,
+        },
         {
           id: "posibles-clientes",
           icon: (
@@ -221,6 +220,23 @@ export default function MarketingPage() {
           title: "Posibles Clientes",
           description: "CRM de prospectos generados por cotizaciones.",
           buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "franja-precios-vista",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          title: "Franja de precios",
+          description: "Consulta los precios de productos por clasificación.",
+          buttonText: "Ver Precios",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -339,7 +355,7 @@ export default function MarketingPage() {
     },
     {
       id: "franja-precios",
-      title: "Franja de precios",
+      title: "Gestión de precios",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -347,18 +363,18 @@ export default function MarketingPage() {
       ),
       cards: [
         {
-          id: "listado-precios",
+          id: "listado-precios-editable",
           icon: (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
           ),
           title: "Listado de precios",
-          description: "Gestionar y consultar precios de productos",
-          buttonText: "Ver Listado",
+          description: "Actualizar y gestionar precios de productos",
+          buttonText: "Gestionar",
           buttonIcon: (
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           ),
         },
@@ -472,8 +488,7 @@ export default function MarketingPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-          }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"}`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -512,8 +527,12 @@ export default function MarketingPage() {
               <div className="space-y-3">
                 {sections
                   .map((section) => {
-                    // Filtrar cards permitidos en esta sección
-                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                    // Filtrar cards permitidos en esta sección y ocultar gestion-precios
+                    const allowedCards = section.cards.filter(card => 
+                      isCardAllowed(card.id) && 
+                      card.id !== "gestion-precios" && 
+                      card.title !== "Gestión de precios"
+                    );
 
                     // Si no hay cards permitidos, no mostrar la sección
                     if (allowedCards.length === 0) return null;
@@ -553,7 +572,7 @@ export default function MarketingPage() {
                             {section.cards.map((card) => (
                               <div
                                 key={card.id}
-                                className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                                className={`group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden ${card.id === "gestion-precios" || card.title === "Gestión de precios" ? "hidden" : ""}`}
                                 style={{
                                   boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
                                   transform: 'translateY(0)'
@@ -604,6 +623,10 @@ export default function MarketingPage() {
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/marketing/solicitudes-permisos");
                                       } else if (card.id === "listado-precios") {
+                                        router.push("/marketing/franja-precios/listado-precios");
+                                      } else if (card.id === "listado-precios-editable") {
+                                        router.push("/marketing/franja-precios/gestion-precios");
+                                      } else if (card.id === "franja-precios-vista") {
                                         router.push("/marketing/franja-precios/listado-precios");
                                       } else if (card.id === "reporte-general-1") {
                                         router.push("/marketing/reporte-general-1");

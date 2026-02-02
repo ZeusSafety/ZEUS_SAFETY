@@ -62,23 +62,20 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
-          disabled 
-            ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
-              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
-            }`
-        }`}
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${disabled
+          ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+          : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
+          }`
+          }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform duration-200 ${
-            disabled 
-              ? 'text-gray-400' 
-              : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
-          }`}
+          className={`w-5 h-5 transition-transform duration-200 ${disabled
+            ? 'text-gray-400'
+            : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -89,11 +86,10 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
       </button>
 
       {isOpen && !disabled && (
-        <div 
-          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden ${
-            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
-          style={{ 
+        <div
+          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+          style={{
             borderRadius: '0.5rem',
             border: '1px solid #e5e7eb',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
@@ -105,11 +101,10 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
                 key={`${option.value}-${index}-${option.id || ''}`}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-4 py-3 transition-all duration-150 ${
-                  value === option.value
-                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
-                    : 'text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`w-full text-left px-4 py-3 transition-all duration-150 ${value === option.value
+                  ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
+                  : 'text-gray-900 hover:bg-gray-50'
+                  }`}
                 style={{ borderRadius: '0.375rem' }}
               >
                 {option.label}
@@ -124,15 +119,29 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
   );
 };
 
+// Helper para redondeo SUNAT (Midpoint Rounding)
+const roundSUNAT = (num, decimals = 2) => {
+  const factor = Math.pow(10, decimals);
+  return Math.round((num + Number.EPSILON) * factor) / factor;
+};
+
+// Formateador de moneda
+const formatMoney = (amount) => {
+  return new Intl.NumberFormat('es-PE', {
+    style: 'currency',
+    currency: 'PEN',
+    minimumFractionDigits: 2
+  }).format(amount).replace('PEN', 'S/');
+};
+
 // Componente de sugerencias para búsqueda
 const SuggestionsList = ({ suggestions, onSelect, show, position = "bottom" }) => {
   if (!show || !suggestions || suggestions.length === 0) return null;
 
   return (
-    <div 
-      className={`absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto ${
-        position === "top" ? "bottom-full mb-2" : "top-full mt-2"
-      }`}
+    <div
+      className={`absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto ${position === "top" ? "bottom-full mb-2" : "top-full mt-2"
+        }`}
     >
       {suggestions.map((item, index) => (
         <button
@@ -182,7 +191,8 @@ export default function CrearVentaPage() {
     producto: "",
     codigo: "",
     cantidad: 1,
-    precioVenta: "",
+    precioVenta: "", // Valor Unitario (sin IGV)
+    subtotalBase: "", // Subtotal de la línea (Base Gravada, sin IGV)
   });
 
   // Estados para edición de productos en la tabla
@@ -264,11 +274,11 @@ export default function CrearVentaPage() {
           });
         }
       };
-      
+
       updatePosition();
       window.addEventListener('scroll', updatePosition, true);
       window.addEventListener('resize', updatePosition);
-      
+
       return () => {
         window.removeEventListener('scroll', updatePosition, true);
         window.removeEventListener('resize', updatePosition);
@@ -285,13 +295,13 @@ export default function CrearVentaPage() {
           setMostrarSugerenciasProductos(false);
         }
       }
-      
+
       // Para el dropdown de edición en la tabla
       if (mostrarSugerenciasProductoEdicion) {
-        if (productoEdicionRef.current && 
-            !productoEdicionRef.current.contains(event.target) && 
-            dropdownRef.current && 
-            !dropdownRef.current.contains(event.target)) {
+        if (productoEdicionRef.current &&
+          !productoEdicionRef.current.contains(event.target) &&
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target)) {
           setTimeout(() => {
             setMostrarSugerenciasProductoEdicion(false);
           }, 100);
@@ -312,7 +322,7 @@ export default function CrearVentaPage() {
 
       if (response.status === 200) {
         const data = await response.json();
-        
+
         // Filtrar por categoría
         const asesores = data.filter(item => item.CATEGORIA === 'ASESOR');
         const clasificaciones = data.filter(item => item.CATEGORIA === 'CLASIFICACION');
@@ -321,7 +331,7 @@ export default function CrearVentaPage() {
         setOpcionesAsesor(asesores.map(item => ({ value: item.NOMBRE, label: item.NOMBRE })));
         setOpcionesClasificacion(clasificaciones.map(item => ({ value: item.NOMBRE, label: item.NOMBRE })));
         setOpcionesSalidaPedido(salidasPedido.map(item => ({ value: item.NOMBRE, label: item.NOMBRE })));
-        
+
         setApiConectada(true);
       }
     } catch (error) {
@@ -337,7 +347,7 @@ export default function CrearVentaPage() {
       if (response.ok) {
         const apiResponse = await response.json();
         const regiones = Array.isArray(apiResponse.data) ? apiResponse.data : [];
-        
+
         // Usar un Map para eliminar duplicados basados en el valor
         const regionesUnicas = new Map();
         regiones.forEach(item => {
@@ -349,7 +359,7 @@ export default function CrearVentaPage() {
             });
           }
         });
-        
+
         setOpcionesRegion(Array.from(regionesUnicas.values()));
 
         // Seleccionar Lima por defecto si existe
@@ -379,11 +389,11 @@ export default function CrearVentaPage() {
 
       const idRegionFormateado = "RE_" + String(regionId).padStart(2, '0');
       const response = await fetch(`https://configmarketing-2946605267.us-central1.run.app/distritos?id_region=${idRegionFormateado}`);
-      
+
       if (response.ok) {
         const apiResponse = await response.json();
         const distritos = Array.isArray(apiResponse.data) ? apiResponse.data : [];
-        
+
         // Usar un Map para eliminar duplicados basados en el valor
         const distritosUnicos = new Map();
         distritos.forEach(item => {
@@ -395,7 +405,7 @@ export default function CrearVentaPage() {
             });
           }
         });
-        
+
         setOpcionesDistrito(Array.from(distritosUnicos.values()));
       }
     } catch (error) {
@@ -442,16 +452,16 @@ export default function CrearVentaPage() {
       if (response.ok) {
         const data = await response.json();
         const productosMap = {};
-        
+
         // Guardar también la lista completa de productos para el buscador de edición
         todosLosProductos.current = data.filter(p => p.NOMBRE && p.CODIGO);
-        
+
         data.forEach(producto => {
           if (producto.NOMBRE && producto.CODIGO) {
             productosMap[producto.NOMBRE] = producto.CODIGO;
           }
         });
-        
+
         setProductosData(productosMap);
       }
     } catch (error) {
@@ -486,7 +496,7 @@ export default function CrearVentaPage() {
             id: item.ID_CLIENTE,
             nombre: item.CLIENTE
           }));
-          
+
           setSugerenciasClientes(sugerencias);
           setMostrarSugerenciasClientes(sugerencias.length > 0);
         }
@@ -519,7 +529,7 @@ export default function CrearVentaPage() {
           nombre: producto,
           codigo: productosData[producto]
         }));
-      
+
       setSugerenciasProductos(sugerencias);
       setMostrarSugerenciasProductos(sugerencias.length > 0);
     }, 300);
@@ -552,7 +562,7 @@ export default function CrearVentaPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === "cliente") {
       setFormData(prev => ({ ...prev, cliente: value, clienteId: null }));
       buscarClientes(value);
@@ -612,31 +622,68 @@ export default function CrearVentaPage() {
 
   const handleProductoChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === "producto") {
-      setNuevoProducto(prev => ({ ...prev, producto: value, codigo: "" }));
-      buscarProductos(value);
-      setMostrarSugerenciasProductos(true);
-    } else {
-      setNuevoProducto(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    const val = value === "" ? "" : value;
+
+    setNuevoProducto(prev => {
+      let updated = { ...prev, [name]: val };
+
+      if (name === "producto") {
+        updated.codigo = "";
+        buscarProductos(val);
+        setMostrarSugerenciasProductos(true);
+      }
+
+      const qty = parseFloat(updated.cantidad) || 0;
+
+      if (name === "cantidad" || name === "precioVenta") {
+        // Calcular Subtotal Base (sin IGV) desde el Unitario (sin IGV)
+        const unitPrice = parseFloat(updated.precioVenta) || 0;
+        if (qty > 0 && unitPrice >= 0) {
+          const subtotalItem = qty * unitPrice;
+          updated.subtotalBase = subtotalItem.toFixed(2);
+        } else {
+          updated.subtotalBase = "";
+        }
+      } else if (name === "subtotalBase") {
+        // Calcular Unitario (sin IGV) desde el Subtotal Base (bidireccional)
+        const subtotalItem = parseFloat(val) || 0;
+        if (qty > 0 && subtotalItem >= 0) {
+          const unitPrice = subtotalItem / qty;
+          // Guardamos con alta precisión para SUNAT
+          updated.precioVenta = unitPrice.toFixed(6);
+        } else {
+          updated.precioVenta = "";
+        }
+      }
+
+      return updated;
+    });
   };
 
-  const calcularTotal = () => {
-    const cantidad = parseFloat(nuevoProducto.cantidad) || 0;
-    const precio = parseFloat(nuevoProducto.precioVenta) || 0;
-    return (cantidad * precio).toFixed(2);
-  };
+  const calcularTotalesFinales = () => {
+    let gravada = 0;
+    let totalIgv = 0;
+    let importeTotal = 0;
 
-  const calcularTotalGeneral = () => {
-    return productos.reduce((total, producto) => {
-      const cantidad = parseFloat(producto.cantidad) || 0;
-      const precio = parseFloat(producto.precioVenta) || 0;
-      return total + (cantidad * precio * 1.18);
-    }, 0).toFixed(2);
+    productos.forEach(p => {
+      const qty = parseFloat(p.cantidad) || 0;
+      const unitVal = parseFloat(p.precioVenta) || 0;
+
+      const baseRaw = qty * unitVal;
+      const baseLine = roundSUNAT(baseRaw);
+      const igvLine = roundSUNAT(baseLine * 0.18);
+      const totalLine = roundSUNAT(baseLine + igvLine);
+
+      gravada += baseLine;
+      totalIgv += igvLine;
+      importeTotal += totalLine;
+    });
+
+    return {
+      gravada: gravada.toFixed(2),
+      igv: totalIgv.toFixed(2),
+      total: importeTotal.toFixed(2)
+    };
   };
 
   const agregarProducto = () => {
@@ -644,11 +691,22 @@ export default function CrearVentaPage() {
       return;
     }
 
+    const qty = parseFloat(nuevoProducto.cantidad) || 0;
+    const unitPrice = parseFloat(nuevoProducto.precioVenta) || 0;
+
+    // Validar que el cálculo sea consistente antes de agregar
+    const base = roundSUNAT(qty * unitPrice);
+    const igv = roundSUNAT(base * 0.18);
+    const total = roundSUNAT(base + igv);
+
     const producto = {
       id: Date.now(),
       ...nuevoProducto,
-      precioVenta: parseFloat(nuevoProducto.precioVenta),
-      cantidad: parseFloat(nuevoProducto.cantidad),
+      precioVenta: unitPrice, // Se guarda el unitario con su precisión (4-6 dec)
+      cantidad: qty,
+      subtotal: base,
+      igv: igv,
+      total: total
     };
 
     setProductos([...productos, producto]);
@@ -657,6 +715,7 @@ export default function CrearVentaPage() {
       codigo: "",
       cantidad: 1,
       precioVenta: "",
+      subtotalBase: ""
     });
   };
 
@@ -676,7 +735,7 @@ export default function CrearVentaPage() {
 
   const guardarEdicionProducto = () => {
     if (!editingProducto) return;
-    
+
     // Validar campos requeridos
     if (!editingProducto.producto || !editingProducto.precioVenta || !editingProducto.cantidad) {
       alert("Campos incompletos.");
@@ -684,14 +743,14 @@ export default function CrearVentaPage() {
     }
 
     // Actualizar el producto en la lista
-    setProductos(productos.map(item => 
-      item.id === editingProductoId 
-        ? { 
-            ...editingProducto,
-            codigo: editingProducto.codigo || item.codigo || "",
-            precioVenta: parseFloat(editingProducto.precioVenta),
-            cantidad: parseFloat(editingProducto.cantidad)
-          }
+    setProductos(productos.map(item =>
+      item.id === editingProductoId
+        ? {
+          ...editingProducto,
+          codigo: editingProducto.codigo || item.codigo || "",
+          precioVenta: parseFloat(editingProducto.precioVenta),
+          cantidad: parseFloat(editingProducto.cantidad)
+        }
         : item
     ));
 
@@ -705,13 +764,13 @@ export default function CrearVentaPage() {
   const handleProductoSelectEdicion = (prod) => {
     const nombreProducto = prod.NOMBRE || prod.nombre;
     const codigoProducto = prod.CODIGO || prod.codigo;
-    
+
     setEditingProducto(prev => {
       if (!prev) return prev;
       return { ...prev, producto: nombreProducto, codigo: codigoProducto };
     });
     setBusquedaProductoEdicion(nombreProducto);
-    
+
     setTimeout(() => {
       setMostrarSugerenciasProductoEdicion(false);
     }, 50);
@@ -754,6 +813,7 @@ export default function CrearVentaPage() {
       codigo: "",
       cantidad: 1,
       precioVenta: "",
+      subtotalBase: ""
     });
     setSugerenciasClientes([]);
     setSugerenciasProductos([]);
@@ -777,32 +837,52 @@ export default function CrearVentaPage() {
         return;
       }
 
-      const detalle = productos.map(producto => ({
-        N_COMPROBANTE: formData.comprobanteNumero.trim(),
-        CODIGO: producto.codigo,
-        PRODUCTO: producto.producto,
-        CANTIDAD: producto.cantidad.toString(),
-        PRECIO_VENTA: producto.precioVenta.toFixed(2),
-        TOTAL: (producto.cantidad * producto.precioVenta * 1.18).toFixed(2)
-      }));
+      const detalle = productos.map(producto => {
+        const qty = parseFloat(producto.cantidad) || 0;
+        const unitVal = parseFloat(producto.precioVenta) || 0;
+        const subtotalBase = roundSUNAT(qty * unitVal);
+        const igv = roundSUNAT(subtotalBase * 0.18);
+        const total = roundSUNAT(subtotalBase + igv);
+
+        return {
+          N_COMPROBANTE: formData.comprobanteNumero.trim(),
+          CODIGO: producto.codigo,
+          PRODUCTO: producto.producto,
+          CANTIDAD: producto.cantidad.toString(),
+          PRECIO_VENTA: unitVal.toFixed(6), // Valor Unitario sin IGV (6 decimales)
+          TOTAL_CON_IGV: total.toFixed(2),  // Total con IGV (2 decimales)
+          BASE_GRAVADA: subtotalBase.toFixed(2), // Subtotal (2 decimales)
+          IGV: igv.toFixed(2)
+        };
+      });
 
       const datosVenta = {
-        id_cliente: formData.clienteId.toString(),
+        id_cliente: formData.clienteId ? formData.clienteId.toString() : "",
+        cliente: formData.cliente, // Enviar nombre cliente por si acaso
         fecha: formData.fecha,
         clasificacion: formData.clasificacion,
         asesor: formData.asesor,
         n_comprobante: formData.comprobanteNumero.trim(),
+        comprobante: formData.comprobante, // Tipo de comprobante
         id_region: formData.regionId ? formData.regionId.toString() : "",
         id_distrito: formData.distritoId ? formData.distritoId.toString() : "",
         id_lugar: formData.lugarId ? formData.lugarId.toString() : "",
         salida_de_pedido: formData.salidaPedido,
         observacion: formData.observaciones || "",
-        detalle: detalle
+        // Agregamos totales de cabecera
+        total_gravada: calcularTotalesFinales().gravada,
+        total_igv: calcularTotalesFinales().igv,
+        importe_total: calcularTotalesFinales().total,
+        usuario_registro: user.email || "sistema",
+        detalle: detalle.map(d => ({
+          ...d,
+          TOTAL: d.TOTAL_CON_IGV // Compatibilidad
+        }))
       };
 
       const api = "https://crudventas-2946605267.us-central1.run.app";
       const metodo = "insertar_venta";
-      
+
       const response = await fetch(`${api}?metodo=${metodo}`, {
         method: 'POST',
         headers: {
@@ -818,9 +898,9 @@ export default function CrearVentaPage() {
         const currentNumber = parseInt(formData.comprobanteNumero.replace(/[^0-9]/g, '')) || 0;
         setFormData(prev => ({
           ...prev,
-          comprobanteNumero: prev.comprobante === "FACTURA" ? `F ${currentNumber + 1}` : 
-                            prev.comprobante === "BOLETA" ? `B ${currentNumber + 1}` : 
-                            `P ${currentNumber + 1}`
+          comprobanteNumero: prev.comprobante === "FACTURA" ? `F ${currentNumber + 1}` :
+            prev.comprobante === "BOLETA" ? `B ${currentNumber + 1}` :
+              `P ${currentNumber + 1}`
         }));
       } else {
         const errorData = await response.text();
@@ -843,12 +923,12 @@ export default function CrearVentaPage() {
   // Manejar clicks fuera de las sugerencias
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (clienteSuggestionsRef.current && !clienteSuggestionsRef.current.contains(event.target) && 
-          clienteInputRef.current && !clienteInputRef.current.contains(event.target)) {
+      if (clienteSuggestionsRef.current && !clienteSuggestionsRef.current.contains(event.target) &&
+        clienteInputRef.current && !clienteInputRef.current.contains(event.target)) {
         setMostrarSugerenciasClientes(false);
       }
-      if (productoSuggestionsRef.current && !productoSuggestionsRef.current.contains(event.target) && 
-          productoInputRef.current && !productoInputRef.current.contains(event.target)) {
+      if (productoSuggestionsRef.current && !productoSuggestionsRef.current.contains(event.target) &&
+        productoInputRef.current && !productoInputRef.current.contains(event.target)) {
         setMostrarSugerenciasProductos(false);
       }
     };
@@ -880,9 +960,8 @@ export default function CrearVentaPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -1181,27 +1260,37 @@ export default function CrearVentaPage() {
                     {/* Fila 2 - Primera columna */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Precio de Venta
+                        Precio de Venta (Valor Unitario)
                       </label>
                       <input
                         type="number"
                         name="precioVenta"
                         value={nuevoProducto.precioVenta}
                         onChange={handleProductoChange}
-                        step="0.01"
+                        step="0.000001"
                         min="0"
+                        placeholder="Ej. 42.37"
                         className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
+                      <p className="text-[10px] text-gray-500 mt-1">Precio sin IGV</p>
                     </div>
 
                     {/* Fila 2 - Segunda columna */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Total
+                        Subtotal (Base Gravada)
                       </label>
-                      <div className="px-4 py-2.5 border-2 border-gray-300 rounded-lg bg-gray-50 text-sm font-semibold text-gray-900">
-                        S/ {calcularTotal()}
-                      </div>
+                      <input
+                        type="number"
+                        name="subtotalBase"
+                        value={nuevoProducto.subtotalBase}
+                        onChange={handleProductoChange}
+                        step="0.01"
+                        min="0"
+                        placeholder="Ej. 966.10"
+                        className="w-full px-4 py-2.5 border-2 border-orange-200 bg-orange-50/30 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm font-bold text-gray-900"
+                      />
+                      <p className="text-[10px] text-orange-600 mt-1">Este monto suma a la Gravada</p>
                     </div>
 
                     {/* Fila 2 - Tercera columna */}
@@ -1209,12 +1298,12 @@ export default function CrearVentaPage() {
                       <button
                         type="button"
                         onClick={agregarProducto}
-                        className="px-3 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-1.5 text-sm"
+                        className="w-full px-3 py-2.5 bg-[#002D5A] text-white rounded-lg font-bold hover:bg-[#003d7a] transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-1.5 text-sm"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Agregar</span>
+                        <span>Agregar Producto</span>
                       </button>
                     </div>
                   </div>
@@ -1253,24 +1342,25 @@ export default function CrearVentaPage() {
                           productos.map((producto, index) => {
                             const isEditing = editingProductoId === producto.id;
                             const displayProd = isEditing ? editingProducto : producto;
-                            
-                            // Calcular IGV y Total
-                            const cantidad = parseFloat(displayProd.cantidad) || 0;
-                            const precio = parseFloat(displayProd.precioVenta) || 0;
-                            const igv = (cantidad * precio * 0.18).toFixed(2);
-                            const total = (cantidad * precio * 1.18).toFixed(2);
-                            
+
+                            // Cálculos de línea
+                            const qty = parseFloat(displayProd.cantidad) || 0;
+                            const unit = parseFloat(displayProd.precioVenta) || 0;
+                            const subtotal = roundSUNAT(qty * unit);
+                            const igv = roundSUNAT(subtotal * 0.18);
+                            const total = roundSUNAT(subtotal + igv);
+
                             return (
                               <tr key={producto.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
                                 {/* ID DETALLE */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">DET_{2635 + index + 1}</td>
-                                
+
                                 {/* N° COMPROBANTE */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formData.comprobanteNumero}</td>
-                                
+
                                 {/* CÓDIGO - Solo lectura, se actualiza automáticamente */}
                                 <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{displayProd.codigo || ''}</td>
-                                
+
                                 {/* PRODUCTO */}
                                 <td className="px-3 py-2 whitespace-nowrap">
                                   {isEditing ? (
@@ -1283,13 +1373,13 @@ export default function CrearVentaPage() {
                                           const nuevoValor = e.target.value;
                                           setBusquedaProductoEdicion(nuevoValor);
                                           setEditingProducto(prev => ({ ...prev, producto: nuevoValor }));
-                                          
+
                                           // Buscar productos
                                           const textoLower = nuevoValor.toLowerCase();
                                           const sugerencias = todosLosProductos.current
                                             .filter(p => (p.NOMBRE || "").toLowerCase().includes(textoLower))
                                             .slice(0, 10);
-                                          
+
                                           if (sugerencias.length > 0 && nuevoValor.length > 0) {
                                             setMostrarSugerenciasProductoEdicion(true);
                                           } else {
@@ -1308,42 +1398,42 @@ export default function CrearVentaPage() {
                                     <span className="text-[10px] text-gray-700">{producto.producto}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* CANTIDAD */}
-                                <td className="px-3 py-2 whitespace-nowrap">
+                                <td className="px-3 py-2 whitespace-nowrap text-right">
                                   {isEditing ? (
                                     <input
                                       type="number"
                                       value={displayProd.cantidad || ''}
                                       onChange={(e) => setEditingProducto({ ...editingProducto, cantidad: e.target.value })}
-                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                      className="w-16 px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
                                     />
                                   ) : (
                                     <span className="text-[10px] text-gray-700">{producto.cantidad}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* PRECIO VENTA */}
-                                <td className="px-3 py-2 whitespace-nowrap">
+                                <td className="px-3 py-2 whitespace-nowrap text-right">
                                   {isEditing ? (
                                     <input
                                       type="number"
-                                      step="0.01"
+                                      step="0.000001"
                                       value={displayProd.precioVenta || ''}
                                       onChange={(e) => setEditingProducto({ ...editingProducto, precioVenta: e.target.value })}
-                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                      className="w-24 px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
                                     />
                                   ) : (
-                                    <span className="text-[10px] text-gray-700">S/ {producto.precioVenta.toFixed(2)}</span>
+                                    <span className="text-[10px] text-gray-700" title={producto.precioVenta}>S/ {parseFloat(producto.precioVenta).toFixed(2)}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* IGV (18%) - Calculado automáticamente */}
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">S/ {igv}</td>
-                                
+                                <td className="px-3 py-2 whitespace-nowrap text-right text-[10px] text-gray-700">S/ {igv.toFixed(2)}</td>
+
                                 {/* TOTAL - Calculado automáticamente */}
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">S/ {total}</td>
-                                
+                                <td className="px-3 py-2 whitespace-nowrap text-right text-[10px] font-bold text-gray-900 bg-gray-50/50">S/ {total.toFixed(2)}</td>
+
                                 {/* ACCIONES */}
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center gap-2">
@@ -1401,10 +1491,30 @@ export default function CrearVentaPage() {
                   </div>
                 </div>
 
-                {/* Total General */}
-                <div className="mt-4 flex justify-end">
-                  <div className="text-lg font-bold text-gray-900">
-                    Total General: S/ {calcularTotalGeneral()}
+                {/* Resumen de Totales SUNAT */}
+                <div className="mt-8 flex flex-col md:flex-row justify-end items-end md:items-stretch gap-4">
+                  <div className="md:w-64 bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-3 border-b border-slate-200 bg-slate-100 flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase">Resumen SUNAT</span>
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium tracking-wide">GRAVADA S/</span>
+                        <span className="text-sm font-bold text-slate-900">{calcularTotalesFinales().gravada}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium tracking-wide">IGV (18%) S/</span>
+                        <span className="text-sm font-bold text-slate-900">{calcularTotalesFinales().igv}</span>
+                      </div>
+                      <div className="h-0.5 bg-slate-200 my-2"></div>
+                      <div className="flex justify-between items-center p-2 bg-blue-700 rounded-lg">
+                        <span className="text-xs text-white font-bold tracking-wider">TOTAL S/</span>
+                        <span className="text-base font-black text-white">{calcularTotalesFinales().total}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1439,7 +1549,7 @@ export default function CrearVentaPage() {
 
       {/* Dropdown de Productos en Edición - Renderizado fuera de la tabla */}
       {editingProductoId && mostrarSugerenciasProductoEdicion && busquedaProductoEdicion.length > 0 && productoEdicionRef.current && dropdownPosition.width > 0 && (
-        <div 
+        <div
           ref={dropdownRef}
           className="fixed z-[9999] bg-white border-2 border-blue-300 rounded-lg shadow-2xl max-h-48 overflow-y-auto"
           style={{
@@ -1457,8 +1567,8 @@ export default function CrearVentaPage() {
             const busqueda = busquedaProductoEdicion.toLowerCase();
             return nombre.includes(busqueda) || codigo.includes(busqueda);
           }).slice(0, 10).map((prod, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1509,13 +1619,13 @@ export default function CrearVentaPage() {
                 </svg>
               </button>
             </div>
-            
+
             {/* Contenido */}
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Esta acción no se puede deshacer. El producto será eliminado permanentemente de la lista.
               </p>
-              
+
               {/* Botones */}
               <div className="flex gap-4">
                 <button

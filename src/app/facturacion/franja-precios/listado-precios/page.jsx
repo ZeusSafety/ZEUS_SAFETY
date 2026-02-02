@@ -48,99 +48,92 @@ export default function ListadoPreciosPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Mapeo de valores internos a valores de API
+  // Mapeo de valores internos a valores de API (el API route ya hace la conversión a Malvinas_online, etc.)
   const getApiId = (tablaId) => {
-    const mapping = {
-      "MALVINAS": "MALVINAS",
-      "PROVINCIA": "PROVINCIA",
-      "JICAMARCA": "JICAMARCA",
-      "ONLINE": "ONLINE",
-      "FERRETERIA": "Ferretería",
-      "CLIENTES_FINALES": "Clientes finales"
-    };
-    return mapping[tablaId] || tablaId;
+    // El API route convierte estos valores a los nombres correctos del backend
+    return tablaId;
   };
 
   // Función para obtener precios de una tabla específica
   const fetchPrecios = useCallback(async (tablaId) => {
     try {
       // Obtener token
-      let token = localStorage.getItem("token") || 
-                  (user?.token || user?.accessToken || user?.access_token) || 
-                  sessionStorage.getItem("token");
-      
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
       if (!token) {
         router.push("/login");
         throw new Error("Token no encontrado. Por favor, inicie sesión.");
       }
-      
+
       // Convertir el ID interno al formato que espera la API
       const apiId = getApiId(tablaId);
-      
+
       // Usar el endpoint proxy de Next.js
       const apiUrl = `/api/franja-precios?id=${encodeURIComponent(apiId)}`;
-      
+
       const headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": `Bearer ${token}`,
       };
-      
+
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: headers,
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem("token");
           router.push("/login");
           throw new Error("token expirado");
         }
-        
+
         const errorData = await response.json().catch(() => ({ error: `Error ${response.status}` }));
         const errorMessage = errorData.error || errorData.message || errorData.details || `Error ${response.status}`;
-        
+
         if (errorData.error === "token expirado" || errorMessage.toLowerCase().includes("token expirado")) {
           localStorage.removeItem("token");
           router.push("/login");
           throw new Error("token expirado");
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       // Parsear respuesta JSON directamente
       const data = await response.json();
-      
+
       // 🔍 LOG: Datos recibidos de la API
       console.log("🔍 [FRONTEND] ===== DATOS RECIBIDOS DE LA API =====");
       console.log("🔍 [FRONTEND] Tipo de data:", typeof data);
       console.log("🔍 [FRONTEND] Es array?", Array.isArray(data));
       console.log("🔍 [FRONTEND] Data completa:", data);
-      
+
       // La API devuelve un array directamente con todos los campos incluidos
       // La nueva API (franja_precios) ya incluye: CODIGO, NOMBRE, CANTIDAD_CAJA, 
       // FICHA_TECNICA_ENLACE, TEXTO_COPIAR, y campos dinámicos de precio (CAJA 1, DOCENA 1, etc.)
-      const preciosArray = Array.isArray(data) ? data : 
-                          (data?.data && Array.isArray(data.data) ? data.data : []);
-      
+      const preciosArray = Array.isArray(data) ? data :
+        (data?.data && Array.isArray(data.data) ? data.data : []);
+
       console.log("🔍 [FRONTEND] PreciosArray procesado - Total:", preciosArray.length);
-      
+
       if (preciosArray.length > 0) {
         console.log("🔍 [FRONTEND] Primer registro completo:", preciosArray[0]);
         console.log("🔍 [FRONTEND] Claves del primer registro:", Object.keys(preciosArray[0]));
-        
+
         // Mostrar solo campos de precio
         const primerRegistro = preciosArray[0];
         const camposPrecio = Object.keys(primerRegistro).filter(key => {
           const keyUpper = key.toUpperCase();
-          return !['ID', 'CODIGO', 'NOMBRE', 'PRODUCTO', 'CANTIDAD_CAJA', 'CANTIDAD_EN_CAJA', 
-                   'FICHA_TECNICA_ENLACE', 'TEXTO_COPIAR', 'MEDIDA', 'PRECIO'].includes(keyUpper) &&
-                 (keyUpper.includes('CAJA') || keyUpper.includes('DOCENA') || 
-                  keyUpper.includes('PAR') || keyUpper.includes('UNIDAD'));
+          return !['ID', 'CODIGO', 'NOMBRE', 'PRODUCTO', 'CANTIDAD_CAJA', 'CANTIDAD_EN_CAJA',
+            'FICHA_TECNICA_ENLACE', 'TEXTO_COPIAR', 'MEDIDA', 'PRECIO'].includes(keyUpper) &&
+            (keyUpper.includes('CAJA') || keyUpper.includes('DOCENA') ||
+              keyUpper.includes('PAR') || keyUpper.includes('UNIDAD'));
         });
-        
+
         console.log("🔍 [FRONTEND] Campos de precio encontrados:", camposPrecio);
         console.log("🔍 [FRONTEND] Valores de precios en primer registro:");
         camposPrecio.forEach(campo => {
@@ -149,22 +142,22 @@ export default function ListadoPreciosPage() {
       } else {
         console.warn("⚠️ [FRONTEND] No hay registros en preciosArray");
       }
-      
+
       console.log("🔍 [FRONTEND] ===== FIN DATOS API =====");
-      
+
       return preciosArray;
     } catch (err) {
       // Solo mostrar error si no es un error esperado de tabla sin datos
       const errorMessage = err.message || "";
-      const isExpectedError = errorMessage.includes("'PRECIO'") || 
-                             errorMessage.includes("PRECIO") ||
-                             errorMessage.includes("No hay datos") ||
-                             errorMessage.includes("no existe");
-      
+      const isExpectedError = errorMessage.includes("'PRECIO'") ||
+        errorMessage.includes("PRECIO") ||
+        errorMessage.includes("No hay datos") ||
+        errorMessage.includes("no existe");
+
       if (!isExpectedError) {
         console.error(`Error al obtener precios para ${tablaId}:`, err.message);
       }
-      
+
       return [];
     }
   }, [user, router]);
@@ -173,10 +166,10 @@ export default function ListadoPreciosPage() {
   useEffect(() => {
     const loadAllData = async () => {
       if (!user) return;
-      
+
       setLoadingAll(true);
       setError(null);
-      
+
       try {
         // Intentar cargar datos de TODAS las tablas para verificar cuáles tienen datos
         // Esto permite habilitar automáticamente las que tengan datos
@@ -184,15 +177,15 @@ export default function ListadoPreciosPage() {
           const data = await fetchPrecios(tabla.value);
           return { tabla: tabla.value, data };
         });
-        
+
         const results = await Promise.all(promises);
-        
+
         // Almacenar todos los datos en el estado
         const newPreciosData = {};
         results.forEach(({ tabla, data }) => {
           newPreciosData[tabla] = data;
         });
-        
+
         // Log para verificar qué tablas tienen datos y estructura de los datos
         console.log("=== DATOS CARGADOS POR TABLA ===");
         Object.keys(newPreciosData).forEach(tabla => {
@@ -203,9 +196,9 @@ export default function ListadoPreciosPage() {
             console.log(`Estructura del primer registro de ${tabla}:`, Object.keys(newPreciosData[tabla][0]));
             const primerRegistro = newPreciosData[tabla][0];
             // Buscar todos los campos relacionados con ficha técnica
-            const fichaKeys = Object.keys(primerRegistro).filter(key => 
-              key.toUpperCase().includes('FICHA') || 
-              key.toUpperCase().includes('PDF') || 
+            const fichaKeys = Object.keys(primerRegistro).filter(key =>
+              key.toUpperCase().includes('FICHA') ||
+              key.toUpperCase().includes('PDF') ||
               key.toUpperCase().includes('ENLACE') ||
               key.toUpperCase().includes('URL')
             );
@@ -223,12 +216,20 @@ export default function ListadoPreciosPage() {
           }
         });
         console.log("=================================");
-        
+
         setPreciosData(newPreciosData);
-        
+
         // Habilitar automáticamente todas las tablas que tengan datos
-        setTablasDisponibles(prev => 
+        // JICAMARCA y ONLINE siempre están deshabilitados (próximamente)
+        setTablasDisponibles(prev =>
           prev.map(tabla => {
+            // JICAMARCA y ONLINE siempre están deshabilitados
+            if (tabla.value === "JICAMARCA" || tabla.value === "ONLINE") {
+              return {
+                ...tabla,
+                disponible: false
+              };
+            }
             const tieneDatos = newPreciosData[tabla.value] && newPreciosData[tabla.value].length > 0;
             return {
               ...tabla,
@@ -236,7 +237,7 @@ export default function ListadoPreciosPage() {
             };
           })
         );
-        
+
         // Si la tabla activa no tiene datos, cambiar a la primera disponible
         const activeTabData = newPreciosData[activeTab];
         if (!activeTabData || activeTabData.length === 0) {
@@ -267,30 +268,30 @@ export default function ListadoPreciosPage() {
     const precios = preciosData[activeTab] || [];
     console.log("🔍 [FRONTEND-LISTADO] ===== DETECTANDO COLUMNAS DE PRECIO =====");
     console.log("🔍 [FRONTEND-LISTADO] Total de precios:", precios.length);
-    
+
     if (precios.length === 0) {
       console.warn("⚠️ [FRONTEND-LISTADO] No hay precios, retornando array vacío");
       return [];
     }
-    
+
     // Campos que NO son columnas de precio según la estructura real de la BD
     const excludedFields = [
-      'index', 'ID', 'id', 'CODIGO', 'codigo', 'NOMBRE', 'nombre', 'PRODUCTO', 'producto',
+      'index', 'ID', 'id', 'Codigo', 'codigo', 'CODIGO', 'Producto', 'producto', 'PRODUCTO',
       'CANTIDAD_UNIDAD_MEDIDA_VENTA', 'cantidad_unidad_medida_venta',
       'UNIDAD_MEDIDA_VENTA', 'unidad_medida_venta',
       'UNIDAD_MEDIDA_CAJA', 'unidad_medida_caja',
       'CANTIDAD_CAJA', 'cantidad_caja', 'CANTIDAD_EN_CAJA', 'cantidad_en_caja',
-      'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace', 'FICHA_TECNICA', 'ficha_tecnica',
-      'TEXTO_COPIAR', 'texto_copiar', 'textoCopiar'
+      'ficha_tecnica', 'FICHA_TECNICA', 'FICHA_TECNICA_ENLACE', 'ficha_tecnica_enlace',
+      'texto_copiar', 'TEXTO_COPIAR', 'textoCopiar'
     ];
-    
+
     // Obtener todas las keys del primer registro
     const firstRecord = precios[0];
     const allKeys = Object.keys(firstRecord);
-    
+
     console.log("🔍 [FRONTEND-LISTADO] Primer registro:", firstRecord);
     console.log("🔍 [FRONTEND-LISTADO] Todas las claves disponibles:", allKeys);
-    
+
     // Filtrar solo las columnas de precio
     // La nueva API devuelve campos dinámicos como "CAJA 1", "DOCENA 1", "PAR 1", "UNIDAD 1"
     // que son numéricos y no están en la lista de excluidos
@@ -301,65 +302,48 @@ export default function ListadoPreciosPage() {
         if (excludedFields.some(excluded => keyUpper.includes(excluded.toUpperCase()))) {
           return false;
         }
-        
-        // Excluir columnas PAR 1, PAR 5 y PAR 10
-        if (keyUpper === 'PAR 1' || keyUpper === 'PAR 5' || keyUpper === 'PAR 10') {
-          return false;
-        }
-        
+
+        // Incluir campos de precio: Caja_1, Caja_5, Caja_10, Caja_20, Docena
         const value = firstRecord[key];
-        // Incluir campos que sean numéricos (precios dinámicos)
-        // O campos que contengan PRECIO y sean numéricos
-        const isNumeric = typeof value === 'number' || 
-                         (!isNaN(parseFloat(value)) && value !== null && value !== '');
-        
-        // Incluir si es numérico o contiene palabras clave de precio
-        if (isNumeric) {
-          // Verificar que no sea un ID u otro campo numérico que no sea precio
-          if (keyUpper.includes('ID') || keyUpper.includes('CANTIDAD')) {
-            return false;
-          }
-          return true;
-        }
-        
-        // También incluir campos que contengan PRECIO
-        if (keyUpper.includes('PRECIO')) {
+        const isNumeric = typeof value === 'number' ||
+          (!isNaN(parseFloat(value)) && value !== null && value !== '');
+
+        // Incluir campos que contengan Caja, Docena y sean numéricos
+        if (keyUpper.includes('CAJA') || keyUpper.includes('DOCENA')) {
           return isNumeric;
         }
-        
+
         return false;
       })
       .sort((a, b) => {
-        // Ordenar: primero CAJA, luego DOCENA, luego PAR, luego UNIDAD
+        // Ordenar: primero DOCENA, luego CAJA
         const aUpper = a.toUpperCase();
         const bUpper = b.toUpperCase();
-        
+
         const getOrder = (str) => {
-          if (str.includes('CAJA')) return 1;
-          if (str.includes('DOCENA')) return 2;
-          if (str.includes('PAR')) return 3;
-          if (str.includes('UNIDAD')) return 4;
-          return 5;
+          if (str.includes('DOCENA')) return 1;
+          if (str.includes('CAJA')) return 2;
+          return 3;
         };
-        
+
         const orderA = getOrder(aUpper);
         const orderB = getOrder(bUpper);
-        
+
         if (orderA !== orderB) return orderA - orderB;
-        
+
         // Si mismo tipo, ordenar por número
         const numA = parseInt(a.match(/\d+/)?.[0] || '0');
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
         return numA - numB;
       });
-    
+
     console.log("🔍 [FRONTEND-LISTADO] Columnas de precio detectadas:", priceColumns);
     console.log("🔍 [FRONTEND-LISTADO] Valores de precios en primer registro:");
     priceColumns.forEach(col => {
       console.log(`  - ${col}: ${firstRecord[col]} (tipo: ${typeof firstRecord[col]})`);
     });
     console.log("🔍 [FRONTEND-LISTADO] ===== FIN DETECCIÓN COLUMNAS =====");
-    
+
     return priceColumns;
   }, [preciosData, activeTab]);
 
@@ -414,8 +398,8 @@ export default function ListadoPreciosPage() {
         return "";
       };
 
-      const codigo = getField(["CODIGO", "codigo"]);
-      const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
+      const codigo = getField(["Codigo", "codigo", "CODIGO"]);
+      const producto = getField(["Producto", "producto", "PRODUCTO"]);
 
       return codigo.includes(term) || producto.includes(term);
     });
@@ -487,7 +471,7 @@ export default function ListadoPreciosPage() {
                     const isActive = activeTab === tabla.value;
                     const isDisabled = !tabla.disponible;
                     const hasData = preciosData[tabla.value]?.length > 0;
-                    
+
                     return (
                       <button
                         key={tabla.value}
@@ -500,11 +484,11 @@ export default function ListadoPreciosPage() {
                         disabled={isDisabled}
                         className={`
                           px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200
-                          ${isActive 
-                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg" 
+                          ${isActive
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg"
                             : isDisabled
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-sm"
                           }
                           ${!isDisabled && !isActive ? "hover:border-blue-300" : ""}
                         `}
@@ -539,7 +523,14 @@ export default function ListadoPreciosPage() {
                 </div>
               ) : precios.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>No hay datos disponibles para esta clasificación.</p>
+                  {(activeTab === "JICAMARCA" || activeTab === "ONLINE") ? (
+                    <div>
+                      <p className="text-gray-600 text-lg font-semibold mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>Próximamente</p>
+                      <p className="text-gray-500 text-sm" style={{ fontFamily: 'var(--font-poppins)' }}>Esta clasificación estará disponible próximamente.</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>No hay datos disponibles para esta clasificación.</p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -615,13 +606,10 @@ export default function ListadoPreciosPage() {
                                 PRODUCTO
                               </th>
                               <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                CANTIDAD EN CAJA
-                              </th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 FICHA TÉCNICA
                               </th>
                               {getPriceColumns.map((columna) => (
-                                <th 
+                                <th
                                   key={columna}
                                   className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
                                   style={{ fontFamily: 'var(--font-poppins)' }}
@@ -637,181 +625,145 @@ export default function ListadoPreciosPage() {
                           <tbody className="divide-y divide-gray-100">
                             {preciosPaginados.map((precio, index) => {
                               const globalIndex = startIndex + index;
-                          // Función helper para obtener el valor de un campo con múltiples variaciones
-                          const getField = (variations) => {
-                            for (const variation of variations) {
-                              if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
-                                return precio[variation];
-                              }
-                            }
-                            return null;
-                          };
+                              // Función helper para obtener el valor de un campo con múltiples variaciones
+                              const getField = (variations) => {
+                                for (const variation of variations) {
+                                  if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
+                                    return precio[variation];
+                                  }
+                                }
+                                return null;
+                              };
 
-                          // Función helper para formatear precio y verificar si es 0
-                          // Manejar NaN, null, undefined, y valores numéricos
-                          const formatPrice = (value) => {
-                            if (value === null || value === undefined || value === "" || value === "NaN") return { text: "", isZero: false };
-                            if (typeof value === "number" && isNaN(value)) return { text: "", isZero: false };
-                            const num = parseFloat(value);
-                            if (isNaN(num)) return { text: "", isZero: false };
-                            if (num === 0) return { text: "", isZero: true };
-                            return { text: `S/.${num.toFixed(2)}`, isZero: false };
-                          };
+                              // Función helper para formatear precio y verificar si es 0
+                              // Manejar NaN, null, undefined, y valores numéricos
+                              const formatPrice = (value) => {
+                                if (value === null || value === undefined || value === "" || value === "NaN") return { text: "", isZero: false };
+                                if (typeof value === "number" && isNaN(value)) return { text: "", isZero: false };
+                                const num = parseFloat(value);
+                                if (isNaN(num)) return { text: "", isZero: false };
+                                if (num === 0) return { text: "", isZero: true };
+                                return { text: `S/.${num.toFixed(2)}`, isZero: false };
+                              };
 
-                          // Mapeo de campos según la estructura de la nueva API (franja_precios)
-                          const codigo = getField(["CODIGO", "codigo"]);
-                          const producto = getField(["NOMBRE", "nombre", "PRODUCTO", "producto"]);
-                          
-                          // CANTIDAD_CAJA viene directamente de la API como "UNIDAD 10", "CAJA 1", etc.
-                          const cantidadCaja = getField(["CANTIDAD_CAJA", "cantidad_caja", "CANTIDAD_EN_CAJA", "cantidad_en_caja"]) || "-";
-                          
-                          // Ficha técnica viene directamente de la API (franja_precios)
-                          // Buscar primero con getField, luego buscar manualmente en todas las keys del objeto
-                          let fichaTecnica = getField([
-                            "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace", 
-                            "FICHA_TECNICA", "ficha_tecnica",
-                            "FICHA_TECNICA_URL", "ficha_tecnica_url",
-                            "PDF", "pdf", "PDF_URL", "pdf_url",
-                            "ENLACE_FICHA", "enlace_ficha",
-                            "URL_FICHA", "url_ficha",
-                            "P.FICHA_TECNICA_ENLACE", "p.ficha_tecnica_enlace"
-                          ]);
-                          
-                          // Si no se encontró, buscar manualmente en todas las keys del objeto
-                          if (!fichaTecnica || fichaTecnica === "" || fichaTecnica === null) {
-                            const allKeys = Object.keys(precio);
-                            const fichaKey = allKeys.find(key => {
-                              const keyUpper = key.toUpperCase();
-                              return keyUpper.includes('FICHA') || 
-                                     keyUpper.includes('PDF') || 
-                                     (keyUpper.includes('ENLACE') && !keyUpper.includes('TEXTO')) ||
-                                     (keyUpper.includes('URL') && !keyUpper.includes('IMG'));
-                            });
-                            if (fichaKey) {
-                              fichaTecnica = precio[fichaKey];
-                              // Log para debugging
-                              if (globalIndex === 0) {
-                                console.log(`🔍 Ficha técnica encontrada en campo: ${fichaKey} = ${fichaTecnica}`);
-                              }
-                            }
-                          }
-                          const textoCopiar = getField(["TEXTO_COPIAR", "texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
+                              // Mapeo de campos según la estructura del nuevo backend
+                              // El SP devuelve: Producto, Codigo, ficha_tecnica, Caja_1, Caja_5, Caja_10, Caja_20, Docena, texto_copiar
+                              const codigo = getField(["Codigo", "codigo", "CODIGO"]);
+                              const producto = getField(["Producto", "producto", "PRODUCTO"]);
+                              const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE"]);
+                              const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
 
-                          return (
-                            <tr key={globalIndex} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {codigo || "-"}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {producto || "-"}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
-                                {cantidadCaja || "-"}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
-                                <div className="flex items-center justify-center">
-                                  {fichaTecnica && fichaTecnica !== "" && fichaTecnica !== null && fichaTecnica !== undefined ? (
-                                    <a
-                                      href={fichaTecnica}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Abrir ficha técnica en nueva pestaña"
-                                      style={{ fontFamily: 'var(--font-poppins)' }}
-                                    >
-                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>PDF</span>
-                                    </a>
-                                  ) : (
-                                    <button
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
-                                      title="Sin ficha técnica"
-                                      disabled
-                                      style={{ fontFamily: 'var(--font-poppins)' }}
-                                    >
-                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-                                        <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                        <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
-                                      </svg>
-                                      <span style={{ pointerEvents: 'none' }}>PDF</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                              {getPriceColumns.map((columna) => {
-                                const precioValue = formatPrice(precio[columna]);
-                                return (
-                                  <td 
-                                    key={columna}
-                                    className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    {precioValue.text}
+                              return (
+                                <tr key={globalIndex} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                  <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                    {codigo || "-"}
                                   </td>
-                                );
-                              })}
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
-                                {textoCopiar ? (
-                                  <button
-                                    onClick={() => copyToClipboard(textoCopiar, globalIndex)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] ${
-                                      copiedIndex === globalIndex
-                                        ? "bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-                                        : "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                                    }`}
-                                    title="Copiar texto al portapapeles"
-                                    style={{ fontFamily: 'var(--font-poppins)' }}
-                                  >
-                                    {copiedIndex === globalIndex ? (
-                                      <>
-                                        <svg
-                                          className="w-3.5 h-3.5"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
+                                  <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                    {producto || "-"}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
+                                      {fichaTecnica && fichaTecnica !== "" && fichaTecnica !== null && fichaTecnica !== undefined ? (
+                                        <a
+                                          href={fichaTecnica}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Abrir ficha técnica en nueva pestaña"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
                                         >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                        Copiado
-                                      </>
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                            <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                            <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                        </a>
+                                      ) : (
+                                        <button
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Sin ficha técnica"
+                                          disabled
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                            <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                            <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                  {getPriceColumns.map((columna) => {
+                                    const precioValue = formatPrice(precio[columna]);
+                                    return (
+                                      <td
+                                        key={columna}
+                                        className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700"
+                                        style={{ fontFamily: 'var(--font-poppins)' }}
+                                      >
+                                        {precioValue.text}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
+                                    {textoCopiar ? (
+                                      <button
+                                        onClick={() => copyToClipboard(textoCopiar, globalIndex)}
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] ${copiedIndex === globalIndex
+                                            ? "bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                                            : "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                                          }`}
+                                        title="Copiar texto al portapapeles"
+                                        style={{ fontFamily: 'var(--font-poppins)' }}
+                                      >
+                                        {copiedIndex === globalIndex ? (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="currentColor"
+                                              viewBox="0 0 20 20"
+                                            >
+                                              <path
+                                                fillRule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clipRule="evenodd"
+                                              />
+                                            </svg>
+                                            Copiado
+                                          </>
+                                        ) : (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            Copiar
+                                          </>
+                                        )}
+                                      </button>
                                     ) : (
-                                      <>
-                                        <svg
-                                          className="w-3.5 h-3.5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                          />
-                                        </svg>
-                                        Copiar
-                                      </>
+                                      <span className="text-gray-400">-</span>
                                     )}
-                                  </button>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
+                                  </td>
+                                </tr>
+                              );
                             })}
                           </tbody>
                         </table>
                       </div>
-                      
+
                       {/* Controles de Paginación */}
                       <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                         <button

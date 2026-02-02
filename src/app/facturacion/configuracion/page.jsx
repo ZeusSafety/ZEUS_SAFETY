@@ -62,23 +62,20 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${
-          disabled 
-            ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed' 
-            : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${
-              isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
-            }`
-        }`}
+        className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 text-sm flex items-center justify-between ${disabled
+          ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+          : `border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] ${isOpen ? 'ring-2 ring-[#002D5A] border-[#002D5A]' : ''
+          }`
+          }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform duration-200 ${
-            disabled 
-              ? 'text-gray-400' 
-              : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
-          }`}
+          className={`w-5 h-5 transition-transform duration-200 ${disabled
+            ? 'text-gray-400'
+            : `text-gray-400 ${isOpen ? (openUpward ? '' : 'transform rotate-180') : ''}`
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -88,27 +85,25 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
       </button>
 
       {isOpen && !disabled && (
-        <div 
-          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden ${
-            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
-          style={{ 
+        <div
+          className={`absolute z-50 w-full bg-white shadow-xl overflow-hidden ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+          style={{
             borderRadius: '0.5rem',
             border: '1px solid #e5e7eb',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}
         >
-          <div className="max-h-60 overflow-y-auto custom-scrollbar p-1.5">
+          <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-4 py-3 transition-all duration-150 ${
-                  value === option.value
-                    ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
-                    : 'text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`w-full text-left px-4 py-3 transition-all duration-150 ${value === option.value
+                  ? 'bg-[#002D5A]/10 text-[#002D5A] font-semibold'
+                  : 'text-gray-900 hover:bg-gray-50'
+                  }`}
                 style={{ borderRadius: '0.375rem' }}
               >
                 {option.label}
@@ -127,51 +122,90 @@ export default function ConfiguracionPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const API_URL = "https://productoscrud-2946605267.us-central1.run.app";
+
+  const [isFetching, setIsFetching] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "info" });
+
+  // Listas de datos
+  const [asesores, setAsesores] = useState([]);
+  const [formasPago, setFormasPago] = useState([]);
+  const [lugares, setLugares] = useState([]);
+
+  // Paginación Lugares
   const [currentPageLugares, setCurrentPageLugares] = useState(1);
-  const [totalPagesLugares, setTotalPagesLugares] = useState(14);
-  const [totalLugares, setTotalLugares] = useState(70);
-  const [nuevoCliente, setNuevoCliente] = useState({
-    nombre: "",
-    tipo: "",
-  });
+  const elementosPorPaginaLugares = 5;
 
-  // Datos de prueba - Asesores
-  const [asesores, setAsesores] = useState([
-    { id: 9, nombre: "HERVIN", estado: "ACTIVO" },
-    { id: 10, nombre: "KIMBERLY", estado: "ACTIVO" },
-    { id: 15, nombre: "IMPORT ZEUS", estado: "ACTIVO" },
-    { id: 31, nombre: "LIZETH", estado: "ACTIVO" },
-    { id: 32, nombre: "EVELYN", estado: "ACTIVO" },
-    { id: 33, nombre: "JOSEPH", estado: "ACTIVO" },
-    { id: 34, nombre: "SANDRA", estado: "ACTIVO" },
-    { id: 35, nombre: "ALVARO", estado: "ACTIVO" },
-  ]);
+  // Modales
+  const [isAsesorModalOpen, setIsAsesorModalOpen] = useState(false);
+  const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
+  const [isLugarModalOpen, setIsLugarModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Datos de prueba - Formas de Pago
-  const [formasPago, setFormasPago] = useState([
-    { id: 1, nombre: "CREDITO", estado: "ACTIVO" },
-    { id: 2, nombre: "BCP", estado: "ACTIVO" },
-    { id: 6, nombre: "YAPE", estado: "ACTIVO" },
-    { id: 8, nombre: "BCP K", estado: "ACTIVO" },
-    { id: 9, nombre: "EFECTIVO", estado: "ACTIVO" },
-    { id: 10, nombre: "TRANSFERENCIA", estado: "ACTIVO" },
-    { id: 11, nombre: "TARJETA", estado: "ACTIVO" },
-    { id: 12, nombre: "PLIN", estado: "ACTIVO" },
-  ]);
+  // Forms
+  const [asesorForm, setAsesorForm] = useState({ nombre: "", estado: "1" });
+  const [pagoForm, setPagoForm] = useState({ nombre: "", estado: "1" });
+  const [lugarForm, setLugarForm] = useState({ nombre: "", tipo: "" });
+  const [nuevoCliente, setNuevoCliente] = useState({ nombre: "", tipo: "" });
 
-  // Datos de prueba - Lugares
-  const [lugares, setLugares] = useState([
-    { id: 72, lugar: "NARANJAL", tipo: "AVENIDA" },
-    { id: 69, lugar: "HUARAL", tipo: "DISTRITO" },
-    { id: 66, lugar: "AV TUPAC AMARU", tipo: "DISTRITO" },
-    { id: 65, lugar: "LIMA", tipo: "CIUDAD" },
-    { id: 64, lugar: "CALLAO", tipo: "DISTRITO" },
-  ]);
+  // Edición y Eliminación
+  const [editingId, setEditingId] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const opcionesTipoCliente = [
-    { value: "1", label: "Persona Natural" },
-    { value: "2", label: "Persona Jurídica" },
+    { value: "1", label: "EMPRESA" },
+    { value: "2", label: "PERSONA" },
   ];
+
+  const opcionesEstado = [
+    { value: "1", label: "Activo" },
+    { value: "0", label: "Inactivo" },
+  ];
+
+  const opcionesTipoLugar = [
+    { value: "Centro comercial", label: "Centro comercial" },
+    { value: "Provincia", label: "Provincia" },
+    { value: "Avenida", label: "Avenida" },
+    { value: "Ciudad", label: "Ciudad" },
+    { value: "Distrito", label: "Distrito" },
+  ];
+
+  const showNotify = (message, type = "info") => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: "", type: "info" }), 3000);
+  };
+
+  const cargarConfiguraciones = async () => {
+    try {
+      const response = await fetch(`${API_URL}?metodo=configuracion`);
+      if (!response.ok) throw new Error("Error al cargar configuraciones");
+      const data = await response.json();
+      setAsesores(data.filter(item => item.CATEGORIA === 'ASESOR'));
+      setFormasPago(data.filter(item => item.CATEGORIA === 'FORMA_PAGO'));
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al cargar configuraciones", "error");
+    }
+  };
+
+  const cargarLugares = async () => {
+    try {
+      const response = await fetch(`${API_URL}?metodo=lugar_configuracion`);
+      if (!response.ok) throw new Error("Error al cargar lugares");
+      const data = await response.json();
+      setLugares(data);
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al cargar lugares", "error");
+    }
+  };
+
+  const inicializarDatos = async () => {
+    setIsFetching(true);
+    await Promise.all([cargarConfiguraciones(), cargarLugares()]);
+    setIsFetching(false);
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -193,6 +227,12 @@ export default function ConfiguracionPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      inicializarDatos();
+    }
+  }, [user]);
+
   const handleClienteChange = (e) => {
     const { name, value } = e.target;
     setNuevoCliente((prev) => ({
@@ -201,53 +241,208 @@ export default function ConfiguracionPage() {
     }));
   };
 
-  const registrarCliente = () => {
+  const registrarCliente = async () => {
     if (!nuevoCliente.nombre || !nuevoCliente.tipo) {
+      showNotify("Todos los campos son obligatorios", "error");
       return;
     }
-    console.log("Registrar cliente:", nuevoCliente);
-    setNuevoCliente({ nombre: "", tipo: "" });
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(`${API_URL}?metodo=configuracion_cliente`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cliente: nuevoCliente.nombre,
+          tipo_cliente: nuevoCliente.tipo
+        })
+      });
+
+      if (!response.ok) throw new Error("Error al registrar cliente");
+
+      showNotify("Cliente registrado correctamente", "success");
+      setNuevoCliente({ nombre: "", tipo: "" });
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al registrar cliente", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const recargarDatos = () => {
-    console.log("Recargar datos");
-    // Lógica para recargar datos
+  // --- CRUD ASESORES ---
+  const handleNuevoAsesor = () => {
+    setAsesorForm({ nombre: "", estado: "1" });
+    setEditingId(null);
+    setIsAsesorModalOpen(true);
   };
 
-  const editarAsesor = (id) => {
-    console.log("Editar asesor:", id);
+  const editarAsesor = (asesor) => {
+    setAsesorForm({ nombre: asesor.NOMBRE, estado: asesor.ESTADO });
+    setEditingId(asesor.ID);
+    setIsAsesorModalOpen(true);
   };
 
-  const eliminarAsesor = (id) => {
-    console.log("Eliminar asesor:", id);
+  const guardarAsesor = async (e) => {
+    e.preventDefault();
+    if (!asesorForm.nombre) return showNotify("El nombre es obligatorio", "error");
+
+    try {
+      setIsSaving(true);
+      const url = editingId ? `${API_URL}?metodo=configuracion_edit` : `${API_URL}?metodo=configuracion`;
+      const method = editingId ? 'PUT' : 'POST';
+      const body = editingId
+        ? { id: editingId, nombre: asesorForm.nombre, estado: asesorForm.estado }
+        : { nombre: asesorForm.nombre, categoria: 'ASESOR' };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) throw new Error("Error al guardar asesor");
+
+      showNotify(editingId ? "Asesor actualizado" : "Asesor creado", "success");
+      setIsAsesorModalOpen(false);
+      cargarConfiguraciones();
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al guardar asesor", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const nuevoAsesor = () => {
-    console.log("Nuevo asesor");
+  // --- CRUD FORMAS DE PAGO ---
+  const handleNuevaFormaPago = () => {
+    setPagoForm({ nombre: "", estado: "1" });
+    setEditingId(null);
+    setIsPagoModalOpen(true);
   };
 
-  const editarFormaPago = (id) => {
-    console.log("Editar forma de pago:", id);
+  const editarFormaPago = (forma) => {
+    setPagoForm({ nombre: forma.NOMBRE, estado: forma.ESTADO });
+    setEditingId(forma.ID);
+    setIsPagoModalOpen(true);
   };
 
-  const eliminarFormaPago = (id) => {
-    console.log("Eliminar forma de pago:", id);
+  const guardarFormaPago = async (e) => {
+    e.preventDefault();
+    if (!pagoForm.nombre) return showNotify("El nombre es obligatorio", "error");
+
+    try {
+      setIsSaving(true);
+      const url = editingId ? `${API_URL}?metodo=configuracion_edit` : `${API_URL}?metodo=configuracion`;
+      const method = editingId ? 'PUT' : 'POST';
+      const body = editingId
+        ? { id: editingId, nombre: pagoForm.nombre, estado: pagoForm.estado }
+        : { nombre: pagoForm.nombre, categoria: 'FORMA_PAGO' };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) throw new Error("Error al guardar forma de pago");
+
+      showNotify(editingId ? "Forma de pago actualizada" : "Forma de pago creada", "success");
+      setIsPagoModalOpen(false);
+      cargarConfiguraciones();
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al guardar forma de pago", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const nuevaFormaPago = () => {
-    console.log("Nueva forma de pago");
+  // --- CRUD LUGARES ---
+  const handleNuevoLugar = () => {
+    setLugarForm({ nombre: "", tipo: "" });
+    setEditingId(null);
+    setIsLugarModalOpen(true);
   };
 
-  const editarLugar = (id) => {
-    console.log("Editar lugar:", id);
+  const editarLugar = (lugar) => {
+    setLugarForm({ nombre: lugar.LUGAR, tipo: lugar.TIPO });
+    setEditingId(lugar.ID);
+    setIsLugarModalOpen(true);
   };
 
-  const eliminarLugar = (id) => {
-    console.log("Eliminar lugar:", id);
+  const guardarLugar = async (e) => {
+    e.preventDefault();
+    if (!lugarForm.nombre || !lugarForm.tipo) return showNotify("Todos los campos son obligatorios", "error");
+
+    try {
+      setIsSaving(true);
+      const url = editingId ? `${API_URL}?metodo=configuracion_lugar_edit` : `${API_URL}?metodo=configuracion_lugar`;
+      const method = editingId ? 'PUT' : 'POST';
+      const body = editingId
+        ? { id: editingId, lugar: lugarForm.nombre, tipo: lugarForm.tipo }
+        : { lugar: lugarForm.nombre, tipo: lugarForm.tipo };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) throw new Error("Error al guardar lugar");
+
+      showNotify(editingId ? "Lugar actualizado" : "Lugar creado", "success");
+      setIsLugarModalOpen(false);
+      cargarLugares();
+    } catch (error) {
+      console.error(error);
+      showNotify("Error al guardar lugar", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const nuevoLugar = () => {
-    console.log("Nuevo lugar");
+  // --- ELIMINACION COMUN ---
+  const confirmarEliminar = (id, tipo) => {
+    setItemToDelete({ id, tipo });
+    setIsDeleteModalOpen(true);
+  };
+
+  const ejecutarEliminacion = async () => {
+    if (!itemToDelete) return;
+    const { id, tipo } = itemToDelete;
+
+    try {
+      setIsSaving(true);
+      console.log(`Eliminando ${tipo} con ID:`, id);
+
+      const response = await fetch(`${API_URL}?metodo=eliminar_configuracion`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: String(id) })
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const result = await response.json().catch(() => ({ success: true }));
+      console.log('Resultado eliminación:', result);
+
+      showNotify(`${tipo} eliminado correctamente`, "success");
+      setIsDeleteModalOpen(false);
+
+      // Forzar carga de datos
+      if (tipo === 'Lugar') {
+        await cargarLugares();
+      } else {
+        await cargarConfiguraciones();
+      }
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      showNotify("No se pudo completar la eliminación", "error");
+    } finally {
+      setIsSaving(false);
+      setItemToDelete(null);
+    }
   };
 
   if (loading) {
@@ -267,13 +462,39 @@ export default function ConfiguracionPage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
       >
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: '#F7FAFF' }}>
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative" style={{ background: '#F7FAFF' }}>
+          {/* Notificaciones */}
+          {notification.show && (
+            <div className={`fixed top-4 right-4 z-[100] flex items-center p-4 mb-4 text-sm rounded-lg shadow-xl border animate-fade-in-down ${notification.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-blue-50 text-blue-800 border-blue-200'
+              }`}>
+              <div className="mr-3">
+                {notification.type === 'success' ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                ) : notification.type === 'error' ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+                )}
+              </div>
+              <p className="font-semibold">{notification.message}</p>
+            </div>
+          )}
+
+          {/* Loading Overlay Global */}
+          {(isFetching || isSaving) && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#002D5A] mb-4"></div>
+                <p className="text-[#002D5A] font-bold text-lg animate-pulse">Procesando...</p>
+              </div>
+            </div>
+          )}
+
           <div className="max-w-[95%] mx-auto px-4 py-4">
             {/* Botón Volver */}
             <button
@@ -290,17 +511,27 @@ export default function ConfiguracionPage() {
             {/* Card contenedor principal */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6">
               {/* Header */}
-              <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Configuraciones</h1>
-                <button
-                  onClick={recargarDatos}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all duration-200 flex items-center space-x-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span>Recargar Datos</span>
-                </button>
+              <div className="mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Configuraciones</h1>
+                      <p className="text-sm text-gray-600 font-medium mt-0.5">Gestiona las configuraciones de los clientes</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-50 border border-green-300 rounded-lg">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-xs sm:text-sm font-semibold text-green-700">API Conectada</span>
+                  </div>
+                </div>
               </div>
 
               {/* Secciones lado a lado */}
@@ -315,7 +546,7 @@ export default function ConfiguracionPage() {
                       <h2 className="text-lg font-bold">Gestión de Asesores</h2>
                     </div>
                     <button
-                      onClick={nuevoAsesor}
+                      onClick={handleNuevoAsesor}
                       className="px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 text-sm flex items-center space-x-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -337,39 +568,48 @@ export default function ConfiguracionPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {asesores.map((asesor) => (
-                            <tr key={asesor.id} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{asesor.id}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{asesor.nombre}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px]">
-                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
-                                  {asesor.estado}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
-                                <div className="flex items-center justify-center space-x-2">
-                                  <button
-                                    onClick={() => editarAsesor(asesor.id)}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    <span>Editar</span>
-                                  </button>
-                                  <button
-                                    onClick={() => eliminarAsesor(asesor.id)}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    <span>Eliminar</span>
-                                  </button>
-                                </div>
+                          {asesores.length > 0 ? (
+                            asesores.map((asesor) => (
+                              <tr key={asesor.ID} className="hover:bg-slate-200 transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{asesor.ID}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-bold">{asesor.NOMBRE}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px]">
+                                  <span className={`px-2 py-1 rounded text-[10px] font-bold ${asesor.ESTADO === '1' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+                                    }`}>
+                                    {asesor.ESTADO === '1' ? 'ACTIVO' : 'INACTIVO'}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => editarAsesor(asesor)}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                      <span>Editar</span>
+                                    </button>
+                                    <button
+                                      onClick={() => confirmarEliminar(asesor.ID, 'Asesor')}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                      <span>Eliminar</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="px-6 py-10 text-center text-gray-500 italic text-sm">
+                                No hay asesores registrados
                               </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -386,7 +626,7 @@ export default function ConfiguracionPage() {
                       <h2 className="text-lg font-bold">Gestión de Formas de Pago</h2>
                     </div>
                     <button
-                      onClick={nuevaFormaPago}
+                      onClick={handleNuevaFormaPago}
                       className="px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 text-sm flex items-center space-x-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -408,39 +648,48 @@ export default function ConfiguracionPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {formasPago.map((forma) => (
-                            <tr key={forma.id} className="hover:bg-slate-200 transition-colors">
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{forma.id}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{forma.nombre}</td>
-                              <td className="px-3 py-2 whitespace-nowrap text-[10px]">
-                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
-                                  {forma.estado}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-center">
-                                <div className="flex items-center justify-center space-x-2">
-                                  <button
-                                    onClick={() => editarFormaPago(forma.id)}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    <span>Editar</span>
-                                  </button>
-                                  <button
-                                    onClick={() => eliminarFormaPago(forma.id)}
-                                    className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    <span>Eliminar</span>
-                                  </button>
-                                </div>
+                          {formasPago.length > 0 ? (
+                            formasPago.map((forma) => (
+                              <tr key={forma.ID} className="hover:bg-slate-200 transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{forma.ID}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-bold">{forma.NOMBRE}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px]">
+                                  <span className={`px-2 py-1 rounded text-[10px] font-bold ${forma.ESTADO === '1' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+                                    }`}>
+                                    {forma.ESTADO === '1' ? 'ACTIVO' : 'INACTIVO'}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => editarFormaPago(forma)}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                      <span>Editar</span>
+                                    </button>
+                                    <button
+                                      onClick={() => confirmarEliminar(forma.ID, 'Forma de Pago')}
+                                      className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                      <span>Eliminar</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="px-6 py-10 text-center text-gray-500 italic text-sm">
+                                No hay formas de pago registradas
                               </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -459,7 +708,7 @@ export default function ConfiguracionPage() {
                     <h2 className="text-lg font-bold">Gestión de Lugares</h2>
                   </div>
                   <button
-                    onClick={nuevoLugar}
+                    onClick={handleNuevoLugar}
                     className="px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 text-sm flex items-center space-x-1"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -481,35 +730,43 @@ export default function ConfiguracionPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {lugares.map((lugar) => (
-                          <tr key={lugar.id} className="hover:bg-slate-200 transition-colors">
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{lugar.id}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{lugar.lugar}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{lugar.tipo}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <button
-                                  onClick={() => editarLugar(lugar.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  <span>Editar</span>
-                                </button>
-                                <button
-                                  onClick={() => eliminarLugar(lugar.id)}
-                                  className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span>Eliminar</span>
-                                </button>
-                              </div>
+                        {lugares.length > 0 ? (
+                          lugares.slice((currentPageLugares - 1) * elementosPorPaginaLugares, currentPageLugares * elementosPorPaginaLugares).map((lugar) => (
+                            <tr key={lugar.ID} className="hover:bg-slate-200 transition-colors">
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">{lugar.ID}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-bold">{lugar.LUGAR}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 font-semibold">{lugar.TIPO}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <button
+                                    onClick={() => editarLugar(lugar)}
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 hover:border-blue-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <span>Editar</span>
+                                  </button>
+                                  <button
+                                    onClick={() => confirmarEliminar(lugar.ID, 'Lugar')}
+                                    className="flex items-center space-x-1 px-2.5 py-1 bg-red-600 border-2 border-red-700 hover:bg-red-700 hover:border-red-800 text-white rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span>Eliminar</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className="px-6 py-10 text-center text-gray-500 italic text-sm">
+                              No hay lugares registrados
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -518,19 +775,19 @@ export default function ConfiguracionPage() {
                     <button
                       onClick={() => setCurrentPageLugares((prev) => Math.max(1, prev - 1))}
                       disabled={currentPageLugares === 1}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                     >
-                      &lt;
+                      &lt; Anterior
                     </button>
-                    <span className="text-[10px] text-gray-700 font-medium">
-                      Página {currentPageLugares} de {totalPagesLugares} ({totalLugares} lugares)
+                    <span className="text-[10px] text-gray-700 font-bold">
+                      Página {currentPageLugares} de {Math.ceil(lugares.length / elementosPorPaginaLugares) || 1} ({lugares.length} lugares)
                     </span>
                     <button
-                      onClick={() => setCurrentPageLugares((prev) => Math.min(totalPagesLugares, prev + 1))}
-                      disabled={currentPageLugares === totalPagesLugares}
-                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      onClick={() => setCurrentPageLugares((prev) => Math.min(Math.ceil(lugares.length / elementosPorPaginaLugares) || 1, prev + 1))}
+                      disabled={currentPageLugares === (Math.ceil(lugares.length / elementosPorPaginaLugares) || 1)}
+                      className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                     >
-                      &gt;
+                      Siguiente &gt;
                     </button>
                   </div>
                 </div>
@@ -556,7 +813,7 @@ export default function ConfiguracionPage() {
                       value={nuevoCliente.nombre}
                       onChange={handleClienteChange}
                       placeholder="Ingrese el nombre completo del cliente"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-black font-medium"
                     />
                   </div>
                   <div>
@@ -587,6 +844,207 @@ export default function ConfiguracionPage() {
           </div>
         </main>
       </div>
+
+      {/* MODAL ASESOR */}
+      {isAsesorModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-visible transform transition-all scale-100 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId ? 'Editar Asesor' : 'Nuevo Asesor'}
+              </h3>
+              <button onClick={() => setIsAsesorModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <form onSubmit={guardarAsesor} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Asesor <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={asesorForm.nombre}
+                  onChange={(e) => setAsesorForm({ ...asesorForm, nombre: e.target.value })}
+                  placeholder="Ej: Hervin"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] outline-none transition-all text-sm font-medium text-black"
+                  required
+                />
+              </div>
+              <CustomSelect
+                label="Estado"
+                name="estado"
+                value={asesorForm.estado}
+                onChange={(e) => setAsesorForm({ ...asesorForm, estado: e.target.value })}
+                options={opcionesEstado}
+                placeholder="Seleccione estado"
+              />
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAsesorModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 bg-[#002D5A] text-white rounded-lg font-bold hover:bg-[#003d7a] transition-all text-sm disabled:opacity-50"
+                >
+                  {isSaving ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FORMA DE PAGO */}
+      {isPagoModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-visible p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId ? 'Editar Forma de Pago' : 'Nueva Forma de Pago'}
+              </h3>
+              <button onClick={() => setIsPagoModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <form onSubmit={guardarFormaPago} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre de Forma de Pago <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={pagoForm.nombre}
+                  onChange={(e) => setPagoForm({ ...pagoForm, nombre: e.target.value })}
+                  placeholder="Ej: Efectivo"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] outline-none transition-all text-sm font-medium text-black"
+                  required
+                />
+              </div>
+              <CustomSelect
+                label="Estado"
+                name="estado"
+                value={pagoForm.estado}
+                onChange={(e) => setPagoForm({ ...pagoForm, estado: e.target.value })}
+                options={opcionesEstado}
+                placeholder="Seleccione estado"
+              />
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsPagoModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 bg-[#002D5A] text-white rounded-lg font-bold hover:bg-[#003d7a] transition-all text-sm disabled:opacity-50"
+                >
+                  {isSaving ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL LUGAR */}
+      {isLugarModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-visible p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId ? 'Editar Lugar' : 'Nuevo Lugar'}
+              </h3>
+              <button onClick={() => setIsLugarModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <form onSubmit={guardarLugar} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Lugar <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={lugarForm.nombre}
+                  onChange={(e) => setLugarForm({ ...lugarForm, nombre: e.target.value })}
+                  placeholder="Ej: Naranjal"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] outline-none transition-all text-sm font-medium text-black"
+                  required
+                />
+              </div>
+              <CustomSelect
+                label="Tipo de Lugar"
+                name="tipo"
+                value={lugarForm.tipo}
+                onChange={(e) => setLugarForm({ ...lugarForm, tipo: e.target.value })}
+                options={opcionesTipoLugar}
+                placeholder="Seleccione tipo"
+                required
+              />
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsLugarModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 bg-[#002D5A] text-white rounded-lg font-bold hover:bg-[#003d7a] transition-all text-sm disabled:opacity-50"
+                >
+                  {isSaving ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ELIMINAR */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 flex flex-col items-center">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">¿Confirmar Eliminación?</h3>
+            <p className="text-gray-500 text-center mb-8">Esta acción eliminará el registro de <strong>{itemToDelete?.tipo}</strong> de forma permanente.</p>
+            <div className="flex flex-col w-full space-y-3">
+              <button
+                onClick={ejecutarEliminacion}
+                disabled={isSaving}
+                className="w-full px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-50"
+              >
+                {isSaving ? 'Eliminando...' : 'Sí, Eliminar'}
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                No, Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes fade-in-down {
+          0% { opacity: 0; transform: translateY(-20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-in {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .animate-fade-in-down { animation: fade-in-down 0.4s ease-out forwards; }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+      `}</style>
     </div>
   );
 }
