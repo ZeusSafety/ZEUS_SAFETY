@@ -669,14 +669,13 @@ export default function CrearVentaPage() {
       const qty = parseFloat(p.cantidad) || 0;
       const unitVal = parseFloat(p.precioVenta) || 0;
 
-      const baseRaw = qty * unitVal;
-      const baseLine = roundSUNAT(baseRaw);
-      const igvLine = roundSUNAT(baseLine * 0.18);
-      const totalLine = roundSUNAT(baseLine + igvLine);
+      const totalConIgv = roundSUNAT(qty * unitVal);
+      const baseLine = roundSUNAT(totalConIgv / 1.18);
+      const igvLine = roundSUNAT(totalConIgv - baseLine);
 
       gravada += baseLine;
       totalIgv += igvLine;
-      importeTotal += totalLine;
+      importeTotal += totalConIgv;
     });
 
     return {
@@ -695,18 +694,18 @@ export default function CrearVentaPage() {
     const unitPrice = parseFloat(nuevoProducto.precioVenta) || 0;
 
     // Validar que el cálculo sea consistente antes de agregar
-    const base = roundSUNAT(qty * unitPrice);
-    const igv = roundSUNAT(base * 0.18);
-    const total = roundSUNAT(base + igv);
+    const totalConIgv = roundSUNAT(qty * unitPrice);
+    const baseGravada = roundSUNAT(totalConIgv / 1.18);
+    const igv = roundSUNAT(totalConIgv - baseGravada);
 
     const producto = {
       id: Date.now(),
       ...nuevoProducto,
-      precioVenta: unitPrice, // Se guarda el unitario con su precisión (4-6 dec)
+      precioVenta: unitPrice,
       cantidad: qty,
-      subtotal: base,
+      subtotal: baseGravada,
       igv: igv,
-      total: total
+      total: totalConIgv
     };
 
     setProductos([...productos, producto]);
@@ -840,18 +839,18 @@ export default function CrearVentaPage() {
       const detalle = productos.map(producto => {
         const qty = parseFloat(producto.cantidad) || 0;
         const unitVal = parseFloat(producto.precioVenta) || 0;
-        const subtotalBase = roundSUNAT(qty * unitVal);
-        const igv = roundSUNAT(subtotalBase * 0.18);
-        const total = roundSUNAT(subtotalBase + igv);
+        const totalConIgv = roundSUNAT(qty * unitVal);
+        const baseGravada = roundSUNAT(totalConIgv / 1.18);
+        const igv = roundSUNAT(totalConIgv - baseGravada);
 
         return {
           N_COMPROBANTE: formData.comprobanteNumero.trim(),
           CODIGO: producto.codigo,
           PRODUCTO: producto.producto,
           CANTIDAD: producto.cantidad.toString(),
-          PRECIO_VENTA: unitVal.toFixed(6), // Valor Unitario sin IGV (6 decimales)
-          TOTAL_CON_IGV: total.toFixed(2),  // Total con IGV (2 decimales)
-          BASE_GRAVADA: subtotalBase.toFixed(2), // Subtotal (2 decimales)
+          PRECIO_VENTA: unitVal.toFixed(6), // Valor Unitario con IGV (6 decimales)
+          TOTAL_CON_IGV: totalConIgv.toFixed(2),  // Total con IGV (2 decimales)
+          BASE_GRAVADA: baseGravada.toFixed(2), // Base gravada sin IGV (2 decimales)
           IGV: igv.toFixed(2)
         };
       });
@@ -1098,7 +1097,6 @@ export default function CrearVentaPage() {
                           value={formData.comprobante}
                           onChange={handleInputChange}
                           options={opcionesComprobante}
-                          placeholder="Seleccione"
                         />
                       </div>
                       <div className="flex-1">
@@ -1260,7 +1258,7 @@ export default function CrearVentaPage() {
                     {/* Fila 2 - Primera columna */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Precio de Venta (Valor Unitario)
+                        Precio de Venta
                       </label>
                       <input
                         type="number"
@@ -1269,16 +1267,15 @@ export default function CrearVentaPage() {
                         onChange={handleProductoChange}
                         step="0.000001"
                         min="0"
-                        placeholder="Ej. 42.37"
                         className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
-                      <p className="text-[10px] text-gray-500 mt-1">Precio sin IGV</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Precio con IGV incluido</p>
                     </div>
 
                     {/* Fila 2 - Segunda columna */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Subtotal (Base Gravada)
+                        Subtotal
                       </label>
                       <input
                         type="number"
@@ -1287,14 +1284,16 @@ export default function CrearVentaPage() {
                         onChange={handleProductoChange}
                         step="0.01"
                         min="0"
-                        placeholder="Ej. 966.10"
                         className="w-full px-4 py-2.5 border-2 border-orange-200 bg-orange-50/30 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm font-bold text-gray-900"
                       />
-                      <p className="text-[10px] text-orange-600 mt-1">Este monto suma a la Gravada</p>
+                      <p className="text-[10px] text-orange-600 mt-1"></p>
                     </div>
 
                     {/* Fila 2 - Tercera columna */}
-                    <div className="flex items-end">
+                    <div className="flex flex-col">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        &nbsp;
+                      </label>
                       <button
                         type="button"
                         onClick={agregarProducto}
@@ -1315,14 +1314,14 @@ export default function CrearVentaPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-blue-700 border-b-2 border-blue-800">
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID DETALLE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° COMPROBANTE</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO VENTA</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">IGV (18%)</th>
-                          <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL</th>
+                          <th hidden className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ID DETALLE</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">N° COMPROBANTE</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO VENTA</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">IGV (18%)</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL</th>
                           <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIONES</th>
                         </tr>
                       </thead>
@@ -1346,23 +1345,23 @@ export default function CrearVentaPage() {
                             // Cálculos de línea
                             const qty = parseFloat(displayProd.cantidad) || 0;
                             const unit = parseFloat(displayProd.precioVenta) || 0;
-                            const subtotal = roundSUNAT(qty * unit);
-                            const igv = roundSUNAT(subtotal * 0.18);
-                            const total = roundSUNAT(subtotal + igv);
+                            const totalConIgv = roundSUNAT(qty * unit);
+                            const subtotal = roundSUNAT(totalConIgv / 1.18);
+                            const igv = roundSUNAT(totalConIgv - subtotal);
 
                             return (
                               <tr key={producto.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
                                 {/* ID DETALLE */}
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900">DET_{2635 + index + 1}</td>
+                                <td hidden className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-900 text-center">DET_{2635 + index + 1}</td>
 
                                 {/* N° COMPROBANTE */}
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{formData.comprobanteNumero}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">{formData.comprobanteNumero}</td>
 
                                 {/* CÓDIGO - Solo lectura, se actualiza automáticamente */}
-                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{displayProd.codigo || ''}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-center">{displayProd.codigo || ''}</td>
 
                                 {/* PRODUCTO */}
-                                <td className="px-3 py-2 whitespace-nowrap">
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
                                   {isEditing ? (
                                     <div className="relative" ref={productoEdicionRef}>
                                       <input
@@ -1400,7 +1399,7 @@ export default function CrearVentaPage() {
                                 </td>
 
                                 {/* CANTIDAD */}
-                                <td className="px-3 py-2 whitespace-nowrap text-right">
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
                                   {isEditing ? (
                                     <input
                                       type="number"
@@ -1414,14 +1413,14 @@ export default function CrearVentaPage() {
                                 </td>
 
                                 {/* PRECIO VENTA */}
-                                <td className="px-3 py-2 whitespace-nowrap text-right">
+                                <td className="px-3 py-2 whitespace-nowrap text-center">
                                   {isEditing ? (
                                     <input
                                       type="number"
                                       step="0.000001"
                                       value={displayProd.precioVenta || ''}
                                       onChange={(e) => setEditingProducto({ ...editingProducto, precioVenta: e.target.value })}
-                                      className="w-24 px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                      className="w-24 px-2 py-1 border-2 border-blue-300 rounded-lg text-[10px] font-medium text-gray-900 focus:border-blue-500 outline-none text-center"
                                     />
                                   ) : (
                                     <span className="text-[10px] text-gray-700" title={producto.precioVenta}>S/ {parseFloat(producto.precioVenta).toFixed(2)}</span>
@@ -1429,10 +1428,10 @@ export default function CrearVentaPage() {
                                 </td>
 
                                 {/* IGV (18%) - Calculado automáticamente */}
-                                <td className="px-3 py-2 whitespace-nowrap text-right text-[10px] text-gray-700">S/ {igv.toFixed(2)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-center text-[10px] text-gray-700">S/ {igv.toFixed(2)}</td>
 
-                                {/* TOTAL - Calculado automáticamente */}
-                                <td className="px-3 py-2 whitespace-nowrap text-right text-[10px] font-bold text-gray-900 bg-gray-50/50">S/ {total.toFixed(2)}</td>
+                                {/* TOTAL - Base Gravada (sin IGV) */}
+                                <td className="px-3 py-2 whitespace-nowrap text-center text-[10px] font-bold text-gray-900 bg-gray-50/50">S/ {subtotal.toFixed(2)}</td>
 
                                 {/* ACCIONES */}
                                 <td className="px-3 py-2 whitespace-nowrap text-center">
