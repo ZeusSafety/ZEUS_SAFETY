@@ -16,7 +16,6 @@ export default function VentasPage() {
     "solicitudes-incidencias": false,
     "franja-precios": false,
     "gestion-permisos": false,
-    "gestion-asistencias": false,
   });
 
   useEffect(() => {
@@ -178,34 +177,6 @@ export default function VentasPage() {
         },
       ],
     },
-    {
-      id: "gestion-asistencias",
-      title: "Gestión de Asistencias",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      cards: [
-        {
-          id: "control-asistencia",
-          icon: (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ),
-          title: "Control de Asistencia",
-          description: "Gestionar y reportar la asistencia del personal",
-          buttonText: "Ver Asistencias",
-          buttonIcon: (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          ),
-        },
-      ],
-    },
   ];
 
   return (
@@ -326,8 +297,6 @@ export default function VentasPage() {
                                         router.push("/ventas/solicitudes-incidencias");
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/ventas/solicitudes-permisos");
-                                      } else if (card.id === "control-asistencia") {
-                                        router.push("/ventas/asistencias");
                                       }
                                     }}
                                     className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/context/AuthContext";
 import { Header } from "../../../../components/layout/Header";
@@ -21,6 +21,20 @@ export default function GestionPreciosPage() {
   const [editingData, setEditingData] = useState({});
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("create");
+  const [formData, setFormData] = useState({});
+  const [productoBusqueda, setProductoBusqueda] = useState("");
+  const [sugerenciasProductos, setSugerenciasProductos] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [todosLosProductos, setTodosLosProductos] = useState([]);
+  const [productosCargados, setProductosCargados] = useState(false);
+  const [buscandoProductos, setBuscandoProductos] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const productoInputRef = useRef(null);
+  const sugerenciasRef = useRef(null);
   const [tablasDisponibles, setTablasDisponibles] = useState([
     { value: "MALVINAS", label: "Malvinas Online", disponible: true },
     { value: "PROVINCIA", label: "Provincia Online", disponible: true },
@@ -274,6 +288,312 @@ export default function GestionPreciosPage() {
         [field]: value ? parseFloat(value) : null
       }
     }));
+  };
+
+  // Función para obtener el token de autenticación
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token") || "";
+    }
+    return "";
+  };
+
+  // Función para cargar todos los productos desde la API
+  const cargarTodosLosProductos = async () => {
+    if (productosCargados) {
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      return;
+    }
+
+    setBuscandoProductos(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Error 401: Token de autenticación inválido o expirado");
+        } else {
+          console.error(`Error ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(`Error al cargar productos: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const productos = Array.isArray(data) ? data : (data.data || []);
+
+      setTodosLosProductos(productos);
+      setProductosCargados(true);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+    } finally {
+      setBuscandoProductos(false);
+    }
+  };
+
+  // Función para filtrar productos localmente
+  const filtrarProductos = (termino) => {
+    if (todosLosProductos.length === 0) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    const terminoLower = termino.toLowerCase().trim();
+    const productosFiltrados = todosLosProductos.filter(prod => {
+      const nombre = (prod.NOMBRE || prod.nombre || "").toLowerCase();
+      const codigo = (prod.CODIGO || prod.codigo || "").toLowerCase();
+      return nombre.includes(terminoLower) || codigo.includes(terminoLower);
+    });
+
+    setSugerenciasProductos(productosFiltrados);
+    setMostrarSugerencias(productosFiltrados.length > 0);
+  };
+
+  // Función para buscar productos
+  const buscarProductos = (termino) => {
+    if (!termino || termino.trim().length < 2) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos().then(() => {
+        filtrarProductos(termino);
+      });
+      return;
+    }
+
+    filtrarProductos(termino);
+  };
+
+  // Manejar cuando el usuario enfoca el campo de producto
+  const handleProductoFocus = () => {
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos();
+    }
+
+    if (productoBusqueda && sugerenciasProductos.length > 0) {
+      setMostrarSugerencias(true);
+    }
+  };
+
+  // Seleccionar producto de las sugerencias
+  const seleccionarProducto = (productoItem) => {
+    const nombre = productoItem.NOMBRE || productoItem.nombre || "";
+    const codigo = productoItem.CODIGO || productoItem.codigo || "";
+
+    setProductoBusqueda(nombre);
+    setFormData({ ...formData, NOMBRE: nombre, CODIGO: codigo });
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+  };
+
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sugerenciasRef.current &&
+        !sugerenciasRef.current.contains(event.target) &&
+        productoInputRef.current &&
+        !productoInputRef.current.contains(event.target)
+      ) {
+        setMostrarSugerencias(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleAgregar = () => {
+    setModalType("create");
+    const defaultFormData = {
+      CODIGO: "",
+      NOMBRE: "",
+      UNIDAD_MEDIDA_VENTA: "UNIDAD",
+      CANTIDAD_UNIDAD_MEDIDA_VENTA: 1,
+      PRECIO_UNIDAD_MEDIDA_VENTA: 0,
+      UNIDAD_MEDIDA_CAJA: "UNIDAD",
+      CANTIDAD_CAJA: 0,
+      CLASIFICACION: activeTab,
+      TEXTO_COPIAR: ""
+    };
+    setFormData(defaultFormData);
+    setProductoBusqueda("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      let token = localStorage.getItem("token") ||
+        (user?.token || user?.accessToken || user?.access_token) ||
+        sessionStorage.getItem("token");
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      if (!formData.CODIGO) {
+        setErrorMessage("Por favor complete todos los campos requeridos");
+        setShowErrorModal(true);
+        setSaving(false);
+        return;
+      }
+
+      if (modalType === "create" && !formData.NOMBRE) {
+        setErrorMessage("Por favor complete todos los campos requeridos");
+        setShowErrorModal(true);
+        setSaving(false);
+        return;
+      }
+
+      const method = modalType === "create" ? "POST" : "PUT";
+      const apiMethod = modalType === "create" ? "CREAR_FRANJA_PRECIO" : "ACTUALIZAR_FRANJA_PRECIO";
+      const apiUrl = `/api/franja-precios?method=${apiMethod}&id=${encodeURIComponent(activeTab)}`;
+
+      const nombreValue = modalType === "create"
+        ? (formData.NOMBRE || formData.nombre || "")
+        : (formData.NOMBRE || formData.nombre || "");
+
+      if (!formData.CODIGO && !formData.codigo) {
+        setErrorMessage("Error: El campo Código es requerido");
+        setShowErrorModal(true);
+        setSaving(false);
+        return;
+      }
+
+      if (modalType === "create" && !nombreValue) {
+        setErrorMessage("Error: El campo Nombre es requerido");
+        setShowErrorModal(true);
+        setSaving(false);
+        return;
+      }
+
+      const requestBody = {
+        ...formData,
+        NOMBRE: nombreValue,
+        CLASIFICACION: activeTab,
+        TEXTO_COPIAR: formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || "",
+      };
+
+      const response = await fetch(apiUrl, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Error al ${modalType === "create" ? "crear" : "actualizar"} el producto`;
+        try {
+          const errorText = await response.text();
+          try {
+            const errorData = JSON.parse(errorText);
+            let extractedError = errorData.error || errorData.message || errorData.details;
+            if (typeof extractedError === 'number') {
+              if (extractedError === 0) {
+                extractedError = "Error desconocido. Verifique que todos los campos estén completos.";
+              } else {
+                extractedError = `Error ${extractedError}`;
+              }
+            }
+            if (extractedError && typeof extractedError === 'string' && extractedError.trim()) {
+              errorMessage = extractedError;
+            } else if (!extractedError) {
+              errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+            }
+          } catch (jsonError) {
+            if (errorText && errorText.trim()) {
+              errorMessage = errorText;
+            } else {
+              errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+            }
+          }
+        } catch (parseError) {
+          errorMessage = `Error ${response.status}: ${response.statusText || 'Error desconocido'}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const newData = await fetchPrecios(activeTab);
+      const newPreciosData = { ...preciosData };
+      newPreciosData[activeTab] = newData;
+      setPreciosData(newPreciosData);
+
+      setShowModal(false);
+      setProductoBusqueda("");
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+
+      setNotification({
+        show: true,
+        message: `Producto ${modalType === "create" ? "creado" : "actualizado"} correctamente`,
+        type: "success"
+      });
+      setTimeout(() => {
+        setNotification({ show: false, message: "", type: "success" });
+      }, 2000);
+    } catch (error) {
+      console.error(`Error al ${modalType === "create" ? "crear" : "actualizar"}:`, error);
+      setErrorMessage(`Error al ${modalType === "create" ? "crear" : "actualizar"} el producto: ${error.message}`);
+      setShowErrorModal(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Función para copiar texto al portapapeles
+  const copyToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => {
+        setCopiedIndex(null);
+      }, 2000); // Mostrar feedback por 2 segundos
+    } catch (err) {
+      console.error("Error al copiar al portapapeles:", err);
+      // Fallback para navegadores antiguos
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopiedIndex(index);
+        setTimeout(() => {
+          setCopiedIndex(null);
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error("Error en fallback de copia:", fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const handleSaveAll = async () => {
@@ -533,7 +853,7 @@ export default function GestionPreciosPage() {
                         onClick={() => {
                           // Exportar a Excel
                           const exportToExcel = () => {
-                            const headers = ['CÓDIGO', 'PRODUCTO', ...getPriceColumns.map(col => col.replace(/_/g, ' '))];
+                            const headers = ['CÓDIGO', 'PRODUCTO', 'FICHA TÉCNICA', ...getPriceColumns.map(col => col.replace(/_/g, ' ')), 'TEXTO COPIAR'];
                             const rows = preciosFiltrados.map(precio => {
                               const getField = (variations) => {
                                 for (const variation of variations) {
@@ -545,8 +865,10 @@ export default function GestionPreciosPage() {
                               };
                               const codigo = getField(["Codigo", "codigo", "CODIGO"]) || "";
                               const producto = getField(["Producto", "producto", "PRODUCTO"]) || "";
+                              const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace"]) || "";
+                              const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR", "textoCopiar"]) || "";
                               const precios = getPriceColumns.map(col => precio[col] || "");
-                              return [codigo, producto, ...precios];
+                              return [codigo, producto, fichaTecnica, ...precios, textoCopiar];
                             });
                             
                             let csvContent = headers.join(',') + '\n';
@@ -602,7 +924,9 @@ export default function GestionPreciosPage() {
                                     <tr>
                                       <th>CÓDIGO</th>
                                       <th>PRODUCTO</th>
+                                      <th>FICHA TÉCNICA</th>
                                       ${getPriceColumns.map(col => `<th>${col.replace(/_/g, ' ')}</th>`).join('')}
+                                      <th>TEXTO COPIAR</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -617,11 +941,13 @@ export default function GestionPreciosPage() {
                                       };
                                       const codigo = getField(["Codigo", "codigo", "CODIGO"]) || "-";
                                       const producto = getField(["Producto", "producto", "PRODUCTO"]) || "-";
+                                      const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace"]) || "-";
+                                      const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR", "textoCopiar"]) || "-";
                                       const precios = getPriceColumns.map(col => {
                                         const val = precio[col];
                                         return val && val !== null && val !== "" ? `S/.${parseFloat(val).toFixed(2)}` : "-";
                                       }).join('</td><td>');
-                                      return `<tr><td>${codigo}</td><td>${producto}</td><td>${precios}</td></tr>`;
+                                      return `<tr><td>${codigo}</td><td>${producto}</td><td>${fichaTecnica}</td><td>${precios}</td><td>${textoCopiar}</td></tr>`;
                                     }).join('')}
                                   </tbody>
                                 </table>
@@ -644,6 +970,16 @@ export default function GestionPreciosPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         PDF
+                      </button>
+                      <button
+                        onClick={handleAgregar}
+                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-xs whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Agregar Producto
                       </button>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
@@ -679,6 +1015,9 @@ export default function GestionPreciosPage() {
                               <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
                                 PRODUCTO
                               </th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                FICHA TÉCNICA
+                              </th>
                               {getPriceColumns.map((columna) => (
                                 <th
                                   key={columna}
@@ -688,6 +1027,9 @@ export default function GestionPreciosPage() {
                                   {columna.replace(/_/g, ' ')}
                                 </th>
                               ))}
+                              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins)' }}>
+                                ACCIONES
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
@@ -704,6 +1046,8 @@ export default function GestionPreciosPage() {
 
                               const codigo = getField(["Codigo", "codigo", "CODIGO"]);
                               const producto = getField(["Producto", "producto", "PRODUCTO"]);
+                              const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE", "ficha_tecnica_enlace"]);
+                              const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR", "textoCopiar"]);
 
                               const isSelected = selectedRows.has(codigo);
                               const editRow = editingData[codigo] || precio;
@@ -733,6 +1077,41 @@ export default function GestionPreciosPage() {
                                   <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
                                     {producto || "-"}
                                   </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
+                                      {fichaTecnica && fichaTecnica !== "" && fichaTecnica !== null && fichaTecnica !== undefined ? (
+                                        <a
+                                          href={fichaTecnica}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Abrir ficha técnica en nueva pestaña"
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                            <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                            <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                        </a>
+                                      ) : (
+                                        <button
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] cursor-pointer select-none"
+                                          title="Sin ficha técnica"
+                                          disabled
+                                          style={{ fontFamily: 'var(--font-poppins)' }}
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+                                            <path d="M6 2C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V7.41421C19 7.149 18.8946 6.89464 18.7071 6.70711L13.2929 1.29289C13.1054 1.10536 12.851 1 12.5858 1H6Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                            <path d="M13 1V6H18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <text x="12" y="15" fontSize="6" fill="currentColor" fontWeight="bold" textAnchor="middle" fontFamily="Arial, sans-serif" letterSpacing="0.3">PDF</text>
+                                          </svg>
+                                          <span style={{ pointerEvents: 'none' }}>PDF</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
                                   {getPriceColumns.map((columna) => {
                                     const precioValue = formatPrice(isSelected ? (editRow[columna] || precio[columna]) : precio[columna]);
                                     return (
@@ -753,6 +1132,55 @@ export default function GestionPreciosPage() {
                                       </td>
                                     );
                                   })}
+                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-center">
+                                    {textoCopiar ? (
+                                      <button
+                                        onClick={() => copyToClipboard(textoCopiar, globalIndex)}
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95] ${copiedIndex === globalIndex
+                                            ? "bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                                            : "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                                          }`}
+                                        title="Copiar texto al portapapeles"
+                                        style={{ fontFamily: 'var(--font-poppins)' }}
+                                      >
+                                        {copiedIndex === globalIndex ? (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="currentColor"
+                                              viewBox="0 0 20 20"
+                                            >
+                                              <path
+                                                fillRule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clipRule="evenodd"
+                                              />
+                                            </svg>
+                                            Copiado
+                                          </>
+                                        ) : (
+                                          <>
+                                            <svg
+                                              className="w-3.5 h-3.5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            Copiar
+                                          </>
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -805,6 +1233,368 @@ export default function GestionPreciosPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal para Crear/Actualizar */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => {
+            setShowModal(false);
+            setProductoBusqueda("");
+            setSugerenciasProductos([]);
+            setMostrarSugerencias(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header con gradiente */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-blue-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#002D5A] to-[#002D5A] rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  Agregar Producto
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setProductoBusqueda("");
+                  setSugerenciasProductos([]);
+                  setMostrarSugerencias(false);
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-all duration-200 text-gray-500 hover:text-gray-700 hover:scale-110 active:scale-95"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido del formulario */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="space-y-4">
+                {/* Nombre del Producto */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nombre del Producto
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={productoInputRef}
+                      type="text"
+                      value={productoBusqueda || formData.NOMBRE || ""}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setProductoBusqueda(valor);
+                        setFormData({ ...formData, NOMBRE: valor });
+                        buscarProductos(valor);
+                      }}
+                      onFocus={handleProductoFocus}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm transition-all duration-200 bg-white text-gray-900 hover:border-gray-300"
+                      required
+                      placeholder="Escribe el nombre del producto..."
+                    />
+                    {buscandoProductos && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <svg className="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                    {mostrarSugerencias && sugerenciasProductos.length > 0 && (
+                      <div
+                        ref={sugerenciasRef}
+                        className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {sugerenciasProductos.map((prod, index) => (
+                          <button
+                            key={prod.ID || prod.id || index}
+                            type="button"
+                            onClick={() => seleccionarProducto(prod)}
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="text-sm font-medium text-gray-900">
+                              {prod.NOMBRE || prod.nombre}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Código: {prod.CODIGO || prod.codigo}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Código */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Código
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.CODIGO || ""}
+                    readOnly={true}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                    required
+                  />
+                  <input type="hidden" name="CODIGO" value={formData.CODIGO || ""} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Unidad de Medida Venta
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_VENTA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_VENTA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Cantidad Unidad Medida Venta
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.CANTIDAD_UNIDAD_MEDIDA_VENTA ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                        setFormData({ ...formData, CANTIDAD_UNIDAD_MEDIDA_VENTA: value });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                          setFormData({ ...formData, CANTIDAD_UNIDAD_MEDIDA_VENTA: 1 });
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Precio Unidad Medida Venta
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.PRECIO_UNIDAD_MEDIDA_VENTA ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                      setFormData({ ...formData, PRECIO_UNIDAD_MEDIDA_VENTA: value });
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                        setFormData({ ...formData, PRECIO_UNIDAD_MEDIDA_VENTA: 0 });
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Unidad de Medida Caja
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.UNIDAD_MEDIDA_CAJA || "UNIDAD"}
+                        onChange={(e) => setFormData({ ...formData, UNIDAD_MEDIDA_CAJA: e.target.value })}
+                        className="w-full px-4 py-2.5 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-blue-300 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        required
+                      >
+                        <option value="UNIDAD">UNIDAD</option>
+                        <option value="DOCENA">DOCENA</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAR">PAR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Cantidad en Caja
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.CANTIDAD_CAJA ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                        setFormData({ ...formData, CANTIDAD_CAJA: value });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                          setFormData({ ...formData, CANTIDAD_CAJA: 0 });
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300"
+                    />
+                  </div>
+                </div>
+
+                {/* Campos Dinámicos de Precios */}
+                {getPriceColumns.length > 0 && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-[#002D5A] mb-4 uppercase tracking-wider">
+                      Precios por Rango
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {getPriceColumns.map((columna) => (
+                        <div key={columna}>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                            {columna.replace(/_/g, ' ')}
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData[columna] ?? ""}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                              setFormData({ ...formData, [columna]: value });
+                            }}
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 shadow-sm"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Texto a copiar */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Texto a copiar
+                  </label>
+                  <textarea
+                    value={formData.TEXTO_COPIAR || formData.texto_copiar || formData.textoCopiar || ""}
+                    onChange={(e) => setFormData({ ...formData, TEXTO_COPIAR: e.target.value, texto_copiar: e.target.value, textoCopiar: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] focus:outline-none text-sm bg-white text-gray-900 transition-all duration-200 hover:border-gray-300 resize-y"
+                    placeholder="Escribe el texto que se copiará para este producto..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer con botones */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200/60 bg-gray-50/50">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setProductoBusqueda("");
+                  setSugerenciasProductos([]);
+                  setMostrarSugerencias(false);
+                }}
+                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm shadow-sm"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-br from-[#002D5A] to-[#002D5A] hover:from-[#1a56e6] hover:to-[#1a56e6] text-white rounded-lg font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Agregar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Error */}
+      {showErrorModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowErrorModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-xl border border-gray-200/60 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60">
+              <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                Error
+              </h3>
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700" style={{ fontFamily: 'var(--font-poppins)' }}>
+                {errorMessage}
+              </p>
+            </div>
+            <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200/60">
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="px-6 py-2.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold transition-all duration-200 text-sm shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

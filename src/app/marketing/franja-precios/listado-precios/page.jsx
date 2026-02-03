@@ -581,6 +581,128 @@ export default function ListadoPreciosPage() {
                         </button>
                       )}
                     </div>
+                      <button
+                        onClick={() => {
+                          // Exportar a Excel
+                          const exportToExcel = () => {
+                            const headers = ['CÓDIGO', 'PRODUCTO', 'FICHA TÉCNICA', ...getPriceColumns.map(col => col.replace(/_/g, ' ')), 'TEXTO COPIAR'];
+                            const rows = preciosFiltrados.map(precio => {
+                              const getField = (variations) => {
+                                for (const variation of variations) {
+                                  if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
+                                    return precio[variation];
+                                  }
+                                }
+                                return "";
+                              };
+                              const codigo = getField(["Codigo", "codigo", "CODIGO"]) || "";
+                              const producto = getField(["Producto", "producto", "PRODUCTO"]) || "";
+                              const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE"]) || "";
+                              const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR"]) || "";
+                              const precios = getPriceColumns.map(col => precio[col] || "");
+                              return [codigo, producto, fichaTecnica, ...precios, textoCopiar];
+                            });
+                            
+                            let csvContent = headers.join(',') + '\n';
+                            rows.forEach(row => {
+                              csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+                            });
+                            
+                            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                            const link = document.createElement('a');
+                            const url = URL.createObjectURL(blob);
+                            link.setAttribute('href', url);
+                            link.setAttribute('download', `precios_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+                            link.style.visibility = 'hidden';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          };
+                          exportToExcel();
+                        }}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Excel
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Exportar a PDF
+                          const exportToPDF = () => {
+                            const printWindow = window.open('', '_blank');
+                            
+                            let htmlContent = `
+                              <!DOCTYPE html>
+                              <html>
+                              <head>
+                                <title>Listado de Precios - ${activeTab}</title>
+                                <style>
+                                  body { font-family: Arial, sans-serif; padding: 20px; }
+                                  h1 { color: #002D5A; }
+                                  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                                  th { background-color: #1e40af; color: white; padding: 10px; text-align: left; }
+                                  td { padding: 8px; border: 1px solid #ddd; }
+                                  tr:nth-child(even) { background-color: #f9fafb; }
+                                </style>
+                              </head>
+                              <body>
+                                <h1>Listado de Precios - ${activeTab}</h1>
+                                <p>Fecha: ${new Date().toLocaleDateString('es-ES')}</p>
+                                <table>
+                                  <thead>
+                                    <tr>
+                                      <th>CÓDIGO</th>
+                                      <th>PRODUCTO</th>
+                                      <th>FICHA TÉCNICA</th>
+                                      ${getPriceColumns.map(col => `<th>${col.replace(/_/g, ' ')}</th>`).join('')}
+                                      <th>TEXTO COPIAR</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    ${preciosFiltrados.map(precio => {
+                                      const getField = (variations) => {
+                                        for (const variation of variations) {
+                                          if (precio[variation] !== undefined && precio[variation] !== null && precio[variation] !== "") {
+                                            return precio[variation];
+                                          }
+                                        }
+                                        return "";
+                                      };
+                                      const codigo = getField(["Codigo", "codigo", "CODIGO"]) || "-";
+                                      const producto = getField(["Producto", "producto", "PRODUCTO"]) || "-";
+                                      const fichaTecnica = getField(["ficha_tecnica", "FICHA_TECNICA", "FICHA_TECNICA_ENLACE"]) || "-";
+                                      const textoCopiar = getField(["texto_copiar", "TEXTO_COPIAR"]) || "-";
+                                      const precios = getPriceColumns.map(col => {
+                                        const val = precio[col];
+                                        return val && val !== null && val !== "" ? `S/.${parseFloat(val).toFixed(2)}` : "-";
+                                      }).join('</td><td>');
+                                      return `<tr><td>${codigo}</td><td>${producto}</td><td>${fichaTecnica}</td><td>${precios}</td><td>${textoCopiar}</td></tr>`;
+                                    }).join('')}
+                                  </tbody>
+                                </table>
+                              </body>
+                              </html>
+                            `;
+                            
+                            printWindow.document.write(htmlContent);
+                            printWindow.document.close();
+                            setTimeout(() => {
+                              printWindow.print();
+                            }, 250);
+                          };
+                          exportToPDF();
+                        }}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.98] text-sm whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        PDF
+                      </button>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
                       {searchTerm && (
