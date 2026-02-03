@@ -16,6 +16,7 @@ export default function VentasPage() {
     "solicitudes-incidencias": false,
     "franja-precios": false,
     "gestion-permisos": false,
+    "gestion-asistencias": false,
   });
 
   useEffect(() => {
@@ -177,6 +178,34 @@ export default function VentasPage() {
         },
       ],
     },
+    {
+      id: "gestion-asistencias",
+      title: "Gestión de Asistencias",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "control-asistencia",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          title: "Control de Asistencia",
+          description: "Gestionar y reportar la asistencia del personal",
+          buttonText: "Ver Asistencias",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -222,33 +251,25 @@ export default function VentasPage() {
 
               {/* Secciones */}
               <div className="space-y-3">
-                {sections
-                  .map((section) => {
-                    // Filtrar cards permitidos en esta sección
-                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
-
-                    // Si no hay cards permitidos, no mostrar la sección
-                    if (allowedCards.length === 0) return null;
-
-                    return {
-                      ...section,
-                      cards: allowedCards,
-                    };
-                  })
-                  .filter(section => section !== null)
-                  .map((section) => (
-                    <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                {sections.map((section) => {
+                  // Filtrar cards permitidos en esta sección
+                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                  // Mostrar la sección aunque no tenga cards permitidas (para depuración)
+                  const sectionToShow = { ...section, cards: allowedCards.length > 0 ? allowedCards : section.cards };
+                  
+                  return (
+                    <div key={sectionToShow.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                       {/* Header de Sección */}
                       <button
-                        onClick={() => toggleSection(section.id)}
+                        onClick={() => toggleSection(sectionToShow.id)}
                         className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
                       >
                         <div className="flex items-center space-x-2">
-                          <div className="text-white">{section.icon}</div>
-                          <h2 className="text-base font-bold text-white">{section.title}</h2>
+                          <div className="text-white">{sectionToShow.icon}</div>
+                          <h2 className="text-base font-bold text-white">{sectionToShow.title}</h2>
                         </div>
                         <svg
-                          className={`w-4 h-4 transition-transform duration-200 ${expandedSections[section.id] ? "rotate-180" : ""}`}
+                          className={`w-4 h-4 transition-transform duration-200 ${expandedSections[sectionToShow.id] ? "rotate-180" : ""}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -259,10 +280,15 @@ export default function VentasPage() {
                       </button>
 
                       {/* Cards de la Sección */}
-                      {expandedSections[section.id] && (
+                      {expandedSections[sectionToShow.id] && (
                         <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
-                          <div className={`grid gap-2.5 ${section.cards.length === 1 ? "grid-cols-1" : section.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
-                            {section.cards.map((card) => (
+                          <div className={`grid gap-2.5 ${sectionToShow.cards.length === 1 ? "grid-cols-1" : sectionToShow.cards.length <= 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                            {sectionToShow.cards.length === 0 ? (
+                              <div className="col-span-full text-center py-4 text-gray-500 text-sm">
+                                No hay cards disponibles en esta sección
+                              </div>
+                            ) : (
+                              sectionToShow.cards.map((card) => (
                               <div
                                 key={card.id}
                                 className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
@@ -300,6 +326,8 @@ export default function VentasPage() {
                                         router.push("/ventas/solicitudes-incidencias");
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/ventas/solicitudes-permisos");
+                                      } else if (card.id === "control-asistencia") {
+                                        router.push("/ventas/asistencias");
                                       }
                                     }}
                                     className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
@@ -313,12 +341,14 @@ export default function VentasPage() {
                                   </button>
                                 </div>
                               </div>
-                            ))}
+                            ))
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                })}
               </div>
             </div>
           </div>

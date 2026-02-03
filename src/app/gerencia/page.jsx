@@ -18,6 +18,7 @@ export default function GerenciaPage() {
     "gestion-solicitudes": false,
     "gestion-movilidad": false,
     "gestion-permisos": false,
+    "gestion-asistencias": false,
   });
 
   useEffect(() => {
@@ -268,6 +269,34 @@ export default function GerenciaPage() {
         },
       ],
     },
+    {
+      id: "gestion-asistencias",
+      title: "Gestión de Asistencias",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "control-asistencia",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          title: "Control de Asistencia",
+          description: "Gestionar y reportar la asistencia del personal",
+          buttonText: "Ver Asistencias",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -316,44 +345,46 @@ export default function GerenciaPage() {
 
               {/* Secciones */}
               <div className="space-y-3">
-                {sections
-                  .map((section) => {
-                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
-                    if (allowedCards.length === 0) return null;
-                    return { ...section, cards: allowedCards };
-                  })
-                  .filter(section => section !== null)
-                  .map((section) => {
-                    const sectionId = section.id;
-                    return (
-                      <div key={sectionId} className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] overflow-hidden" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
-                        {/* Header de Sección */}
-                        <button
-                          onClick={() => toggleSection(sectionId)}
-                          type="button"
-                          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
-                          style={{ fontFamily: 'var(--font-poppins)' }}
+                {sections.map((section) => {
+                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                  // Mostrar la sección aunque no tenga cards permitidas (para depuración)
+                  const sectionToShow = { ...section, cards: allowedCards.length > 0 ? allowedCards : section.cards };
+                  
+                  const sectionId = sectionToShow.id;
+                  return (
+                    <div key={sectionId} className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] overflow-hidden" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
+                      {/* Header de Sección */}
+                      <button
+                        onClick={() => toggleSection(sectionId)}
+                        type="button"
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                        style={{ fontFamily: 'var(--font-poppins)' }}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="text-white">{sectionToShow.icon}</div>
+                          <h2 className="text-base font-semibold text-white" style={{ fontFamily: 'var(--font-poppins)' }}>{sectionToShow.title}</h2>
+                        </div>
+                        <svg
+                          className={`w-4 h-4 transition-transform duration-200 ${expandedSections[sectionId] ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
                         >
-                          <div className="flex items-center space-x-2">
-                            <div className="text-white">{section.icon}</div>
-                            <h2 className="text-base font-semibold text-white" style={{ fontFamily: 'var(--font-poppins)' }}>{section.title}</h2>
-                          </div>
-                          <svg
-                            className={`w-4 h-4 transition-transform duration-200 ${expandedSections[sectionId] ? "rotate-180" : ""}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
 
-                        {/* Cards de la Sección */}
-                        {expandedSections[sectionId] && (
-                          <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
-                            <div className={`grid gap-2.5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}>
-                              {section.cards.map((card) => (
+                      {/* Cards de la Sección */}
+                      {expandedSections[sectionId] && (
+                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
+                          <div className={`grid gap-2.5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}>
+                            {sectionToShow.cards.length === 0 ? (
+                              <div className="col-span-full text-center py-4 text-gray-500 text-sm">
+                                No hay cards disponibles en esta sección
+                              </div>
+                            ) : (
+                              sectionToShow.cards.map((card) => (
                                 <div
                                   key={card.id}
                                   className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
@@ -390,6 +421,7 @@ export default function GerenciaPage() {
                                         else if (card.id === "listado-solicitudes") router.push("/gerencia/solicitudes-incidencias");
                                         else if (card.id === "listado-movilidad") router.push("/gerencia/listado-movilidad");
                                         else if (card.id === "listado-permisos") router.push("/gerencia/solicitudes-permisos");
+                                        else if (card.id === "control-asistencia") router.push("/gerencia/asistencias");
                                         else router.push("/gerencia");
                                       }}
                                       className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden"
@@ -403,13 +435,14 @@ export default function GerenciaPage() {
                                     </button>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
+                              ))
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
