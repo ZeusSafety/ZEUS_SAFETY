@@ -25,6 +25,7 @@ export default function AsistenciasPage() {
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
   const [historialCargas, setHistorialCargas] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [tablaLimpiada, setTablaLimpiada] = useState(false);
   const itemsPerPage = 15;
 
   useEffect(() => {
@@ -52,6 +53,47 @@ export default function AsistenciasPage() {
       loadHistorialCargas();
     }
   }, [user]);
+
+  // Cargar automáticamente el último historial al entrar (solo una vez)
+  useEffect(() => {
+    if (historialCargas.length > 0 && excelData.length === 0 && !loadingData && !tablaLimpiada) {
+      const ultimoRegistro = historialCargas[0]; // El primero es el más reciente (ya está ordenado)
+      const cargarUltimoRegistro = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+
+          const response = await fetch("/api/asistencias?endpoint=dashboard", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) return;
+
+          const data = await response.json();
+          const datosDelRegistro = data.filter((item) => item.id_registro === ultimoRegistro.id_registro);
+          
+          if (datosDelRegistro.length === 0) return;
+
+          const excelDataFormatted = datosDelRegistro.map((item) => ({
+            id: item.id_empleado || "-",
+            nombre: item.nombre || "-",
+            fecha: item.fecha,
+            entrada: item.hora_entrada || null,
+            salida: item.hora_salida || null,
+          }));
+
+          setExcelData(excelDataFormatted);
+        } catch (error) {
+          console.error("Error al cargar último registro:", error);
+        }
+      };
+      
+      cargarUltimoRegistro();
+    }
+  }, [historialCargas, excelData.length, loadingData, tablaLimpiada]);
 
   // Resetear página cuando cambian los filtros
   useEffect(() => {
@@ -99,18 +141,7 @@ export default function AsistenciasPage() {
         return;
       }
 
-      // Intentar obtener historial desde localStorage primero
-      const historialLocal = localStorage.getItem("historialCargasAsistencias");
-      if (historialLocal) {
-        try {
-          const parsed = JSON.parse(historialLocal);
-          setHistorialCargas(parsed);
-        } catch (e) {
-          console.error("Error al parsear historial local:", e);
-        }
-      }
-
-      // También intentar obtener desde el dashboard
+      // Obtener desde el dashboard (API)
       const response = await fetch("/api/asistencias?endpoint=dashboard", {
         method: "GET",
         headers: {
@@ -120,26 +151,63 @@ export default function AsistenciasPage() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Obtener historial local para preservar registrado_por y area
+        const historialLocal = JSON.parse(localStorage.getItem("historialCargasAsistencias") || "[]");
+        const historialLocalMap = {};
+        historialLocal.forEach((reg) => {
+          historialLocalMap[reg.id_registro] = reg;
+        });
+        
         // Agrupar por id_registro para obtener el historial
         const registros = {};
         data.forEach((item) => {
           if (item.id_registro && !registros[item.id_registro]) {
+            // Buscar en múltiples campos posibles (verificar todas las variantes)
+            const registradoPor = item.registrado_por || item.REGISTRADO_POR || item.registradoPor || null;
+            const area = item.area || item.AREA || item.Area || null;
+            const pdfReporte = item.pdf_reporte || item.PDF_REPORTE || item.pdfReporte || null;
+            
+            // Si el dashboard no tiene estos campos, usar los del historial local
+            const localData = historialLocalMap[item.id_registro] || {};
+            
             registros[item.id_registro] = {
               id_registro: item.id_registro,
-              registrado_por: item.registrado_por || "N/A",
-              area: item.area || "N/A",
-              pdf_reporte: item.pdf_reporte || null,
+              registrado_por: registradoPor || localData.registrado_por || null,
+              area: area || localData.area || null,
+              pdf_reporte: pdfReporte || localData.pdf_reporte || null,
             };
           }
         });
+        
+        // Agregar registros del historial local que no están en el dashboard
+        historialLocal.forEach((reg) => {
+          if (!registros[reg.id_registro]) {
+            registros[reg.id_registro] = reg;
+          }
+        });
+        
         const historialFromAPI = Object.values(registros).sort((a, b) => b.id_registro - a.id_registro);
+        
+        // Solo actualizar si hay datos en la API
         if (historialFromAPI.length > 0) {
           setHistorialCargas(historialFromAPI);
           localStorage.setItem("historialCargasAsistencias", JSON.stringify(historialFromAPI));
+        } else {
+          // Si la API está vacía, limpiar el estado y localStorage
+          setHistorialCargas([]);
+          localStorage.removeItem("historialCargasAsistencias");
         }
+      } else {
+        // Si hay error en la API, limpiar también
+        setHistorialCargas([]);
+        localStorage.removeItem("historialCargasAsistencias");
       }
     } catch (error) {
       console.error("Error al cargar historial:", error);
+      // En caso de error, limpiar el estado
+      setHistorialCargas([]);
+      localStorage.removeItem("historialCargasAsistencias");
     }
   };
 
@@ -153,6 +221,9 @@ export default function AsistenciasPage() {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    
+    // Si se sube un nuevo archivo, resetear el flag de tabla limpiada
+    setTablaLimpiada(false);
 
     try {
       const data = await file.arrayBuffer();
@@ -333,24 +404,93 @@ export default function AsistenciasPage() {
       }
 
       const result = await response.json();
+      console.log("Respuesta completa del backend:", JSON.stringify(result, null, 2)); // Debug con JSON.stringify para ver el contenido real
+      
+      // Verificar que el id_registro venga del backend (buscar en múltiples campos posibles)
+      // Buscar en todas las variantes posibles
+      const idRegistro = result.id_registro || 
+                         result.id || 
+                         result.ID_REGISTRO || 
+                         result.ID || 
+                         result.registro_id ||
+                         result.registroId ||
+                         (result.data && result.data.id_registro) ||
+                         (result.data && result.data.id) ||
+                         null;
+      
+      console.log("ID registro encontrado:", idRegistro); // Debug
+      console.log("Todas las claves del objeto result:", Object.keys(result)); // Debug: ver todas las claves disponibles
+      
+      if (!idRegistro) {
+        console.error("Error: El backend no devolvió id_registro. Respuesta completa:", JSON.stringify(result, null, 2));
+        // Intentar usar un ID temporal basado en timestamp si no hay id_registro
+        console.warn("Usando ID temporal basado en timestamp");
+        const idTemporal = Date.now();
+        
+        // Guardar los datos del excelData asociados a este id_registro temporal
+        const datosRegistro = {
+          id_registro: idTemporal,
+          datos: excelData,
+          fecha_guardado: new Date().toISOString(),
+        };
+        const datosRegistros = JSON.parse(localStorage.getItem("datosRegistrosAsistencias") || "[]");
+        datosRegistros.push(datosRegistro);
+        localStorage.setItem("datosRegistrosAsistencias", JSON.stringify(datosRegistros));
+        
+        // Agregar al historial local con ID temporal
+        const nuevoRegistro = {
+          id_registro: idTemporal,
+          registrado_por: modalData.registradoPor,
+          area: modalData.area,
+          pdf_reporte: result.url || null,
+        };
+        
+        const historialActual = [nuevoRegistro, ...historialCargas].sort((a, b) => b.id_registro - a.id_registro);
+        setHistorialCargas(historialActual);
+        localStorage.setItem("historialCargasAsistencias", JSON.stringify(historialActual));
+        
+        showNotification("Datos guardados correctamente (ID temporal)", "success");
+        setExcelData([]);
+        setModalData({ registradoPor: "", area: "" });
+        setShowModal(false);
+        loadDashboardData();
+        return;
+      }
+      
+      // Guardar los datos del excelData asociados a este id_registro para poder recuperarlos después
+      const datosRegistro = {
+        id_registro: idRegistro,
+        datos: excelData,
+        fecha_guardado: new Date().toISOString(),
+      };
+      const datosRegistros = JSON.parse(localStorage.getItem("datosRegistrosAsistencias") || "[]");
+      datosRegistros.push(datosRegistro);
+      localStorage.setItem("datosRegistrosAsistencias", JSON.stringify(datosRegistros));
       
       // Agregar al historial local
       const nuevoRegistro = {
-        id_registro: result.id_registro || Date.now(),
+        id_registro: idRegistro,
         registrado_por: modalData.registradoPor,
         area: modalData.area,
         pdf_reporte: result.url || null,
       };
       
+      console.log("Nuevo registro guardado:", nuevoRegistro); // Debug
+      
       const historialActual = [nuevoRegistro, ...historialCargas].sort((a, b) => b.id_registro - a.id_registro);
       setHistorialCargas(historialActual);
       localStorage.setItem("historialCargasAsistencias", JSON.stringify(historialActual));
+      
+      console.log("Nuevo registro guardado:", nuevoRegistro); // Debug
+      console.log("Historial actualizado:", historialActual); // Debug
       
       showNotification("Datos guardados correctamente", "success");
       setExcelData([]);
       setModalData({ registradoPor: "", area: "" });
       setShowModal(false);
       loadDashboardData();
+      // NO llamar loadHistorialCargas aquí porque ya actualizamos el historial arriba
+      // loadHistorialCargas(); // Esto sobrescribiría los datos que acabamos de guardar
     } catch (error) {
       console.error("Error:", error);
       showNotification(error.message || "Error al guardar los datos", "error");
@@ -419,8 +559,160 @@ export default function AsistenciasPage() {
     return 0;
   };
 
-  // Combinar datos del dashboard con datos del Excel cargado
+  const handleClearTable = () => {
+    setExcelData([]);
+    setDashboardData([]);
+    setSelectedYear(null);
+    setSelectedMonth(null);
+    setSelectedNombre(null);
+    setCurrentPage(1);
+    setTablaLimpiada(true); // Marcar que la tabla fue limpiada manualmente
+    showNotification("Tabla limpiada", "success");
+  };
+
+  const handleCargarHistorial = async (idRegistro) => {
+    try {
+      setLoadingData(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showNotification("No se encontró el token", "error");
+        return;
+      }
+
+      const response = await fetch("/api/asistencias?endpoint=dashboard", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al cargar datos");
+      }
+
+      const data = await response.json();
+      let datosDelRegistro = data.filter((item) => item.id_registro === idRegistro);
+      
+      // Si no se encuentran datos en el dashboard, intentar recuperarlos del localStorage
+      if (datosDelRegistro.length === 0) {
+        console.log("No se encontraron datos en dashboard, buscando en localStorage...");
+        const datosRegistros = JSON.parse(localStorage.getItem("datosRegistrosAsistencias") || "[]");
+        const registroGuardado = datosRegistros.find((r) => r.id_registro === idRegistro);
+        
+        if (registroGuardado && registroGuardado.datos) {
+          console.log("Datos encontrados en localStorage:", registroGuardado);
+          // Convertir los datos guardados al formato esperado
+          const excelDataFormatted = registroGuardado.datos.map((item) => ({
+            id: item.id || "-",
+            nombre: item.nombre || "-",
+            fecha: item.fecha,
+            entrada: item.entrada || null,
+            salida: item.salida || null,
+          }));
+          
+          // Limpiar filtros al cargar un historial
+          setSelectedYear(null);
+          setSelectedMonth(null);
+          setSelectedNombre(null);
+          setCurrentPage(1);
+          setTablaLimpiada(false);
+          
+          setExcelData(excelDataFormatted);
+          showNotification("Datos del historial cargados desde almacenamiento local", "success");
+          setLoadingData(false);
+          return;
+        } else {
+          showNotification("No se encontraron datos para este registro", "error");
+          setLoadingData(false);
+          return;
+        }
+      }
+
+      // Convertir datos del dashboard al formato de excelData
+      const excelDataFormatted = datosDelRegistro.map((item) => ({
+        id: item.id_empleado || "-",
+        nombre: item.nombre || "-",
+        fecha: item.fecha,
+        entrada: item.hora_entrada || null,
+        salida: item.hora_salida || null,
+      }));
+
+      // Limpiar filtros al cargar un historial
+      setSelectedYear(null);
+      setSelectedMonth(null);
+      setSelectedNombre(null);
+      setCurrentPage(1);
+      setTablaLimpiada(false); // Resetear flag al cargar un historial
+
+      setExcelData(excelDataFormatted);
+      showNotification("Datos del historial cargados correctamente", "success");
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification("Error al cargar datos del historial", "error");
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleDescargarPDF = async (idRegistro, pdfUrl) => {
+    try {
+      // Si ya existe el PDF, descargarlo directamente
+      if (pdfUrl) {
+        window.open(pdfUrl, "_blank");
+        return;
+      }
+
+      // Si no existe, generar el PDF desde los datos del registro
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showNotification("No se encontró el token", "error");
+        return;
+      }
+
+      const response = await fetch("/api/asistencias?endpoint=dashboard", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al cargar datos");
+      }
+
+      const data = await response.json();
+      const datosDelRegistro = data.filter((item) => item.id_registro === idRegistro);
+      
+      if (datosDelRegistro.length === 0) {
+        showNotification("No se encontraron datos para este registro", "error");
+        return;
+      }
+
+      // Convertir datos al formato de excelData para generar el PDF
+      const excelDataFormatted = datosDelRegistro.map((item) => ({
+        id: item.id_empleado || "-",
+        nombre: item.nombre || "-",
+        fecha: item.fecha,
+        entrada: item.hora_entrada || null,
+        salida: item.hora_salida || null,
+      }));
+
+      // Generar y descargar el PDF
+      const pdfDoc = generatePDF(excelDataFormatted);
+      pdfDoc.save(`Reporte_Asistencia_${idRegistro}.pdf`);
+      showNotification("PDF generado y descargado correctamente", "success");
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification("Error al generar el PDF", "error");
+    }
+  };
+
+  // Solo usar excelData, no combinar con dashboardData para evitar duplicados
   const allData = useMemo(() => {
+    if (excelData.length === 0) {
+      return [];
+    }
+    
     const excelDataFormatted = excelData.map((item) => ({
       id_asistencia: null,
       id_empleado: item.id,
@@ -433,10 +725,8 @@ export default function AsistenciasPage() {
       mes: new Date(item.fecha).getMonth() + 1,
     }));
 
-    const combined = [...excelDataFormatted, ...dashboardData];
-    console.log("allData:", combined.length, "excel:", excelData.length, "dashboard:", dashboardData.length);
-    return combined;
-  }, [excelData, dashboardData]);
+    return excelDataFormatted;
+  }, [excelData]);
 
   const filteredData = useMemo(() => {
     let filtered = [...allData];
@@ -602,26 +892,35 @@ export default function AsistenciasPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <div className="flex items-center space-x-2">
+                    <label className="cursor-pointer inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md" title="Subir Excel">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      Subir Excel
                       <input type="file" accept=".xls,.xlsx" onChange={handleFileUpload} className="hidden" />
                     </label>
                     {excelData.length > 0 && (
                       <button
                         onClick={() => setShowModal(true)}
-                        className="inline-flex items-center px-4 py-2 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                        className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                        title="Guardar"
                         style={{ fontFamily: "var(--font-poppins)" }}
                       >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        Guardar
                       </button>
                     )}
+                    <button
+                      onClick={handleClearTable}
+                      className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                      title="Limpiar Tabla"
+                      style={{ fontFamily: "var(--font-poppins)" }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -745,47 +1044,6 @@ export default function AsistenciasPage() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl border border-gray-200 p-3 shadow-sm">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3" style={{ fontFamily: "var(--font-poppins)" }}>
-                    Historial de Cargas
-                  </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {historialCargas.length === 0 ? (
-                      <p className="text-xs text-gray-500 text-center py-4" style={{ fontFamily: "var(--font-poppins)" }}>
-                        No hay cargas registradas
-                      </p>
-                    ) : (
-                      historialCargas.map((registro, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
-                              #{registro.id_registro}
-                            </p>
-                            <p className="text-xs text-gray-600 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
-                              {registro.registrado_por}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
-                              {registro.area}
-                            </p>
-                          </div>
-                          {registro.pdf_reporte && (
-                            <a
-                              href={registro.pdf_reporte}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-2 p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-                              title="Descargar PDF"
-                            >
-                              <svg className="w-4 h-4 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                              </svg>
-                            </a>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
               </div>
 
               <div className="lg:col-span-9">
@@ -945,7 +1203,73 @@ export default function AsistenciasPage() {
                   })()}
                 </div>
               </div>
-            </div>
+              </div>
+
+              {/* Historial de Cargas - Debajo de la tabla y métricas, ancho completo - Siempre visible */}
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 shadow-sm mt-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+                  Historial de Cargas
+                </h3>
+                {historialCargas.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {historialCargas.map((registro, index) => {
+                      // Buscar en el orden correcto: primero registrado_por (como se guarda), luego variantes
+                      const registradoPor = registro.registrado_por || registro.REGISTRADO_POR || registro.registradoPor || null;
+                      const area = registro.area || registro.AREA || null;
+                      
+                      // Debug: ver qué tiene el registro
+                      if (index === 0) {
+                        console.log("Primer registro del historial:", registro);
+                      }
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarHistorial(registro.id_registro)}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
+                              #{String(registro.id_registro).slice(-6)}
+                            </p>
+                            <p className="text-xs text-gray-600 truncate mt-1" style={{ fontFamily: "var(--font-poppins)" }}>
+                              {registradoPor || "Sin especificar"}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
+                              {area || "Sin especificar"}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-1 ml-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCargarHistorial(registro.id_registro);
+                              }}
+                              className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                              title="Cargar en tabla"
+                            >
+                              <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDescargarPDF(registro.id_registro, registro.pdf_reporte);
+                              }}
+                              className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+                              title="Descargar PDF"
+                            >
+                              <svg className="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 text-sm" style={{ fontFamily: "var(--font-poppins)" }}>
+                    No hay historial de cargas disponible
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </main>
@@ -981,14 +1305,18 @@ export default function AsistenciasPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Área</label>
-                <input
-                  type="text"
+                <select
                   value={modalData.area}
                   onChange={(e) => setModalData({ ...modalData, area: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                   style={{ fontFamily: "var(--font-poppins)" }}
-                  placeholder="Área de la persona"
-                />
+                >
+                  <option value="">Seleccione un área</option>
+                  <option value="Gerencia">Gerencia</option>
+                  <option value="Sistemas">Sistemas</option>
+                  <option value="Administración">Administración</option>
+                  <option value="Recursos humanos">Recursos humanos</option>
+                </select>
               </div>
             </div>
             <div className="flex justify-end space-x-3 mt-6">
