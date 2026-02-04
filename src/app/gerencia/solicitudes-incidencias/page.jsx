@@ -113,7 +113,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
       // Obtener todas las solicitudes de todas las áreas
       // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
-      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+      const areas = ["gerencia", "logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
 
       // Hacer llamadas en paralelo para obtener todas las solicitudes
       const promesas = areas.map(async (area) => {
@@ -187,9 +187,15 @@ export default function SolicitudesIncidenciasGerenciaPage() {
     // Filtrar por área de recepción (solo si hay un valor seleccionado)
     if (areaRecepcion && areaRecepcion.trim() !== "") {
       filtered = filtered.filter(s => {
-        // Buscar el área en múltiples campos posibles
-        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION || s.AREA || s.area || "";
-        return area && area.trim() !== "" && area.toUpperCase() === areaRecepcion.toUpperCase();
+        // Buscar el área en múltiples campos posibles (solo campos de recepción, no de emisión)
+        const area = s.AREA_RECEPCION || s.area_recepcion || s.AREA_RECEPCION_ || s.area_recepcion_ || "";
+        // Normalizar el área para comparación (eliminar espacios y convertir a mayúsculas)
+        const areaNormalizada = area ? area.trim().toUpperCase() : "";
+        const filtroNormalizado = areaRecepcion.trim().toUpperCase();
+        // Comparar con diferentes variantes posibles
+        return areaNormalizada === filtroNormalizado || 
+               areaNormalizada === filtroNormalizado.replace(/\s+/g, "_") ||
+               areaNormalizada === filtroNormalizado.replace(/_/g, " ");
       });
     }
 

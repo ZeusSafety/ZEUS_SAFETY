@@ -169,22 +169,6 @@ export default function GerenciaPage() {
             </svg>
           ),
         },
-        {
-          id: "gestion-precios",
-          icon: (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          ),
-          title: "Gestión de precios",
-          description: "Administrar y configurar precios de productos",
-          buttonText: "Gestionar",
-          buttonIcon: (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          ),
-        },
       ],
     },
     {
@@ -417,7 +401,6 @@ export default function GerenciaPage() {
                                         else if (card.id === "accesibilidad-credenciales") router.push("/gerencia/colaboradores");
                                         else if (card.id === "registro-actividad-general") router.push("/gerencia/registro-actividad-general");
                                         else if (card.id === "listado-precios") router.push("/gerencia/listado-precios");
-                                        else if (card.id === "gestion-precios") router.push("/gerencia/gestion-precios");
                                         else if (card.id === "listado-solicitudes") router.push("/gerencia/solicitudes-incidencias");
                                         else if (card.id === "listado-movilidad") router.push("/gerencia/listado-movilidad");
                                         else if (card.id === "listado-permisos") router.push("/gerencia/solicitudes-permisos");

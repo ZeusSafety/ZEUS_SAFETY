@@ -16,6 +16,7 @@ function RecursosHumanosContent() {
     "gestion-colaboradores": false,
     "solicitudes-incidencias": false,
     "gestion-permisos": false,
+    "gestion-asistencias": false,
   });
 
   // Estados para colaboradores
@@ -1732,6 +1733,7 @@ function RecursosHumanosContent() {
     { id: "gestion-colaboradores", name: "Gestión de Colaboradores", icon: "users" },
     { id: "solicitudes-incidencias", name: "Solicitudes/Incidencias", icon: "solicitudes" },
     { id: "gestion-permisos", name: "Gestión de Permisos", icon: "document" },
+    { id: "gestion-asistencias", name: "Gestión de Asistencias", icon: "clock" },
   ];
 
   const getIcon = (iconName) => {
@@ -2346,12 +2348,57 @@ function RecursosHumanosContent() {
                                   className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
                                   style={{ fontFamily: 'var(--font-poppins)' }}
                                 >
-                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer"></span>
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
                                   <span className="relative z-10 flex items-center space-x-1.5">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <span>Ver Permisos</span>
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : section.id === "gestion-asistencias" ? (
+                          <div className="grid gap-2.5 grid-cols-1">
+                            <div
+                              className="group bg-white rounded-xl p-3 border border-gray-200/80 hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 ease-out relative overflow-hidden"
+                              style={{
+                                boxShadow: '0px 2px 8px rgba(0,0,0,0.04)',
+                                transform: 'translateY(0)'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0px 8px 20px rgba(30, 99, 247, 0.12)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0px 2px 8px rgba(0,0,0,0.04)';
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-xl" />
+
+                              <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110">
+                                    {getIcon("clock")}
+                                  </div>
+                                </div>
+                                <h3 className="text-sm font-semibold text-slate-900 mb-1.5 leading-tight group-hover:text-blue-700 transition-colors duration-200" style={{ fontFamily: 'var(--font-poppins)' }}>Control de Asistencia</h3>
+                                <p className="text-[11px] text-slate-600 mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: 'var(--font-poppins)' }}>Gestionar y reportar la asistencia del personal</p>
+                                <button
+                                  type="button"
+                                  onClick={() => router.push("/recursos-humanos/asistencias")}
+                                  className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"
+                                  style={{ fontFamily: 'var(--font-poppins)' }}
+                                >
+                                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/0 group-hover:via-white/20 group-hover:to-white/0 group-hover:animate-shimmer" />
+                                  <span className="relative z-10 flex items-center space-x-1.5">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <span>Ver Asistencias</span>
                                   </span>
                                 </button>
                               </div>

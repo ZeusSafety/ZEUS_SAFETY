@@ -15,6 +15,10 @@ export const subVistasToCardsMap = {
   "GESTION_PRODUCTOS": ["productos", "gestionar-productos"],
   "REGISTRO_ACTIVIDAD_GENERAL": "registro-activity-general",
   "REGISTRO DE ACTIVIDAD (LOGS GENERALES)": "registro-activity-general",
+  "LISTADO DE FRANJA DE PRECIOS": "listado-precios",
+  "LISTADO_DE_FRANJA_DE_PRECIOS": "listado-precios",
+  "CONTROL DE ASISTENCIA": "control-asistencia",
+  "CONTROL_DE_ASISTENCIA": "control-asistencia",
 
   // ========== ADMINISTRACION ==========
   "LISTADO DE IMPORTACIONES": ["importaciones", "listado-importaciones"],
@@ -127,10 +131,14 @@ export const subVistasToCardsMap = {
   "MARKETING_LISTADO_PERMISOS": "listado-permisos",
   "REGISTRO DE VENTAS ONLINE": "registro-ventas-online",
   "REGISTRO_DE_VENTAS_ONLINE": "registro-ventas-online",
-  "LISTADO DE PRECIOS": "listado-precios",
-  "LISTADO_DE_PRECIOS": "listado-precios",
-  "LISTADO DE PRECIOS - MARKETING": "listado-precios",
-  "LISTADO_DE_PRECIOS_MARKETING": "listado-precios",
+  "FRANJA DE PRECIOS": "franja-precios-vista",
+  "FRANJA_DE_PRECIOS": "franja-precios-vista",
+  "FRANJA DE PRECIOS - MARKETING": "franja-precios-vista",
+  "FRANJA_DE_PRECIOS_MARKETING": "franja-precios-vista",
+  "LISTADO DE PRECIOS": "listado-precios-editable",
+  "LISTADO_DE_PRECIOS": "listado-precios-editable",
+  "LISTADO DE PRECIOS - MARKETING": "listado-precios-editable",
+  "LISTADO_DE_PRECIOS_MARKETING": "listado-precios-editable",
 
   // ========== MARKETING (REPORTES) ==========
   "REPORTES MARKETING": "reporte-general-1",
@@ -164,6 +172,8 @@ export const subVistasToCardsMap = {
   // ========== RECURSOS HUMANOS ==========
   "SOLICITUDES ADMIN-RRHH": "listado-solicitudes",
   "RRHH_LISTADO_PERMISOS": "listado-permisos",
+  "CONTROL DE ASISTENCIA": "control-asistencia",
+  "CONTROL_DE_ASISTENCIA": "control-asistencia",
 
   // ========== GENERAL / COMODINES ==========
   "LISTADO DE PERMISOS": "listado-permisos",
