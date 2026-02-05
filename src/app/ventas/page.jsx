@@ -16,6 +16,7 @@ export default function VentasPage() {
     "solicitudes-incidencias": false,
     "franja-precios": false,
     "gestion-permisos": false,
+    "gestion-cotizaciones": false,
   });
 
   useEffect(() => {
@@ -177,6 +178,51 @@ export default function VentasPage() {
         },
       ],
     },
+    {
+      id: "gestion-cotizaciones",
+      title: "Gestión de Cotizaciones",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "cotizaciones-ventas",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Cotizaciones",
+          description: "Sistema de cotizaciones para clientes.",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+        {
+          id: "historial-cotizaciones-ventas",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          title: "Historial de Cotizaciones",
+          description: "Historial de cotizaciones registradas",
+          buttonText: "Ver",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -223,8 +269,8 @@ export default function VentasPage() {
               {/* Secciones */}
               <div className="space-y-3">
                 {sections.map((section) => {
-                  // Filtrar cards permitidos en esta sección
-                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                    // Filtrar cards permitidos en esta sección
+                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
                   // Mostrar la sección aunque no tenga cards permitidas (para depuración)
                   const sectionToShow = { ...section, cards: allowedCards.length > 0 ? allowedCards : section.cards };
                   
@@ -297,6 +343,10 @@ export default function VentasPage() {
                                         router.push("/ventas/solicitudes-incidencias");
                                       } else if (card.id === "listado-permisos") {
                                         router.push("/ventas/solicitudes-permisos");
+                                      } else if (card.id === "cotizaciones-ventas") {
+                                        router.push("/ventas/cotizaciones");
+                                      } else if (card.id === "historial-cotizaciones-ventas") {
+                                        router.push("/ventas/historial-cotizaciones");
                                       }
                                     }}
                                     className="w-full flex items-center justify-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 group-hover:from-blue-800 group-hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md text-xs active:scale-[0.97] relative overflow-hidden cursor-pointer"

@@ -94,6 +94,13 @@ export const subVistasToCardsMap = {
   "LISTADO_DE_PRECIOS": "listado-precios",
   "SOLICITUDES ADMIN-VENTAS": "listado-solicitudes",
   "VENTAS_LISTADO_PERMISOS": "listado-permisos",
+  "COTIZACIONES": "cotizaciones-ventas",
+  "COTIZACIONES_VENTAS": "cotizaciones-ventas",
+  "COTIZACIONES - VENTAS": "cotizaciones-ventas",
+  "HISTORIAL DE COTIZACIONES": "historial-cotizaciones-ventas",
+  "HISTORIAL_DE_COTIZACIONES": "historial-cotizaciones-ventas",
+  "HISTORIAL DE COTIZACIONES - VENTAS": "historial-cotizaciones-ventas",
+  "HISTORIAL_DE_COTIZACIONES_VENTAS": "historial-cotizaciones-ventas",
 
   // ========== MARKETING ==========
   "GESTION DE CLIENTES": "gestion-clientes",

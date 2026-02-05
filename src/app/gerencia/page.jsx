@@ -330,39 +330,39 @@ export default function GerenciaPage() {
               {/* Secciones */}
               <div className="space-y-3">
                 {sections.map((section) => {
-                  const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
+                    const allowedCards = section.cards.filter(card => isCardAllowed(card.id));
                   // Mostrar la sección aunque no tenga cards permitidas (para depuración)
                   const sectionToShow = { ...section, cards: allowedCards.length > 0 ? allowedCards : section.cards };
                   
                   const sectionId = sectionToShow.id;
-                  return (
-                    <div key={sectionId} className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] overflow-hidden" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
-                      {/* Header de Sección */}
-                      <button
-                        onClick={() => toggleSection(sectionId)}
-                        type="button"
-                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
-                        style={{ fontFamily: 'var(--font-poppins)' }}
-                      >
-                        <div className="flex items-center space-x-2">
+                    return (
+                      <div key={sectionId} className="bg-[#FFFFFF] rounded-[16px] border border-[#E6EAF2] overflow-hidden" style={{ boxShadow: '0px 4px 12px rgba(0,0,0,0.06)' }}>
+                        {/* Header de Sección */}
+                        <button
+                          onClick={() => toggleSection(sectionId)}
+                          type="button"
+                          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white hover:shadow-md hover:scale-[1.01] transition-all duration-200 shadow-sm"
+                          style={{ fontFamily: 'var(--font-poppins)' }}
+                        >
+                          <div className="flex items-center space-x-2">
                           <div className="text-white">{sectionToShow.icon}</div>
                           <h2 className="text-base font-semibold text-white" style={{ fontFamily: 'var(--font-poppins)' }}>{sectionToShow.title}</h2>
-                        </div>
-                        <svg
-                          className={`w-4 h-4 transition-transform duration-200 ${expandedSections[sectionId] ? "rotate-180" : ""}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                          </div>
+                          <svg
+                            className={`w-4 h-4 transition-transform duration-200 ${expandedSections[sectionId] ? "rotate-180" : ""}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
 
-                      {/* Cards de la Sección */}
-                      {expandedSections[sectionId] && (
-                        <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
-                          <div className={`grid gap-2.5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}>
+                        {/* Cards de la Sección */}
+                        {expandedSections[sectionId] && (
+                          <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100">
+                            <div className={`grid gap-2.5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}>
                             {sectionToShow.cards.length === 0 ? (
                               <div className="col-span-full text-center py-4 text-gray-500 text-sm">
                                 No hay cards disponibles en esta sección
@@ -420,12 +420,12 @@ export default function GerenciaPage() {
                                 </div>
                               ))
                             )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>

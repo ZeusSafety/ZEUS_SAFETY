@@ -1,0 +1,2388 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useAuth } from "../../../components/context/AuthContext";
+import { Header } from "../../../components/layout/Header";
+import { Sidebar } from "../../../components/layout/Sidebar";
+import Modal from "../../../components/ui/Modal";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+// Componente de Select personalizado con dropdown compacto
+const CompactSelect = ({ value, onChange, options, placeholder, disabled = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const selectRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  const handleSelect = (optionValue) => {
+    if (disabled) return;
+    onChange({ target: { value: optionValue } });
+    setIsOpen(false);
+  };
+
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownHeight = 180; // Altura máxima más compacta
+      setOpenUpward(spaceAbove > spaceBelow && spaceBelow < dropdownHeight);
+    }
+    setIsOpen(!isOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={selectRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        disabled={disabled}
+        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-left flex items-center justify-between transition-all ${isOpen
+          ? 'border-blue-500 shadow-md'
+          : 'border-gray-300 hover:border-blue-300'
+          } ${disabled ? 'border-gray-200' : ''}`}
+      >
+        <span className={`${selectedOption ? "text-gray-900 font-medium" : "text-gray-500"} whitespace-nowrap overflow-hidden text-ellipsis uppercase`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'transform rotate-180' : ''
+            }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div
+          className={`absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl overflow-hidden ${openUpward ? 'bottom-full mb-1' : 'top-full'
+            }`}
+          style={{ maxHeight: '200px', overflowY: 'auto' }}
+        >
+          {options.map((option, index) => (
+            <button
+              key={option.value || index}
+              type="button"
+              onClick={() => handleSelect(option.value)}
+              className={`w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${value === option.value
+                ? 'bg-blue-600 text-white font-semibold'
+                : 'text-gray-900 hover:bg-blue-50'
+                } ${index === 0 && !option.value ? 'text-gray-500 italic' : ''}`}
+              style={{
+                lineHeight: '1.4'
+              }}
+            >
+              <span className={value === option.value ? 'uppercase' : ''}>
+                {option.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// URL base del backend de cotizaciones para Ventas
+const API_BASE_URL = "https://api-cotizaciones-ventas-2946605267.us-central1.run.app";
+
+export default function CotizacionesPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Información de la empresa
+  const empresaInfo = {
+    razonSocial: "BUSINNES OF IMPORT ZEUS S.A.C",
+    ruc: "20600101596",
+    direccion: "AV. GUILLERMO DANSEY NRO. 401 CERCADO DE LIMA INT. 30006",
+    telefono: "944767397"
+  };
+
+  // Estados del formulario
+  const [cliente, setCliente] = useState("");
+  const [ruc, setRuc] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [dni, setDni] = useState("");
+  const [cel, setCel] = useState("");
+  const [buscandoRuc, setBuscandoRuc] = useState(false);
+  // Inicializar fecha de emisión con la fecha actual en formato yyyy-mm-dd para el input type="date"
+  const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [fechaEmision, setFechaEmision] = useState(getCurrentDate());
+  const [formaPago, setFormaPago] = useState("");
+  const [region, setRegion] = useState("");
+  const [distrito, setDistrito] = useState("");
+  const [regiones, setRegiones] = useState([]);
+  const [distritos, setDistritos] = useState([]);
+  const [cargandoRegiones, setCargandoRegiones] = useState(false);
+  const [cargandoDistritos, setCargandoDistritos] = useState(false);
+  const [moneda, setMoneda] = useState("");
+  const [atendidoPor, setAtendidoPor] = useState("");
+
+  // Estados de productos
+  const [producto, setProducto] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [cantidad, setCantidad] = useState(1);
+  const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
+  
+  // Opciones de unidad de medida
+  const opcionesUnidadMedida = [
+    { value: "", label: "Seleccione Unidad de Medida" },
+    { value: "DOCENAS", label: "DOCENAS" },
+    { value: "UNIDADES", label: "UNIDADES" },
+    { value: "PARES", label: "PARES" },
+    { value: "PAQUETES", label: "PAQUETES" },
+    { value: "ROLLOS", label: "ROLLOS" },
+    { value: "METROS", label: "METROS" },
+  ];
+  const [precioVenta, setPrecioVenta] = useState("");
+  const [total, setTotal] = useState(0.00);
+
+  // Estado para el modal de confirmación
+
+  // Estados para búsqueda de productos
+  const [productoBusqueda, setProductoBusqueda] = useState("");
+  const [sugerenciasProductos, setSugerenciasProductos] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const [buscandoProductos, setBuscandoProductos] = useState(false);
+  const [todosLosProductos, setTodosLosProductos] = useState([]);
+  const [productosCargados, setProductosCargados] = useState(false);
+  const productoInputRef = useRef(null);
+  const sugerenciasRef = useRef(null);
+
+  // Estados para modal de precios
+  const [modalPreciosAbierto, setModalPreciosAbierto] = useState(false);
+  const [preciosDisponibles, setPreciosDisponibles] = useState([]);
+  const [cargandoPrecios, setCargandoPrecios] = useState(false);
+
+  // Modal de previsualización (PDF)
+  const [mostrarModalPreview, setMostrarModalPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewCodigoTemporal, setPreviewCodigoTemporal] = useState("");
+  const [previewSiguienteNumero, setPreviewSiguienteNumero] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Datos de prueba para la tabla de productos
+  const [productosLista, setProductosLista] = useState([
+
+  ]);
+
+  // Estados para edición de productos en la tabla
+  const [editingProductoId, setEditingProductoId] = useState(null);
+  const [editingProducto, setEditingProducto] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productoToDelete, setProductoToDelete] = useState(null);
+  const [busquedaProductoEdicion, setBusquedaProductoEdicion] = useState("");
+  const [mostrarSugerenciasProductoEdicion, setMostrarSugerenciasProductoEdicion] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const productoEdicionRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Cargar regiones al montar el componente
+  useEffect(() => {
+    const cargarRegiones = async () => {
+      setCargandoRegiones(true);
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No se encontró token de autenticación");
+          return;
+        }
+        const response = await fetch(`${API_BASE_URL}/regiones`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        await handleApiResponse(response);
+        if (!response.ok) {
+          throw new Error("Error al cargar regiones");
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          setRegiones(data.data);
+        }
+      } catch (error) {
+        console.error("Error al cargar regiones:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
+      } finally {
+        setCargandoRegiones(false);
+      }
+    };
+
+    cargarRegiones();
+  }, []);
+
+  // Manejar posición del dropdown de productos en edición
+  useEffect(() => {
+    if (mostrarSugerenciasProductoEdicion && productoEdicionRef.current) {
+      const updatePosition = () => {
+        if (productoEdicionRef.current) {
+          const rect = productoEdicionRef.current.getBoundingClientRect();
+          setDropdownPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [mostrarSugerenciasProductoEdicion]);
+
+  // Manejar clics fuera del dropdown de edición
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Para el dropdown principal de productos
+      if (productoInputRef.current && !productoInputRef.current.contains(event.target)) {
+        if (sugerenciasRef.current && !sugerenciasRef.current.contains(event.target)) {
+          setMostrarSugerencias(false);
+        }
+      }
+      
+      // Para el dropdown de edición en la tabla
+      if (mostrarSugerenciasProductoEdicion) {
+        if (productoEdicionRef.current && 
+            !productoEdicionRef.current.contains(event.target) && 
+            dropdownRef.current && 
+            !dropdownRef.current.contains(event.target)) {
+          // Usar setTimeout para permitir que el click en el dropdown se procese primero
+          setTimeout(() => {
+            setMostrarSugerenciasProductoEdicion(false);
+          }, 100);
+        }
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [mostrarSugerenciasProductoEdicion]);
+
+  // Cargar distritos cuando se selecciona una región
+  useEffect(() => {
+    const cargarDistritos = async () => {
+      if (!region) {
+        setDistritos([]);
+        setDistrito("");
+        return;
+      }
+
+      setCargandoDistritos(true);
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No se encontró token de autenticación");
+          return;
+        }
+        const response = await fetch(`${API_BASE_URL}/distritos?id_region=${encodeURIComponent(region)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        await handleApiResponse(response);
+        if (!response.ok) {
+          throw new Error("Error al cargar distritos");
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          setDistritos(data.data);
+        } else {
+          setDistritos([]);
+        }
+        // Limpiar distrito seleccionado cuando cambia la región
+        setDistrito("");
+      } catch (error) {
+        console.error("Error al cargar distritos:", error);
+        if (error.message.includes("Token expirado")) {
+          return; // Ya se redirigió al login
+        }
+        setDistritos([]);
+      } finally {
+        setCargandoDistritos(false);
+      }
+    };
+
+    cargarDistritos();
+  }, [region]);
+
+  // Detectar si es desktop y abrir sidebar automáticamente
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calcular total cuando cambian cantidad o precio
+  useEffect(() => {
+    const cantidadNum = parseFloat(cantidad) || 0;
+    const precioNum = parseFloat(precioVenta) || 0;
+    setTotal(cantidadNum * precioNum);
+  }, [cantidad, precioVenta]);
+
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sugerenciasRef.current &&
+        !sugerenciasRef.current.contains(event.target) &&
+        productoInputRef.current &&
+        !productoInputRef.current.contains(event.target)
+      ) {
+        setMostrarSugerencias(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Función para obtener el token de autenticación desde localStorage
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token") || "";
+    }
+    return "";
+  };
+
+  // Función helper para manejar respuestas de API y redirigir al login si el token expiró
+  const handleApiResponse = async (response) => {
+    // Si el token expiró (401), redirigir al login
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      router.push("/login");
+      throw new Error("Token expirado. Por favor, inicie sesión nuevamente.");
+    }
+    return response;
+  };
+
+  // Función para cargar todos los productos desde la API
+  const cargarTodosLosProductos = async () => {
+    if (productosCargados) {
+      return; // Ya están cargados, no volver a cargar
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      alert("Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.");
+      return;
+    }
+
+    setBuscandoProductos(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/productos/5?method=BUSQUEDA_PRODUCTO`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      await handleApiResponse(response);
+
+      if (!response.ok) {
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al cargar productos: ${response.status} ${response.statusText}`);
+        throw new Error(`Error al cargar productos: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Asegurarse de que data sea un array
+      const productos = Array.isArray(data) ? data : (data.data || []);
+
+      setTodosLosProductos(productos);
+      setProductosCargados(true);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+      // El error ya fue manejado arriba con alert
+    } finally {
+      setBuscandoProductos(false);
+    }
+  };
+
+  // Función para filtrar productos localmente
+  const buscarProductos = (termino) => {
+    if (!termino || termino.trim().length < 2) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    // Si no hay productos cargados, cargarlos primero
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos().then(() => {
+        // Después de cargar, filtrar con el término
+        filtrarProductos(termino);
+      });
+      return;
+    }
+
+    filtrarProductos(termino);
+  };
+
+  // Función para filtrar productos localmente
+  const filtrarProductos = (termino) => {
+    if (todosLosProductos.length === 0) {
+      setSugerenciasProductos([]);
+      setMostrarSugerencias(false);
+      return;
+    }
+
+    const terminoLower = termino.toLowerCase().trim();
+    const productosFiltrados = todosLosProductos.filter(prod => {
+      const nombre = (prod.NOMBRE || prod.nombre || "").toLowerCase();
+      const codigo = (prod.CODIGO || prod.codigo || "").toLowerCase();
+      return nombre.includes(terminoLower) || codigo.includes(terminoLower);
+    });
+
+    setSugerenciasProductos(productosFiltrados);
+    setMostrarSugerencias(productosFiltrados.length > 0);
+  };
+
+  // Manejar cambio en el campo de búsqueda de producto
+  const handleProductoBusquedaChange = (e) => {
+    const valor = e.target.value;
+    setProductoBusqueda(valor);
+    buscarProductos(valor);
+  };
+
+  // Manejar cuando el usuario enfoca el campo de producto
+  const handleProductoFocus = () => {
+    // Cargar productos si no están cargados
+    if (!productosCargados && todosLosProductos.length === 0) {
+      cargarTodosLosProductos();
+    }
+
+    // Si hay sugerencias previas, mostrarlas
+    if (sugerenciasProductos.length > 0) {
+      setMostrarSugerencias(true);
+    }
+  };
+
+  // Seleccionar producto de las sugerencias
+  const seleccionarProducto = (productoItem) => {
+    setProductoBusqueda(productoItem.NOMBRE || productoItem.nombre || "");
+    setProducto(productoItem.NOMBRE || productoItem.nombre || "");
+    setCodigo(productoItem.CODIGO || productoItem.codigo || "");
+    setProductoSeleccionado(productoItem);
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+
+  };
+
+  // Función para obtener precios
+  const obtenerPrecios = async (codigoProducto, tipoClasificacion) => {
+    if (!codigoProducto || !tipoClasificacion) {
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      console.error("No se encontró token de autenticación");
+      alert("Error: No se encontró token de autenticación. Por favor, inicie sesión nuevamente.");
+      return;
+    }
+
+    setCargandoPrecios(true);
+    try {
+      const url = `https://api-productos-zeus-2946605267.us-central1.run.app/franja-precios/5?method=OBTENER_PRECIO_PRODUCTO&id=${encodeURIComponent(codigoProducto)}/${tipoClasificacion}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      await handleApiResponse(response);
+
+      if (!response.ok) {
+        console.error(`Error ${response.status}: ${response.statusText}`);
+        alert(`Error al obtener precios: ${response.status} ${response.statusText}`);
+        throw new Error(`Error al obtener precios: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const precios = Array.isArray(data) ? data : (data.data || []);
+
+      setPreciosDisponibles(precios);
+      setModalPreciosAbierto(true);
+    } catch (error) {
+      console.error("Error al obtener precios:", error);
+      alert("Error al obtener los precios del producto");
+    } finally {
+      setCargandoPrecios(false);
+    }
+  };
+
+
+  // Seleccionar precio del modal
+  const seleccionarPrecio = (precioItem) => {
+    const precio = precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || precioItem.PRECIO || 0;
+    const precioNum = parseFloat(precio) || 0;
+    console.log("Precio seleccionado:", precioNum, "de item:", precioItem); // Debug
+    setPrecioVenta(precioNum.toString());
+    // NO sobrescribir unidadMedida - usar la seleccionada manualmente del combo box
+    // setUnidadMedida(precioItem.MEDIDA || precioItem.medida || "UN");
+    setModalPreciosAbierto(false);
+
+    // Recalcular total inmediatamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    setTotal(cantidadNum * precioNum);
+  };
+
+  // Función para buscar RUC
+  const handleBuscarRuc = async () => {
+    if (!ruc || ruc.trim() === "") {
+      alert("Por favor ingrese un RUC");
+      return;
+    }
+
+    const rucTrimmed = ruc.trim();
+    const rucLength = rucTrimmed.length;
+
+    // Validar longitud del RUC
+    if (rucLength !== 10 && rucLength !== 11) {
+      alert("El RUC debe tener 10 o 11 dígitos");
+      return;
+    }
+
+    setBuscandoRuc(true);
+    try {
+      const response = await fetch("/api/consulta-ruc", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ruc: rucTrimmed }),
+      });
+
+      await handleApiResponse(response);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Datos recibidos de la API:", data);
+      console.log("Todas las claves del objeto:", Object.keys(data));
+
+      // Función auxiliar para obtener el nombre/cliente de diferentes formatos
+      const obtenerNombre = () => {
+        const nombre = data.razonSocial ||
+          data.razon_social ||
+          data.RazonSocial ||
+          data.RAZON_SOCIAL ||
+          data.nombre ||
+          data.Nombre ||
+          data.NOMBRE ||
+          data.nombreCompleto ||
+          data.nombre_completo ||
+          data.cliente ||
+          data.Cliente ||
+          data.CLIENTE ||
+          "";
+        console.log("Nombre encontrado:", nombre);
+        return nombre;
+      };
+
+      // Función auxiliar para obtener la dirección de diferentes formatos
+      const obtenerDireccion = () => {
+        // Buscar en todas las variaciones posibles
+        const direccion = data.direccion ||
+          data.direccion_completa ||
+          data.Direccion ||
+          data.DIRECCION ||
+          data.direccionCompleta ||
+          data.DireccionCompleta ||
+          data.DIRECCION_COMPLETA ||
+          data.domicilio ||
+          data.Domicilio ||
+          data.DOMICILIO ||
+          data.direccionFiscal ||
+          data.DireccionFiscal ||
+          data.DIRECCION_FISCAL ||
+          data.direccionLegal ||
+          data.DireccionLegal ||
+          data.DIRECCION_LEGAL ||
+          data.direccionPrincipal ||
+          data.DireccionPrincipal ||
+          data.DIRECCION_PRINCIPAL ||
+          "";
+
+        console.log("Dirección encontrada:", direccion);
+
+        // Si no se encontró, buscar cualquier campo que contenga "direccion" o "domicilio" en su nombre
+        if (!direccion) {
+          const keys = Object.keys(data);
+          for (const key of keys) {
+            const keyLower = key.toLowerCase();
+            if ((keyLower.includes('direccion') || keyLower.includes('domicilio') || keyLower.includes('address')) && data[key] && typeof data[key] === 'string' && data[key].trim() !== '') {
+              console.log(`Dirección encontrada en campo alternativo "${key}":`, data[key]);
+              return data[key];
+            }
+          }
+        }
+
+        return direccion;
+      };
+
+      // Obtener valores
+      const nombreCliente = obtenerNombre();
+      const direccionCliente = obtenerDireccion();
+
+      console.log("Valores finales - Cliente:", nombreCliente, "Dirección:", direccionCliente);
+
+      // Llenar campos según el tipo de RUC
+      if (rucLength === 11) {
+        // RUC 20 - Empresa
+        if (nombreCliente) {
+          setCliente(nombreCliente);
+          console.log("Cliente establecido:", nombreCliente);
+        }
+        if (direccionCliente) {
+          setDireccion(direccionCliente);
+          console.log("Dirección establecida:", direccionCliente);
+        } else {
+          console.warn("No se encontró dirección en la respuesta de la API");
+        }
+        // NO rellenar DNI para RUC 20
+        setDni("");
+      } else if (rucLength === 10) {
+        // RUC 10 - Persona natural
+        // Extraer DNI: borrar los 2 primeros dígitos y el último dígito
+        const rucSinPrimeros = rucTrimmed.substring(2); // Quita los 2 primeros
+        const dniExtraido = rucSinPrimeros.substring(0, rucSinPrimeros.length - 1); // Quita el último
+        setDni(dniExtraido);
+
+        if (nombreCliente) {
+          setCliente(nombreCliente);
+          console.log("Cliente establecido:", nombreCliente);
+        }
+        if (direccionCliente) {
+          setDireccion(direccionCliente);
+          console.log("Dirección establecida:", direccionCliente);
+        } else {
+          console.warn("No se encontró dirección en la respuesta de la API");
+        }
+      }
+
+      // Mostrar mensaje si no se encontraron datos
+      if (!nombreCliente && !direccionCliente) {
+        alert("No se encontraron datos para el RUC ingresado");
+      } else if (!direccionCliente) {
+        console.warn("Se encontró el cliente pero no la dirección");
+      }
+    } catch (error) {
+      console.error("Error al buscar RUC:", error);
+      alert(`Error al buscar RUC: ${error.message}`);
+    } finally {
+      setBuscandoRuc(false);
+    }
+  };
+
+  // Calcular total general
+  const totalGeneral = productosLista.reduce((sum, prod) => sum + (prod.subtotal || 0), 0);
+
+  const handleAgregarProducto = () => {
+    if (!producto || !codigo || cantidad <= 0 || !precioVenta) {
+      alert("Por favor complete todos los campos del producto");
+      return;
+    }
+
+    // Asegurarse de que el precio sea un número válido
+    const precioNum = parseFloat(precioVenta) || 0;
+    if (precioNum <= 0) {
+      alert("El precio debe ser mayor a 0");
+      return;
+    }
+
+    // Calcular subtotal correctamente
+    const cantidadNum = parseFloat(cantidad) || 1;
+    const subtotalCalculado = cantidadNum * precioNum;
+
+    const nuevoProducto = {
+      id: Date.now(),
+      cantidad: cantidadNum,
+      unidad: unidadMedida ? unidadMedida.toUpperCase() : "UNIDADES",
+      codigo: codigo,
+      producto: producto,
+      precioUnit: precioNum,
+      subtotal: subtotalCalculado
+    };
+
+    console.log("Agregando producto:", nuevoProducto); // Debug
+
+    setProductosLista([...productosLista, nuevoProducto]);
+
+    // Limpiar campos
+    setProducto("");
+    setProductoBusqueda("");
+    setCodigo("");
+    setCantidad(1);
+    setUnidadMedida("Seleccione Unidad de Medida"); 
+    setPrecioVenta("");
+    setTotal(0.00);
+    setProductoSeleccionado(null);
+  };
+
+  const iniciarEdicionProducto = (prod) => {
+    setEditingProductoId(prod.id);
+    setEditingProducto({ ...prod });
+    setBusquedaProductoEdicion(prod.producto || "");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const cancelarEdicionProducto = () => {
+    setEditingProductoId(null);
+    setEditingProducto(null);
+    setBusquedaProductoEdicion("");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const guardarEdicionProducto = () => {
+    if (!editingProducto) return;
+    
+    // Validar campos requeridos
+    if (!editingProducto.producto || !editingProducto.precioUnit || !editingProducto.cantidad) {
+      alert("Campos incompletos.");
+      return;
+    }
+
+    // Recalcular subtotal
+    const cantidad = parseFloat(editingProducto.cantidad) || 0;
+    const precio = parseFloat(editingProducto.precioUnit) || 0;
+    const nuevoSubtotal = cantidad * precio;
+
+    // Actualizar el producto en la lista
+    setProductosLista(productosLista.map(item => 
+      item.id === editingProductoId 
+        ? { 
+            ...editingProducto, 
+            subtotal: nuevoSubtotal,
+            codigo: editingProducto.codigo || item.codigo || ""
+          }
+        : item
+    ));
+
+    // Limpiar estados de edición
+    setEditingProductoId(null);
+    setEditingProducto(null);
+    setBusquedaProductoEdicion("");
+    setMostrarSugerenciasProductoEdicion(false);
+  };
+
+  const handleProductoSelectEdicion = (prod) => {
+    const nombreProducto = prod.NOMBRE || prod.nombre;
+    const codigoProducto = prod.CODIGO || prod.codigo;
+    
+    // Actualizar el producto en edición
+    setEditingProducto(prev => {
+      if (!prev) return prev;
+      return { ...prev, producto: nombreProducto, codigo: codigoProducto };
+    });
+    setBusquedaProductoEdicion(nombreProducto);
+    
+    // Cerrar el dropdown después de un pequeño delay para asegurar que el estado se actualice
+    setTimeout(() => {
+      setMostrarSugerenciasProductoEdicion(false);
+    }, 50);
+  };
+
+  const confirmarEliminarProducto = (id) => {
+    setProductoToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleEliminarProducto = () => {
+    if (productoToDelete) {
+      setProductosLista(productosLista.filter(prod => prod.id !== productoToDelete));
+      setShowDeleteModal(false);
+      setProductoToDelete(null);
+    }
+  };
+
+  // Función para generar el HTML de la cotización (solo el contenido, sin scripts)
+  const generarHTMLCotizacion = (numeroCotizacion) => {
+    return `
+    <style>
+        /* Botón de descarga */
+        .download-button-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .download-button {
+            background: linear-gradient(135deg, #002D5A 0%, #002D5A 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .download-button:active {
+            transform: translateY(0);
+        }
+
+        .download-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Configuración General */
+        /* Configuración General */
+        * {
+            color: #000000 !important;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 5px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            min-width: 100%;
+            width: 100%;
+            max-width: none;
+            color: #000000;
+        }
+
+        .page-container {
+            background-color: white;
+            width: 900px;
+            /* Ancho aumentado para que se vea más ancho */
+            max-width: none;
+            margin: 0 auto;
+            padding: 15px 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            position: relative;
+            color: #000000;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .logo-section {
+            width: 25%;
+        }
+
+        .logo-section img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .company-info {
+            width: 50%;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.4;
+            padding-top: 5px;
+            color: #000000;
+        }
+
+        .company-name {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 5px;
+            display: block;
+            color: #000000;
+        }
+
+        .ruc-box {
+            width: 25%;
+            border: 2px solid #5b9bd5;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .ruc-header {
+            background-color: #5b9bd5;
+            /* Azul claro de la imagen */
+            padding: 5px;
+            border-bottom: 1px solid #5b9bd5;
+        }
+
+        .ruc-title {
+            background-color: #5b9bd5;
+            padding: 5px;
+            border-bottom: 1px solid #5b9bd5;
+            font-size: 14px;
+        }
+
+        .ruc-number {
+            background-color: #5b9bd5;
+            padding: 8px;
+        }
+
+        /* --- Cliente Info --- */
+        .client-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            line-height: 1.8;
+            color: #000000;
+        }
+
+        .client-left {
+            width: 60%;
+            color: #000000;
+        }
+
+        .client-right {
+            width: 35%;
+            color: #000000;
+        }
+
+        /* --- Tablas Generales --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            /* Bordes negros sólidos */
+            padding: 4px 5px;
+            text-align: center;
+            color: #000000;
+        }
+
+        td {
+            padding-bottom: 13px;
+            padding-top: 7px;
+        }
+
+        th {
+            padding-bottom: 6px;
+            padding-top: 5px;
+        }
+        
+
+
+        /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
+        .meta-table th {
+            background-color: #5b9bd5;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+
+        .meta-table td {
+            height: 20px;
+            /* Altura vacía */
+            color: #000000;
+        }
+
+        /* Espaciador */
+        .spacer {
+            height: 10px;
+        }
+
+        /* --- Tabla Principal de Productos --- */
+        .product-table th {
+            background-color: #5b9bd5;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+
+        .product-table tr {
+            height: 22px;
+            /* Altura de filas vacías */
+        }
+
+        .product-table td {
+            color: #000000;
+        }
+
+        /* Column widths para imitar la imagen */
+        .col-cant {
+            width: 8%;
+        }
+
+        .col-uni {
+            width: 10%;
+        }
+
+        .col-cod {
+            width: 12%;
+        }
+
+        .col-prod {
+            width: 45%;
+        }
+
+        .col-punit {
+            width: 12%;
+        }
+
+        .col-sub {
+            width: 13%;
+        }
+
+        /* --- Total Section --- */
+        .total-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+            margin-bottom: 20px;
+        }
+
+        .total-box {
+            display: flex;
+            border: 1px solid #000;
+            width: 210px;
+        }
+
+        .total-label {
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 12px;
+            border-right: 1px solid #000;
+            flex-grow: 1;
+            color: #000000;
+        }
+
+        .total-value {
+            width: 95px;
+            padding: 5px;
+            color: #000000;
+        }
+
+        /* --- Tabla de Bancos --- */
+        .bank-table th {
+            background-color: #5b9bd5;
+            text-transform: uppercase;
+            font-size: 10px;
+            color: #ffffff;
+        }
+
+        .bank-table td {
+            font-size: 9px;
+            border: none;
+            /* La imagen parece tener bordes internos sutiles o solo filas, pero pondré bordes estándar para mantener estructura */
+            border-bottom: 1px solid #ccc;
+            padding: 3px;
+            color: #000000;
+        }
+
+        .bank-table {
+            border: 1px solid #000;
+            margin-bottom: 20px;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .footer-stripe-light-suave {
+            background-color: #d9e6f2;
+            height: 18px;
+            width: 100%;
+        }
+
+        .footer-stripe-light {
+            background-color: #6faee5;
+            height: 20px;
+            width: 100%;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding-top: 2px;
+        }
+
+        footer .footer-stripe-dark {
+            background-color: #1f4e79;
+            color: white !important;
+            text-align: center;
+            font-weight: bold;
+            padding: 8px 0 15px 0;
+            font-size: 18px;
+        }
+
+        /* Para impresión */
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            .page-container {
+                box-shadow: none;
+                width: 100%;
+                max-width: 100%;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Header -->
+        <header>
+            <div class="logo-section">
+                <!-- Logo desde la URL proporcionada -->
+                <img src="https://cibertecedgar.github.io/img-archivo/logo.png" alt="Zeus Safety Logo">
+            </div>
+            <div class="company-info">
+                <span class="company-name">${empresaInfo.razonSocial}</span>
+                ${empresaInfo.direccion}<br>
+                LIMA - LIMA - LIMA<br>
+                TELEFONO: ${empresaInfo.telefono}
+            </div>
+            <div class="ruc-box">
+                <div class="ruc-header">RUC: ${empresaInfo.ruc}</div>
+                <div class="ruc-title">COTIZACIÓN</div>
+                <div class="ruc-number">${numeroCotizacion}</div>
+            </div>
+        </header>
+        <!-- Información del Cliente -->
+        <div class="client-info">
+            <div class="client-left">
+                <div>CLIENTE: ${cliente || ''}</div>
+                <div>RUC: ${ruc || ''}</div>
+                <div>DIRECCIÓN: ${direccion || ''}</div>
+            </div>
+            <div class="client-right">
+                <div>DNI: ${dni || ''}</div>
+                <div>CEL: ${cel || ''}</div>
+            </div>
+        </div>
+        <!-- Tabla Metadatos -->
+        <table class="meta-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%; font-size: 13px;">FECHA DE EMISIÓN</th>
+                        <th style="width: 20%; font-size: 13px;">FORMA <br>DE PAGO</th>
+                        <th style="width: 15%; font-size: 13px;">REGIÓN</th>
+                        <th style="width: 20%; font-size: 13px;">DISTRITO</th>
+                        <th style="width: 10%; font-size: 13px;">MONEDA</th>
+                        <th style="width: 20%; font-size: 13px;">ATENDIDO POR</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>${fechaEmision ? (() => {
+                      const [año, mes, día] = fechaEmision.split('-');
+                      return `${día}/${mes}/${año}`;
+                    })() : ''}</td>
+                    <td>${formaPago || ''}</td>
+                    <td>${regionSeleccionada?.REGION || ''}</td>
+                    <td>${distritoSeleccionado?.DISTRITO || ''}</td>
+                    <td>${moneda || ''}</td>
+                    <td>${atendidoPor || ''}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="spacer"></div>
+        <!-- Tabla de Productos -->
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th class="col-cant" style="font-size: 13px;">CANT.</th>
+                        <th class="col-uni" style="font-size: 13px;">UNIDAD</th>
+                        <th class="col-cod" style="font-size: 13px;">CODIGO</th>
+                        <th class="col-prod" style="font-size: 13px;">PRODUCTO</th>
+                        <th class="col-punit" style="font-size: 13px;">P/UNIT</th>
+                        <th class="col-sub" style="font-size: 13px;">SUBTOTAL</th>
+                </tr>
+            </thead>
+            <tbody id="product-rows">
+                ${productosLista.map(prod => `
+                    <tr>
+                        <td>${prod.cantidad}</td>
+                        <td>${prod.unidad}</td>
+                        <td>${prod.codigo}</td>
+                        <td style="text-align: left;">${prod.producto}</td>
+                        <td>S/ ${prod.precioUnit.toFixed(2)}</td>
+                        <td>S/ ${prod.subtotal.toFixed(2)}</td>
+                    </tr>
+                `).join('')}
+                ${Array(Math.max(0, 22 - productosLista.length)).fill(0).map(() => `
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <!-- Total -->
+        <div class="total-section">
+            <div class="total-box">
+                <div class="total-label">TOTAL S/ :</div>
+                <div class="total-value">S/ ${totalGeneral.toFixed(2)}</div>
+            </div>
+        </div>
+        <!-- Tabla de Bancos -->
+        <table class="bank-table">
+            <thead>
+                <tr>
+                    <th style="font-size: 13px;">CUENTA</th>
+                    <th style="font-size: 13px;">BANCO</th>
+                    <th style="font-size: 13px;">NOMBRE DE <br>LA CUENTA</th>
+                    <th style="font-size: 13px;">NRO. CUENTA</th>
+                    <th style="font-size: 13px;">CCI</th>
+                </tr>
+            </thead>
+            <tbody>
+                    <tr>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BCP Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">191-2233941-0-59</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00219100223394105953</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BBVA Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">0011-0364-01000453-46</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">011-364-000100045346-72</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">INTERBANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">2003006034134</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">SCOTIABANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">000-4024129</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00908100000402412911</td>
+                    </tr>
+                </tbody>
+        </table>
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-stripe-light-suave"></div>
+            <div class="footer-stripe-light"></div>
+            <div class="footer-stripe-dark">
+                ¡ EN ZEUS SAFETY, TU SEGURIDAD SIEMPRE SERÁ NUESTRA PRIORIDAD !
+            </div>
+        </footer>
+    </div>
+      `;
+  };
+
+  // 1. Obtener datos de región y distrito
+  const regionSeleccionada = regiones.find(r => r.ID_REGION === region);
+  const distritoSeleccionado = distritos.find(d => d.ID_DISTRITO === distrito);
+
+  const generarPDFBlob = async (codigoReal) => {
+    try {
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '1000px';
+      tempDiv.style.backgroundColor = 'white';
+
+      // Usamos un código temporal para el diseño, el real lo asigna el backend
+      tempDiv.innerHTML = generarHTMLCotizacion(codigoReal);
+      document.body.appendChild(tempDiv);
+
+      const images = tempDiv.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+      }));
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pxToMm = 25.4 / 96;
+      const imgWidthMm = (canvas.width * pxToMm) / 2;
+      const imgHeightMm = (canvas.height * pxToMm) / 2;
+      const ratio = Math.min((pdfWidth - 20) / imgWidthMm, (pdfHeight - 20) / imgHeightMm);
+
+      pdf.addImage(imgData, 'PNG', (pdfWidth - (imgWidthMm * ratio)) / 2, 10, imgWidthMm * ratio, imgHeightMm * ratio);
+
+      const blob = pdf.output('blob');
+      document.body.removeChild(tempDiv);
+      return blob;
+    }
+
+    catch (error) {
+      console.error("Error al generar el PDF:", error);
+      return null;
+    }
+  };
+
+  const limpiarCamposSelectivos = () => {
+    // Limpiar campos EXCEPTO: Fecha Emisión, Cliente, RUC, Dirección, DNI, CEL, Campaña
+    setFormaPago("");
+    setRegion("");
+    setDistrito("");
+    setMoneda("");
+    setAtendidoPor("");
+    
+    // Limpiar productos de la tabla
+    setProductosLista([]);
+    
+    // Limpiar campos del formulario de productos
+    setProducto("");
+    setCodigo("");
+    setCantidad(1);
+    setUnidadMedida("Seleccione Unidad de Medida");
+    setPrecioVenta("");
+    setTotal(0.00);
+    setProductoBusqueda("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    setProductoSeleccionado(null);
+  };
+
+  const handleRegistrarCotizacion = async (opts = {}) => {
+    if (productosLista.length === 0) {
+      alert("Debe agregar al menos un producto");
+      return;
+    }
+
+    try {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+
+      const token = getAuthToken();
+      if (!token) {
+        alert('Error de autenticación. Inicie sesión.');
+        return;
+      }
+
+      // --- CALCULAR CÓDIGO TEMPORAL PARA EL DISEÑO ---
+      const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
+      const siguienteNumero = opts?.siguienteNumero || (ultimoNumero + 1);
+      const codigoTemporal = opts?.codigoTemporal || `C001-${String(siguienteNumero).padStart(8, '0')}`;
+
+      // --- PASO A: Generar el PDF (o usar previsualización) ---
+      const pdfBlob = opts?.pdfBlob || (await generarPDFBlob(codigoTemporal));
+
+      if (!pdfBlob) {
+        alert("Error al preparar el archivo PDF.");
+        return;
+      }
+
+      // --- PASO B: Preparar FormData ---
+      const formData = new FormData();
+      formData.append("nombre_cliente", cliente || '');
+      formData.append("region", regionSeleccionada?.REGION || region || '');
+      formData.append("distrito", distritoSeleccionado?.DISTRITO || distrito || '');
+      formData.append("monto_total", totalGeneral);
+      formData.append("atendido_por", atendidoPor || '');
+
+      // Datos extra para completar posibles_clientes (se guardan en posibles_clientes por backend)
+      formData.append("cel", cel || "");
+      formData.append("ruc", ruc || "");
+      formData.append("dni", dni || "");
+
+      // Producto interesado: el producto con mayor cantidad dentro de la cotización
+      const productoInteresado =
+        (Array.isArray(productosLista) && productosLista.length > 0)
+          ? (productosLista.reduce((best, p) => (Number(p?.cantidad || 0) > Number(best?.cantidad || 0) ? p : best), productosLista[0])?.producto || "No especificado")
+          : "No especificado";
+      formData.append("producto_interesado", productoInteresado);
+
+      // El archivo PDF físico que el backend espera como "pdf_file"
+      formData.append("pdf_file", pdfBlob, `${codigoTemporal}.pdf`);
+
+      const API_URL = `${API_BASE_URL}/cotizacion`;
+
+      // --- PASO C: Enviar al Backend ---
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // El backend puede o no devolver el código. Si no lo devuelve, usamos el código temporal
+        const numeroFinal = data?.codigo_cotizacion || data?.COD_COTIZACION || codigoTemporal;
+        alert(`Cotización ${numeroFinal} registrada y guardada con éxito.`);
+
+        // --- PASO D: Descargar para el usuario ---
+        // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        link.download = `Cotizacion_${numeroFinal}.pdf`;
+        link.click();
+
+        // Actualizar localStorage
+        // Si el código viene en formato C001-00000001, extraemos el correlativo; si no, usamos el siguienteNumero calculado
+        let correlativo = siguienteNumero;
+        if (typeof numeroFinal === "string" && numeroFinal.includes("-")) {
+          const parts = numeroFinal.split("-");
+          const maybe = parseInt(parts[1], 10);
+          if (!Number.isNaN(maybe)) correlativo = maybe;
+        }
+        localStorage.setItem('lastCotizacionNumber', correlativo.toString());
+
+        // Confirmación (debug): si el backend devolvió URL pública, la mostramos en consola
+        if (data?.url) {
+          console.log("URL PDF (backend):", data.url);
+        }
+
+        // Si venimos desde previsualización, cerramos modal y limpiamos
+        if (mostrarModalPreview) {
+          handleCerrarPreviewCotizacion();
+        }
+
+        // Limpiar campos selectivos después de registrar exitosamente
+        limpiarCamposSelectivos();
+      } else {
+        alert(`Error: ${data.error || 'No se pudo registrar'}`);
+      }
+    } catch (error) {
+      console.error('Error general:', error);
+      alert('Ocurrió un error al procesar la cotización.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAbrirPreviewCotizacion = async () => {
+    if (productosLista.length === 0) {
+      alert("Debe agregar al menos un producto");
+      return;
+    }
+
+    const ultimoNumero = parseInt(localStorage.getItem('lastCotizacionNumber') || '0', 10);
+    const siguienteNumero = ultimoNumero + 1;
+    const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
+
+    setPreviewCodigoTemporal(codigoTemporal);
+    setPreviewSiguienteNumero(siguienteNumero);
+    setPreviewHtml(generarHTMLCotizacion(codigoTemporal));
+    setMostrarModalPreview(true);
+  };
+
+  const handleCerrarPreviewCotizacion = () => {
+    setPreviewHtml("");
+    setPreviewCodigoTemporal("");
+    setPreviewSiguienteNumero(0);
+    setMostrarModalPreview(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F7FAFF' }}>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"
+          }`}
+      >
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+        <main className="flex-1 overflow-y-auto" style={{ background: '#F7FAFF' }}>
+          <div className="p-3 lg:p-4" style={{ paddingBottom: '100px' }}>
+            {/* Estilos para dropdowns más compactos */}
+            <style jsx global>{`
+              /* Forzar estilos más compactos en los dropdowns */
+              select[name="region"] option,
+              select[name="distrito"] option {
+                padding: 3px 6px !important;
+                font-size: 11px !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+              }
+              
+              /* Reducir el tamaño del dropdown cuando está abierto */
+              select[name="region"],
+              select[name="distrito"] {
+                font-size: 12px !important;
+              }
+            `}</style>
+
+            {/* Header con Botón Volver alineado */}
+            <div className="mb-4 flex items-start justify-start max-w-[100rem] mx-auto">
+              <button
+                onClick={() => router.push("/ventas")}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium hover:shadow-md hover:scale-105 transition-all duration-200 shadow-sm ripple-effect relative overflow-hidden text-sm group"
+                style={{ fontFamily: 'var(--font-poppins)' }}
+              >
+                <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Volver a Ventas</span>
+              </button>
+            </div>
+
+            {/* Contenedor General Blanco */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-2 lg:p-2.5 max-w-[75rem] mx-auto">
+              {/* Información de la Empresa */}
+              <div className="mb-4 pb-4 border-b border-gray-300 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900 mb-3">RAZÓN SOCIAL: {empresaInfo.razonSocial}</h2>
+                    <div className="space-y-1.5 text-sm text-gray-800">
+                      <p><span className="font-semibold text-gray-900">RUC:</span> {empresaInfo.ruc}</p>
+                      <p><span className="font-semibold text-gray-900">DIRECCIÓN:</span> {empresaInfo.direccion}</p>
+                      <p><span className="font-semibold text-gray-900">TELÉFONO:</span> {empresaInfo.telefono}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center lg:justify-end">
+                    <div className="relative w-60 h-30">
+                      <Image
+                        src="/images/logo_zeus_safety.png"
+                        alt="Zeus Safety Logo"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información del Cliente */}
+              <div className="mb-4 pb-4 border-b border-gray-300 mt-4">
+                <h2 className="text-sm font-bold text-gray-900 mb-4">Cliente:</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">NOMBRE DEL CLIENTE</label>
+                    <input
+                      type="text"
+                      value={cliente}
+                      onChange={(e) => setCliente(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      placeholder="Nombre del cliente"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">RUC:</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={ruc}
+                        onChange={(e) => setRuc(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleBuscarRuc();
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                        placeholder="Ingrese RUC"
+                        maxLength={11}
+                      />
+                      <button
+                        onClick={handleBuscarRuc}
+                        disabled={buscandoRuc}
+                        className="px-4 py-2 bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white rounded-lg transition-all duration-200 flex items-center justify-center min-w-[44px]"
+                        title="Buscar RUC"
+                      >
+                        {buscandoRuc ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">DIRECCIÓN:</label>
+                    <input
+                      type="text"
+                      value={direccion}
+                      onChange={(e) => setDireccion(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      placeholder="Dirección del cliente"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">DNI:</label>
+                    <input
+                      type="text"
+                      value={dni}
+                      onChange={(e) => setDni(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      placeholder="DNI del cliente"
+                      maxLength={8}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">CEL:</label>
+                    <input
+                      type="text"
+                      value={cel}
+                      onChange={(e) => setCel(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      placeholder="Celular del cliente"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Parámetros de Cotización */}
+              <div className="mb-4 pb-4 border-b border-gray-300 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">FECHA DE EMISIÓN</label>
+                    <input
+                      type="date"
+                      value={fechaEmision}
+                      onChange={(e) => setFechaEmision(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">FORMA DE PAGO</label>
+                    <CompactSelect
+                      value={formaPago}
+                      onChange={(e) => setFormaPago(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      options={[
+                        { value: "", label: "Seleccione Pago" },
+                        { value: "AL CONTADO", label: "AL CONTADO" },
+                        { value: "CREDITO", label: "CRÉDITO" }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">REGION</label>
+                    <CompactSelect
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      disabled={cargandoRegiones}
+                      placeholder={cargandoRegiones ? "Cargando regiones..." : "Seleccione una región"}
+                      options={[
+                        { value: "", label: cargandoRegiones ? "Cargando regiones..." : "Seleccione una región" },
+                        ...regiones.map((reg) => ({
+                          value: reg.ID_REGION,
+                          label: reg.REGION
+                        }))
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">DISTRITO</label>
+                    <CompactSelect
+                      value={distrito}
+                      onChange={(e) => setDistrito(e.target.value)}
+                      disabled={!region || cargandoDistritos}
+                      placeholder={
+                        !region
+                          ? "Primero seleccione una región"
+                          : cargandoDistritos
+                            ? "Cargando distritos..."
+                            : "Seleccione un distrito"
+                      }
+                      options={[
+                        {
+                          value: "",
+                          label: !region
+                            ? "Primero seleccione una región"
+                            : cargandoDistritos
+                              ? "Cargando distritos..."
+                              : "Seleccione un distrito"
+                        },
+                        ...distritos.map((dist) => ({
+                          value: dist.ID_DISTRITO,
+                          label: dist.DISTRITO
+                        }))
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">MONEDA</label>
+                    <CompactSelect
+                      value={moneda}
+                      onChange={(e) => setMoneda(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      options={[
+                        { value: "", label: "Seleccione moneda" },
+                        { value: "SOLES", label: "SOLES (PEN)" },
+                        { value: "DOLARES", label: "DÓLARES (USD)" }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">ATENDIDO POR</label>
+                    <CompactSelect
+                      value={atendidoPor}
+                      onChange={(e) => setAtendidoPor(e.target.value)}
+                      placeholder="Seleccione un asesor"
+                      options={[
+                        { value: "", label: "Seleccione un asesor" },
+                        { value: "HERVIN-9447673667", label: "HERVIN-9447673667" },
+                        { value: "KIMBERLY-987560590", label: "KIMBERLY-987560590" },
+                        { value: "ALVARO-935447178", label: "ÁLVARO-935447178" },
+                        { value: "KRISTEL-916532849", label: "CRISTEL-916532849" },
+                        { value: "ZEUS-908917879", label: "ZEUS-908917879" }
+                      ]}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalle de Productos */}
+              <div className="mb-3 pb-3 border-b border-gray-300">
+                <h2 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Detalle de Productos
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+                  <div className="relative">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">PRODUCTO:</label>
+                    <div className="relative">
+                      <input
+                        ref={productoInputRef}
+                        type="text"
+                        value={productoBusqueda}
+                        onChange={handleProductoBusquedaChange}
+                        onFocus={handleProductoFocus}
+                        placeholder="Buscar producto..."
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                      />
+                      {buscandoProductos && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                        </div>
+                      )}
+                    </div>
+                    {mostrarSugerencias && sugerenciasProductos.length > 0 && (
+                      <div
+                        ref={sugerenciasRef}
+                        className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {sugerenciasProductos.map((prod, index) => (
+                          <button
+                            key={prod.ID || prod.id || index}
+                            type="button"
+                            onClick={() => seleccionarProducto(prod)}
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="text-sm font-medium text-gray-900">
+                              {prod.NOMBRE || prod.nombre}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Código: {prod.CODIGO || prod.codigo}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">CÓDIGO:</label>
+                    <input
+                      type="text"
+                      value={codigo}
+                      readOnly
+                      placeholder="Código del producto"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-900 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">CANTIDAD:</label>
+                    <input
+                      type="number"
+                      value={cantidad}
+                      onChange={(e) => setCantidad(parseInt(e.target.value) || "")}
+                      min=""
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">UNIDAD DE MEDIDA:</label>
+                    <CompactSelect
+                      value={unidadMedida}
+                      onChange={(e) => setUnidadMedida(e.target.value)}
+                      placeholder="Seleccione unidad de medida"
+                      options={opcionesUnidadMedida}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">PRECIO DE VENTA:</label>
+                    <input
+                      type="number"
+                      value={precioVenta}
+                      onChange={(e) => setPrecioVenta(e.target.value)}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">TOTAL:</label>
+                    <input
+                      type="text"
+                      value={`S/ ${total.toFixed(2)}`}
+                      readOnly
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-sm font-semibold text-gray-900"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleAgregarProducto}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm mt-4"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Agregar a la lista
+                </button>
+              </div>
+
+              {/* Modal de Precios */}
+              <Modal
+                isOpen={modalPreciosAbierto}
+                onClose={() => setModalPreciosAbierto(false)}
+                title="Seleccionar Precio"
+                size="md"
+              >
+                {cargandoPrecios ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                  </div>
+                ) : preciosDisponibles.length === 0 ? (
+                  <div className="text-center py-8 text-gray-600">
+                    No hay precios disponibles para este producto y clasificación.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Seleccione el precio para el producto: <strong>{producto}</strong>
+                    </p>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {preciosDisponibles.map((precioItem, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => seleccionarPrecio(precioItem)}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {precioItem.MEDIDA || precioItem.medida || "Sin medida"}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Código: {precioItem.CODIGO || precioItem.codigo || codigo}
+                              </div>
+                            </div>
+                            <div className="text-lg font-bold text-blue-700">
+                              S/ {(precioItem.PRECIO_UNIDAD_MEDIDA_VENTA || precioItem.precio_unidad_medida_venta || precioItem.precio || 0).toFixed(2)}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Modal>
+
+              {/* Lista de Productos */}
+              <div className="mb-4 pb-4 mt-4">
+                <h2 className="text-sm font-bold text-gray-900 mb-3">Productos</h2>
+                {productosLista.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+                    <p className="text-center text-gray-600 py-4 text-sm">No hay productos agregados</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-blue-700 border-b-2 border-blue-800">
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANTIDAD</th>
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">UNIDAD</th>
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CÓDIGO</th>
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRECIO UNIT.</th>
+                            <th className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">SUBTOTAL</th>
+                            <th className="px-3 py-2.5 text-center text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap">ACCIÓN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {productosLista.map((prod) => {
+                            const isEditing = editingProductoId === prod.id;
+                            const displayProd = isEditing ? editingProducto : prod;
+                            
+                            return (
+                              <tr key={prod.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
+                                {/* CANTIDAD */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      value={displayProd.cantidad || ''}
+                                      onChange={(e) => {
+                                        const nuevaCantidad = e.target.value;
+                                        const precio = parseFloat(editingProducto.precioUnit) || 0;
+                                        const nuevoSubtotal = parseFloat(nuevaCantidad) * precio;
+                                        setEditingProducto({ ...editingProducto, cantidad: nuevaCantidad, subtotal: nuevoSubtotal });
+                                      }}
+                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[11px] font-medium text-gray-900 text-center focus:border-blue-500 outline-none"
+                                    />
+                                  ) : (
+                                    <span className="text-[11px] font-medium text-gray-900">{prod.cantidad}</span>
+                                  )}
+                                </td>
+                                
+                                {/* UNIDAD */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <select
+                                      value={displayProd.unidad || ''}
+                                      onChange={(e) => setEditingProducto({ ...editingProducto, unidad: e.target.value })}
+                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[11px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                    >
+                                      <option value="DOCENAS">DOCENAS</option>
+                                      <option value="UNIDADES">UNIDADES</option>
+                                      <option value="PARES">PARES</option>
+                                      <option value="PAQUETES">PAQUETES</option>
+                                      <option value="ROLLOS">ROLLOS</option>
+                                      <option value="METROS">METROS</option>
+                                    </select>
+                                  ) : (
+                                    <span className="text-[11px] text-gray-700">{prod.unidad ? prod.unidad.toUpperCase() : "UNIDADES"}</span>
+                                  )}
+                                </td>
+                                
+                                {/* CÓDIGO - Solo lectura, se actualiza automáticamente */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  <span className="text-[11px] font-medium text-gray-900">{displayProd.codigo || ''}</span>
+                                </td>
+                                
+                                {/* PRODUCTO */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <div className="relative" ref={productoEdicionRef}>
+                                      <input
+                                        type="text"
+                                        placeholder="Buscar producto..."
+                                        value={busquedaProductoEdicion}
+                                        onChange={(e) => {
+                                          const nuevoValor = e.target.value;
+                                          setBusquedaProductoEdicion(nuevoValor);
+                                          setEditingProducto(prev => ({ ...prev, producto: nuevoValor }));
+                                          
+                                          // Cargar productos si no están cargados
+                                          if (!productosCargados && todosLosProductos.length === 0) {
+                                            cargarTodosLosProductos().then(() => {
+                                              if (nuevoValor.length > 0) {
+                                                setMostrarSugerenciasProductoEdicion(true);
+                                              }
+                                            });
+                                          } else {
+                                            setMostrarSugerenciasProductoEdicion(nuevoValor.length > 0);
+                                          }
+                                        }}
+                                        onFocus={() => {
+                                          // Cargar productos si no están cargados
+                                          if (!productosCargados && todosLosProductos.length === 0) {
+                                            cargarTodosLosProductos();
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[11px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] text-gray-700">{prod.producto}</span>
+                                  )}
+                                </td>
+                                
+                                {/* PRECIO UNIT. */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={displayProd.precioUnit || ''}
+                                      onChange={(e) => {
+                                        const nuevoPrecio = e.target.value;
+                                        const cantidad = parseFloat(editingProducto.cantidad) || 0;
+                                        const nuevoSubtotal = cantidad * parseFloat(nuevoPrecio);
+                                        setEditingProducto({ ...editingProducto, precioUnit: nuevoPrecio, subtotal: nuevoSubtotal });
+                                      }}
+                                      className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[11px] font-medium text-gray-900 focus:border-blue-500 outline-none"
+                                    />
+                                  ) : (
+                                    <span className="text-[11px] text-gray-700">S/ {(prod.precioUnit || 0).toFixed(2)}</span>
+                                  )}
+                                </td>
+                                
+                                {/* SUBTOTAL */}
+                                <td className="px-3 py-2.5 whitespace-nowrap">
+                                  <span className="text-[11px] text-gray-700 font-semibold">S/ {(displayProd.subtotal || 0).toFixed(2)}</span>
+                                </td>
+                                
+                                {/* ACCIÓN */}
+                                <td className="px-3 py-2.5 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          onClick={guardarEdicionProducto}
+                                          className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-500 hover:text-white rounded-lg transition-all"
+                                          title="Guardar cambios"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={cancelarEdicionProducto}
+                                          className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-500 hover:text-white rounded-lg transition-all"
+                                          title="Cancelar edición"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => iniciarEdicionProducto(prod)}
+                                          className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
+                                          title="Editar"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => confirmarEliminarProducto(prod.id)}
+                                          className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg text-[11px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.95]"
+                                          title="Eliminar"
+                                        >
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+              
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="bg-slate-200 px-3 py-2.5 flex items-center justify-between border-t-2 border-slate-300">
+                      <div></div>
+                      <p className="text-[11px] font-bold text-gray-900">
+                        TOTAL: S/ {totalGeneral.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botón Registrar */}
+              <div className="flex justify-end pt-2 mt-2 mb-4">
+                <button
+                  onClick={handleAbrirPreviewCotizacion}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                >
+                  Previsualizar y Registrar
+                </button>
+              </div>
+
+              {/* Modal: Previsualización PDF */}
+              <Modal
+                isOpen={mostrarModalPreview}
+                onClose={handleCerrarPreviewCotizacion}
+                title="Previsualización de Cotización"
+                size="6xl"
+                hideFooter={true}
+              >
+                <div className="space-y-4">
+                  
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+                    {previewHtml ? (
+                      <iframe
+                        title="Previsualización HTML"
+                        srcDoc={previewHtml}
+                        className="w-full"
+                        style={{ height: "70vh" }}
+                      />
+                    ) : (
+                      <div className="py-10 text-center text-sm text-gray-600">
+                        No hay previsualización disponible.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-gray-700">
+                      Código: <span className="font-semibold">{previewCodigoTemporal || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCerrarPreviewCotizacion}
+                        className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+                        disabled={isSubmitting}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (isSubmitting) return;
+                          if (!previewCodigoTemporal || !previewSiguienteNumero) {
+                            alert("No se pudo preparar la previsualización. Intente nuevamente.");
+                            return;
+                          }
+                          await handleRegistrarCotizacion({
+                            codigoTemporal: previewCodigoTemporal,
+                            siguienteNumero: previewSiguienteNumero,
+                          });
+                        }}
+                        className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                      >
+                        {isSubmitting ? "Creando PDF..." : "Registrar"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Modal>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Dropdown de Productos en Edición - Renderizado fuera de la tabla */}
+      {editingProductoId && mostrarSugerenciasProductoEdicion && busquedaProductoEdicion.length > 0 && productoEdicionRef.current && dropdownPosition.width > 0 && (
+        <div 
+          ref={dropdownRef}
+          className="fixed z-[9999] bg-white border-2 border-blue-300 rounded-lg shadow-2xl max-h-48 overflow-y-auto"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            position: 'fixed'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {todosLosProductos.filter(p => {
+            const nombre = (p.NOMBRE || p.nombre || "").toLowerCase();
+            const codigo = (p.CODIGO || p.codigo || "").toLowerCase();
+            const busqueda = busquedaProductoEdicion.toLowerCase();
+            return nombre.includes(busqueda) || codigo.includes(busqueda);
+          }).map((prod, idx) => (
+            <div 
+              key={idx} 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleProductoSelectEdicion(prod);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleProductoSelectEdicion(prod);
+              }}
+              className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-50 last:border-0 transition-colors"
+            >
+              {prod.NOMBRE || prod.nombre}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/60 bg-gradient-to-r from-red-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-poppins)' }}>
+                  ¿Estás seguro de eliminar?
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setProductoToDelete(null);
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Contenido */}
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: 'var(--font-poppins)' }}>
+                Esta acción no se puede deshacer. El producto será eliminado permanentemente de la lista.
+              </p>
+              
+              {/* Botones */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setProductoToDelete(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEliminarProducto}
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all"
+                  style={{ fontFamily: 'var(--font-poppins)' }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+
