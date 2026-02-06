@@ -331,15 +331,22 @@ export default function ListadoImportacionesPage() {
       // - solo los campos que el backend espera para area=importacion
       // - productos SIEMPRE debe estar presente (requerido por el backend)
       const productos = updateForm.productos || selectedImportacion.productos || "";
+      
+      // Para fechas: si están vacías, enviar null en lugar de string vacío
+      // Esto permite que el backend maneje campos opcionales correctamente
+      const fechaLlegada = updateForm.fechaLlegadaProductos || selectedImportacion.fechaLlegada;
+      const fechaAlmacen = updateForm.fechaAlmacen || selectedImportacion.fechaAlmacen;
+      const tipoCarga = updateForm.tipoCarga || selectedImportacion.tipoCarga;
+      const canal = updateForm.canal || selectedImportacion.canal;
 
       const payload = {
         id: idNumerico, // ID en la raíz del body (requerido por el backend)
         productos: productos, // SIEMPRE requerido por el backend
-        fecha_llegada_productos: updateForm.fechaLlegadaProductos || "",
-        fecha_almacen: updateForm.fechaAlmacen || "",
-        tipo_carga: updateForm.tipoCarga || "",
+        fecha_llegada_productos: fechaLlegada || null,
+        fecha_almacen: fechaAlmacen || null,
+        tipo_carga: tipoCarga || null,
         estado_importacion: estadoParaAPI || "",
-        canal: updateForm.canal || "",
+        canal: canal || null,
       };
 
       console.log('📤 Enviando payload:', JSON.stringify(payload, null, 2));
@@ -666,7 +673,7 @@ export default function ListadoImportacionesPage() {
                                     fechaAlmacen: normalizarFechaParaInput(importacion.fechaAlmacen) || "",
                                     productos: importacion.productos || "",
                                     tipoCarga: importacion.tipoCarga || "",
-                                    estado: importacion.estado || "",
+                                    estado: importacion.estado === "PRODUCCIÓN" ? "PRODUCCION" : importacion.estado || "",
                                     canal: importacion.canal || "",
                                   });
                                   setIsUpdateModalOpen(true);

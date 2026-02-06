@@ -6,6 +6,9 @@ import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
 import Modal from "../../../components/ui/Modal";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export default function HistorialCotizacionesPage() {
   const router = useRouter();
@@ -22,6 +25,11 @@ export default function HistorialCotizacionesPage() {
   const [clienteModalData, setClienteModalData] = useState({ idCoti: null, nuevoEstado: "" });
   const [tipoCliente, setTipoCliente] = useState("");
   const [canalOrigen, setCanalOrigen] = useState("");
+
+  // Estado para edición de CAMPANIA
+  const [editingCampaniaId, setEditingCampaniaId] = useState(null);
+  const [editingCampaniaValue, setEditingCampaniaValue] = useState("");
+  const [campaniaUpdateModal, setCampaniaUpdateModal] = useState({ isOpen: false, message: "" });
 
   // Filtros
   const [searchNombre, setSearchNombre] = useState("");
@@ -356,6 +364,177 @@ export default function HistorialCotizacionesPage() {
     setCanalOrigen("");
   };
 
+  // Funciones para editar CAMPANIA
+  const handleClickCampania = (idCoti, valorActual) => {
+    setEditingCampaniaId(idCoti);
+    setEditingCampaniaValue(valorActual || "");
+  };
+
+  const handleActualizarCampania = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      alert("No se encontró token de autenticación");
+      return;
+    }
+
+    if (!editingCampaniaValue.trim()) {
+      alert("El valor de CAMPANIA no puede estar vacío");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://cotizaciones2026-2946605267.us-central1.run.app/editar_campania",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            id_coti: editingCampaniaId,
+            campania: editingCampaniaValue.trim().toUpperCase(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data?.success || response.ok) {
+        // Convertir a mayúsculas
+        const campaniaEnMayusculas = editingCampaniaValue.trim().toUpperCase();
+        
+        // Actualizar el valor en la lista local
+        setCotizaciones((prev) =>
+          prev.map((item) =>
+            item.ID_COTI === editingCampaniaId
+              ? { ...item, CAMPANIA: campaniaEnMayusculas }
+              : item
+          )
+        );
+
+        // Mostrar modal de éxito
+        setCampaniaUpdateModal({
+          isOpen: true,
+          message: `CAMPAÑA actualizado a: ${campaniaEnMayusculas}`,
+        });
+
+        // Cerrar modal después de 2 segundos
+        setTimeout(() => {
+          setCampaniaUpdateModal({ isOpen: false, message: "" });
+          setEditingCampaniaId(null);
+          setEditingCampaniaValue("");
+        }, 2000);
+      } else {
+        alert("Error al actualizar: " + (data?.error || "Error desconocido"));
+        setEditingCampaniaId(null);
+        setEditingCampaniaValue("");
+      }
+    } catch (error) {
+      console.error("Error al actualizar CAMPANIA:", error);
+      alert("Error de conexión al actualizar CAMPANIA");
+      setEditingCampaniaId(null);
+      setEditingCampaniaValue("");
+    }
+  };
+
+  const handleCancelEditCampania = () => {
+    setEditingCampaniaId(null);
+    setEditingCampaniaValue("");
+  };
+
+  // Función para generar PDF
+  const handleGenerarPDF = () => {
+    if (filteredCotizaciones.length === 0) {
+      alert("No hay datos para exportar a PDF");
+      return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Título
+    doc.setFontSize(16);
+    doc.setTextColor(0, 45, 90);
+    doc.text("Reporte de Cotizaciones", pageWidth / 2, 15, { align: "center" });
+    
+    // Fecha de generación
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, pageWidth / 2, 22, { align: "center" });
+
+    // Datos para la tabla
+    const tableData = filteredCotizaciones.map((item) => [
+      formatearFecha(item.FECHA_EMISION),
+      item.COD_COTIZACION || "",
+      item.NOMBRE_CLIENTE || "",
+      `${item.REGION || ""} / ${item.DISTRITO || ""}`,
+      item.ATENDIDO_POR || "",
+      `S/ ${Number(item.MONTO_TOTAL || 0).toFixed(2)}`,
+      item.CAMPANIA || "N/A",
+      item.ESTADO || "PENDIENTE",
+    ]);
+
+    // Crear tabla
+    autoTable(doc, {
+      head: [["Fecha", "Código", "Cliente", "Región/Distrito", "Atendido Por", "Monto", "Origen", "Estado"]],
+      body: tableData,
+      startY: 30,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: "linebreak",
+      },
+      headStyles: {
+        fillColor: [0, 45, 90],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [240, 245, 255],
+      },
+      margin: { top: 30, right: 10, bottom: 10, left: 10 },
+    });
+
+    // Guardar PDF
+    doc.save(`reporte-cotizaciones-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
+  // Función para generar Excel
+  const handleGenerarExcel = () => {
+    if (filteredCotizaciones.length === 0) {
+      alert("No hay datos para exportar a Excel");
+      return;
+    }
+
+    // Preparar datos
+    const excelData = filteredCotizaciones.map((item) => ({
+      "Fecha Emisión": formatearFecha(item.FECHA_EMISION),
+      "Código": item.COD_COTIZACION || "",
+      "Cliente": item.NOMBRE_CLIENTE || "",
+      "Región": item.REGION || "",
+      "Distrito": item.DISTRITO || "",
+      "Atendido Por": item.ATENDIDO_POR || "",
+      "Monto Total": Number(item.MONTO_TOTAL || 0).toFixed(2),
+      urlCompleta: item.RUTA_PDF || "",
+      "Origen": item.CAMPANIA || "N/A",
+      "Estado": item.ESTADO || "PENDIENTE",
+    }));
+
+    // Crear libro de trabajo
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cotizaciones");
+
+    // Ajustar ancho de columnas
+    const maxWidth = 20;
+    const colWidths = Object.keys(excelData[0]).map(() => maxWidth);
+    ws["!cols"] = colWidths.map((width) => ({ wch: width }));
+
+    // Guardar Excel
+    XLSX.writeFile(wb, `reporte-cotizaciones-${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -515,13 +694,59 @@ export default function HistorialCotizacionesPage() {
                           handleLimpiarFiltros();
                           setFilterEstado("");
                         }}
-                        className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+                        className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-200 transition-colors whitespace-nowrap"
                       >
                         Limpiar
                       </button>
                     </div>
                   </div>
 
+                  {/* Botones de Reportes */}
+                  <div className="flex gap-2 items-end">
+                    <button
+                      type="button"
+                      onClick={handleGenerarPDF}
+                      className="flex-1 px-3 py-2 bg-red-600 border border-red-700 rounded-lg text-xs font-semibold text-white hover:bg-red-700 transition-all duration-200 hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+                      title="Descargar reporte en PDF"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 11V7m0 4l-2-2m2 2l2-2m-6 8h8a2 2 0 002-2V9.5a1 1 0 00-.293-.707l-4.5-4.5A1 1 0 0012.5 4H8a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span>PDF</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleGenerarExcel}
+                      className="flex-1 px-3 py-2 bg-green-600 border border-green-700 rounded-lg text-xs font-semibold text-white hover:bg-green-700 transition-all duration-200 hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+                      title="Descargar reporte en Excel"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <span>Excel</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               {/* Tabla de cotizaciones */}
@@ -530,22 +755,22 @@ export default function HistorialCotizacionesPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-blue-700 border-b-2 border-blue-800 text-center">
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           FECHA EMISIÓN
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           CÓD. COTIZACIÓN
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           CLIENTE
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           REGIÓN / DISTRITO
                         </th>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           ATENDIDO POR
                         </th>
-                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                        <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
                           MONTO TOTAL
                         </th>
                         <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">
@@ -626,24 +851,48 @@ export default function HistorialCotizacionesPage() {
                               )}
                             </td>
                             <td>
-                              <span
-                                className={`
+                              {editingCampaniaId === item.ID_COTI ? (
+                                <input
+                                  type="text"
+                                  value={editingCampaniaValue}
+                                  onChange={(e) => setEditingCampaniaValue(e.target.value)}
+                                  onBlur={handleActualizarCampania}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleActualizarCampania();
+                                    } else if (e.key === "Escape") {
+                                      handleCancelEditCampania();
+                                    }
+                                  }}
+                                  autoFocus
+                                  className="w-full px-2 py-1 border-2 border-blue-500 rounded-md text-[11px] font-semibold text-center bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-500"
+                                />
+                              ) : (
+                                <span
+                                  onClick={() => handleClickCampania(item.ID_COTI, item.CAMPANIA)}
+                                  className={`
                                     px-4 py-2 
                                     whitespace-nowrap 
                                     text-sm font-semibold 
                                     text-center 
                                     rounded-md
                                     text-[11px]
+                                    cursor-pointer
+                                    transition-all duration-200
+                                    hover:shadow-md hover:scale-105
+                                    block
                                   ${item.CAMPANIA?.startsWith("CM")
-                                    ? "bg-blue-600 text-gray-100" // Campañas publicitarias
-                                    : item.CAMPANIA?.startsWith("OR")
-                                      ? "bg-green-600 text-white"   // Clientes orgánicos
-                                      : "bg-gray-100 text-gray-600" // N/A u otros
-                                  }
-                                `}
-                              >
-                                {item.CAMPANIA || "N/A"}
-                              </span>
+                                      ? "bg-blue-600 text-gray-100" // Campañas publicitarias
+                                      : item.CAMPANIA?.startsWith("OR")
+                                        ? "bg-green-600 text-white"   // Clientes orgánicos
+                                        : "bg-gray-100 text-gray-600" // N/A u otros
+                                    }
+                                  `}
+                                  title="Click para editar"
+                                >
+                                  {item.CAMPANIA || "N/A"}
+                                </span>
+                              )}
                             </td>
 
                             <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -764,6 +1013,37 @@ export default function HistorialCotizacionesPage() {
                   </div>
                 </div>
               </Modal>
+
+              {/* Modal pequeño de confirmación de actualización de CAMPAÑA */}
+              {campaniaUpdateModal.isOpen && (
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4 animate-fadeIn">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+                        <svg
+                          className="w-8 h-8 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 text-center">
+                        ¡Actualizado!
+                      </h3> 
+                      <p className="text-sm text-gray-600 text-center">
+                        {campaniaUpdateModal.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
