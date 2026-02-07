@@ -151,14 +151,22 @@ export default function AsistenciasPage() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
+        // Si la API no devuelve ningún registro real en la base de datos,
+        // tratamos eso como historial vacío y borramos el localStorage.
+        if (!Array.isArray(data) || data.length === 0) {
+          setHistorialCargas([]);
+          localStorage.removeItem("historialCargasAsistencias");
+          return;
+        }
+
         // Obtener historial local para preservar registrado_por y area
         const historialLocal = JSON.parse(localStorage.getItem("historialCargasAsistencias") || "[]");
         const historialLocalMap = {};
         historialLocal.forEach((reg) => {
           historialLocalMap[reg.id_registro] = reg;
         });
-        
+
         // Agrupar por id_registro para obtener el historial
         const registros = {};
         data.forEach((item) => {
@@ -167,10 +175,10 @@ export default function AsistenciasPage() {
             const registradoPor = item.registrado_por || item.REGISTRADO_POR || item.registradoPor || null;
             const area = item.area || item.AREA || item.Area || null;
             const pdfReporte = item.pdf_reporte || item.PDF_REPORTE || item.pdfReporte || null;
-            
+
             // Si el dashboard no tiene estos campos, usar los del historial local
             const localData = historialLocalMap[item.id_registro] || {};
-            
+
             registros[item.id_registro] = {
               id_registro: item.id_registro,
               registrado_por: registradoPor || localData.registrado_por || null,
@@ -179,22 +187,21 @@ export default function AsistenciasPage() {
             };
           }
         });
-        
+
         // Agregar registros del historial local que no están en el dashboard
         historialLocal.forEach((reg) => {
           if (!registros[reg.id_registro]) {
             registros[reg.id_registro] = reg;
           }
         });
-        
+
         const historialFromAPI = Object.values(registros).sort((a, b) => b.id_registro - a.id_registro);
-        
-        // Solo actualizar si hay datos en la API
+
+        // Actualizar estado y localStorage con el historial resultante
         if (historialFromAPI.length > 0) {
           setHistorialCargas(historialFromAPI);
           localStorage.setItem("historialCargasAsistencias", JSON.stringify(historialFromAPI));
         } else {
-          // Si la API está vacía, limpiar el estado y localStorage
           setHistorialCargas([]);
           localStorage.removeItem("historialCargasAsistencias");
         }
@@ -227,7 +234,9 @@ export default function AsistenciasPage() {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
+      // NO usar cellDates: true para evitar problemas de zona horaria
+      // En su lugar, leeremos las fechas como números seriales y las parsearemos manualmente
+      const workbook = XLSX.read(data, { type: "array", cellDates: false });
 
       const sheetName = "Reporte de Excepciones";
       if (!workbook.SheetNames.includes(sheetName)) {
@@ -236,88 +245,259 @@ export default function AsistenciasPage() {
       }
 
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+      // Leer con raw: true para obtener valores numéricos (números seriales de fechas) y poder parsearlos correctamente
+      const jsonDataRaw = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: true });
+      
+      // También leer los valores formateados para obtener strings de texto
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false });
 
       const asistencias = [];
-      // Empezamos en fila 5 (índice 4) como en el HTML de prueba
-      for (let i = 4; i < jsonData.length; i++) {
-        const row = jsonData[i];
-        if (!row || row.length === 0) continue;
+      const fechasProcesadas = []; // Para rastrear fechas procesadas y ayudar a inferir fechas faltantes
+      
+      // Función auxiliar para normalizar fechas de Excel (como en tu ejemplo: normalizarFecha)
+      const parseDate = (dateValue) => {
+        if (!dateValue && dateValue !== 0) return null;
+        
+        // Si es un objeto Date: usar componentes LOCALES (Excel no tiene zona horaria, es fecha calendario)
+        if (dateValue instanceof Date) {
+          const year = dateValue.getFullYear();
+          const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+          const day = String(dateValue.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        
+        if (typeof dateValue === "string") {
+          const trimmed = dateValue.trim();
+          if (!trimmed || trimmed === "" || trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") {
+            return null;
+          }
+          
+          // Si ya está en formato YYYY-MM-DD, devolver tal cual
+          const dateMatch = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (dateMatch) {
+            return trimmed;
+          }
+          
+          const parsed = new Date(trimmed + "T00:00:00");
+          if (!isNaN(parsed.getTime())) {
+            const year = parsed.getFullYear();
+            const month = String(parsed.getMonth() + 1).padStart(2, '0');
+            const day = String(parsed.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+        }
+        
+        // Si es un número (código serial de fecha de Excel): sin zona horaria
+        if (typeof dateValue === "number") {
+          const excelDate = XLSX.SSF.parse_date_code(dateValue);
+          if (excelDate && excelDate.y && excelDate.m && excelDate.d) {
+            return `${excelDate.y}-${String(excelDate.m).padStart(2, "0")}-${String(excelDate.d).padStart(2, "0")}`;
+          }
+        }
+        
+        return null;
+      };
+      
+      // Función para inferir fecha basándose en fechas anteriores/posteriores del mismo empleado
+      const inferirFecha = (index, fechaActual, entrada, salida, idEmpleado, nombreEmpleado) => {
+        // Si hay fecha actual válida, usarla
+        if (fechaActual) return fechaActual;
+        
+        // Buscar fecha anterior válida del mismo empleado primero
+        for (let i = index - 1; i >= 4; i--) {
+          const prevRow = jsonData[i];
+          if (!prevRow || prevRow.length === 0) continue;
+          
+          const prevId = prevRow[0]?.toString().trim() || "";
+          const prevNombre = prevRow[1]?.toString().trim() || "";
+          
+          // Si es el mismo empleado, usar su fecha para inferir
+          if ((idEmpleado && prevId === idEmpleado) || (nombreEmpleado && prevNombre === nombreEmpleado)) {
+            const prevFecha = parseDate(prevRow[3]);
+            if (prevFecha) {
+              const prevDate = new Date(prevFecha + "T00:00:00");
+              let nextDate = new Date(prevDate);
+              nextDate.setDate(nextDate.getDate() + 1);
+              while (nextDate.getDay() === 0) nextDate.setDate(nextDate.getDate() + 1);
+              return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`;
+            }
+          }
+        }
+        
+        for (let i = index - 1; i >= 4; i--) {
+          const prevRow = jsonData[i];
+          if (!prevRow || prevRow.length === 0) continue;
+          const prevFecha = parseDate(prevRow[3]);
+          if (prevFecha) {
+            const prevDate = new Date(prevFecha + "T00:00:00");
+            let nextDate = new Date(prevDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            while (nextDate.getDay() === 0) nextDate.setDate(nextDate.getDate() + 1);
+            return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`;
+          }
+        }
+        
+        for (let i = index + 1; i < jsonData.length; i++) {
+          const nextRow = jsonData[i];
+          if (!nextRow || nextRow.length === 0) continue;
+          const nextId = nextRow[0]?.toString().trim() || "";
+          const nextNombre = nextRow[1]?.toString().trim() || "";
+          if ((idEmpleado && nextId === idEmpleado) || (nombreEmpleado && nextNombre === nombreEmpleado)) {
+            const nextFecha = parseDate(nextRow[3]);
+            if (nextFecha) {
+              const nextDate = new Date(nextFecha + "T00:00:00");
+              let prevDate = new Date(nextDate);
+              prevDate.setDate(prevDate.getDate() - 1);
+              while (prevDate.getDay() === 0) prevDate.setDate(prevDate.getDate() - 1);
+              return `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-${String(prevDate.getDate()).padStart(2, "0")}`;
+            }
+          }
+        }
+        
+        for (let i = index + 1; i < jsonData.length; i++) {
+          const nextRow = jsonData[i];
+          if (!nextRow || nextRow.length === 0) continue;
+          const nextFecha = parseDate(nextRow[3]);
+          if (nextFecha) {
+            const nextDate = new Date(nextFecha + "T00:00:00");
+            let prevDate = new Date(nextDate);
+            prevDate.setDate(prevDate.getDate() - 1);
+            while (prevDate.getDay() === 0) prevDate.setDate(prevDate.getDate() - 1);
+            return `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-${String(prevDate.getDate()).padStart(2, "0")}`;
+          }
+        }
+        
+        return null;
+      };
+      
+      // Función auxiliar para formatear horarios del Excel (similar a formatearHora del ejemplo)
+      const formatearHora = (valor) => {
+        if (!valor && valor !== 0) return null;
 
-        const id = row[0]?.toString().trim() || "";
-        const nombre = row[1]?.toString().trim() || "";
-        const fecha = row[3];
-        const entrada = row[4];
-        const salida = row[5];
+        // Si es un objeto Date (lo que puede pasar con cellDates: true)
+        if (valor instanceof Date) {
+          const h = valor.getHours().toString().padStart(2, '0');
+          const m = valor.getMinutes().toString().padStart(2, '0');
+          return `${h}:${m}:00`;
+        }
+
+        // Si es una cadena larga (ej: "Sat Dec 30 1899...")
+        if (typeof valor === 'string' && valor.includes('GMT')) {
+          const fecha = new Date(valor);
+          if (!isNaN(fecha.getTime())) {
+            const h = fecha.getHours().toString().padStart(2, '0');
+            const m = fecha.getMinutes().toString().padStart(2, '0');
+            return `${h}:${m}:00`;
+          }
+        }
+
+        // Si es un número (puede ser código de fecha Excel o fracción del día)
+        if (typeof valor === "number") {
+          // Intentar parsear como código de fecha Excel
+          const time = XLSX.SSF.parse_date_code(valor);
+          if (time && (time.H !== undefined || time.M !== undefined)) {
+            return `${String(time.H || 0).padStart(2, "0")}:${String(time.M || 0).padStart(2, "0")}:${String(time.S || 0).padStart(2, "0")}`;
+          }
+          
+          // Si es una fracción del día (0.0 a 0.999...), convertir a horas:minutos:segundos
+          if (valor >= 0 && valor < 1) {
+            const totalSeconds = Math.floor(valor * 24 * 60 * 60);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+          }
+        }
+        
+        // Si es un string, intentar parsearlo
+        if (typeof valor === "string") {
+          const trimmed = valor.trim();
+          if (!trimmed || trimmed === "" || trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") {
+            return null;
+          }
+          
+          // Si ya es un string corto tipo "08:44" o "08:44:00", devolverlo
+          const timeMatch = trimmed.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+          if (timeMatch) {
+            const hours = parseInt(timeMatch[1]);
+            const minutes = parseInt(timeMatch[2]);
+            const seconds = parseInt(timeMatch[3] || 0);
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+          }
+          
+          return trimmed;
+        }
+        
+        return null;
+      };
+
+      // Empezamos en fila 5 (índice 4) como en el HTML de prueba
+      // Usar la longitud de jsonDataRaw como referencia principal
+      const maxLength = Math.max(jsonData.length || 0, jsonDataRaw.length || 0);
+      for (let i = 4; i < maxLength; i++) {
+        const row = jsonData[i] || [];
+        const rowRaw = jsonDataRaw[i] || [];
+        if ((!row || row.length === 0) && (!rowRaw || rowRaw.length === 0)) continue;
+
+        const id = (row[0] || rowRaw[0])?.toString().trim() || "";
+        const nombre = (row[1] || rowRaw[1])?.toString().trim() || "";
+        // Usar el valor raw para la fecha para poder parsearlo correctamente como número serial de Excel
+        // Si no hay valor raw, usar el formateado
+        const fecha = rowRaw[3] !== undefined && rowRaw[3] !== null ? rowRaw[3] : (row[3] || null);
+        const entrada = rowRaw[4] !== undefined && rowRaw[4] !== null ? rowRaw[4] : (row[4] || null);
+        const salida = rowRaw[5] !== undefined && rowRaw[5] !== null ? rowRaw[5] : (row[5] || null);
 
         // Solo continuar si no hay ID ni nombre (fila completamente vacía)
         if (!id && !nombre) continue;
 
-        let fechaFormateada = null;
-        if (fecha) {
-          if (fecha instanceof Date) {
-            fechaFormateada = fecha.toISOString().split("T")[0];
-          } else if (typeof fecha === "string") {
-            const dateMatch = fecha.match(/(\d{4})-(\d{2})-(\d{2})/);
-            if (dateMatch) {
-              fechaFormateada = fecha;
-            } else {
-              const parsed = new Date(fecha);
-              if (!isNaN(parsed.getTime())) {
-                fechaFormateada = parsed.toISOString().split("T")[0];
-              }
-            }
-          } else if (typeof fecha === "number") {
-            const excelDate = XLSX.SSF.parse_date_code(fecha);
-            if (excelDate) {
-              fechaFormateada = `${excelDate.y}-${String(excelDate.m).padStart(2, "0")}-${String(excelDate.d).padStart(2, "0")}`;
-            }
-          }
-        }
+        // Procesar la fecha de la fila actual - SIEMPRE usar la fecha de la fila
+        let fechaFormateada = parseDate(fecha);
+        
+        // Formatear entrada y salida
+        let entradaFormateada = formatearHora(entrada);
+        let salidaFormateada = formatearHora(salida);
 
-        let entradaFormateada = null;
-        if (entrada) {
-          if (entrada instanceof Date) {
-            const hours = entrada.getHours();
-            const minutes = entrada.getMinutes();
-            const seconds = entrada.getSeconds();
-            entradaFormateada = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-          } else if (typeof entrada === "number") {
-            const time = XLSX.SSF.parse_date_code(entrada);
-            if (time) {
-              entradaFormateada = `${String(time.H).padStart(2, "0")}:${String(time.M).padStart(2, "0")}:${String(time.S || 0).padStart(2, "0")}`;
-            }
-          } else if (typeof entrada === "string") {
-            entradaFormateada = entrada.trim();
-          }
-        }
-
-        let salidaFormateada = null;
-        if (salida) {
-          if (salida instanceof Date) {
-            const hours = salida.getHours();
-            const minutes = salida.getMinutes();
-            const seconds = salida.getSeconds();
-            salidaFormateada = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-          } else if (typeof salida === "number") {
-            const time = XLSX.SSF.parse_date_code(salida);
-            if (time) {
-              salidaFormateada = `${String(time.H).padStart(2, "0")}:${String(time.M).padStart(2, "0")}:${String(time.S || 0).padStart(2, "0")}`;
-            }
-          } else if (typeof salida === "string") {
-            salidaFormateada = salida.trim();
-          }
-        }
-
-        // Procesar si hay fecha, incluso si falta ID o nombre
+        // IMPORTANTE: Si hay fecha en el Excel, SIEMPRE crear el registro, incluso si entrada y salida están vacías
+        // Esto permite mostrar días feriados o días sin registro como "No Registrado"
         if (fechaFormateada) {
-          asistencias.push({
+          const registro = {
             id: id || "-",
             nombre: nombre || "-",
             fecha: fechaFormateada,
             entrada: entradaFormateada,
             salida: salidaFormateada,
+          };
+          
+          asistencias.push(registro);
+          
+          // Guardar para referencia futura
+          fechasProcesadas.push({
+            id: id || "-",
+            nombre: nombre || "-",
+            fecha: fechaFormateada,
           });
+        } else if (entradaFormateada || salidaFormateada) {
+          // Si NO hay fecha pero SÍ hay entrada o salida, intentar inferirla
+          // Esto solo debería pasar si el Excel tiene datos inconsistentes
+          fechaFormateada = inferirFecha(i, null, entradaFormateada, salidaFormateada, id, nombre);
+          
+          if (fechaFormateada) {
+            const registro = {
+              id: id || "-",
+              nombre: nombre || "-",
+              fecha: fechaFormateada,
+              entrada: entradaFormateada,
+              salida: salidaFormateada,
+            };
+            
+            asistencias.push(registro);
+            
+            fechasProcesadas.push({
+              id: id || "-",
+              nombre: nombre || "-",
+              fecha: fechaFormateada,
+            });
+          }
         }
       }
 
@@ -325,6 +505,30 @@ export default function AsistenciasPage() {
         showNotification("No se encontraron datos válidos en el archivo", "error");
         return;
       }
+
+      // Ordenar los datos primero por nombre/ID de empleado, luego por fecha
+      // Esto mantiene los registros del mismo empleado juntos y ordenados cronológicamente
+      asistencias.sort((a, b) => {
+        // Primero por ID de empleado (si existe)
+        if (a.id && b.id && a.id !== "-" && b.id !== "-") {
+          const idCompare = a.id.localeCompare(b.id);
+          if (idCompare !== 0) return idCompare;
+        }
+        
+        // Luego por nombre
+        if (a.nombre && b.nombre && a.nombre !== "-" && b.nombre !== "-") {
+          const nombreCompare = a.nombre.localeCompare(b.nombre);
+          if (nombreCompare !== 0) return nombreCompare;
+        }
+        
+        // Finalmente por fecha (cronológicamente). YYYY-MM-DD ordena bien como string
+        if (a.fecha && b.fecha) {
+          return String(a.fecha).localeCompare(String(b.fecha));
+        } else if (a.fecha && !b.fecha) return -1;
+        else if (!a.fecha && b.fecha) return 1;
+        
+        return 0;
+      });
 
       setExcelData(asistencias);
       showNotification("Datos cargados correctamente", "success");
@@ -498,18 +702,33 @@ export default function AsistenciasPage() {
   };
 
   const getDayName = (fecha) => {
-    const date = new Date(fecha);
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    return days[date.getDay()];
+    if (!fecha) return null;
+    try {
+      // Usar "T00:00:00" para interpretar la fecha como medianoche LOCAL y evitar que
+      // "2026-01-01" se interprete como UTC (que en Perú sería 31 dic 2025)
+      const date = new Date(String(fecha).trim() + "T00:00:00");
+      if (isNaN(date.getTime())) return null;
+      const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+      return days[date.getDay()];
+    } catch (error) {
+      return null;
+    }
   };
 
   const getDayNumber = (fecha) => {
-    const date = new Date(fecha);
-    return date.getDate();
+    if (!fecha) return null;
+    try {
+      // Usar "T00:00:00" para interpretar la fecha como medianoche LOCAL
+      const date = new Date(String(fecha).trim() + "T00:00:00");
+      if (isNaN(date.getTime())) return null;
+      return date.getDate();
+    } catch (error) {
+      return null;
+    }
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return "-";
+    if (!timeString || timeString === "--" || timeString === null) return "--";
     const parts = timeString.split(":");
     if (parts.length < 2) return timeString;
     const hours = parseInt(parts[0]);
@@ -520,43 +739,113 @@ export default function AsistenciasPage() {
     return `${String(displayHours).padStart(2, "0")}:${minutes}:${seconds} ${ampm}`;
   };
 
-  const getEstadoEntrada = (entrada, fecha) => {
-    if (!entrada) {
+  const getEstadoEntrada = (entrada, salida, fecha) => {
+    const HORA_ENTRADA_LIMITE = "09:00:00";
+    
+    // ❌ No Registrado SOLO cuando el campo Entrada está vacío (o cuando ambos están vacíos)
+    if (!entrada || entrada === "--" || entrada === null) {
       return { texto: "No Registrado", color: "text-gray-600", bg: "bg-gray-100", icon: "❌" };
     }
-    const [hours, minutes] = entrada.split(":").map(Number);
-    const entradaTime = hours * 60 + minutes;
-    const horaLimite = 9 * 60;
-    if (entradaTime <= horaLimite) {
-      return { texto: "Temprano", color: "text-green-700", bg: "bg-green-100", icon: "✓" };
-    } else {
-      return { texto: "Tarde", color: "text-red-700", bg: "bg-red-100", icon: "✗" };
+    
+    // Si hay entrada, calcular el estado basándose en la hora de entrada
+    try {
+      // Extraer horas y minutos de la entrada
+      const partesEntrada = String(entrada).split(":");
+      const hEntrada = parseInt(partesEntrada[0] || 0);
+      const mEntrada = parseInt(partesEntrada[1] || 0);
+      
+      // Extraer horas y minutos del límite
+      const partesLimite = HORA_ENTRADA_LIMITE.split(":");
+      const hLimite = parseInt(partesLimite[0] || 9);
+      const mLimite = parseInt(partesLimite[1] || 0);
+      
+      const entradaTime = hEntrada * 60 + mEntrada;
+      const limiteTime = hLimite * 60 + mLimite;
+      
+      // Si la entrada es después del límite, es "Tarde"
+      if (entradaTime > limiteTime) {
+        return { texto: "Tarde", color: "text-red-700", bg: "bg-red-100", icon: "✗" };
+      } else {
+        // Si la entrada es antes o igual al límite, es "Temprano"
+        return { texto: "Temprano", color: "text-green-700", bg: "bg-green-100", icon: "✓" };
+      }
+    } catch (error) {
+      console.error("Error calculando estado de entrada:", error);
+      return { texto: "No Registrado", color: "text-gray-600", bg: "bg-gray-100", icon: "❌" };
     }
   };
 
   const calcularMinutosTardanza = (entrada) => {
-    if (!entrada) return 0;
-    const [hours, minutes] = entrada.split(":").map(Number);
-    const entradaTime = hours * 60 + minutes;
-    const horaLimite = 9 * 60;
-    return Math.max(0, entradaTime - horaLimite);
+    if (!entrada || entrada === "--" || entrada === null) return 0;
+    
+    try {
+      const HORA_ENTRADA_LIMITE = "09:00:00";
+      // Extraer solo HH:mm de cadenas como "08:44:00" o "8:44"
+      const partesEntrada = String(entrada).split(":");
+      const partesLimite = HORA_ENTRADA_LIMITE.split(":");
+      
+      const h1 = parseInt(partesEntrada[0] || 0);
+      const m1 = parseInt(partesEntrada[1] || 0);
+      
+      const h2 = parseInt(partesLimite[0] || 9);
+      const m2 = parseInt(partesLimite[1] || 0);
+      
+      const total1 = h1 * 60 + m1;
+      const total2 = h2 * 60 + m2;
+      
+      return total1 > total2 ? total1 - total2 : 0;
+    } catch (e) {
+      console.error("Error calculando minutos de tardanza:", e);
+      return 0;
+    }
   };
 
   const calcularTiempoExtra = (entrada, salida) => {
-    if (!entrada || !salida) return 0;
-    const estado = getEstadoEntrada(entrada);
-    if (estado.texto === "Tarde") return 0;
+    if (!entrada || entrada === "--" || entrada === null) return 0;
+    if (!salida || salida === "--" || salida === null) return 0;
+    
+    const estado = getEstadoEntrada(entrada, salida);
+    if (estado.texto === "Tarde" || estado.texto === "No Registrado") return 0;
 
-    const [entHours, entMinutes] = entrada.split(":").map(Number);
-    const [salHours, salMinutes] = salida.split(":").map(Number);
-    const entradaTime = entHours * 60 + entMinutes;
-    const salidaTime = salHours * 60 + salMinutes;
-    const horaSalidaLimite = 18 * 60;
-
-    if (entradaTime <= 9 * 60 && salidaTime > horaSalidaLimite) {
-      return salidaTime - horaSalidaLimite;
+    try {
+      const HORA_ENTRADA_LIMITE = "09:00:00";
+      const HORA_SALIDA_LIMITE = "18:00:00";
+      
+      // Calcular tiempo extra de entrada (minutos antes de las 9:00)
+      const partesEntrada = String(entrada).split(":");
+      const partesLimiteEntrada = HORA_ENTRADA_LIMITE.split(":");
+      
+      const hEntrada = parseInt(partesEntrada[0] || 0);
+      const mEntrada = parseInt(partesEntrada[1] || 0);
+      const hLimiteEntrada = parseInt(partesLimiteEntrada[0] || 9);
+      const mLimiteEntrada = parseInt(partesLimiteEntrada[1] || 0);
+      
+      const entradaTime = hEntrada * 60 + mEntrada;
+      const limiteEntradaTime = hLimiteEntrada * 60 + mLimiteEntrada;
+      
+      // Calcular tiempo extra de salida (minutos después de las 18:00)
+      const partesSalida = String(salida).split(":");
+      const partesLimiteSalida = HORA_SALIDA_LIMITE.split(":");
+      
+      const hSalida = parseInt(partesSalida[0] || 0);
+      const mSalida = parseInt(partesSalida[1] || 0);
+      const hLimiteSalida = parseInt(partesLimiteSalida[0] || 18);
+      const mLimiteSalida = parseInt(partesLimiteSalida[1] || 0);
+      
+      const salidaTime = hSalida * 60 + mSalida;
+      const limiteSalidaTime = hLimiteSalida * 60 + mLimiteSalida;
+      
+      // Tiempo extra de entrada (minutos antes de las 9:00)
+      const extraEntrada = entradaTime < limiteEntradaTime ? limiteEntradaTime - entradaTime : 0;
+      
+      // Tiempo extra de salida (minutos después de las 18:00)
+      const extraSalida = salidaTime > limiteSalidaTime ? salidaTime - limiteSalidaTime : 0;
+      
+      return extraEntrada + extraSalida;
+    } catch (e) {
+      console.error("Error calculando tiempo extra:", e);
+      return 0;
     }
-    return 0;
   };
 
   const handleClearTable = () => {
@@ -713,17 +1002,38 @@ export default function AsistenciasPage() {
       return [];
     }
     
-    const excelDataFormatted = excelData.map((item) => ({
-      id_asistencia: null,
-      id_empleado: item.id,
-      id_registro: null,
-      fecha: item.fecha,
-      hora_entrada: item.entrada,
-      hora_salida: item.salida,
-      nombre: item.nombre,
-      anio: new Date(item.fecha).getFullYear(),
-      mes: new Date(item.fecha).getMonth() + 1,
-    }));
+    const excelDataFormatted = excelData.map((item) => {
+      // Extraer año y mes de la fecha de forma segura
+      let anio = null;
+      let mes = null;
+      if (item.fecha) {
+        // Si la fecha está en formato YYYY-MM-DD, extraer directamente
+        const fechaMatch = String(item.fecha).match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (fechaMatch) {
+          anio = parseInt(fechaMatch[1]);
+          mes = parseInt(fechaMatch[2]);
+        } else {
+          // Si no está en formato esperado, parsear como medianoche local (T00:00:00)
+          const fechaDate = new Date(String(item.fecha).trim() + "T00:00:00");
+          if (!isNaN(fechaDate.getTime())) {
+            anio = fechaDate.getFullYear();
+            mes = fechaDate.getMonth() + 1;
+          }
+        }
+      }
+      
+      return {
+        id_asistencia: null,
+        id_empleado: item.id,
+        id_registro: null,
+        fecha: item.fecha,
+        hora_entrada: item.entrada,
+        hora_salida: item.salida,
+        nombre: item.nombre,
+        anio: anio,
+        mes: mes,
+      };
+    });
 
     return excelDataFormatted;
   }, [excelData]);
@@ -735,7 +1045,10 @@ export default function AsistenciasPage() {
     if (selectedYear) {
       filtered = filtered.filter((d) => {
         if (!d.fecha) return false;
-        const year = d.anio || new Date(d.fecha).getFullYear();
+        const year = d.anio ?? (() => {
+          const m = String(d.fecha).match(/(\d{4})/);
+          return m ? parseInt(m[1]) : null;
+        })();
         return year === selectedYear;
       });
     }
@@ -744,7 +1057,10 @@ export default function AsistenciasPage() {
     if (selectedMonth) {
       filtered = filtered.filter((d) => {
         if (!d.fecha) return false;
-        const month = d.mes || new Date(d.fecha).getMonth() + 1;
+        const month = d.mes ?? (() => {
+          const m = String(d.fecha).match(/-(\d{2})-/);
+          return m ? parseInt(m[1]) : null;
+        })();
         return month === selectedMonth;
       });
     }
@@ -762,8 +1078,12 @@ export default function AsistenciasPage() {
   const uniqueYears = useMemo(() => {
     const years = new Set();
     allData.forEach((d) => {
-      const year = d.anio || new Date(d.fecha).getFullYear();
-      years.add(year);
+      let year = d.anio;
+      if (year == null && d.fecha) {
+        const m = String(d.fecha).match(/(\d{4})-/);
+        year = m ? parseInt(m[1], 10) : null;
+      }
+      if (year != null) years.add(year);
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [allData]);
@@ -771,8 +1091,12 @@ export default function AsistenciasPage() {
   const uniqueMonths = useMemo(() => {
     const months = new Set();
     allData.forEach((d) => {
-      const month = d.mes || new Date(d.fecha).getMonth() + 1;
-      months.add(month);
+      let month = d.mes;
+      if (month == null && d.fecha) {
+        const m = String(d.fecha).match(/-(\d{2})-/);
+        month = m ? parseInt(m[1], 10) : null;
+      }
+      if (month != null) months.add(month);
     });
     return Array.from(months).sort((a, b) => a - b);
   }, [allData]);
@@ -795,7 +1119,7 @@ export default function AsistenciasPage() {
   const asistenciasPuntuales = useMemo(() => {
     return selectedPersonData.filter((d) => {
       if (!d.hora_entrada) return false;
-      const estado = getEstadoEntrada(d.hora_entrada, d.fecha);
+      const estado = getEstadoEntrada(d.hora_entrada, d.hora_salida, d.fecha);
       return estado.texto === "Temprano";
     }).length;
   }, [selectedPersonData]);
@@ -803,7 +1127,7 @@ export default function AsistenciasPage() {
   const tardanzas = useMemo(() => {
     return selectedPersonData.filter((d) => {
       if (!d.hora_entrada) return false;
-      const estado = getEstadoEntrada(d.hora_entrada, d.fecha);
+      const estado = getEstadoEntrada(d.hora_entrada, d.hora_salida, d.fecha);
       return estado.texto === "Tarde";
     }).length;
   }, [selectedPersonData]);
@@ -820,13 +1144,28 @@ export default function AsistenciasPage() {
 
   const minutosDebidos = useMemo(() => {
     return selectedPersonData.reduce((total, d) => {
-      if (!d.hora_entrada) return total;
-      const estado = getEstadoEntrada(d.hora_entrada, d.fecha);
-      if (estado.texto === "Temprano" && d.hora_salida) {
-        const [entHours, entMinutes] = d.hora_entrada.split(":").map(Number);
-        const entradaTime = entHours * 60 + entMinutes;
-        const minutosAntes = 9 * 60 - entradaTime;
-        return total + minutosAntes;
+      if (!d.hora_entrada || d.hora_entrada === "--" || d.hora_entrada === null) return total;
+      const estado = getEstadoEntrada(d.hora_entrada, d.hora_salida, d.fecha);
+      if (estado.texto === "Temprano") {
+        try {
+          const HORA_ENTRADA_LIMITE = "09:00:00";
+          const partesEntrada = String(d.hora_entrada).split(":");
+          const partesLimite = HORA_ENTRADA_LIMITE.split(":");
+          
+          const hEntrada = parseInt(partesEntrada[0] || 0);
+          const mEntrada = parseInt(partesEntrada[1] || 0);
+          const hLimite = parseInt(partesLimite[0] || 9);
+          const mLimite = parseInt(partesLimite[1] || 0);
+          
+          const entradaTime = hEntrada * 60 + mEntrada;
+          const limiteTime = hLimite * 60 + mLimite;
+          
+          const minutosAntes = limiteTime - entradaTime;
+          return total + (minutosAntes > 0 ? minutosAntes : 0);
+        } catch (e) {
+          console.error("Error calculando minutos debidos:", e);
+          return total;
+        }
       }
       return total;
     }, 0);
@@ -1105,20 +1444,23 @@ export default function AsistenciasPage() {
                           }
 
                           return dataPaginada.map((d, index) => {
-                            // Si no hay entrada, es inasistencia (No Registrado)
-                            const estado = getEstadoEntrada(d.hora_entrada, d.fecha);
-                            const minutosTardanza = d.hora_entrada ? calcularMinutosTardanza(d.hora_entrada) : 0;
-                            const tiempoExtra = d.hora_entrada && d.hora_salida ? calcularTiempoExtra(d.hora_entrada, d.hora_salida) : 0;
-                            const dayName = getDayName(d.fecha);
-                            const dayNumber = getDayNumber(d.fecha);
+                            // Calcular estado de entrada - SOLO cuando el campo Entrada está vacío (o cuando ambos están vacíos)
+                            const estado = getEstadoEntrada(d.hora_entrada, d.hora_salida, d.fecha);
+                            const minutosTardanza = (d.hora_entrada && d.hora_entrada !== "--" && d.hora_entrada !== null) ? calcularMinutosTardanza(d.hora_entrada) : 0;
+                            const tiempoExtra = (d.hora_entrada && d.hora_entrada !== "--" && d.hora_entrada !== null && d.hora_salida && d.hora_salida !== "--" && d.hora_salida !== null) ? calcularTiempoExtra(d.hora_entrada, d.hora_salida) : 0;
+                            
+                            // Usar la fecha directamente del registro (ya procesada correctamente al leer el Excel)
+                            const fechaParaMostrar = d.fecha;
+                            const dayName = fechaParaMostrar ? getDayName(fechaParaMostrar) : "-";
+                            const dayNumber = fechaParaMostrar ? getDayNumber(fechaParaMostrar) : "-";
 
                             return (
                               <tr key={index} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
                                 <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-                                  {dayNumber}
+                                  {dayNumber || "-"}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-900 capitalize" style={{ fontFamily: "var(--font-poppins)" }}>
-                                  {dayName}
+                                  {dayName || "-"}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-[10px] font-medium text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
                                   {d.nombre || "-"}
@@ -1312,10 +1654,10 @@ export default function AsistenciasPage() {
                   style={{ fontFamily: "var(--font-poppins)" }}
                 >
                   <option value="">Seleccione un área</option>
-                  <option value="Gerencia">Gerencia</option>
-                  <option value="Sistemas">Sistemas</option>
-                  <option value="Administración">Administración</option>
-                  <option value="Recursos humanos">Recursos humanos</option>
+                  <option value="GERENCIA">GERENCIA</option>
+                  <option value="SISTEMAS">SISTEMAS</option>
+                  <option value="ADMINISTRACION">ADMINISTRACION</option>
+                  <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
                 </select>
               </div>
             </div>
