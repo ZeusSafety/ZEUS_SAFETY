@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Decimal from "decimal.js";
 import { useAuth } from "../../../components/context/AuthContext";
 import { Header } from "../../../components/layout/Header";
 import { Sidebar } from "../../../components/layout/Sidebar";
@@ -119,10 +120,44 @@ const CustomSelect = ({ name, value, onChange, options, placeholder, required, l
   );
 };
 
-// Helper para redondeo SUNAT (Midpoint Rounding)
-const roundSUNAT = (num, decimals = 2) => {
-  const factor = Math.pow(10, decimals);
-  return Math.round((num + Number.EPSILON) * factor) / factor;
+// Truncar a N decimales sin redondear (usando Decimal.js para precisión exacta)
+const truncateSUNAT = (num, decimals = 2) => {
+  if (num === null || num === undefined || num === "" || (typeof num === "number" && isNaN(num))) return 0;
+  try {
+    return new Decimal(num).toDecimalPlaces(decimals, Decimal.ROUND_DOWN).toNumber();
+  } catch {
+    return 0;
+  }
+};
+
+// Truncar precio unitario a 6 decimales (estándar SUNAT) antes de multiplicar
+const truncatePrice6 = (num) => {
+  if (num === null || num === undefined || num === "" || (typeof num === "number" && isNaN(num))) return 0;
+  try {
+    return new Decimal(num).toDecimalPlaces(6, Decimal.ROUND_DOWN).toNumber();
+  } catch {
+    return 0;
+  }
+};
+
+// Calcular base gravada con precisión decimal exacta: precio truncado a 6 dec × cantidad, resultado truncado a 2 dec
+const calcBaseGravada = (cantidad, precioUnitario) => {
+  try {
+    const qty = new Decimal(cantidad || 0);
+    const price = new Decimal(precioUnitario || 0).toDecimalPlaces(6, Decimal.ROUND_DOWN);
+    return qty.times(price).toDecimalPlaces(2, Decimal.ROUND_DOWN).toNumber();
+  } catch {
+    return 0;
+  }
+};
+
+// Calcular IGV (18%) sobre base, truncado a 2 decimales
+const calcIgv = (baseGravada) => {
+  try {
+    return new Decimal(baseGravada || 0).times(0.18).toDecimalPlaces(2, Decimal.ROUND_DOWN).toNumber();
+  } catch {
+    return 0;
+  }
 };
 
 // Formateador de moneda
@@ -663,20 +698,16 @@ export default function CrearVentaPage() {
   const calcularTotalesFinales = () => {
     let gravada = 0;
     let totalIgv = 0;
-    let importeTotal = 0;
 
     productos.forEach(p => {
-      const qty = parseFloat(p.cantidad) || 0;
-      const unitVal = parseFloat(p.precioVenta) || 0;
-
-      const totalConIgv = roundSUNAT(qty * unitVal);
-      const baseLine = roundSUNAT(totalConIgv / 1.18);
-      const igvLine = roundSUNAT(totalConIgv - baseLine);
+      const baseLine = calcBaseGravada(p.cantidad, p.precioVenta);
+      const igvLine = calcIgv(baseLine);
 
       gravada += baseLine;
       totalIgv += igvLine;
-      importeTotal += totalConIgv;
     });
+
+    const importeTotal = gravada + totalIgv;
 
     return {
       gravada: gravada.toFixed(2),
@@ -693,19 +724,17 @@ export default function CrearVentaPage() {
     const qty = parseFloat(nuevoProducto.cantidad) || 0;
     const unitPrice = parseFloat(nuevoProducto.precioVenta) || 0;
 
-    // Validar que el cálculo sea consistente antes de agregar
-    const totalConIgv = roundSUNAT(qty * unitPrice);
-    const baseGravada = roundSUNAT(totalConIgv / 1.18);
-    const igv = roundSUNAT(totalConIgv - baseGravada);
+    const baseGravada = calcBaseGravada(nuevoProducto.cantidad, nuevoProducto.precioVenta);
+    const igv = calcIgv(baseGravada);
 
     const producto = {
       id: Date.now(),
       ...nuevoProducto,
-      precioVenta: unitPrice,
+      precioVenta: truncatePrice6(unitPrice),
       cantidad: qty,
       subtotal: baseGravada,
       igv: igv,
-      total: totalConIgv
+      total: baseGravada
     };
 
     setProductos([...productos, producto]);
@@ -837,19 +866,17 @@ export default function CrearVentaPage() {
       }
 
       const detalle = productos.map(producto => {
-        const qty = parseFloat(producto.cantidad) || 0;
-        const unitVal = parseFloat(producto.precioVenta) || 0;
-        const totalConIgv = roundSUNAT(qty * unitVal);
-        const baseGravada = roundSUNAT(totalConIgv / 1.18);
-        const igv = roundSUNAT(totalConIgv - baseGravada);
+        const baseGravada = calcBaseGravada(producto.cantidad, producto.precioVenta);
+        const igv = calcIgv(baseGravada);
+        const totalConIgv = new Decimal(baseGravada).plus(igv).toDecimalPlaces(2, Decimal.ROUND_DOWN).toNumber();
 
         return {
           N_COMPROBANTE: formData.comprobanteNumero.trim(),
           CODIGO: producto.codigo,
           PRODUCTO: producto.producto,
           CANTIDAD: producto.cantidad.toString(),
-          PRECIO_VENTA: unitVal.toFixed(6), // Valor Unitario con IGV (6 decimales)
-          TOTAL_CON_IGV: totalConIgv.toFixed(2),  // Total con IGV (2 decimales)
+          PRECIO_VENTA: truncatePrice6(producto.precioVenta).toFixed(6), // Valor Unitario sin IGV (6 decimales)
+          TOTAL_CON_IGV: totalConIgv.toFixed(2),  // Total con IGV (base + IGV)
           BASE_GRAVADA: baseGravada.toFixed(2), // Base gravada sin IGV (2 decimales)
           IGV: igv.toFixed(2)
         };
@@ -1267,9 +1294,10 @@ export default function CrearVentaPage() {
                         onChange={handleProductoChange}
                         step="0.000001"
                         min="0"
+                        placeholder="Ej: 28.39"
                         className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002D5A] focus:border-[#002D5A] transition-all text-sm text-gray-900"
                       />
-                      <p className="text-[10px] text-gray-500 mt-1">Precio con IGV incluido</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Precio sin IGV (hasta 6 decimales para precisión)</p>
                     </div>
 
                     {/* Fila 2 - Segunda columna */}
@@ -1342,12 +1370,9 @@ export default function CrearVentaPage() {
                             const isEditing = editingProductoId === producto.id;
                             const displayProd = isEditing ? editingProducto : producto;
 
-                            // Cálculos de línea
-                            const qty = parseFloat(displayProd.cantidad) || 0;
-                            const unit = parseFloat(displayProd.precioVenta) || 0;
-                            const totalConIgv = roundSUNAT(qty * unit);
-                            const subtotal = roundSUNAT(totalConIgv / 1.18);
-                            const igv = roundSUNAT(totalConIgv - subtotal);
+                            // Cálculos de línea con precisión: base truncada, IGV truncado
+                            const subtotal = calcBaseGravada(displayProd.cantidad, displayProd.precioVenta);
+                            const igv = calcIgv(subtotal);
 
                             return (
                               <tr key={producto.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
@@ -1427,10 +1452,10 @@ export default function CrearVentaPage() {
                                   )}
                                 </td>
 
-                                {/* IGV (18%) - Calculado automáticamente */}
+                                {/* IGV (18%) - 18% de la base gravada */}
                                 <td className="px-3 py-2 whitespace-nowrap text-center text-[10px] text-gray-700">S/ {igv.toFixed(2)}</td>
 
-                                {/* TOTAL - Base Gravada (sin IGV) */}
+                                {/* TOTAL - Base Gravada (cantidad × precio sin IGV) */}
                                 <td className="px-3 py-2 whitespace-nowrap text-center text-[10px] font-bold text-gray-900 bg-gray-50/50">S/ {subtotal.toFixed(2)}</td>
 
                                 {/* ACCIONES */}
