@@ -876,27 +876,27 @@ export default function AsistenciasPage() {
                       <input type="file" accept=".xls,.xlsx" onChange={handleFileUpload} className="hidden" />
                     </label>
                     {excelData.length > 0 && (
-                      <button
-                        onClick={() => setShowModal(true)}
-                        className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-                        title="Guardar"
-                        style={{ fontFamily: "var(--font-poppins)" }}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
+                        <button
+                          onClick={() => setShowModal(true)}
+                          className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Guardar"
+                          style={{ fontFamily: "var(--font-poppins)" }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
                     )}
-                    <button
-                      onClick={handleClearTable}
-                      className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-                      title="Limpiar Tabla"
-                      style={{ fontFamily: "var(--font-poppins)" }}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
+                        <button
+                          onClick={handleClearTable}
+                          className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Limpiar Tabla"
+                          style={{ fontFamily: "var(--font-poppins)" }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
                   </div>
                 </div>
 
@@ -963,8 +963,8 @@ export default function AsistenciasPage() {
                             </option>
                           ))}
                         </select>
-                      </div>
                     </div>
+                  </div>
                   </div>
 
                   <div className="bg-gray-50 rounded-xl border border-gray-200 p-3 shadow-sm">
@@ -988,9 +988,9 @@ export default function AsistenciasPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-yellow-800">Inasistencias</span>
                           <span className="text-base font-bold text-yellow-900">{inasistencias}</span>
-                        </div>
                       </div>
                     </div>
+                  </div>
                   </div>
 
                   <div className="bg-gray-50 rounded-xl border border-gray-200 p-3 shadow-sm">
@@ -1176,9 +1176,9 @@ export default function AsistenciasPage() {
                       </div>
                     );
                   })()}
+                    </div>
                   </div>
                 </div>
-              </div>
 
               {/* Historial de Cargas - Debajo de la tabla y métricas, ancho completo - Siempre visible */}
               <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 shadow-sm mt-4">

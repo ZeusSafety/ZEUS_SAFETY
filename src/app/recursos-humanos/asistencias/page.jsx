@@ -18,15 +18,13 @@ export default function AsistenciasPage() {
   const [dashboardData, setDashboardData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState({ registradoPor: "", area: "" });
+  const [modalData, setModalData] = useState({ periodo: "", registradoPor: "", area: "" });
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedNombre, setSelectedNombre] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
   const [historialCargas, setHistorialCargas] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [tablaLimpiada, setTablaLimpiada] = useState(false);
-  const itemsPerPage = 15;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -95,9 +93,9 @@ export default function AsistenciasPage() {
     }
   }, [historialCargas, excelData.length, loadingData, tablaLimpiada]);
 
-  // Resetear página cuando cambian los filtros
+  // Cuando cambian los filtros, en el futuro se podrían resetear estados adicionales
   useEffect(() => {
-    setCurrentPage(1);
+    // Sin paginación: no es necesario actualizar nada por ahora
   }, [selectedYear, selectedMonth, selectedNombre]);
 
   const loadDashboardData = async () => {
@@ -167,6 +165,7 @@ export default function AsistenciasPage() {
             const registradoPor = item.registrado_por || item.REGISTRADO_POR || item.registradoPor || null;
             const area = item.area || item.AREA || item.Area || null;
             const pdfReporte = item.pdf_reporte || item.PDF_REPORTE || item.pdfReporte || null;
+            const periodo = item.periodo || item.PERIODO || null;
             
             // Si el dashboard no tiene estos campos, usar los del historial local
             const localData = historialLocalMap[item.id_registro] || {};
@@ -175,6 +174,7 @@ export default function AsistenciasPage() {
               id_registro: item.id_registro,
               registrado_por: registradoPor || localData.registrado_por || null,
               area: area || localData.area || null,
+              periodo: periodo || localData.periodo || null,
               pdf_reporte: pdfReporte || localData.pdf_reporte || null,
             };
           }
@@ -359,7 +359,7 @@ export default function AsistenciasPage() {
   };
 
   const handleGuardar = async () => {
-    if (!modalData.registradoPor || !modalData.area) {
+    if (!modalData.periodo || !modalData.registradoPor || !modalData.area) {
       showNotification("Por favor complete todos los campos", "error");
       return;
     }
@@ -378,6 +378,7 @@ export default function AsistenciasPage() {
       formData.append("file", pdfFile);
       formData.append("registrado_por", modalData.registradoPor);
       formData.append("area", modalData.area);
+      formData.append("periodo", modalData.periodo);
       formData.append("asistencias", JSON.stringify(excelData));
 
       const token = localStorage.getItem("token");
@@ -442,6 +443,7 @@ export default function AsistenciasPage() {
           id_registro: idTemporal,
           registrado_por: modalData.registradoPor,
           area: modalData.area,
+          periodo: modalData.periodo,
           pdf_reporte: result.url || null,
         };
         
@@ -451,7 +453,7 @@ export default function AsistenciasPage() {
         
         showNotification("Datos guardados correctamente (ID temporal)", "success");
         setExcelData([]);
-        setModalData({ registradoPor: "", area: "" });
+        setModalData({ periodo: "", registradoPor: "", area: "" });
         setShowModal(false);
         loadDashboardData();
         return;
@@ -472,6 +474,7 @@ export default function AsistenciasPage() {
         id_registro: idRegistro,
         registrado_por: modalData.registradoPor,
         area: modalData.area,
+        periodo: modalData.periodo,
         pdf_reporte: result.url || null,
       };
       
@@ -486,7 +489,7 @@ export default function AsistenciasPage() {
       
       showNotification("Datos guardados correctamente", "success");
       setExcelData([]);
-      setModalData({ registradoPor: "", area: "" });
+      setModalData({ periodo: "", registradoPor: "", area: "" });
       setShowModal(false);
       loadDashboardData();
       // NO llamar loadHistorialCargas aquí porque ya actualizamos el historial arriba
@@ -565,7 +568,6 @@ export default function AsistenciasPage() {
     setSelectedYear(null);
     setSelectedMonth(null);
     setSelectedNombre(null);
-    setCurrentPage(1);
     setTablaLimpiada(true); // Marcar que la tabla fue limpiada manualmente
     showNotification("Tabla limpiada", "success");
   };
@@ -614,7 +616,6 @@ export default function AsistenciasPage() {
           setSelectedYear(null);
           setSelectedMonth(null);
           setSelectedNombre(null);
-          setCurrentPage(1);
           setTablaLimpiada(false);
           
           setExcelData(excelDataFormatted);
@@ -641,7 +642,6 @@ export default function AsistenciasPage() {
       setSelectedYear(null);
       setSelectedMonth(null);
       setSelectedNombre(null);
-      setCurrentPage(1);
       setTablaLimpiada(false); // Resetear flag al cargar un historial
 
       setExcelData(excelDataFormatted);
@@ -1048,7 +1048,7 @@ export default function AsistenciasPage() {
 
               <div className="lg:col-span-9">
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
-                  <div className="overflow-x-auto justify-center text-center">
+                  <div className="overflow-x-auto justify-center text-center max-h-[600px] overflow-y-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-gradient-to-r from-blue-700 to-blue-800 border-b-2 border-blue-900">
@@ -1082,17 +1082,18 @@ export default function AsistenciasPage() {
                         {(() => {
                           // Filtrar solo días laborables (lunes a sábado) basándose en la fecha
                           // Si la entrada está vacía, es inasistencia (feriado o no registró)
-                          const dataFiltrada = filteredData.filter((d) => {
+                          let dataFiltrada = filteredData.filter((d) => {
                             if (!d.fecha) return false;
                             const dayName = getDayName(d.fecha);
                             // Omitir domingos
                             return dayName !== "Domingo";
                           });
 
-                          const totalPages = Math.ceil(dataFiltrada.length / itemsPerPage);
-                          const startIndex = (currentPage - 1) * itemsPerPage;
-                          const endIndex = startIndex + itemsPerPage;
-                          const dataPaginada = dataFiltrada.slice(startIndex, endIndex);
+                          // Ordenar por fecha ascendente (del 1 al 31)
+                          dataFiltrada = dataFiltrada.sort((a, b) => {
+                            if (!a.fecha || !b.fecha) return 0;
+                            return new Date(a.fecha) - new Date(b.fecha);
+                          });
 
                           if (dataFiltrada.length === 0) {
                             return (
@@ -1104,7 +1105,7 @@ export default function AsistenciasPage() {
                             );
                           }
 
-                          return dataPaginada.map((d, index) => {
+                          return dataFiltrada.map((d, index) => {
                             // Si no hay entrada, es inasistencia (No Registrado)
                             const estado = getEstadoEntrada(d.hora_entrada, d.fecha);
                             const minutosTardanza = d.hora_entrada ? calcularMinutosTardanza(d.hora_entrada) : 0;
@@ -1148,62 +1149,9 @@ export default function AsistenciasPage() {
                     </table>
                   </div>
 
-                  {/* Paginación */}
-                  {(() => {
-                    // Filtrar solo días laborables (lunes a sábado) basándose en la fecha
-                    const dataFiltrada = filteredData.filter((d) => {
-                      if (!d.fecha) return false;
-                      const dayName = getDayName(d.fecha);
-                      // Omitir domingos
-                      return dayName !== "Domingo";
-                    });
-                    const totalPages = Math.ceil(dataFiltrada.length / itemsPerPage);
-
-                    if (totalPages <= 1) return null;
-
-                    return (
-                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                        <button
-                          onClick={() => setCurrentPage(1)}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                          style={{ fontFamily: "var(--font-poppins)" }}
-                        >
-                          «
-                        </button>
-                        <button
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                          style={{ fontFamily: "var(--font-poppins)" }}
-                        >
-                          &lt;
-                        </button>
-                        <span className="text-xs text-gray-700 font-semibold" style={{ fontFamily: "var(--font-poppins)" }}>
-                          Página {currentPage} de {totalPages}
-                        </span>
-                        <button
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                          style={{ fontFamily: "var(--font-poppins)" }}
-                        >
-                          &gt;
-                        </button>
-                        <button
-                          onClick={() => setCurrentPage(totalPages)}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                          style={{ fontFamily: "var(--font-poppins)" }}
-                        >
-                          »
-                        </button>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
-              </div>
+            </div>
 
               {/* Historial de Cargas - Debajo de la tabla y métricas, ancho completo - Siempre visible */}
               <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 shadow-sm mt-4">
@@ -1216,16 +1164,13 @@ export default function AsistenciasPage() {
                       // Buscar en el orden correcto: primero registrado_por (como se guarda), luego variantes
                       const registradoPor = registro.registrado_por || registro.REGISTRADO_POR || registro.registradoPor || null;
                       const area = registro.area || registro.AREA || null;
-                      
-                      // Debug: ver qué tiene el registro
-                      if (index === 0) {
-                        console.log("Primer registro del historial:", registro);
-                      }
+                      const periodo = registro.periodo || registro.PERIODO || null;
+
                       return (
                         <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarHistorial(registro.id_registro)}>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
-                              #{String(registro.id_registro).slice(-6)}
+                              {periodo || `#${String(registro.id_registro).slice(-6)}`}
                             </p>
                             <p className="text-xs text-gray-600 truncate mt-1" style={{ fontFamily: "var(--font-poppins)" }}>
                               {registradoPor || "Sin especificar"}
@@ -1292,6 +1237,17 @@ export default function AsistenciasPage() {
               </button>
             </div>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Periodo</label>
+                <input
+                  type="text"
+                  value={modalData.periodo}
+                  onChange={(e) => setModalData({ ...modalData, periodo: e.target.value })}
+                  className="w-full px-3 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  style={{ fontFamily: "var(--font-poppins)" }}
+                  placeholder="Ej: Febrero 2026"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Registrado Por</label>
                 <input

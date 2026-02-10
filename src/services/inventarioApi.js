@@ -149,9 +149,26 @@ export async function insertarNumeroInventario(data) {
 // Obtener ID de inventario por nombre
 export async function obtenerIdInventario(nombre) {
   try {
-    const inventarios = await listarInventarios();
-    const inventario = inventarios.find((inv) => inv.NOMBRE === nombre);
-    return inventario?.ID || null;
+    const resp = await listarInventarios();
+
+    // La API de backend devuelve un objeto con { success, inventarios, ... }
+    // pero por compatibilidad también soportamos otros formatos.
+    let inventarios = [];
+    if (Array.isArray(resp)) {
+      inventarios = resp;
+    } else if (resp && Array.isArray(resp.inventarios)) {
+      inventarios = resp.inventarios;
+    } else if (resp && Array.isArray(resp.data)) {
+      inventarios = resp.data;
+    }
+
+    const inventario = inventarios.find(
+      (inv) =>
+        inv.numero_inventario === nombre ||
+        inv.NOMBRE === nombre
+    );
+
+    return inventario?.id || inventario?.ID || null;
   } catch (error) {
     console.error("Error obteniendo ID de inventario:", error);
     return null;
@@ -241,4 +258,77 @@ export async function subirArchivo(file, folderBucket = "inventario_conteo") {
     const data = await responseDirect.json();
     return data.url;
   }
+}
+
+// ========== NUEVOS MÉTODOS DEL CÓDIGO HTML ==========
+
+// Asignar inventario
+export async function asignarInventario(data) {
+  return post("asignar_inventario", data);
+}
+
+// Unir colaborador a inventario
+export async function unirColaborador(data) {
+  return post("unir_colaborador", data);
+}
+
+// Cerrar inventario
+export async function cerrarInventario(data) {
+  return post("cerrar_inventario", data);
+}
+
+// Obtener inventario activo
+export async function obtenerInventarioActivo() {
+  return get("obtener_inventario_activo");
+}
+
+// Iniciar conteo
+export async function iniciarConteo(data) {
+  return post("iniciar_conteo", data);
+}
+
+// Obtener detalle de conteo
+export async function obtenerDetalleConteo(conteoId) {
+  return get("obtener_detalle_conteo", { conteo_id: conteoId });
+}
+
+// Actualizar masivo (cantidades y unidades de medida)
+export async function actualizarMasivo(data) {
+  return post("actualizar_masivo", data);
+}
+
+// Finalizar conteo
+export async function finalizarConteo(data) {
+  return post("finalizar_conteo", data);
+}
+
+// Cargar Excel de emergencia
+export async function cargarExcelEmergencia(formData) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Token de autenticación no encontrado.");
+  }
+
+  return request(`?method=cargar_excel_emergencia`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    body: formData,
+  });
+}
+
+// Listar conteos Callao
+export async function listarConteosCallao(inventarioId) {
+  return get("listar_conteos_callao", { inventario_id: inventarioId });
+}
+
+// Listar conteos Malvinas
+export async function listarConteosMalvinas(inventarioId) {
+  return get("listar_conteos_malvinas", { inventario_id: inventarioId });
+}
+
+// Listar productos de inventario
+export async function listarProductosInventario() {
+  return get("listar_productos_inventario");
 }

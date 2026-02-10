@@ -165,6 +165,7 @@ export default function RegistroImportacionesPage() {
   const [mostrarModalPreview, setMostrarModalPreview] = useState(false);
   const [previewHTML, setPreviewHTML] = useState("");
   const [generandoPDF, setGenerandoPDF] = useState(false);
+  const [registroCompletado, setRegistroCompletado] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -997,6 +998,9 @@ export default function RegistroImportacionesPage() {
 
   // Registrar importación después de generar el PDF
   const registrarImportacionConPDF = async () => {
+    // Evitar descargas/registros múltiples
+    if (generandoPDF || registroCompletado) return;
+
     try {
       setGenerandoPDF(true);
 
@@ -1010,6 +1014,20 @@ export default function RegistroImportacionesPage() {
       }
 
       const { blob } = pdfResult;
+
+      // Disparar descarga local del PDF (una sola vez en este flujo)
+      try {
+        const urlDescarga = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = urlDescarga;
+        link.download = `Ficha_Importacion_${formData.numeroDespacho || "sin_numero"}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(urlDescarga);
+      } catch (e) {
+        console.warn("No se pudo iniciar la descarga automática del PDF:", e);
+      }
 
       const token = getAuthToken();
       if (!token) {
@@ -1084,6 +1102,7 @@ export default function RegistroImportacionesPage() {
           // El backend devuelve {"message": "Registro exitoso", "url_archivo": "..."}
           if (result.message === "Registro exitoso" || result.status === "success") {
             alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.\nURL del PDF: " + (result.url_archivo || "N/A"));
+            setRegistroCompletado(true);
             setMostrarModalPreview(false);
             router.push("/importacion");
           } else {
@@ -1642,6 +1661,8 @@ export default function RegistroImportacionesPage() {
         secondaryButtonText="Cancelar"
         onPrimaryButtonClick={registrarImportacionConPDF}
         onSecondaryButtonClick={() => setMostrarModalPreview(false)}
+        primaryButtonDisabled={generandoPDF || registroCompletado}
+        primaryButtonLoading={generandoPDF}
         hideFooter={false}
       >
         <div className="w-full h-full flex flex-col">

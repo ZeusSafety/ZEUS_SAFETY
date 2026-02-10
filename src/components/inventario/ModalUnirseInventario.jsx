@@ -19,10 +19,20 @@ export function ModalUnirseInventario({ isOpen, onClose, onSuccess }) {
     try {
       setLoading(true);
       const data = await inventarioApi.listarInventarios();
-      setInventarios(data || []);
+      // Asegurarse de que siempre sea un array
+      if (Array.isArray(data)) {
+        setInventarios(data);
+      } else if (data && Array.isArray(data.data)) {
+        setInventarios(data.data);
+      } else if (data && Array.isArray(data.inventarios)) {
+        setInventarios(data.inventarios);
+      } else {
+        setInventarios([]);
+      }
     } catch (error) {
       console.error("Error cargando inventarios:", error);
       alert("Error al cargar inventarios: " + error.message);
+      setInventarios([]);
     } finally {
       setLoading(false);
     }
@@ -36,7 +46,9 @@ export function ModalUnirseInventario({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    const inventario = inventarios.find((inv) => inv.NOMBRE === selectedInventario);
+    const inventario = Array.isArray(inventarios) 
+      ? inventarios.find((inv) => (inv.NOMBRE || inv.nombre) === selectedInventario)
+      : null;
     
     if (onSuccess) {
       onSuccess({
@@ -80,11 +92,15 @@ export function ModalUnirseInventario({ isOpen, onClose, onSuccess }) {
                 disabled={loading}
               >
                 <option value="">Seleccione un inventario...</option>
-                {inventarios.map((inv) => (
-                  <option key={inv.ID} value={inv.NOMBRE}>
-                    {inv.NOMBRE} - {inv.AREA} - {inv.FECHA_REGISTRO}
-                  </option>
-                ))}
+                {Array.isArray(inventarios) && inventarios.length > 0 ? (
+                  inventarios.map((inv) => (
+                    <option key={inv.ID || inv.id} value={inv.NOMBRE || inv.nombre}>
+                      {inv.NOMBRE || inv.nombre} - {inv.AREA || inv.area} - {inv.FECHA_REGISTRO || inv.fecha_registro}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Cargando inventarios...</option>
+                )}
               </select>
             </div>
 

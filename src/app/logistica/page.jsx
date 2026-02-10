@@ -15,7 +15,7 @@ export default function LogisticaPage() {
     "ver-listados": false,
     "descuento-cajas-malvinas": false,
     "solicitudes-incidencias": false,
-    "inventario": false,
+    "Gestion-inventario": false,
     "gestion-movilidad": false,
     "gestion-permisos": false,
   });
@@ -232,8 +232,8 @@ export default function LogisticaPage() {
       ],
     },
     {
-      id: "inventario",
-      title: "Inventario",
+      id: "Gestion-inventario",
+      title: "Gestión de Inventario",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

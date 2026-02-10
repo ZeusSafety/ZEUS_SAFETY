@@ -29,9 +29,19 @@ export function ModalAsignarInventario({ isOpen, onClose, onSuccess }) {
   const cargarColaboradores = async () => {
     try {
       const data = await inventarioApi.colaboradoresInventario("INVENTARIO");
-      setColaboradores(data || []);
+      // Asegurarse de que siempre sea un array
+      if (Array.isArray(data)) {
+        setColaboradores(data);
+      } else if (data && Array.isArray(data.data)) {
+        setColaboradores(data.data);
+      } else if (data && Array.isArray(data.colaboradores)) {
+        setColaboradores(data.colaboradores);
+      } else {
+        setColaboradores([]);
+      }
     } catch (error) {
       console.error("Error cargando colaboradores:", error);
+      setColaboradores([]);
     }
   };
 
@@ -48,7 +58,11 @@ export function ModalAsignarInventario({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    const personaNombre = persona === "Otro" ? personaOtro.trim() : colaboradores.find(c => c.ID === persona)?.NOMBRE || "";
+    const personaNombre = persona === "Otro" 
+      ? personaOtro.trim() 
+      : (Array.isArray(colaboradores) 
+          ? colaboradores.find(c => (c.ID || c.id) === persona)?.NOMBRE || colaboradores.find(c => (c.ID || c.id) === persona)?.nombre || ""
+          : "");
     
     if (!personaNombre) {
       alert("Seleccione o ingrese una persona autorizada");
@@ -155,11 +169,13 @@ export function ModalAsignarInventario({ isOpen, onClose, onSuccess }) {
                 required
               >
                 <option value="">Seleccione...</option>
-                {colaboradores.map((col) => (
-                  <option key={col.ID} value={col.ID}>
-                    {col.NOMBRE}
-                  </option>
-                ))}
+                {Array.isArray(colaboradores) && colaboradores.length > 0 ? (
+                  colaboradores.map((col) => (
+                    <option key={col.ID || col.id} value={col.ID || col.id}>
+                      {col.NOMBRE || col.nombre}
+                    </option>
+                  ))
+                ) : null}
                 <option value="Otro">Otro</option>
               </select>
             </div>

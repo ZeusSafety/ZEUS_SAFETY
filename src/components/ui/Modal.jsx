@@ -13,6 +13,8 @@ export default function Modal({
   onPrimaryButtonClick,
   onSecondaryButtonClick,
   hideFooter = false,
+  primaryButtonDisabled = false,
+  primaryButtonLoading = false,
 }) {
   useEffect(() => {
     if (isOpen) {
@@ -86,11 +88,19 @@ export default function Modal({
             {primaryButtonText && (
               <button
                 type="button"
-                onClick={onPrimaryButtonClick}
-                className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                onClick={primaryButtonDisabled ? undefined : onPrimaryButtonClick}
+                disabled={primaryButtonDisabled}
+                className={`px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200 flex items-center gap-2 ${
+                  primaryButtonDisabled ? "opacity-60 cursor-not-allowed hover:scale-100 hover:shadow-md" : ""
+                }`}
                 style={{ fontFamily: 'var(--font-poppins)' }}
               >
-                {primaryButtonText}
+                {primaryButtonLoading && (
+                  <span className="inline-flex">
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  </span>
+                )}
+                <span>{primaryButtonText}</span>
               </button>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "../../../components/context/AuthContext";
@@ -128,6 +128,7 @@ export default function CotizacionesPage() {
   const [dni, setDni] = useState("");
   const [cel, setCel] = useState("");
   const [campania, setCampania] = useState("");
+  const [delivery, setDelivery] = useState("");
   const [buscandoRuc, setBuscandoRuc] = useState(false);
   // Inicializar fecha de emisión con la fecha actual en formato yyyy-mm-dd para el input type="date"
   const getCurrentDate = () => {
@@ -192,6 +193,7 @@ export default function CotizacionesPage() {
   const [previewCodigoTemporal, setPreviewCodigoTemporal] = useState("");
   const [previewSiguienteNumero, setPreviewSiguienteNumero] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registroCompletado, setRegistroCompletado] = useState(false);
   // Datos de prueba para la tabla de productos
   const [productosLista, setProductosLista] = useState([
 
@@ -737,6 +739,12 @@ export default function CotizacionesPage() {
 
   // Calcular total general
   const totalGeneral = productosLista.reduce((sum, prod) => sum + (prod.subtotal || 0), 0);
+  const deliveryMonto = useMemo(() => {
+    const n = parseFloat(delivery);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return n;
+  }, [delivery]);
+  const totalConDelivery = totalGeneral + deliveryMonto;
 
   const handleAgregarProducto = () => {
     if (!producto || !codigo || cantidad <= 0 || !precioVenta) {
@@ -1298,10 +1306,16 @@ export default function CotizacionesPage() {
             </tbody>
         </table>
         <!-- Total -->
-        <div class="total-section">
-            <div class="total-box">
-                <div class="total-label">TOTAL S/ :</div>
-                <div class="total-value">S/ ${totalGeneral.toFixed(2)}</div>
+        <div class="total-section" style="display:flex; justify-content:flex-end; margin-top: 5px; margin-bottom: 20px;">
+            <div style="display:flex; flex-direction:column; gap:4px; width: 240px;">
+                <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
+                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">DELIVERY S/ :</div>
+                    <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
+                </div>
+                <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
+                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
+                    <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
+                </div>
             </div>
         </div>
         <!-- Tabla de Bancos -->
@@ -1443,7 +1457,7 @@ export default function CotizacionesPage() {
     }
 
     try {
-      if (isSubmitting) return;
+      if (isSubmitting || registroCompletado) return;
       setIsSubmitting(true);
 
       const token = getAuthToken();
@@ -1470,7 +1484,7 @@ export default function CotizacionesPage() {
       formData.append("nombre_cliente", cliente || '');
       formData.append("region", regionSeleccionada?.REGION || region || '');
       formData.append("distrito", distritoSeleccionado?.DISTRITO || distrito || '');
-      formData.append("monto_total", totalGeneral);
+      formData.append("monto_total", totalConDelivery);
       formData.append("atendido_por", atendidoPor || '');
 
       // Datos extra para completar posibles_clientes (se guardan en posibles_clientes por backend)
@@ -1488,6 +1502,7 @@ export default function CotizacionesPage() {
       // El archivo PDF físico que el backend espera como "pdf_file"
       formData.append("pdf_file", pdfBlob, `${codigoTemporal}.pdf`);
       formData.append("campania", campania || '');
+      formData.append("delivery", delivery || '');
 
       const API_URL = "https://cotizaciones2026-2946605267.us-central1.run.app/cotizacion";
 
@@ -1509,10 +1524,15 @@ export default function CotizacionesPage() {
 
         // --- PASO D: Descargar para el usuario ---
         // Opcional: Puedes descargar el blob que ya tenemos para no volver a generarlo
+        const objectUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(pdfBlob);
+        link.href = objectUrl;
         link.download = `Cotizacion_${numeroFinal}.pdf`;
         link.click();
+        URL.revokeObjectURL(objectUrl);
+
+        // Bloquear re-descarga/registro (1 sola vez por previsualización)
+        setRegistroCompletado(true);
 
         // Actualizar localStorage
         // Si el código viene en formato C001-00000001, extraemos el correlativo; si no, usamos el siguienteNumero calculado
@@ -1557,6 +1577,7 @@ export default function CotizacionesPage() {
     const siguienteNumero = ultimoNumero + 1;
     const codigoTemporal = `C001-${String(siguienteNumero).padStart(8, '0')}`;
 
+    setRegistroCompletado(false);
     setPreviewCodigoTemporal(codigoTemporal);
     setPreviewSiguienteNumero(siguienteNumero);
     setPreviewHtml(generarHTMLCotizacion(codigoTemporal));
@@ -1730,15 +1751,31 @@ export default function CotizacionesPage() {
                       placeholder="Celular del cliente"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">ORIGEN DEL CLIENTE:</label>
-                    <input
-                      type="text"
-                      value={campania}
-                      onChange={(e) => setCampania(e.target.value)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                      placeholder="Codigo Ejemplo CM001 o OR001"
-                    />
+                  <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">ORIGEN DEL CLIENTE:</label>
+                        <input
+                          type="text"
+                          value={campania}
+                          onChange={(e) => setCampania(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          placeholder="Codigo Ejemplo CM001 o OR001"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Delivery:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={delivery}
+                          onChange={(e) => setDelivery(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
+                          placeholder="Monto de delivery"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2211,9 +2248,11 @@ export default function CotizacionesPage() {
                       </table>
                     </div>
                     <div className="bg-slate-200 px-3 py-2.5 flex items-center justify-between border-t-2 border-slate-300">
-                      <div></div>
+                      <div className="text-[11px] font-bold text-gray-900">
+                        DELIVERY: S/ {deliveryMonto.toFixed(2)}
+                      </div>
                       <p className="text-[11px] font-bold text-gray-900">
-                        TOTAL: S/ {totalGeneral.toFixed(2)}
+                        TOTAL: S/ {totalConDelivery.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -2272,7 +2311,7 @@ export default function CotizacionesPage() {
                       <button
                         type="button"
                         onClick={async () => {
-                          if (isSubmitting) return;
+                          if (isSubmitting || registroCompletado) return;
                           if (!previewCodigoTemporal || !previewSiguienteNumero) {
                             alert("No se pudo preparar la previsualización. Intente nuevamente.");
                             return;
@@ -2282,9 +2321,19 @@ export default function CotizacionesPage() {
                             siguienteNumero: previewSiguienteNumero,
                           });
                         }}
-                        className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200"
+                        disabled={isSubmitting || registroCompletado}
+                        className={`px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200 flex items-center gap-2 ${
+                          isSubmitting || registroCompletado ? "opacity-60 cursor-not-allowed hover:scale-100 hover:shadow-md" : ""
+                        }`}
                       >
-                        {isSubmitting ? "Creando PDF..." : "Registrar"}
+                        {isSubmitting && (
+                          <span className="inline-flex">
+                            <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          </span>
+                        )}
+                        <span>
+                          {registroCompletado ? "Descargado" : (isSubmitting ? "Descargando..." : "Registrar")}
+                        </span>
                       </button>
                     </div>
                   </div>
