@@ -20,7 +20,7 @@ export default function AsistenciasPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({ periodo: "", registradoPor: "", area: "" });
   const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null); // Nombre del mes en español (ej: "Febrero")
   const [selectedNombre, setSelectedNombre] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
   const [historialCargas, setHistorialCargas] = useState([]);
@@ -855,6 +855,19 @@ export default function AsistenciasPage() {
     showNotification("Tabla limpiada", "success");
   };
 
+  // ================== FILTRO DE HISTORIAL POR MES (USANDO PERIODO, CASE-INSENSITIVE) ==================
+  const historialFiltradoPorMes = useMemo(() => {
+    if (!selectedMonth) return historialCargas;
+
+    const mesBuscado = String(selectedMonth).toLowerCase(); // ej: "febrero"
+
+    return historialCargas.filter((registro) => {
+      const periodo = (registro.periodo || registro.PERIODO || "").toString().toLowerCase();
+      // Coincide si el nombre del mes aparece en cualquier parte del periodo, sin importar mayúsculas/minúsculas
+      return periodo.includes(mesBuscado);
+    });
+  }, [historialCargas, selectedMonth]);
+
   const handleCargarHistorial = async (idRegistro) => {
     try {
       setLoadingData(true);
@@ -1505,9 +1518,9 @@ export default function AsistenciasPage() {
                 <h3 className="text-base font-semibold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
                   Historial de Cargas
                 </h3>
-                {historialCargas.length > 0 ? (
+                {historialFiltradoPorMes.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {historialCargas.map((registro, index) => {
+                    {historialFiltradoPorMes.map((registro, index) => {
                       // Buscar en el orden correcto: primero registrado_por (como se guarda), luego variantes
                       const registradoPor = registro.registrado_por || registro.REGISTRADO_POR || registro.registradoPor || null;
                       const area = registro.area || registro.AREA || null;
@@ -1589,7 +1602,7 @@ export default function AsistenciasPage() {
                 <input
                   type="text"
                   value={modalData.periodo}
-                  onChange={(e) => setModalData({ ...modalData, periodo: e.target.value })}
+                  onChange={(e) => setModalData({ ...modalData, periodo: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
                   style={{ fontFamily: "var(--font-poppins)" }}
                   placeholder="Ej: Febrero 2026"
@@ -1600,7 +1613,7 @@ export default function AsistenciasPage() {
                 <input
                   type="text"
                   value={modalData.registradoPor}
-                  onChange={(e) => setModalData({ ...modalData, registradoPor: e.target.value })}
+                  onChange={(e) => setModalData({ ...modalData, registradoPor: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
                   style={{ fontFamily: "var(--font-poppins)" }}
                   placeholder="Nombre de la persona"

@@ -151,16 +151,33 @@ export default function ColaboradoresPage() {
       // id_colaborador va solo en la URL como query parameter
       const requestBody = modulosFormateados;
 
-      console.log("Enviando a update_modules:", {
-        url: url.toString(),
-        body: requestBody,
-        bodyStringified: JSON.stringify(requestBody),
-        modulosPermitidos: modulosPermitidos,
-        tipo_modulosPermitidos: typeof modulosPermitidos,
-        esArray: Array.isArray(modulosPermitidos),
-        id_colaborador: idColab,
-        tipo_id_colaborador: typeof idColab,
-        bodyType: Array.isArray(requestBody) ? "array" : typeof requestBody
+      // Log MUY detallado de lo que se está enviando
+      console.log("📤 ENVIANDO A UPDATE_MODULES - DETALLE COMPLETO:", {
+        url_completa: url.toString(),
+        metodo: "PUT",
+        id_colaborador_en_url: idColab,
+        id_colaborador_tipo: typeof idColab,
+        body_completo: requestBody,
+        body_stringified: JSON.stringify(requestBody),
+        cantidad_modulos: requestBody.length,
+        modulos_detalle: requestBody.map(m => ({
+          NOMBRE: m.NOMBRE,
+          ESTADO: m.ESTADO,
+          tipo_estado: typeof m.ESTADO
+        })),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Accept": "application/json"
+        }
+      });
+      
+      // Log adicional para debugging
+      console.log("🔍 VERIFICACIÓN PRE-ENVÍO:", {
+        todos_los_modulos_originales: modulosPermitidos,
+        modulos_activados: modulosPermitidos.filter(m => m.permitido === true).map(m => m.nombre),
+        modulos_desactivados: modulosPermitidos.filter(m => m.permitido !== true).map(m => m.nombre),
+        modulos_formateados_con_estado_1: requestBody.filter(m => m.ESTADO === "1").map(m => m.NOMBRE),
+        modulos_formateados_con_estado_0: requestBody.filter(m => m.ESTADO === "0").map(m => m.NOMBRE)
       });
 
       const response = await fetch(url.toString(), {
@@ -191,10 +208,61 @@ export default function ColaboradoresPage() {
         throw new Error(errorData.error || errorData.message || errorText || `Error ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log("📥 Respuesta RAW de update_modules:", {
+        status: response.status,
+        statusText: response.statusText,
+        responseText: responseText,
+        contentType: response.headers.get("content-type")
+      });
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("❌ Error al parsear respuesta JSON:", parseError);
+        console.error("Respuesta recibida (texto):", responseText);
+        throw new Error(`Error al procesar respuesta del servidor: ${responseText.substring(0, 100)}`);
+      }
+      
+      // Log detallado de la respuesta parseada
+      console.log("✅ Respuesta parseada de update_modules:", {
+        status: response.status,
+        data: data,
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        hasSuccess: data && typeof data === 'object' && 'success' in data,
+        hasError: data && typeof data === 'object' && 'error' in data,
+        hasMessage: data && typeof data === 'object' && 'message' in data,
+        id_colaborador_enviado: idColab,
+        modulos_enviados: requestBody.length,
+        modulos_detalle: requestBody
+      });
+      
+      // Verificar si la respuesta indica éxito
+      // Algunas APIs devuelven { success: true } o { message: "..." } o simplemente un objeto vacío
+      if (data && typeof data === 'object') {
+        if (data.success === false || (data.error && data.error !== null && data.error !== "")) {
+          console.error("⚠️ La API devolvió un error en la respuesta:", data);
+          throw new Error(data.error || data.message || "Error al actualizar módulos");
+        }
+        
+        // Si tiene success: true, está bien
+        if (data.success === true || data.message || (!data.error && !data.success)) {
+          console.log("✅ La API confirmó que se guardaron los módulos");
+        }
+      } else {
+        console.warn("⚠️ Respuesta inesperada de la API:", data);
+      }
+      
       return data;
     } catch (error) {
-      console.error("Error al actualizar módulos:", error);
+      console.error("❌ Error al actualizar módulos:", {
+        error: error,
+        message: error.message,
+        id_colaborador: idColaborador,
+        stack: error.stack
+      });
       throw error;
     }
   };
@@ -212,6 +280,42 @@ export default function ColaboradoresPage() {
     }
 
     try {
+      // Obtener el id_colaborador correcto - intentar desde selectedColaboradorCompleto primero
+      // Para usuarios nuevos, el ID_PERSONA puede no ser el mismo que id_colaborador
+      let idColaboradorFinal = null;
+      
+      if (selectedColaboradorCompleto) {
+        // Buscar id_colaborador en el objeto completo con múltiples variantes posibles
+        idColaboradorFinal = getValorColab(selectedColaboradorCompleto, [
+          "ID_COLABORADOR", 
+          "id_colaborador", 
+          "ID_COLAB", 
+          "id_colab",
+          "ID_COLABORADOR_ID",
+          "id_colaborador_id"
+        ], null);
+      }
+      
+      // Si no se encontró en el objeto completo, usar el id del selectedColaborador
+      if (!idColaboradorFinal) {
+        idColaboradorFinal = selectedColaborador.id;
+      }
+      
+      // Asegurar que sea un número válido
+      const idColabNum = typeof idColaboradorFinal === 'string' ? parseInt(idColaboradorFinal, 10) : idColaboradorFinal;
+      
+      if (!idColabNum || isNaN(idColabNum)) {
+        throw new Error("Error: No se pudo obtener un ID de colaborador válido");
+      }
+
+      console.log("🔍 ID Colaborador obtenido:", {
+        desdeCompleto: idColaboradorFinal !== selectedColaborador.id,
+        idColaboradorFinal: idColaboradorFinal,
+        idColabNum: idColabNum,
+        selectedColaboradorId: selectedColaborador.id,
+        selectedColaboradorCompleto: selectedColaboradorCompleto ? "existe" : "no existe"
+      });
+
       // Lista completa de todos los módulos posibles (según Postman)
       const todosLosModulos = [
         "MARKETING",
@@ -250,25 +354,136 @@ export default function ColaboradoresPage() {
       });
 
       console.log("📤 Módulos con estado a enviar:", JSON.stringify(modulosConEstado, null, 2));
-      console.log("👤 ID Colaborador:", selectedColaborador.id);
+      console.log("👤 ID Colaborador final a usar:", idColabNum);
 
       // Validar que haya módulos
       if (!Array.isArray(modulosConEstado) || modulosConEstado.length === 0) {
         throw new Error("Error: No hay módulos para actualizar");
       }
 
-      await actualizarModulos(selectedColaborador.id, modulosConEstado);
+      const resultadoGuardado = await actualizarModulos(idColabNum, modulosConEstado);
+      
+      console.log("💾 Resultado del guardado:", resultadoGuardado);
+
+      // Verificar que realmente se guardaron los permisos haciendo una petición de verificación
+      // Esperar un momento para que el backend procese
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Intentar verificar los permisos guardados
+      let permisosVerificados = false;
+      let usuarioParaVerificacion = selectedColaborador?.usuario || 
+        (selectedColaboradorCompleto ? getValorColab(selectedColaboradorCompleto, ["USUARIO", "usuario"], null) : null);
+      
+      if (usuarioParaVerificacion && usuarioParaVerificacion.trim() !== "") {
+        try {
+          const responseVerificacion = await fetch(
+            `https://api-login-accesos-2946605267.us-central1.run.app?metodo=get_permissions&user=${encodeURIComponent(usuarioParaVerificacion)}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+            }
+          );
+          
+          if (responseVerificacion.ok) {
+            const datosVerificacion = await responseVerificacion.json();
+            console.log("🔍 Verificación de permisos guardados:", {
+              usuario: usuarioParaVerificacion,
+              modulos_encontrados: datosVerificacion.modulos || [],
+              modulos_esperados: modulosConEstado.filter(m => m.permitido).map(m => m.nombre)
+            });
+            
+            // Verificar que los módulos que se activaron estén en la respuesta
+            const modulosActivados = modulosConEstado.filter(m => m.permitido).map(m => m.nombre.toUpperCase().trim());
+            const modulosEnRespuesta = Array.isArray(datosVerificacion.modulos) 
+              ? datosVerificacion.modulos.map(m => String(m.NOMBRE || m.nombre || "").toUpperCase().trim())
+              : [];
+            
+            console.log("🔍 COMPARACIÓN DETALLADA:", {
+              modulos_que_se_enviaron_activados: modulosActivados,
+              modulos_que_devuelve_get_permissions: modulosEnRespuesta,
+              respuesta_completa: datosVerificacion,
+              id_colaborador_usado: idColabNum,
+              usuario_para_verificacion: usuarioParaVerificacion
+            });
+            
+            const modulosFaltantes = modulosActivados.filter(m => !modulosEnRespuesta.includes(m));
+            
+            if (modulosFaltantes.length > 0) {
+              console.error("❌ ALERTA CRÍTICA: Los siguientes módulos NO se guardaron correctamente:", modulosFaltantes);
+              console.error("📋 Módulos que se intentaron activar:", modulosActivados);
+              console.error("📋 Módulos que devuelve la API:", modulosEnRespuesta);
+              console.error("⚠️ ESTO INDICA UN PROBLEMA EN EL BACKEND O BASE DE DATOS");
+              console.error("💡 El backend respondió 200 OK pero no guardó los datos en la BD");
+              
+              // Mostrar alerta visual al usuario
+              setNotification({
+                show: true,
+                message: `⚠️ ADVERTENCIA: Los módulos se enviaron pero no se guardaron. Módulos faltantes: ${modulosFaltantes.join(", ")}. Revise el backend/base de datos.`,
+                type: "error"
+              });
+              setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 6000);
+            } else {
+              console.log("✅ Verificación exitosa: Todos los módulos se guardaron correctamente");
+              permisosVerificados = true;
+            }
+          }
+        } catch (errorVerificacion) {
+          console.warn("⚠️ No se pudo verificar los permisos guardados:", errorVerificacion);
+        }
+      }
 
       setNotification({
         show: true,
-        message: "Módulos actualizados exitosamente",
-        type: "success"
+        message: permisosVerificados 
+          ? "Módulos actualizados y verificados exitosamente" 
+          : "Módulos actualizados exitosamente (verifique en la base de datos si persisten)",
+        type: permisosVerificados ? "success" : "success"
       });
-      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
+      setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 4000);
 
-      // Recargar permisos para asegurar sincronización
-      if (selectedColaborador.usuario) {
-        await fetchPermisos(selectedColaborador.usuario);
+      // Obtener el usuario antes de recargar (para usarlo después)
+      let usuarioParaPermisos = selectedColaborador?.usuario || null;
+      
+      // Si no está en selectedColaborador, intentar desde selectedColaboradorCompleto
+      if (!usuarioParaPermisos && selectedColaboradorCompleto) {
+        usuarioParaPermisos = getValorColab(selectedColaboradorCompleto, [
+          "USUARIO",
+          "usuario",
+          "Usuario",
+          "USER",
+          "user",
+          "User",
+          "LOGIN",
+          "login",
+          "Login"
+        ], null);
+      }
+
+      // Recargar la lista de colaboradores para obtener datos actualizados
+      // Esto asegura que cuando se abra el modal de nuevo, tenga los datos más recientes
+      await fetchColaboradores();
+      
+      console.log("🔄 Recargando permisos con usuario:", {
+        usuarioParaPermisos,
+        idColaborador: idColabNum,
+        desdeSelectedColaborador: selectedColaborador?.usuario || null,
+        desdeCompleto: selectedColaboradorCompleto ? getValorColab(selectedColaboradorCompleto, ["USUARIO", "usuario"], null) : null
+      });
+
+      // Recargar permisos si se encontró un usuario
+      // Nota: Si el usuario no tiene username, los permisos se guardaron correctamente
+      // pero no se pueden recargar aquí. Al cerrar y abrir el modal de nuevo, se cargarán correctamente
+      if (usuarioParaPermisos && usuarioParaPermisos.trim() !== "") {
+        try {
+          await fetchPermisos(usuarioParaPermisos);
+        } catch (permisosError) {
+          console.warn("⚠️ Error al recargar permisos (pero se guardaron correctamente):", permisosError);
+        }
+      } else {
+        console.warn("⚠️ No se pudo obtener el usuario para recargar permisos. Los permisos se guardaron correctamente. Cierre y abra el modal de nuevo para ver los cambios.");
       }
     } catch (error) {
       console.error("Error al guardar módulos:", error);

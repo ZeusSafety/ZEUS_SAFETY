@@ -1305,17 +1305,11 @@ export default function CotizacionesPage() {
                 `).join('')}
             </tbody>
         </table>
-        <!-- Total -->
+        <!-- Total (solo productos, sin delivery en la vista previa del PDF) -->
         <div class="total-section" style="display:flex; justify-content:flex-end; margin-top: 5px; margin-bottom: 20px;">
-            <div style="display:flex; flex-direction:column; gap:4px; width: 240px;">
-                <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
-                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">DELIVERY S/ :</div>
-                    <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
-                </div>
-                <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
-                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
-                    <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
-                </div>
+            <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
+                <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
+                <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${totalGeneral.toFixed(2)}</div>
             </div>
         </div>
         <!-- Tabla de Bancos -->
@@ -2246,14 +2240,6 @@ export default function CotizacionesPage() {
                           })}
                         </tbody>
                       </table>
-                    </div>
-                    <div className="bg-slate-200 px-3 py-2.5 flex items-center justify-between border-t-2 border-slate-300">
-                      <div className="text-[11px] font-bold text-gray-900">
-                        DELIVERY: S/ {deliveryMonto.toFixed(2)}
-                      </div>
-                      <p className="text-[11px] font-bold text-gray-900">
-                        TOTAL: S/ {totalConDelivery.toFixed(2)}
-                      </p>
                     </div>
                   </div>
                 )}
