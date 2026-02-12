@@ -690,36 +690,52 @@ export default function CotizacionesPage() {
       console.log("Valores finales - Cliente:", nombreCliente, "Dirección:", direccionCliente);
 
       // Llenar campos según el tipo de RUC
-      if (rucLength === 11) {
+      // Regla:
+      //  - RUC que inicia con 20 (11 dígitos): Empresa, NO se rellena DNI
+      //  - RUC que inicia con 10 (11 dígitos): Persona natural, se extrae DNI quitando
+      //    los 2 primeros dígitos y el último (ej: 10754715028 -> 75471502)
+      if (rucLength === 11 && rucTrimmed.startsWith("20")) {
         // RUC 20 - Empresa
         if (nombreCliente) {
           setCliente(nombreCliente);
-          console.log("Cliente establecido:", nombreCliente);
+          console.log("Cliente establecido (RUC 20):", nombreCliente);
         }
         if (direccionCliente) {
           setDireccion(direccionCliente);
-          console.log("Dirección establecida:", direccionCliente);
+          console.log("Dirección establecida (RUC 20):", direccionCliente);
         } else {
-          console.warn("No se encontró dirección en la respuesta de la API");
+          console.warn("No se encontró dirección en la respuesta de la API para RUC 20");
         }
         // NO rellenar DNI para RUC 20
         setDni("");
-      } else if (rucLength === 10) {
-        // RUC 10 - Persona natural
+      } else if (rucLength === 11 && rucTrimmed.startsWith("10")) {
+        // RUC 10 - Persona natural (11 dígitos que empiezan en 10)
         // Extraer DNI: borrar los 2 primeros dígitos y el último dígito
-        const rucSinPrimeros = rucTrimmed.substring(2); // Quita los 2 primeros
-        const dniExtraido = rucSinPrimeros.substring(0, rucSinPrimeros.length - 1); // Quita el último
+        const dniExtraido = rucTrimmed.substring(2, rucTrimmed.length - 1);
         setDni(dniExtraido);
 
         if (nombreCliente) {
           setCliente(nombreCliente);
-          console.log("Cliente establecido:", nombreCliente);
+          console.log("Cliente establecido (RUC 10):", nombreCliente);
         }
         if (direccionCliente) {
           setDireccion(direccionCliente);
-          console.log("Dirección establecida:", direccionCliente);
+          console.log("Dirección establecida (RUC 10):", direccionCliente);
         } else {
-          console.warn("No se encontró dirección en la respuesta de la API");
+          console.warn("No se encontró dirección en la respuesta de la API para RUC 10");
+        }
+      } else {
+        // Comportamiento por defecto para otros casos:
+        // rellenar cliente y dirección si existen, sin tocar el DNI
+        if (nombreCliente) {
+          setCliente(nombreCliente);
+          console.log("Cliente establecido (otro RUC):", nombreCliente);
+        }
+        if (direccionCliente) {
+          setDireccion(direccionCliente);
+          console.log("Dirección establecida (otro RUC):", direccionCliente);
+        } else if (nombreCliente) {
+          console.warn("Se encontró el cliente pero no la dirección para un RUC no 10/20 estándar");
         }
       }
 
@@ -1305,11 +1321,17 @@ export default function CotizacionesPage() {
                 `).join('')}
             </tbody>
         </table>
-        <!-- Total (solo productos, sin delivery en la vista previa del PDF) -->
+        <!-- Totales (incluye delivery en la vista previa del PDF) -->
         <div class="total-section" style="display:flex; justify-content:flex-end; margin-top: 5px; margin-bottom: 20px;">
-            <div class="total-box" style="display:flex; border: 1px solid #000; width: 240px;">
-                <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
-                <div class="total-value" style="width: 95px; padding: 5px; color: #000000;">S/ ${totalGeneral.toFixed(2)}</div>
+            <div style="display:flex; gap: 8px;">
+                <div class="total-box" style="display:flex; border: 1px solid #000; width: 200px;">
+                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">DELIVERY S/ :</div>
+                    <div class="total-value" style="width: 80px; padding-bottom: 8px; padding-top: 8px; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
+                </div>
+                <div class="total-box" style="display:flex; border: 1px solid #000; width: 190px;">
+                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
+                    <div class="total-value" style="width: 80px; padding-bottom: 8px; padding-top: 8px; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
+                </div>
             </div>
         </div>
         <!-- Tabla de Bancos -->
@@ -1754,11 +1776,11 @@ export default function CotizacionesPage() {
                           value={campania}
                           onChange={(e) => setCampania(e.target.value)}
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm text-gray-900 bg-white"
-                          placeholder="Codigo Ejemplo CM001 o OR001"
+                          placeholder="Codigo Ejemplo CM001 o ORGANICO"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Delivery:</label>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">DELIVERY:</label>
                         <input
                           type="number"
                           min="0"
@@ -2240,6 +2262,27 @@ export default function CotizacionesPage() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+                    {/* Totales debajo de la tabla de productos */}
+                    <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+                      <div className="flex flex-wrap gap-3 justify-end">
+                      <div className="flex items-center border border-gray-300 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800">
+                          <span className="mr-2 text-[10px] uppercase tracking-wider text-gray-500">
+                            Delivery: 
+                          </span>
+                          <span className="text-sm text-blue-700">
+                            S/ {deliveryMonto.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center border border-gray-300 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800">
+                          <span className="mr-2 text-[10px] uppercase tracking-wider text-gray-500">
+                            Total: 
+                          </span>
+                          <span className="text-sm text-blue-700">
+                            S/ {totalConDelivery.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
