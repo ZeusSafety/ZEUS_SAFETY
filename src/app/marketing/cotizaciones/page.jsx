@@ -2199,13 +2199,13 @@ export default function CotizacionesPage() {
                                       className="w-full px-2 py-1 border-2 border-blue-300 rounded-lg text-[11px] font-medium text-gray-900 focus:border-blue-500 outline-none"
                                     />
                                   ) : (
-                                    <span className="text-[11px] text-gray-700">S/ {(prod.precioUnit || 0).toFixed(2)}</span>
+                                    <span className="text-[11px] text-gray-700">S/ {(parseFloat(prod.precioUnit) || 0).toFixed(2)}</span>
                                   )}
                                 </td>
                                 
                                 {/* SUBTOTAL */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
-                                  <span className="text-[11px] text-gray-700 font-semibold">S/ {(displayProd.subtotal || 0).toFixed(2)}</span>
+                                  <span className="text-[11px] text-gray-700 font-semibold">S/ {(parseFloat(displayProd.subtotal) || 0).toFixed(2)}</span>
                                 </td>
                                 
                                 {/* ACCIÓN */}
