@@ -139,8 +139,8 @@ export default function AsistenciasPage() {
         return;
       }
 
-      // Obtener desde el dashboard (API)
-      const response = await fetch("/api/asistencias?endpoint=dashboard", {
+      // Obtener historial de cargas desde el nuevo endpoint dedicado
+      const response = await fetch("/api/asistencias?endpoint=historial-cargas", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -149,67 +149,39 @@ export default function AsistenciasPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Si la API no devuelve ningún registro real en la base de datos,
-        // tratamos eso como historial vacío y borramos el localStorage.
-        if (!Array.isArray(data) || data.length === 0) {
-          setHistorialCargas([]);
-          localStorage.removeItem("historialCargasAsistencias");
-          return;
-        }
         
-        // Obtener historial local para preservar registrado_por y area
-        const historialLocal = JSON.parse(localStorage.getItem("historialCargasAsistencias") || "[]");
-        const historialLocalMap = {};
-        historialLocal.forEach((reg) => {
-          historialLocalMap[reg.id_registro] = reg;
-        });
-      
-        // Agrupar por id_registro para obtener el historial
-        const registros = {};
-        data.forEach((item) => {
-          if (item.id_registro && !registros[item.id_registro]) {
-            // Buscar en múltiples campos posibles (verificar todas las variantes)
-            const registradoPor = item.registrado_por || item.REGISTRADO_POR || item.registradoPor || null;
-            const area = item.area || item.AREA || item.Area || null;
-            const pdfReporte = item.pdf_reporte || item.PDF_REPORTE || item.pdfReporte || null;
-            const periodo = item.periodo || item.PERIODO || null;
-            
-            // Si el dashboard no tiene estos campos, usar los del historial local
-            const localData = historialLocalMap[item.id_registro] || {};            
-            registros[item.id_registro] = {
-              id_registro: item.id_registro,
-              registrado_por: registradoPor || localData.registrado_por || null,
-              area: area || localData.area || null,
-              periodo: periodo || localData.periodo || null,
-              pdf_reporte: pdfReporte || localData.pdf_reporte || null,
-            };
-          }
-        });        
-        // Agregar registros del historial local que no están en el dashboard
-        historialLocal.forEach((reg) => {
-          if (!registros[reg.id_registro]) {
-            registros[reg.id_registro] = reg;
-          }
-});        
-        const historialFromAPI = Object.values(registros).sort((a, b) => b.id_registro - a.id_registro);        
-        // Actualizar estado y localStorage con el historial resultante
-        if (historialFromAPI.length > 0) {
+        // Si la API devuelve un historial válido
+        if (Array.isArray(data) && data.length > 0) {
+          const historialFromAPI = data.sort((a, b) => b.id_registro - a.id_registro);
+          
+          // Actualizar estado y localStorage con el historial
           setHistorialCargas(historialFromAPI);
           localStorage.setItem("historialCargasAsistencias", JSON.stringify(historialFromAPI));
         } else {
+          // Si está vacío, limpiar
           setHistorialCargas([]);
           localStorage.removeItem("historialCargasAsistencias");
         }
       } else {
-        // Si hay error en la API, limpiar también
-        setHistorialCargas([]);
-        localStorage.removeItem("historialCargasAsistencias");
+        // Si hay error en la API, intentar recuperar del localStorage
+        const historialLocal = JSON.parse(localStorage.getItem("historialCargasAsistencias") || "[]");
+        if (historialLocal.length > 0) {
+          console.warn("No se pudo conectar a la API, usando historial local");
+          setHistorialCargas(historialLocal);
+        } else {
+          setHistorialCargas([]);
+        }
       }
     } catch (error) {
       console.error("Error al cargar historial:", error);
-      // En caso de error, limpiar el estado
-      setHistorialCargas([]);
-      localStorage.removeItem("historialCargasAsistencias");
+      // En caso de error, intentar recuperar del localStorage
+      const historialLocal = JSON.parse(localStorage.getItem("historialCargasAsistencias") || "[]");
+      if (historialLocal.length > 0) {
+        console.warn("Error al conectar, usando historial local");
+        setHistorialCargas(historialLocal);
+      } else {
+        setHistorialCargas([]);
+      }
     }
   };
 
