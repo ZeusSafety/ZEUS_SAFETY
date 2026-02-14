@@ -709,6 +709,18 @@ export default function AsistenciasPage() {
     return `${String(displayHours).padStart(2, "0")}:${minutes}:${seconds} ${ampm}`;
   };
 
+  /** Convierte minutos (número) a formato HH:MM:SS. Ej: 2 → "00:02:00", 65 → "01:05:00". Acepta negativos. */
+  const minutosToHMS = (minutos) => {
+    if (minutos == null || isNaN(minutos)) return "00:00:00";
+    const sign = minutos < 0 ? "-" : "";
+    const absMin = Math.abs(minutos);
+    const totalSegundos = Math.round(absMin * 60);
+    const h = Math.floor(totalSegundos / 3600);
+    const m = Math.floor((totalSegundos % 3600) / 60);
+    const s = totalSegundos % 60;
+    return sign + [h, m, s].map((n) => String(n).padStart(2, "0")).join(":");
+  };
+
   const getEstadoEntrada = (entrada, salida, fecha) => {
     const HORA_ENTRADA_LIMITE = "09:00:00";
     
@@ -1342,21 +1354,21 @@ export default function AsistenciasPage() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-900">Minutos de Tardanza Total:</span>
-                      <span className="font-semibold text-red-700">{minutosTardanzaTotal}</span>
+                      <span className="font-semibold text-red-700">{minutosToHMS(minutosTardanzaTotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-900">Minutos Debidos:</span>
-                      <span className="font-semibold text-green-700">{minutosDebidos}</span>
+                      <span className="font-semibold text-green-700">{minutosToHMS(minutosDebidos)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-900">Total de Tiempo Extra:</span>
-                      <span className="font-semibold text-blue-700">{tiempoExtraTotal}</span>
+                      <span className="font-semibold text-blue-700">{minutosToHMS(tiempoExtraTotal)}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t">
                       <span className="text-gray-900 font-medium">Minutos Debidos o Extras:</span>
                       <span className={`font-bold ${minutosDebidosExtras >= 0 ? "text-green-700" : "text-red-700"}`}>
                         {minutosDebidosExtras >= 0 ? "+" : ""}
-                        {minutosDebidosExtras}
+                        {minutosToHMS(minutosDebidosExtras)}
                       </span>
                     </div>
                   </div>
@@ -1468,10 +1480,10 @@ export default function AsistenciasPage() {
                                   {d.hora_salida ? formatTime(d.hora_salida) : "--"}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-                                  {minutosTardanza > 0 ? minutosTardanza : "-"}
+                                  {minutosTardanza > 0 ? minutosToHMS(minutosTardanza) : "-"}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-[10px] text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-                                  {tiempoExtra > 0 ? tiempoExtra : "-"}
+                                  {tiempoExtra > 0 ? minutosToHMS(tiempoExtra) : "-"}
                                 </td>
                               </tr>
                             );
