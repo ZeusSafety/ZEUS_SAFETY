@@ -154,7 +154,7 @@ export default function CotizacionesPage() {
   const [codigo, setCodigo] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [unidadMedida, setUnidadMedida] = useState("Seleccione Unidad de Medida");
-  
+
   // Opciones de unidad de medida
   const opcionesUnidadMedida = [
     { value: "", label: "Seleccione Unidad de Medida" },
@@ -256,11 +256,11 @@ export default function CotizacionesPage() {
           });
         }
       };
-      
+
       updatePosition();
       window.addEventListener('scroll', updatePosition, true);
       window.addEventListener('resize', updatePosition);
-      
+
       return () => {
         window.removeEventListener('scroll', updatePosition, true);
         window.removeEventListener('resize', updatePosition);
@@ -277,13 +277,13 @@ export default function CotizacionesPage() {
           setMostrarSugerencias(false);
         }
       }
-      
+
       // Para el dropdown de edición en la tabla
       if (mostrarSugerenciasProductoEdicion) {
-        if (productoEdicionRef.current && 
-            !productoEdicionRef.current.contains(event.target) && 
-            dropdownRef.current && 
-            !dropdownRef.current.contains(event.target)) {
+        if (productoEdicionRef.current &&
+          !productoEdicionRef.current.contains(event.target) &&
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target)) {
           // Usar setTimeout para permitir que el click en el dropdown se procese primero
           setTimeout(() => {
             setMostrarSugerenciasProductoEdicion(false);
@@ -798,7 +798,7 @@ export default function CotizacionesPage() {
     setProductoBusqueda("");
     setCodigo("");
     setCantidad(1);
-    setUnidadMedida("Seleccione Unidad de Medida"); 
+    setUnidadMedida("Seleccione Unidad de Medida");
     setPrecioVenta("");
     setTotal(0.00);
     setProductoSeleccionado(null);
@@ -821,7 +821,7 @@ export default function CotizacionesPage() {
 
   const guardarEdicionProducto = () => {
     if (!editingProducto) return;
-    
+
     // Validar campos requeridos
     if (!editingProducto.producto || !editingProducto.precioUnit || !editingProducto.cantidad) {
       alert("Campos incompletos.");
@@ -834,13 +834,13 @@ export default function CotizacionesPage() {
     const nuevoSubtotal = cantidad * precio;
 
     // Actualizar el producto en la lista
-    setProductosLista(productosLista.map(item => 
-      item.id === editingProductoId 
-        ? { 
-            ...editingProducto, 
-            subtotal: nuevoSubtotal,
-            codigo: editingProducto.codigo || item.codigo || ""
-          }
+    setProductosLista(productosLista.map(item =>
+      item.id === editingProductoId
+        ? {
+          ...editingProducto,
+          subtotal: nuevoSubtotal,
+          codigo: editingProducto.codigo || item.codigo || ""
+        }
         : item
     ));
 
@@ -854,14 +854,14 @@ export default function CotizacionesPage() {
   const handleProductoSelectEdicion = (prod) => {
     const nombreProducto = prod.NOMBRE || prod.nombre;
     const codigoProducto = prod.CODIGO || prod.codigo;
-    
+
     // Actualizar el producto en edición
     setEditingProducto(prev => {
       if (!prev) return prev;
       return { ...prev, producto: nombreProducto, codigo: codigoProducto };
     });
     setBusquedaProductoEdicion(nombreProducto);
-    
+
     // Cerrar el dropdown después de un pequeño delay para asegurar que el estado se actualice
     setTimeout(() => {
       setMostrarSugerenciasProductoEdicion(false);
@@ -1274,9 +1274,9 @@ export default function CotizacionesPage() {
             <tbody>
                 <tr>
                     <td>${fechaEmision ? (() => {
-                      const [año, mes, día] = fechaEmision.split('-');
-                      return `${día}/${mes}/${año}`;
-                    })() : ''}</td>
+        const [año, mes, día] = fechaEmision.split('-');
+        return `${día}/${mes}/${año}`;
+      })() : ''}</td>
                     <td>${formaPago || ''}</td>
                     <td>${regionSeleccionada?.REGION || ''}</td>
                     <td>${distritoSeleccionado?.DISTRITO || ''}</td>
@@ -1305,8 +1305,8 @@ export default function CotizacionesPage() {
                         <td>${prod.unidad}</td>
                         <td>${prod.codigo}</td>
                         <td style="text-align: left;">${prod.producto}</td>
-                        <td>S/ ${prod.precioUnit.toFixed(2)}</td>
-                        <td>S/ ${prod.subtotal.toFixed(2)}</td>
+                        <td>S/ ${(parseFloat(prod.precioUnit) || 0).toFixed(2)}</td>
+                        <td>S/ ${(parseFloat(prod.subtotal) || 0).toFixed(2)}</td>
                     </tr>
                 `).join('')}
                 ${Array(Math.max(0, 22 - productosLista.length)).fill(0).map(() => `
@@ -1322,16 +1322,20 @@ export default function CotizacionesPage() {
             </tbody>
         </table>
         <!-- Totales (incluye delivery en la vista previa del PDF) -->
-        <div class="total-section" style="display:flex; justify-content:flex-end; margin-top: 5px; margin-bottom: 20px;">
-            <div style="display:flex; gap: 8px;">
-                <div class="total-box" style="display:flex; border: 1px solid #000; width: 200px;">
-                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">DELIVERY S/ :</div>
-                    <div class="total-value" style="width: 80px; padding-bottom: 8px; padding-top: 8px; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
+        <div class="total-section" style="display:flex; justify-content:space-between; gap: 20px; margin-top: 5px; margin-bottom: 10px;">
+            <div style="display:flex; gap: 8px; flex: 1;">
+                <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
+                    <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">SUBTOTAL S/ :</div>
+                    <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${totalGeneral.toFixed(2)}</div>
                 </div>
-                <div class="total-box" style="display:flex; border: 1px solid #000; width: 190px;">
-                    <div class="total-label" style="padding: 5px 10px; font-weight: bold; font-size: 12px; border-right: 1px solid #000; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
-                    <div class="total-value" style="width: 80px; padding-bottom: 8px; padding-top: 8px; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
+                <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
+                    <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; color: #000000;">DELIVERY S/ :</div>
+                    <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
                 </div>
+            </div>
+            <div class="total-box" style="display:flex; border: 1px solid #000; width: 200px; background-color: #f0f0f0;">
+                <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
+                <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
             </div>
         </div>
         <!-- Tabla de Bancos -->
@@ -1448,10 +1452,10 @@ export default function CotizacionesPage() {
     setDistrito("");
     setMoneda("");
     setAtendidoPor("");
-    
+
     // Limpiar productos de la tabla
     setProductosLista([]);
-    
+
     // Limpiar campos del formulario de productos
     setProducto("");
     setCodigo("");
@@ -2098,7 +2102,7 @@ export default function CotizacionesPage() {
                           {productosLista.map((prod) => {
                             const isEditing = editingProductoId === prod.id;
                             const displayProd = isEditing ? editingProducto : prod;
-                            
+
                             return (
                               <tr key={prod.id} className={`hover:bg-slate-200 transition-colors ${isEditing ? 'bg-blue-50' : ''}`}>
                                 {/* CANTIDAD */}
@@ -2119,7 +2123,7 @@ export default function CotizacionesPage() {
                                     <span className="text-[11px] font-medium text-gray-900">{prod.cantidad}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* UNIDAD */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
                                   {isEditing ? (
@@ -2139,12 +2143,12 @@ export default function CotizacionesPage() {
                                     <span className="text-[11px] text-gray-700">{prod.unidad ? prod.unidad.toUpperCase() : "UNIDADES"}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* CÓDIGO - Solo lectura, se actualiza automáticamente */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
                                   <span className="text-[11px] font-medium text-gray-900">{displayProd.codigo || ''}</span>
                                 </td>
-                                
+
                                 {/* PRODUCTO */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
                                   {isEditing ? (
@@ -2157,7 +2161,7 @@ export default function CotizacionesPage() {
                                           const nuevoValor = e.target.value;
                                           setBusquedaProductoEdicion(nuevoValor);
                                           setEditingProducto(prev => ({ ...prev, producto: nuevoValor }));
-                                          
+
                                           // Cargar productos si no están cargados
                                           if (!productosCargados && todosLosProductos.length === 0) {
                                             cargarTodosLosProductos().then(() => {
@@ -2182,7 +2186,7 @@ export default function CotizacionesPage() {
                                     <span className="text-[11px] text-gray-700">{prod.producto}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* PRECIO UNIT. */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
                                   {isEditing ? (
@@ -2202,12 +2206,12 @@ export default function CotizacionesPage() {
                                     <span className="text-[11px] text-gray-700">S/ {(parseFloat(prod.precioUnit) || 0).toFixed(2)}</span>
                                   )}
                                 </td>
-                                
+
                                 {/* SUBTOTAL */}
                                 <td className="px-3 py-2.5 whitespace-nowrap">
                                   <span className="text-[11px] text-gray-700 font-semibold">S/ {(parseFloat(displayProd.subtotal) || 0).toFixed(2)}</span>
                                 </td>
-                                
+
                                 {/* ACCIÓN */}
                                 <td className="px-3 py-2.5 whitespace-nowrap text-center">
                                   <div className="flex items-center justify-center gap-2">
@@ -2251,7 +2255,7 @@ export default function CotizacionesPage() {
                                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                           </svg>
-              
+
                                         </button>
                                       </>
                                     )}
@@ -2263,27 +2267,29 @@ export default function CotizacionesPage() {
                         </tbody>
                       </table>
                     </div>
+                    <br/>
                     {/* Totales debajo de la tabla de productos */}
-                    <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-                      <div className="flex flex-wrap gap-3 justify-end">
-                      <div className="flex items-center border border-gray-300 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800">
-                          <span className="mr-2 text-[10px] uppercase tracking-wider text-gray-500">
-                            Delivery: 
-                          </span>
-                          <span className="text-sm text-blue-700">
-                            S/ {deliveryMonto.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex items-center border border-gray-300 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800">
-                          <span className="mr-2 text-[10px] uppercase tracking-wider text-gray-500">
-                            Total: 
-                          </span>
-                          <span className="text-sm text-blue-700">
-                            S/ {totalConDelivery.toFixed(2)}
-                          </span>
-                        </div>
+                    <div className="border-t border-gray-300 px-6 py-4 bg-gray-50 flex flex-col max-w-sm ml-auto rounded-md shadow-sm">
+                      <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+                        Resumen de Cotización
+                      </h3>
+
+                      <div className="flex justify-between text-sm py-1 border-b border-dashed border-gray-300">
+                        <span className="text-gray-500">Delivery</span>
+                        <span className="font-semibold text-blue-700">S/ {deliveryMonto.toFixed(2)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-sm py-1 border-b border-dashed border-gray-300">
+                        <span className="text-gray-500">Subtotal</span>
+                        <span className="font-semibold text-blue-700">S/ {totalGeneral.toFixed(2)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-sm py-1">
+                        <span className="text-gray-700 font-bold">Total</span>
+                        <span className="text-lg font-bold text-blue-700">S/ {totalConDelivery.toFixed(2)}</span>
                       </div>
                     </div>
+
                   </div>
                 )}
               </div>
@@ -2307,7 +2313,7 @@ export default function CotizacionesPage() {
                 hideFooter={true}
               >
                 <div className="space-y-4">
-                  
+
 
                   <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
                     {previewHtml ? (
@@ -2351,9 +2357,8 @@ export default function CotizacionesPage() {
                           });
                         }}
                         disabled={isSubmitting || registroCompletado}
-                        className={`px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200 flex items-center gap-2 ${
-                          isSubmitting || registroCompletado ? "opacity-60 cursor-not-allowed hover:scale-100 hover:shadow-md" : ""
-                        }`}
+                        className={`px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-[#002D5A] to-[#003B75] hover:from-[#001F3D] hover:to-[#002D5A] rounded-lg shadow-md hover:shadow-lg hover:scale-105 active:scale-[0.98] transition-all duration-200 flex items-center gap-2 ${isSubmitting || registroCompletado ? "opacity-60 cursor-not-allowed hover:scale-100 hover:shadow-md" : ""
+                          }`}
                       >
                         {isSubmitting && (
                           <span className="inline-flex">
@@ -2375,7 +2380,7 @@ export default function CotizacionesPage() {
 
       {/* Dropdown de Productos en Edición - Renderizado fuera de la tabla */}
       {editingProductoId && mostrarSugerenciasProductoEdicion && busquedaProductoEdicion.length > 0 && productoEdicionRef.current && dropdownPosition.width > 0 && (
-        <div 
+        <div
           ref={dropdownRef}
           className="fixed z-[9999] bg-white border-2 border-blue-300 rounded-lg shadow-2xl max-h-48 overflow-y-auto"
           style={{
@@ -2393,8 +2398,8 @@ export default function CotizacionesPage() {
             const busqueda = busquedaProductoEdicion.toLowerCase();
             return nombre.includes(busqueda) || codigo.includes(busqueda);
           }).map((prod, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2445,13 +2450,13 @@ export default function CotizacionesPage() {
                 </svg>
               </button>
             </div>
-            
+
             {/* Contenido */}
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: 'var(--font-poppins)' }}>
                 Esta acción no se puede deshacer. El producto será eliminado permanentemente de la lista.
               </p>
-              
+
               {/* Botones */}
               <div className="flex gap-4">
                 <button
