@@ -26,6 +26,12 @@ export default function AsistenciasPage() {
   const [historialCargas, setHistorialCargas] = useState([]);
   const [tablaLimpiada, setTablaLimpiada] = useState(false);
 
+  // Estados para el modal de actualización
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateModalData, setUpdateModalData] = useState({ periodo: "", registradoPor: "", area: "", idRegistro: null });
+  const [updateExcelFile, setUpdateExcelFile] = useState(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -987,6 +993,303 @@ export default function AsistenciasPage() {
     }
   };
 
+  const handleAbrirActualizationModal = async (registro) => {
+    try {
+      // Configurar datos del registro
+      setUpdateModalData({
+        periodo: registro.periodo || "",
+        registradoPor: registro.registrado_por || "",
+        area: registro.area || "",
+        idRegistro: registro.id_registro,
+      });
+
+      // Cargar los datos de asistencias del registro desde localStorage
+      const datosRegistros = JSON.parse(localStorage.getItem("datosRegistrosAsistencias") || "[]");
+      const registroGuardado = datosRegistros.find((r) => r.id_registro === registro.id_registro);
+
+      if (registroGuardado && registroGuardado.datos && Array.isArray(registroGuardado.datos)) {
+        // Pre-cargar los datos del Excel
+        setUpdateExcelFile(registroGuardado.datos);
+      } else {
+        // Si no hay datos guardados localmente, intentar cargarlos del API
+        const token = localStorage.getItem("token");
+        if (token) {
+          const response = await fetch("/api/asistencias?endpoint=dashboard", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const datosDelRegistro = data.filter((item) => item.id_registro === registro.id_registro);
+
+            if (datosDelRegistro.length > 0) {
+              const excelDataFormatted = datosDelRegistro.map((item) => ({
+                id: item.id_empleado || "-",
+                nombre: item.nombre || "-",
+                fecha: item.fecha,
+                entrada: item.hora_entrada || null,
+                salida: item.hora_salida || null,
+              }));
+              setUpdateExcelFile(excelDataFormatted);
+            }
+          }
+        }
+      }
+
+      setShowUpdateModal(true);
+    } catch (error) {
+      console.error("Error al abrir modal de actualización:", error);
+      showNotification("Error al cargar datos del registro", "error");
+    }
+  };
+
+  const handleProcesarExcelActualizacion = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array", cellDates: false });
+
+      const sheetName = "Reporte de Excepciones";
+      if (!workbook.SheetNames.includes(sheetName)) {
+        showNotification("No se encontró la hoja 'Reporte de Excepciones'", "error");
+        event.target.value = "";
+        return;
+      }
+
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonDataRaw = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: true });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false });
+
+      const asistencias = [];
+
+      const parseDate = (dateValue) => {
+        if (!dateValue && dateValue !== 0) return null;
+
+        if (dateValue instanceof Date) {
+          const year = dateValue.getFullYear();
+          const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+          const day = String(dateValue.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        if (typeof dateValue === "string") {
+          const trimmed = dateValue.trim();
+          if (!trimmed || trimmed === "" || trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") {
+            return null;
+          }
+
+          const dateMatch = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (dateMatch) {
+            return trimmed;
+          }
+
+          const parsed = new Date(trimmed + "T00:00:00");
+          if (!isNaN(parsed.getTime())) {
+            const year = parsed.getFullYear();
+            const month = String(parsed.getMonth() + 1).padStart(2, '0');
+            const day = String(parsed.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+        }
+
+        if (typeof dateValue === "number") {
+          const excelDate = XLSX.SSF.parse_date_code(dateValue);
+          if (excelDate && excelDate.y && excelDate.m && excelDate.d) {
+            return `${excelDate.y}-${String(excelDate.m).padStart(2, "0")}-${String(excelDate.d).padStart(2, "0")}`;
+          }
+        }
+
+        return null;
+      };
+
+      const formatearHora = (timeValue) => {
+        if (!timeValue && timeValue !== 0) return null;
+
+        if (typeof timeValue === "string") {
+          const trimmed = timeValue.trim();
+          if (!trimmed || trimmed === "" || trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") {
+            return null;
+          }
+
+          const timeMatch = trimmed.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+          if (timeMatch) {
+            const h = String(timeMatch[1]).padStart(2, "0");
+            const m = String(timeMatch[2]).padStart(2, "0");
+            const s = String(timeMatch[3] || "00").padStart(2, "0");
+            return `${h}:${m}:${s}`;
+          }
+          return null;
+        }
+
+        if (typeof timeValue === "number") {
+          const totalSegundos = Math.round(timeValue * 86400);
+          const h = Math.floor(totalSegundos / 3600) % 24;
+          const m = Math.floor((totalSegundos % 3600) / 60);
+          const s = totalSegundos % 60;
+          return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        }
+
+        return null;
+      };
+
+      const maxLength = Math.max(jsonData.length || 0, jsonDataRaw.length || 0);
+      for (let i = 4; i < maxLength; i++) {
+        const row = jsonData[i] || [];
+        const rowRaw = jsonDataRaw[i] || [];
+        if ((!row || row.length === 0) && (!rowRaw || rowRaw.length === 0)) continue;
+
+        const id = (row[0] || rowRaw[0])?.toString().trim() || "";
+        const nombre = (row[1] || rowRaw[1])?.toString().trim() || "";
+        const fecha = rowRaw[3] !== undefined && rowRaw[3] !== null ? rowRaw[3] : (row[3] || null);
+        const entrada = rowRaw[4] !== undefined && rowRaw[4] !== null ? rowRaw[4] : (row[4] || null);
+        const salida = rowRaw[5] !== undefined && rowRaw[5] !== null ? rowRaw[5] : (row[5] || null);
+
+        if (!id && !nombre) continue;
+
+        let fechaFormateada = parseDate(fecha);
+        let entradaFormateada = formatearHora(entrada);
+        let salidaFormateada = formatearHora(salida);
+
+        if (fechaFormateada) {
+          const registro = {
+            id: id || "-",
+            nombre: nombre || "-",
+            fecha: fechaFormateada,
+            entrada: entradaFormateada,
+            salida: salidaFormateada,
+          };
+
+          asistencias.push(registro);
+        }
+      }
+
+      if (asistencias.length === 0) {
+        showNotification("No se encontraron datos válidos en el archivo", "error");
+        event.target.value = "";
+        return;
+      }
+
+      asistencias.sort((a, b) => {
+        if (a.id && b.id && a.id !== "-" && b.id !== "-") {
+          const idCompare = a.id.localeCompare(b.id);
+          if (idCompare !== 0) return idCompare;
+        }
+
+        if (a.nombre && b.nombre && a.nombre !== "-" && b.nombre !== "-") {
+          const nombreCompare = a.nombre.localeCompare(b.nombre);
+          if (nombreCompare !== 0) return nombreCompare;
+        }
+
+        if (a.fecha && b.fecha) {
+          return String(a.fecha).localeCompare(String(b.fecha));
+        } else if (a.fecha && !b.fecha) return -1;
+        else if (!a.fecha && b.fecha) return 1;
+
+        return 0;
+      });
+
+      setUpdateExcelFile(asistencias);
+      showNotification(`${asistencias.length} registros procesados correctamente`, "success");
+    } catch (error) {
+      console.error("Error al procesar Excel:", error);
+      showNotification("Error al procesar el archivo Excel", "error");
+      event.target.value = "";
+    }
+  };
+
+  const handleActualizarRegistro = async () => {
+    if (!updateModalData.periodo || !updateModalData.registradoPor || !updateModalData.area) {
+      showNotification("Por favor complete todos los campos", "error");
+      return;
+    }
+
+    if (!updateExcelFile || updateExcelFile.length === 0) {
+      showNotification("Por favor cargue un archivo Excel con los datos", "error");
+      return;
+    }
+
+    try {
+      setUpdateLoading(true);
+
+      const formData = new FormData();
+      formData.append("id_registro", updateModalData.idRegistro);
+      formData.append("periodo", updateModalData.periodo);
+      formData.append("registrado_por", updateModalData.registradoPor);
+      formData.append("area", updateModalData.area);
+      formData.append("asistencias", JSON.stringify(updateExcelFile));
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No se encontró el token");
+      }
+
+      const response = await fetch("/api/asistencias?endpoint=actualizar-reporte", {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al actualizar el registro");
+      }
+
+      const result = await response.json();
+
+      // Actualizar los datos guardados en localStorage con los nuevos datos
+      const datosRegistros = JSON.parse(localStorage.getItem("datosRegistrosAsistencias") || "[]");
+      const indiceRegistro = datosRegistros.findIndex((r) => r.id_registro === updateModalData.idRegistro);
+      
+      if (indiceRegistro >= 0) {
+        datosRegistros[indiceRegistro] = {
+          id_registro: updateModalData.idRegistro,
+          datos: updateExcelFile,
+          fecha_guardado: new Date().toISOString(),
+        };
+      } else {
+        datosRegistros.push({
+          id_registro: updateModalData.idRegistro,
+          datos: updateExcelFile,
+          fecha_guardado: new Date().toISOString(),
+        });
+      }
+      localStorage.setItem("datosRegistrosAsistencias", JSON.stringify(datosRegistros));
+
+      // Cargar los datos actualizados en la tabla
+      setExcelData(updateExcelFile);
+      setSelectedYear(null);
+      setSelectedMonth(null);
+      setSelectedNombre(null);
+      setTablaLimpiada(false);
+
+      showNotification("Registro actualizado correctamente", "success");
+      setShowUpdateModal(false);
+      setUpdateModalData({ periodo: "", registradoPor: "", area: "", idRegistro: null });
+      setUpdateExcelFile(null);
+
+      // Refrescar historial y dashboard
+      await loadHistorialCargas();
+      await loadDashboardData();
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification(error.message || "Error al actualizar el registro", "error");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   // Solo usar excelData, no combinar con dashboardData para evitar duplicados
   const allData = useMemo(() => {
     if (excelData.length === 0) {
@@ -1539,12 +1842,24 @@ export default function AsistenciasPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                handleAbrirActualizationModal(registro);
+                              }}
+                              className="p-2 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
+                              title="Actualizar registro"
+                            >
+                              <svg className="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 handleDescargarPDF(registro.id_registro, registro.pdf_reporte);
                               }}
-                              className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-                              title="Descargar PDF"
+                              className="p-2 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+                              title="Descargar EXCEL"
                             >
-                              <svg className="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
                             </button>
@@ -1633,6 +1948,137 @@ export default function AsistenciasPage() {
                 style={{ fontFamily: "var(--font-poppins)" }}
               >
                 Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpdateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => !updateLoading && setShowUpdateModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/60 p-6 max-w-md w-full my-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                Actualizar Registro
+              </h2>
+              <button
+                onClick={() => !updateLoading && setShowUpdateModal(false)}
+                disabled={updateLoading}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-all duration-200 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Periodo</label>
+                <input
+                  type="text"
+                  value={updateModalData.periodo}
+                  onChange={(e) => setUpdateModalData({ ...updateModalData, periodo: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-400 disabled:bg-gray-100"
+                  style={{ fontFamily: "var(--font-poppins)" }}
+                  placeholder="Ej: Febrero 2026"
+                  disabled={updateLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Registrado Por</label>
+                <input
+                  type="text"
+                  value={updateModalData.registradoPor}
+                  onChange={(e) => setUpdateModalData({ ...updateModalData, registradoPor: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-400 disabled:bg-gray-100"
+                  style={{ fontFamily: "var(--font-poppins)" }}
+                  placeholder="Nombre de la persona"
+                  disabled={updateLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>Área</label>
+                <select
+                  value={updateModalData.area}
+                  onChange={(e) => setUpdateModalData({ ...updateModalData, area: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 bg-white disabled:bg-gray-100"
+                  style={{ fontFamily: "var(--font-poppins)" }}
+                  disabled={updateLoading}
+                >
+                  <option value="">Seleccione un área</option>
+                  <option value="GERENCIA">GERENCIA</option>
+                  <option value="SISTEMAS">SISTEMAS</option>
+                  <option value="ADMINISTRACION">ADMINISTRACION</option>
+                  <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+                  Excel de Asistencias <span className="text-red-600">*</span>
+                </label>
+                {updateExcelFile && updateExcelFile.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-green-800" style={{ fontFamily: "var(--font-poppins)" }}>
+                            {updateExcelFile.length} registros cargados
+                          </p>
+                          <p className="text-xs text-green-700" style={{ fontFamily: "var(--font-poppins)" }}>
+                            Haz clic abajo para reemplazar
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleProcesarExcelActualizacion}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 disabled:bg-gray-100"
+                      style={{ fontFamily: "var(--font-poppins)" }}
+                      disabled={updateLoading}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleProcesarExcelActualizacion}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 disabled:bg-gray-100"
+                      style={{ fontFamily: "var(--font-poppins)" }}
+                      disabled={updateLoading}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowUpdateModal(false)}
+                disabled={updateLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: "var(--font-poppins)" }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleActualizarRegistro}
+                disabled={updateLoading}
+                
+                className="px-4 py-2 bg-gradient-to-br from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                style={{ fontFamily: "var(--font-poppins)" }}
+              >
+                {updateLoading && (
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                <span>{updateLoading ? "Actualizando..." : "Actualizar"}</span>
               </button>
             </div>
           </div>
