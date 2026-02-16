@@ -40,7 +40,7 @@ async function fetchFromAPI(method, request) {
     }
 
     // Para POST, manejar FormData
-    if (method === "POST") {
+    if (method === "POST" || method === "PUT") {
       // Obtener el Content-Type del request original
       const contentType = request.headers.get("content-type");
       
@@ -72,7 +72,7 @@ async function fetchFromAPI(method, request) {
 
         // Realizar la petición con FormData
         const fetchOptions = {
-          method: "POST",
+          method: method,
           headers: headers,
           body: formDataToSend,
         };
@@ -96,7 +96,7 @@ async function fetchFromAPI(method, request) {
         headers["Content-Type"] = "application/json";
         
         const fetchOptions = {
-          method: "POST",
+          method: method,
           headers: headers,
           body: JSON.stringify(body),
         };
@@ -153,12 +153,16 @@ export async function POST(request) {
   return fetchFromAPI("POST", request);
 }
 
+export async function PUT(request) {
+  return fetchFromAPI("PUT", request);
+}
+
 export async function OPTIONS(request) {
   return new NextResponse(null, {
     status: 200,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
