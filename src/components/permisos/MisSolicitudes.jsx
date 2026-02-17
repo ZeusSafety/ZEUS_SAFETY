@@ -123,7 +123,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
 
       // Obtener todas las solicitudes de todas las áreas
       // Hacer múltiples llamadas para obtener solicitudes de todas las áreas
-      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "recursos-humanos"];
+      const areas = ["logistica", "sistemas", "marketing", "ventas", "facturacion", "importacion", "administracion", "gerencia", "recursos-humanos"];
 
       // Hacer llamadas en paralelo para obtener todas las solicitudes
       const promesas = areas.map(async (area) => {
