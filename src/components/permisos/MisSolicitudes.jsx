@@ -689,7 +689,7 @@ export default function SolicitudesIncidenciasGerenciaPage() {
                                 {solicitud.ESTADO || 'Pendiente'}
                               </span>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">
+                            <td className="px-3 py-2 text-center whitespace-nowrap text-[10px] text-gray-700">
                               {tieneReprogramaciones ? (
                                 <div className="flex items-center gap-2 justify-center text-center">
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border-2 bg-green-600 border-green-700 text-white">
