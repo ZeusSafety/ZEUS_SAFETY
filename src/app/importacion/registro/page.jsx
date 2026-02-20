@@ -166,6 +166,8 @@ export default function RegistroImportacionesPage() {
   const [previewHTML, setPreviewHTML] = useState("");
   const [generandoPDF, setGenerandoPDF] = useState(false);
   const [registroCompletado, setRegistroCompletado] = useState(false);
+  // Modal de éxito: PDF registrado y generado correctamente (permanecemos en la vista)
+  const [mostrarModalExitoRegistro, setMostrarModalExitoRegistro] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -996,6 +998,36 @@ export default function RegistroImportacionesPage() {
     cargarPreview();
   };
 
+  // Limpiar todo el formulario después de un registro exitoso (permanecemos en la vista)
+  const limpiarFormulario = () => {
+    setFormData({
+      fechaRegistro: new Date().toISOString().split('T')[0],
+      numeroDespacho: "",
+      responsable: "",
+      fechaLlegada: "",
+      tipoCarga: "",
+      estado: "",
+      descripcionGeneral: "",
+    });
+    setListaProductos([]);
+    setDetalleProducto({
+      unidadMedida: "",
+      cantidad: "",
+      cantidadCaja: "",
+      imagen: null,
+    });
+    setProductoBusqueda("");
+    setCodigoProducto("");
+    setSugerenciasProductos([]);
+    setMostrarSugerencias(false);
+    setEditingProductoId(null);
+    setEditingProducto(null);
+    setBusquedaProductoEdicion("");
+    setMostrarSugerenciasProductoEdicion(false);
+    setRegistroCompletado(false);
+    setPreviewHTML("");
+  };
+
   // Registrar importación después de generar el PDF
   const registrarImportacionConPDF = async () => {
     // Evitar descargas/registros múltiples
@@ -1101,10 +1133,11 @@ export default function RegistroImportacionesPage() {
         if (response.ok) {
           // El backend devuelve {"message": "Registro exitoso", "url_archivo": "..."}
           if (result.message === "Registro exitoso" || result.status === "success") {
-            alert("✅ Registro exitoso: Ficha e Importación guardadas correctamente.\nURL del PDF: " + (result.url_archivo || "N/A"));
             setRegistroCompletado(true);
             setMostrarModalPreview(false);
-            router.push("/importacion");
+            limpiarFormulario();
+            setMostrarModalExitoRegistro(true);
+            // No redirigir: permanecemos en la vista de registro
           } else {
             throw new Error(result.error || result.message || "Error desconocido en el servidor");
           }
@@ -1654,13 +1687,13 @@ export default function RegistroImportacionesPage() {
       {/* Modal de Previsualización del PDF */}
       <Modal
         isOpen={mostrarModalPreview}
-        onClose={() => setMostrarModalPreview(false)}
+        onClose={() => !generandoPDF && setMostrarModalPreview(false)}
         title="Previsualización de Ficha de Importación"
         size="full"
         primaryButtonText={generandoPDF ? "Generando PDF..." : "Registrar"}
         secondaryButtonText="Cancelar"
         onPrimaryButtonClick={registrarImportacionConPDF}
-        onSecondaryButtonClick={() => setMostrarModalPreview(false)}
+        onSecondaryButtonClick={() => !generandoPDF && setMostrarModalPreview(false)}
         primaryButtonDisabled={generandoPDF || registroCompletado}
         primaryButtonLoading={generandoPDF}
         hideFooter={false}
@@ -1688,6 +1721,34 @@ export default function RegistroImportacionesPage() {
               Al hacer clic en "Registrar", se generará el PDF y se guardará la importación en la base de datos.
             </p>
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal de éxito: PDF Registrado y Generado Correctamente */}
+      <Modal
+        isOpen={mostrarModalExitoRegistro}
+        onClose={() => setMostrarModalExitoRegistro(false)}
+        title="Éxito"
+        size="md"
+        hideFooter={false}
+        primaryButtonText="Aceptar"
+        onPrimaryButtonClick={() => setMostrarModalExitoRegistro(false)}
+      >
+        <div className="text-center py-6 px-2">
+          <div className="mx-auto flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white shadow-lg mb-6 ring-4 ring-green-100">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+            PDF Registrado y Generado Correctamente
+          </h3>
+          <p className="text-sm text-gray-600 mb-1" style={{ fontFamily: 'var(--font-poppins)' }}>
+            La ficha de importación se ha guardado en la base de datos.
+          </p>
+          <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-poppins)' }}>
+            El formulario ha sido limpiado. Puede registrar una nueva importación.
+          </p>
         </div>
       </Modal>
 
