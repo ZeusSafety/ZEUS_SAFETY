@@ -598,8 +598,8 @@ export default function RegistroVentasOnlinePage() {
                                         <label className="text-[10px] font-black text-[#002855] uppercase tracking-widest">Línea de Pedido</label>
                                         <select value={detalle.linea} onChange={(e) => setDetalle({ ...detalle, linea: e.target.value })} className="w-full px-5 py-3 bg-white border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-sm font-bold text-[#002855]">
                                             <option value="Seleccione una linea">Seleccione una linea</option>
-                                            <option value="ZEUS SAFETY">ZEUS SAFETY</option>
-                                            <option value="ZEUS ELECTRIC">ZEUS ELECTRIC</option>
+                                            <option value="ZEUS-SAFETY">ZEUS-SAFETY</option>
+                                            <option value="ZEUS-ELECTRIC">ZEUS-ELECTRIC</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">

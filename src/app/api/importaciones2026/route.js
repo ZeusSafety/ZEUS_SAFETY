@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-async function fetchFromAPI(method, request, body = null) {
+async function fetchFromAPI(method, request, body = null, isFormData = false) {
   try {
     const authHeader = request.headers.get("authorization");
     let apiUrl = "https://importaciones2026-2946605267.us-central1.run.app";
@@ -15,9 +15,13 @@ async function fetchFromAPI(method, request, body = null) {
     }
 
     const headers = {
-      "Content-Type": "application/json",
       "Accept": "application/json",
     };
+
+    // Solo agregar Content-Type si NO es FormData
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
 
     if (authHeader && authHeader.trim() !== "") {
       headers["Authorization"] = authHeader;
@@ -29,13 +33,22 @@ async function fetchFromAPI(method, request, body = null) {
     };
 
     if ((method === "POST" || method === "PUT") && body) {
-      fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
-      console.log('📤 Enviando body a API externa:', fetchOptions.body);
+      if (isFormData) {
+        // Si es FormData, pasarlo directamente y eliminar Content-Type
+        fetchOptions.body = body;
+        // Eliminar Content-Type para que Node.js lo configure automáticamente con el boundary
+        delete fetchOptions.headers['Content-Type'];
+      } else {
+        // Si es JSON, stringificarlo
+        fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+        console.log('📤 Enviando body JSON a API externa:', fetchOptions.body);
+      }
     }
 
     console.log('📤 URL:', apiUrl);
     console.log('📤 Método:', method);
-    console.log('📤 Headers:', headers);
+    console.log('📤 Headers:', fetchOptions.headers);
+    console.log('📤 Es FormData:', isFormData);
 
     const response = await fetch(apiUrl, fetchOptions);
 
@@ -75,8 +88,17 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    const body = await request.json();
-    return fetchFromAPI("PUT", request, body);
+    const contentType = request.headers.get("content-type");
+    
+    // Verificar si es multipart/form-data (FormData con archivos)
+    if (contentType && contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      return fetchFromAPI("PUT", request, formData, true);
+    } else {
+      // Si es JSON
+      const body = await request.json();
+      return fetchFromAPI("PUT", request, body, false);
+    }
   } catch (error) {
     return NextResponse.json(
       { error: "Error al procesar el cuerpo de la petición", details: error.message },

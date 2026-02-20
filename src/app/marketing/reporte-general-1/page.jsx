@@ -97,6 +97,12 @@ function formatInt(value) {
   return Math.round(n).toLocaleString("es-PE");
 }
 
+// Entero plano sin separadores (p. ej. 7591480)
+function formatPlainInt(value) {
+  const n = clampNumber(value);
+  return String(Math.round(n));
+}
+
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 function formatMonthLabel(s) {
   if (!s || typeof s !== "string") return "—";
@@ -796,7 +802,7 @@ export default function ReporteGeneral1MarketingPage() {
                           <PieChart cursor="pointer">
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}
-                              formatter={(v) => [formatCurrency(v), "MONTO"]}
+                              formatter={(v) => [formatPlainInt(v), "CANTIDAD"]}
                             />
                             <Pie
                               data={clasificaciones.map((c) => {
@@ -886,7 +892,7 @@ export default function ReporteGeneral1MarketingPage() {
                                 <span className="text-xs font-semibold text-gray-700">{c.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(c.value)}</div>
+                                <div className="text-xs font-bold text-gray-900">{formatPlainInt(c.value)}</div>
                                 <div className="text-[10px] text-gray-500">{percent}%</div>
                               </div>
                             </div>
@@ -916,7 +922,7 @@ export default function ReporteGeneral1MarketingPage() {
                           <PieChart cursor="pointer">
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}
-                              formatter={(v) => [formatCurrency(v), "MONTO"]}
+                              formatter={(v) => [formatPlainInt(v), "CANTIDAD"]}
                             />
                             <Pie
                               data={lineas.map((l) => {
@@ -1006,7 +1012,7 @@ export default function ReporteGeneral1MarketingPage() {
                                 <span className="text-xs font-semibold text-gray-700">{l.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(l.value)}</div>
+                                <div className="text-xs font-bold text-gray-900">{formatPlainInt(l.value)}</div>
                                 <div className="text-[10px] text-gray-500">{percent}%</div>
                               </div>
                             </div>
