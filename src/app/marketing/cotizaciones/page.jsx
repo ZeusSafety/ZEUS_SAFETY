@@ -394,6 +394,24 @@ export default function CotizacionesPage() {
     return response;
   };
 
+  // Sanitizar texto para usar en nombres de archivo (quitar espacios y caracteres no permitidos)
+  const sanitizeFilename = (text) => {
+    if (!text) return '';
+    // Reemplazar acentos por su forma básica, remover caracteres no alfanuméricos excepto guiones y guiones bajos
+    const from = 'ÁÀÂÄÃÅáàâäãåÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÖÕóòôöõÚÙÛÜúùûüÑñÇç';
+    const to   = 'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc';
+    let s = text.split('').map((c, i) => {
+      const idx = from.indexOf(c);
+      return idx > -1 ? to[idx] : c;
+    }).join('');
+    s = s.normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+    s = s.replace(/[^a-zA-Z0-9 _-]/g, '');
+    s = s.replace(/\s+/g, '_');
+    s = s.replace(/_+/g, '_');
+    s = s.replace(/^-+|-+$/g, '');
+    return s.substring(0, 120);
+  };
+
   // Función para cargar todos los productos desde la API
   const cargarTodosLosProductos = async () => {
     if (productosCargados) {
@@ -1520,7 +1538,12 @@ export default function CotizacionesPage() {
       formData.append("producto_interesado", productoInteresado);
 
       // El archivo PDF físico que el backend espera como "pdf_file"
-      formData.append("pdf_file", pdfBlob, `${codigoTemporal}.pdf`);
+      // Construir nombre de archivo incluyendo cliente y región/distrito (sanitizado)
+      const clienteSan = sanitizeFilename(cliente) || 'CLIENTE';
+      const loc = regionSeleccionada?.REGION || distrito || region || '';
+      const locSan = sanitizeFilename(loc) || 'UBICACION';
+      const uploadFileName = `${codigoTemporal}_${clienteSan}_${locSan}.pdf`;
+      formData.append("pdf_file", pdfBlob, uploadFileName);
       formData.append("campania", campania || '');
       formData.append("delivery", delivery || '');
 
@@ -1547,7 +1570,10 @@ export default function CotizacionesPage() {
         const objectUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = `Cotizacion_${numeroFinal}.pdf`;
+        // Nombre de descarga para el usuario: incluir cliente y ubicación
+        const numeroSan = typeof numeroFinal === 'string' ? numeroFinal : codigoTemporal;
+        const downloadFileName = `Cotizacion_${numeroSan}_${clienteSan}_${locSan}.pdf`;
+        link.download = downloadFileName;
         link.click();
         URL.revokeObjectURL(objectUrl);
 
