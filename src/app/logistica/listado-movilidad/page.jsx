@@ -56,6 +56,10 @@ export default function ListadoMovilidadLogisticaPage() {
         }
     };
 
+    if (!user) {
+        return null;
+    }
+
     const registrosFiltrados = vehiculoSeleccionado
         ? registros.filter((r) => r.vehiculo === vehiculoSeleccionado)
         : [];
@@ -100,14 +104,6 @@ export default function ListadoMovilidadLogisticaPage() {
             color: "text-purple-600"
         },
     ];
-
-    if (authLoading || loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
@@ -173,7 +169,14 @@ export default function ListadoMovilidadLogisticaPage() {
                                     <h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
                                         Registros de {vehiculoSeleccionado}
                                     </h2>
-                                    {registrosFiltrados.length === 0 ? (
+                                    {loading ? (
+                                        <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden p-8">
+                                            <div className="flex flex-col items-center justify-center py-12">
+                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
+                                                <p className="text-gray-600 text-center">Cargando registros...</p>
+                                            </div>
+                                        </div>
+                                    ) : registrosFiltrados.length === 0 ? (
                                         <p className="text-gray-600 text-center py-8">No hay registros para este vehículo</p>
                                     ) : (
                                         <div className="bg-white rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden">
