@@ -1082,7 +1082,7 @@ export default function CotizacionesPage() {
             padding-bottom: 6px;
             padding-top: 5px;
         }
-        
+
 
 
         /* --- Tabla Metadatos (Fecha, Forma Pago, etc) --- */
@@ -1244,80 +1244,81 @@ export default function CotizacionesPage() {
             }
         }
     </style>
-</head>
-<body>
-    <div class="page-container">
-        <!-- Header -->
-        <header>
-            <div class="logo-section">
-                <!-- Logo desde la URL proporcionada -->
-                <img src="https://cibertecedgar.github.io/img-archivo/logo.png" alt="Zeus Safety Logo">
+    </head>
+
+    <body>
+        <div class="page-container">
+            <!-- Header -->
+            <header>
+                <div class="logo-section">
+                    <!-- Logo desde la URL proporcionada -->
+                    <img src="https://cibertecedgar.github.io/img-archivo/logo.png" alt="Zeus Safety Logo">
+                </div>
+                <div class="company-info">
+                    <span class="company-name">${empresaInfo.razonSocial}</span>
+                    ${empresaInfo.direccion}<br>
+                    LIMA - LIMA - LIMA<br>
+                    TELEFONO: ${empresaInfo.telefono}
+                </div>
+                <div class="ruc-box">
+                    <div class="ruc-header">RUC: ${empresaInfo.ruc}</div>
+                    <div class="ruc-title">COTIZACIÓN</div>
+                    <div class="ruc-number">${numeroCotizacion}</div>
+                </div>
+            </header>
+            <!-- Información del Cliente -->
+            <div class="client-info">
+                <div class="client-left">
+                    <div>CLIENTE: ${cliente || ''}</div>
+                    <div>RUC: ${ruc || ''}</div>
+                    <div>DIRECCIÓN: ${direccion || ''}</div>
+                </div>
+                <div class="client-right">
+                    <div>DNI: ${dni || ''}</div>
+                    <div>CEL: ${cel || ''}</div>
+                </div>
             </div>
-            <div class="company-info">
-                <span class="company-name">${empresaInfo.razonSocial}</span>
-                ${empresaInfo.direccion}<br>
-                LIMA - LIMA - LIMA<br>
-                TELEFONO: ${empresaInfo.telefono}
-            </div>
-            <div class="ruc-box">
-                <div class="ruc-header">RUC: ${empresaInfo.ruc}</div>
-                <div class="ruc-title">COTIZACIÓN</div>
-                <div class="ruc-number">${numeroCotizacion}</div>
-            </div>
-        </header>
-        <!-- Información del Cliente -->
-        <div class="client-info">
-            <div class="client-left">
-                <div>CLIENTE: ${cliente || ''}</div>
-                <div>RUC: ${ruc || ''}</div>
-                <div>DIRECCIÓN: ${direccion || ''}</div>
-            </div>
-            <div class="client-right">
-                <div>DNI: ${dni || ''}</div>
-                <div>CEL: ${cel || ''}</div>
-            </div>
-        </div>
-        <!-- Tabla Metadatos -->
-        <table class="meta-table">
-            <thead>
-                <tr>
-                    <th style="width: 15%; font-size: 13px;">FECHA DE EMISIÓN</th>
+            <!-- Tabla Metadatos -->
+            <table class="meta-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%; font-size: 13px;">FECHA DE EMISIÓN</th>
                         <th style="width: 20%; font-size: 13px;">FORMA <br>DE PAGO</th>
                         <th style="width: 15%; font-size: 13px;">REGIÓN</th>
                         <th style="width: 20%; font-size: 13px;">DISTRITO</th>
                         <th style="width: 10%; font-size: 13px;">MONEDA</th>
                         <th style="width: 20%; font-size: 13px;">ATENDIDO POR</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>${fechaEmision ? (() => {
-        const [año, mes, día] = fechaEmision.split('-');
-        return `${día}/${mes}/${año}`;
-      })() : ''}</td>
-                    <td>${formaPago || ''}</td>
-                    <td>${regionSeleccionada?.REGION || ''}</td>
-                    <td>${distritoSeleccionado?.DISTRITO || ''}</td>
-                    <td>${moneda || ''}</td>
-                    <td>${atendidoPor || ''}</td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="spacer"></div>
-        <!-- Tabla de Productos -->
-        <table class="product-table">
-            <thead>
-                <tr>
-                    <th class="col-cant" style="font-size: 13px;">CANT.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>${fechaEmision ? (() => {
+                            const [año, mes, día] = fechaEmision.split('-');
+                            return `${día}/${mes}/${año}`;
+                            })() : ''}</td>
+                        <td>${formaPago || ''}</td>
+                        <td>${regionSeleccionada?.REGION || ''}</td>
+                        <td>${distritoSeleccionado?.DISTRITO || ''}</td>
+                        <td>${moneda || ''}</td>
+                        <td>${atendidoPor || ''}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="spacer"></div>
+            <!-- Tabla de Productos -->
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th class="col-cant" style="font-size: 13px;">CANT.</th>
                         <th class="col-uni" style="font-size: 13px;">UNIDAD</th>
                         <th class="col-cod" style="font-size: 13px;">CODIGO</th>
                         <th class="col-prod" style="font-size: 13px;">PRODUCTO</th>
                         <th class="col-punit" style="font-size: 13px;">P/UNIT</th>
                         <th class="col-sub" style="font-size: 13px;">SUBTOTAL</th>
-                </tr>
-            </thead>
-            <tbody id="product-rows">
-                ${productosLista.map(prod => `
+                    </tr>
+                </thead>
+                <tbody id="product-rows">
+                    ${productosLista.map(prod => `
                     <tr>
                         <td>${prod.cantidad}</td>
                         <td>${prod.unidad}</td>
@@ -1326,8 +1327,8 @@ export default function CotizacionesPage() {
                         <td>S/ ${(parseFloat(prod.precioUnit) || 0).toFixed(2)}</td>
                         <td>S/ ${(parseFloat(prod.subtotal) || 0).toFixed(2)}</td>
                     </tr>
-                `).join('')}
-                ${Array(Math.max(0, 22 - productosLista.length)).fill(0).map(() => `
+                    `).join('')}
+                    ${Array(Math.max(0, 22 - productosLista.length)).fill(0).map(() => `
                     <tr>
                         <td></td>
                         <td></td>
@@ -1336,77 +1337,118 @@ export default function CotizacionesPage() {
                         <td></td>
                         <td></td>
                     </tr>
-                `).join('')}
-            </tbody>
-        </table>
-        <!-- Totales (incluye delivery en la vista previa del PDF) -->
-        <div class="total-section" style="display:flex; justify-content:space-between; gap: 20px; margin-top: 5px; margin-bottom: 10px;">
-            <div style="display:flex; gap: 8px; flex: 1;">
-                <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
-                    <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">SUBTOTAL S/ :</div>
-                    <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${totalGeneral.toFixed(2)}</div>
+                    `).join('')}
+                </tbody>
+            </table>
+            <!-- Totales (incluye delivery en la vista previa del PDF) -->
+            <div class="total-section"
+                style="display:flex; justify-content:space-between; gap: 20px; margin-top: 5px; margin-bottom: 10px;">
+                <div style="display:flex; gap: 8px; flex: 1;">
+                    <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
+                        <div class="total-label"
+                            style="padding: 5px 8px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">
+                            SUBTOTAL S/ :</div>
+                        <div class="total-value"
+                            style="width: 160px; padding: 5px 8px; text-align: right; color: #000000;">S/
+                            ${totalGeneral.toFixed(2)}</div>
+                    </div>
+                    <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
+                        <div class="total-label"
+                            style="padding: 5px 8px; font-weight: bold; font-size: 12px; color: #000000;">DELIVERY S/ :
+                        </div>
+                        <div class="total-value"
+                            style="width: 160px; padding: 5px 8px; text-align: right; color: #000000;">S/
+                            ${deliveryMonto.toFixed(2)}</div>
+                    </div>
                 </div>
-                <div class="total-box" style="display:flex; border: 1px solid #000; flex: 1;">
-                    <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; color: #000000;">DELIVERY S/ :</div>
-                    <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${deliveryMonto.toFixed(2)}</div>
+                <div class="total-box"
+                    style="display:flex; border: 1px solid #000; width: 250px; background-color: #f0f0f0;">
+                    <div class="total-label"
+                        style="padding: 5px 8px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">
+                        TOTAL S/ :</div>
+                    <div class="total-value"
+                        style="width: 140px; padding: 5px 8px; text-align: right; color: #000000;">S/
+                        ${totalConDelivery.toFixed(2)}</div>
                 </div>
             </div>
-            <div class="total-box" style="display:flex; border: 1px solid #000; width: 200px; background-color: #f0f0f0;">
-                <div class="total-label" style="padding: 8px 10px; font-weight: bold; font-size: 12px; flex-grow: 1; color: #000000;">TOTAL S/ :</div>
-                <div class="total-value" style="width: 80px; padding: 8px 10px; text-align: right; color: #000000;">S/ ${totalConDelivery.toFixed(2)}</div>
+            <!-- Texto de vigencia -->
+            <div style="text-align: center;">
+                <p style="font-size:18px; font-weight:bold; color:#0f0f0f;">
+                    ¡LA COTIZACIÓN TIENE UNA VIGENCIA DE 3 DÍAS A PARTIR DE LA FECHA DE EMISIÓN!
+                </p>
             </div>
-        </div>
-        <!-- Tabla de Bancos -->
-        <table class="bank-table">
-            <thead>
-                <tr>
-                    <th style="font-size: 13px;">CUENTA</th>
-                    <th style="font-size: 13px;">BANCO</th>
-                    <th style="font-size: 13px;">NOMBRE DE <br>LA CUENTA</th>
-                    <th style="font-size: 13px;">NRO. CUENTA</th>
-                    <th style="font-size: 13px;">CCI</th>
-                </tr>
-            </thead>
-            <tbody>
+            </br>
+            <!-- Tabla de Bancos -->
+            <table class="bank-table">
+                <thead>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BCP Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">191-2233941-0-59</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00219100223394105953</td>
+                        <th style="font-size: 13px;">CUENTA</th>
+                        <th style="font-size: 13px;">BANCO</th>
+                        <th style="font-size: 13px;">NOMBRE DE <br>LA CUENTA</th>
+                        <th style="font-size: 13px;">NRO. CUENTA</th>
+                        <th style="font-size: 13px;">CCI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BCP
+                            Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            191-2233941-0-59</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            00219100223394105953</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BBVA Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">0011-0364-01000453-46</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">011-364-000100045346-72</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            BBVA Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            0011-0364-01000453-46</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            011-364-000100045346-72</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">INTERBANK Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">2003006034134</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;"></td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            INTERBANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            2003006034134</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                        </td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">CORRIENTE</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">SCOTIABANK Soles</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">BUSINESS OF IMPORT & ZEUS S.A.C</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">000-4024129</td>
-                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">00908100000402412911</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            CORRIENTE</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            SCOTIABANK Soles</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            BUSINESS OF IMPORT & ZEUS S.A.C</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            000-4024129</td>
+                        <td style="border: 1px solid #000; font-size: 12px; padding-bottom: 13px; padding-top: 7px;">
+                            00908100000402412911</td>
                     </tr>
                 </tbody>
-        </table>
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-stripe-light-suave"></div>
-            <div class="footer-stripe-light"></div>
-            <div class="footer-stripe-dark">
-                ¡ EN ZEUS SAFETY, TU SEGURIDAD SIEMPRE SERÁ NUESTRA PRIORIDAD !
-            </div>
-        </footer>
-    </div>
+            </table>
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer-stripe-light-suave"></div>
+                <div class="footer-stripe-light"></div>
+                <div class="footer-stripe-dark">
+                    ¡ EN ZEUS SAFETY, TU SEGURIDAD SIEMPRE SERÁ NUESTRA PRIORIDAD !
+                </div>
+            </footer>
+        </div>
       `;
   };
 
