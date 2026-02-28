@@ -375,9 +375,9 @@ export default function RegistroClientesPage() {
                                                     style={{ fontFamily: 'var(--font-poppins)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
                                                 >
                                                     <option value="">Seleccione tipo</option>
-                                                    <option value="Persona">PERSONA</option>
-                                                    <option value="Empresa">EMPRESA</option>
-                                                    <option value="Mayorista">MAYORISTA</option>
+                                                    <option value="PERSONA">PERSONA</option>
+                                                    <option value="EMPRESA">EMPRESA</option>
+                                                    <option value="MAYORISTA">MAYORISTA</option>
                                                 </select>
                                                 <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -401,9 +401,9 @@ export default function RegistroClientesPage() {
                                                     style={{ fontFamily: 'var(--font-poppins)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
                                                 >
                                                     <option value="">Seleccione canal</option>
-                                                    <option value="WhatsApp">WHATSAPP</option>
-                                                    <option value="Facebook">FACEBOOK</option>
-                                                    <option value="Meta Ads">META ADS</option>
+                                                    <option value="WHATSAPP">WHATSAPP</option>
+                                                    <option value="FACEBOOK">FACEBOOK</option>
+                                                    <option value="META_ADS">META ADS</option>
                                                 </select>
                                                 <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
