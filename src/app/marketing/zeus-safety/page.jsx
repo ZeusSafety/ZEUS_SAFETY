@@ -284,11 +284,19 @@ export default function ZeusSafetyPage() {
   const totalProductosPaginas = Math.max(1, Math.ceil((productos.length || 0) / productosPorPagina));
   const productosPaginados = productos.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
+  // Mapear canales - mostrar numero_de_pedidos (COUNT de pedidos) en lugar de monto_total
+  // El sistema antiguo muestra el número de pedidos (100, 11, 22, 1) no los montos
   const canales = (data.canal_ventas || [])
     .map((r) => ({
       name: r?.canal_venta || r?.CANAL_VENTA || r?.canal || r?.CANAL || "—",
-      // Priorizar cantidad de pedidos sobre montos para que se vea como el sistema antiguo (ej. 86)
-      value: clampNumber(r?.cantidad || r?.CANTIDAD || r?.cant || r?.total || r?.TOTAL || 0),
+      // Priorizar numero_de_pedidos (COUNT de pedidos) sobre montos
+      value: Math.round(clampNumber(
+        r?.numero_de_pedidos || r?.NUMERO_DE_PEDIDOS || 
+        r?.cantidad || r?.CANTIDAD || 
+        r?.cant || r?.CANT || 
+        r?.count || r?.COUNT || 
+        r?.total || r?.TOTAL || 0
+      )),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
@@ -744,9 +752,16 @@ export default function ZeusSafetyPage() {
                           margin={{ left: 8, right: 80, top: 8, bottom: 8 }}
                           cursor="pointer"
                         >
-                          <XAxis type="number" tick={{ fill: "rgba(17,24,39,0.65)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <XAxis 
+                            type="number" 
+                            domain={[0, "auto"]}
+                            tick={{ fill: "rgba(17,24,39,0.65)", fontSize: 11 }} 
+                            axisLine={false} 
+                            tickLine={false}
+                            tickFormatter={(v) => Math.round(v)}
+                          />
                           <YAxis type="category" dataKey="name" width={100} tick={{ fill: "rgba(17,24,39,0.75)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8 }} formatter={(v) => formatInt(v)} />
+                          <Tooltip contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8 }} formatter={(v) => Math.round(clampNumber(v))} />
                           <Bar
                             dataKey="value"
                             radius={[10, 10, 10, 10]}
@@ -771,7 +786,7 @@ export default function ZeusSafetyPage() {
                             <LabelList
                               dataKey="value"
                               position="right"
-                              formatter={(v) => formatInt(v)}
+                              formatter={(v) => Math.round(clampNumber(v))}
                               style={{ fontSize: 10, fontWeight: "bold", fill: "#1f2937" }}
                             />
                           </Bar>

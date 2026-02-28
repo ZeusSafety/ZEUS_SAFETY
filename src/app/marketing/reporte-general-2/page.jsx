@@ -633,16 +633,19 @@ export default function ReporteGeneral2MarketingPage() {
                   </div>
 
                   {/* Botón Limpiar Fechas */}
-                  {(filters.inicio || filters.fin) && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters((prev) => ({ ...prev, inicio: "", fin: "" }))}
-                      className="px-4 py-2.5 rounded-xl border-2 border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-all"
-                      style={{ fontFamily: "var(--font-poppins)" }}
-                    >
-                      Limpiar fechas
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFilters((prev) => ({ ...prev, inicio: "", fin: "" }))}
+                    disabled={!filters.inicio && !filters.fin}
+                    className={`px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      filters.inicio || filters.fin
+                        ? "border-red-200 bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer"
+                        : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50"
+                    }`}
+                    style={{ fontFamily: "var(--font-poppins)" }}
+                  >
+                    Limpiar fechas
+                  </button>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2 text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -779,39 +782,21 @@ export default function ReporteGeneral2MarketingPage() {
                             <thead>
                               <tr className="bg-[#002D5A] border-b-2 border-[#E5A017]">
                                 <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">PRODUCTO</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. UNIDAD</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL UNIDAD</th>
                                 <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. DOCENA</th>
                                 <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL DOCENA</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">CANT. PARES</th>
-                                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-white whitespace-nowrap">TOTAL PARES</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                               {productosClientePaginados.map((p, idx) => (
                                 <tr key={`${p.producto}-${idx}`} className="hover:bg-slate-200 transition-colors">
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700">{p.producto}</td>
-                                  {/* Cantidades: Formato 1.600 (con puntos) y SIN símbolo S/ */}
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
-                                    {p.cantUnidad > 0 ? formatInt(p.cantUnidad) : "-"}
-                                  </td>
-                                  {/* Totales: SI llevan símbolo de moneda S/ */}
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
-                                    {p.totalUnidad > 0 ? formatTableTotal(p.totalUnidad) : "-"}
-                                  </td>
-
+                                  {/* Cantidad Docenas: Formato 1.600 (con puntos) y SIN símbolo S/ */}
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
                                     {p.cantDocena > 0 ? formatInt(p.cantDocena) : "-"}
                                   </td>
+                                  {/* Total Docenas: Formato con puntos */}
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
                                     {p.totalDocena > 0 ? formatTableTotal(p.totalDocena) : "-"}
-                                  </td>
-
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
-                                    {p.cantPares > 0 ? formatInt(p.cantPares) : "-"}
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
-                                    {p.totalPares > 0 ? formatTableTotal(p.totalPares) : "-"}
                                   </td>
                                 </tr>
                               ))}

@@ -100,9 +100,19 @@ export async function getDetalleProductoCliente({ inicio, fin, cliente, signal }
 
 // === REPORTE GENERAL 1 (FULL, estilo Postman) ===
 // GET ?modo=dashboard&tipo=full_reporte_1&mes=&producto=&canal=&clasificacion=&linea=&inicio=&fin=
+// Soporta selección múltiple: mes, producto, canal, clasificacion, linea pueden ser arrays
 export async function getReporte1Full({ inicio, fin, mes, producto, canal, clasificacion, linea, signal } = {}) {
   const token = getToken();
   if (!token) throw new Error("Token de autenticación no encontrado. Por favor, inicie sesión.");
+
+  // Convertir arrays a strings separados por comas para el backend
+  const formatArrayParam = (val) => {
+    if (!val) return undefined;
+    if (Array.isArray(val)) {
+      return val.length > 0 ? val.join(',') : undefined;
+    }
+    return String(val).trim() !== "" ? String(val) : undefined;
+  };
 
   const url = buildUrlWithParams({
     tipo: "full_reporte_1",
@@ -110,11 +120,11 @@ export async function getReporte1Full({ inicio, fin, mes, producto, canal, clasi
     inicio: inicio && String(inicio).trim() !== "" ? inicio : undefined,
     fin: fin && String(fin).trim() !== "" ? fin : undefined,
     extra: {
-      mes: mes && String(mes).trim() !== "" ? mes : undefined,
-      producto: producto && String(producto).trim() !== "" ? producto : undefined,
-      canal: canal && String(canal).trim() !== "" ? canal : undefined,
-      clasificacion: clasificacion && String(clasificacion).trim() !== "" ? clasificacion : undefined,
-      linea: linea && String(linea).trim() !== "" ? linea : undefined,
+      mes: formatArrayParam(mes),
+      producto: formatArrayParam(producto),
+      canal: formatArrayParam(canal),
+      clasificacion: formatArrayParam(clasificacion),
+      linea: formatArrayParam(linea),
     },
   });
 

@@ -168,8 +168,8 @@ export default function ZeusElectricPage() {
     pago: null,
     cliente: null,
     region: null,
-    inicio: "2025-01-01",
-    fin: today,
+    inicio: "",
+    fin: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -219,8 +219,8 @@ export default function ZeusElectricPage() {
     setError("");
 
     getZeusElectricReport({
-      inicio: filters.inicio,
-      fin: filters.fin,
+      inicio: filters.inicio || "2025-01-01",
+      fin: filters.fin || today,
       mes: filters.mes,
       producto: filters.producto,
       canal: filters.canal,
@@ -277,10 +277,17 @@ export default function ZeusElectricPage() {
 
   const canales = (data.canal_ventas || [])
     .map((r) => {
-      const rawValue = clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0);
+      // Priorizar cantidad_pedidos (número de pedidos) sobre monto_total
+      const rawValue = clampNumber(
+        r?.cantidad_pedidos || r?.CANTIDAD_PEDIDOS ||
+        r?.numero_de_pedidos || r?.NUMERO_DE_PEDIDOS ||
+        r?.cantidad || r?.CANTIDAD ||
+        r?.count || r?.COUNT ||
+        0
+      );
       return {
         name: r?.canal_venta || r?.CANAL_VENTA || r?.canal || r?.CANAL || "—",
-        value: correctInflatedValue(rawValue), // Corregir valores inflados
+        value: Math.round(rawValue), // Mostrar como entero (número de pedidos)
       };
     })
     .filter((x) => x.value > 0)
@@ -439,11 +446,26 @@ export default function ZeusElectricPage() {
                       style={{ colorScheme: "light", fontFamily: "var(--font-poppins)" }}
                     />
                   </div>
+
+                  {/* Botón para limpiar filtros de fecha */}
+                  <button
+                    type="button"
+                    onClick={() => setFilters((prev) => ({ ...prev, inicio: "", fin: "" }))}
+                    disabled={!filters.inicio && !filters.fin}
+                    className="px-4 py-2.5 rounded-xl border-2 border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    style={{ fontFamily: "var(--font-poppins)" }}
+                    title="Limpiar filtros de fecha"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Limpiar fechas
+                  </button>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2 text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
-                  <div className={`w-2 h-2 rounded-full ${filters.inicio !== "2025-01-01" || filters.fin !== today ? "bg-blue-500" : "bg-gray-300"}`} />
-                  {filters.inicio !== "2025-01-01" || filters.fin !== today ? "Filtrando por rango seleccionado" : "Mostrando todo el histórico"}
+                  <div className={`w-2 h-2 rounded-full ${filters.inicio || filters.fin ? "bg-blue-500" : "bg-gray-300"}`} />
+                  {filters.inicio || filters.fin ? "Filtrando por rango seleccionado" : "Mostrando todo el histórico"}
                 </div>
               </div>
 

@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useMemo } from "react";
 
-const norm = (s) => (!s ? "" : s.toUpperCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim());
+const norm = (s) => {
+  if (!s) return "";
+  return s
+    .toString()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
 const GEOJSON_URL = "https://raw.githubusercontent.com/juaneladio/peru-geojson/master/peru_departamental_simple.geojson";
 
@@ -131,7 +140,9 @@ export default function PeruSVGMap({ regiones = [], loading, selectedRegion, onS
 
   const getRegionColor = (regionName, val) => {
     const isSelected = selectedRegion && norm(selectedRegion) === norm(regionName);
+    // Si está seleccionada, usar color dorado más intenso
     if (isSelected) return "#E5A017";
+    // Si no está seleccionada pero tiene valor, usar gradiente
     if (val === 0) return "#f3f4f6";
     const t = span > 0 ? (val - minVal) / span : 0;
     const r = lerp(219, 37, t);
@@ -169,11 +180,14 @@ export default function PeruSVGMap({ regiones = [], loading, selectedRegion, onS
                 d={region.paths}
                 fill={fillColor}
                 stroke={isSelected ? "#002D5A" : "#cbd5e1"}
-                strokeWidth={isSelected ? 2.5 : 0.8}
-                opacity={0.9}
+                strokeWidth={isSelected ? 3 : 0.8}
+                opacity={isSelected ? 1 : 0.9}
                 className="transition-all duration-200 hover:opacity-100 hover:stroke-[#002D5A]"
                 onClick={() => onSelectRegion?.(region.name)}
-                style={{ cursor: "pointer" }}
+                style={{ 
+                  cursor: "pointer",
+                  filter: isSelected ? "drop-shadow(0 0 8px rgba(229, 160, 23, 0.6))" : "none"
+                }}
               />
             </g>
           );

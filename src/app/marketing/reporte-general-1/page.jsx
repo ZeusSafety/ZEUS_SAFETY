@@ -171,16 +171,44 @@ export default function ReporteGeneral1MarketingPage() {
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  // Estado de filtros global (Omni-filter)
+  // Estado de filtros global (Omni-filter) - Ahora soporta selección múltiple
   const [filters, setFilters] = useState({
-    mes: null,
-    producto: null,
-    canal: null,
-    clasificacion: null,
-    linea: null,
-    inicio: "2025-01-01",
-    fin: today,
+    mes: [], // Array para selección múltiple
+    producto: [], // Array para selección múltiple
+    canal: [], // Array para selección múltiple
+    clasificacion: [], // Array para selección múltiple
+    linea: [], // Array para selección múltiple
+    inicio: "",
+    fin: "",
   });
+
+  // Función helper para toggle de selección múltiple
+  const toggleFilter = (filterKey, value) => {
+    setFilters((prev) => {
+      const currentArray = Array.isArray(prev[filterKey]) ? prev[filterKey] : (prev[filterKey] ? [prev[filterKey]] : []);
+      const isSelected = currentArray.includes(value);
+      const newArray = isSelected 
+        ? currentArray.filter((v) => v !== value)
+        : [...currentArray, value];
+      return { ...prev, [filterKey]: newArray.length > 0 ? newArray : [] };
+    });
+  };
+
+  // Función helper para toggle de selección única (solo un valor a la vez)
+  const toggleSingleFilter = (filterKey, value) => {
+    setFilters((prev) => {
+      const currentArray = Array.isArray(prev[filterKey]) ? prev[filterKey] : (prev[filterKey] ? [prev[filterKey]] : []);
+      const isSelected = currentArray.includes(value);
+      // Si está seleccionado, deseleccionar (vaciar). Si no, seleccionar solo este (reemplazar todo)
+      return { ...prev, [filterKey]: isSelected ? [] : [value] };
+    });
+  };
+
+  // Función helper para verificar si un valor está seleccionado
+  const isFilterSelected = (filterKey, value) => {
+    const currentArray = Array.isArray(filters[filterKey]) ? filters[filterKey] : (filters[filterKey] ? [filters[filterKey]] : []);
+    return currentArray.includes(value);
+  };
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -220,14 +248,15 @@ export default function ReporteGeneral1MarketingPage() {
     setLoading(true);
     setError("");
 
+    // Enviar arrays directamente - la función getReporte1Full los convertirá a strings separados por comas
     getReporte1Full({
-      inicio: filters.inicio,
-      fin: filters.fin,
-      mes: filters.mes,
-      producto: filters.producto,
-      canal: filters.canal,
-      clasificacion: filters.clasificacion,
-      linea: filters.linea,
+      inicio: filters.inicio || "2025-01-01",
+      fin: filters.fin || today,
+      mes: filters.mes.length > 0 ? filters.mes : null,
+      producto: filters.producto.length > 0 ? filters.producto : null, // Filtrar por productos seleccionados
+      canal: filters.canal.length > 0 ? filters.canal : null,
+      clasificacion: filters.clasificacion.length > 0 ? filters.clasificacion : null,
+      linea: filters.linea.length > 0 ? filters.linea : null,
       signal: controller.signal,
     })
       .then((res) => {
@@ -266,19 +295,33 @@ export default function ReporteGeneral1MarketingPage() {
     .sort((a, b) => b.value - a.value);
 
   // Mapear clasificación de pedidos (solo con datos)
+  // Priorizar conteo de registros sobre montos totales
   const clasificaciones = (data.clasificacion_pedidos || [])
     .map((r) => ({
       name: r?.clasificacion_pedido || r?.CLASIFICACION_PEDIDO || r?.clasificacion || r?.CLASIFICACION || r?.tipo || r?.TIPO || r?.nombre || r?.NOMBRE || "—",
-      value: clampNumber(r?.total || r?.TOTAL || 0),
+      // Buscar primero campos de conteo (COUNT), luego cantidad, y finalmente total como fallback
+      value: clampNumber(
+        r?.total_registros || r?.TOTAL_REGISTROS || 
+        r?.cantidad || r?.CANTIDAD || 
+        r?.count || r?.COUNT ||
+        r?.total || r?.TOTAL || 0
+      ),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
   // Mapear líneas (solo con datos)
+  // Priorizar conteo de registros sobre montos totales
   const lineas = (data.lineas || [])
     .map((r) => ({
       name: r?.LINEA || r?.linea || r?.nombre || r?.NOMBRE || r?.descripcion || r?.DESCRIPCION || "—",
-      value: clampNumber(r?.total || r?.TOTAL || 0),
+      // Buscar primero campos de conteo (COUNT), luego cantidad, y finalmente total como fallback
+      value: clampNumber(
+        r?.total_registros || r?.TOTAL_REGISTROS || 
+        r?.cantidad || r?.CANTIDAD || 
+        r?.count || r?.COUNT ||
+        r?.total || r?.TOTAL || 0
+      ),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
@@ -364,30 +407,38 @@ export default function ReporteGeneral1MarketingPage() {
               {/* Barra de filtros activos */}
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 {[
-                  ["mes", filters.mes, "Mes", formatMonthLabel(filters.mes) || filters.mes],
-                  ["producto", filters.producto, "Producto", filters.producto],
-                  ["canal", filters.canal, "Canal", filters.canal],
-                  ["clasificacion", filters.clasificacion, "Clasificación", filters.clasificacion],
-                  ["linea", filters.linea, "Línea", filters.linea],
+                  ["mes", filters.mes, "Mes", (arr) => Array.isArray(arr) && arr.length > 0 ? arr.map(m => formatMonthLabel(m) || m).join(", ") : null],
+                  ["producto", filters.producto, "Producto", (arr) => Array.isArray(arr) && arr.length > 0 ? arr.join(", ") : null],
+                  ["canal", filters.canal, "Canal", (arr) => Array.isArray(arr) && arr.length > 0 ? arr.join(", ") : null],
+                  ["clasificacion", filters.clasificacion, "Clasificación", (arr) => Array.isArray(arr) && arr.length > 0 ? arr.join(", ") : null],
+                  ["linea", filters.linea, "Línea", (arr) => Array.isArray(arr) && arr.length > 0 ? arr.join(", ") : null],
                 ]
-                  .filter(([, v]) => v)
-                  .map(([k, v, label, display]) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => setFilters((prev) => ({ ...prev, [k]: null }))}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold transition-colors"
-                      style={{ fontFamily: "var(--font-poppins)" }}
-                      title="Eliminar filtro"
-                    >
-                      <span className="w-2 h-2 rounded-full bg-[#E5A017]" />
-                      <span className="truncate max-w-[200px]">
-                        {label}: {typeof display === "string" && display.length > 24 ? `${display.substring(0, 24)}...` : (display ?? v)}
-                      </span>
-                      <span className="text-gray-400 hover:text-gray-600">✕</span>
-                    </button>
-                  ))}
-                {!filters.mes && !filters.producto && !filters.canal && !filters.clasificacion && !filters.linea && (
+                  .filter(([, v]) => {
+                    const arr = Array.isArray(v) ? v : (v ? [v] : []);
+                    return arr.length > 0;
+                  })
+                  .map(([k, v, label, displayFn]) => {
+                    const arr = Array.isArray(v) ? v : (v ? [v] : []);
+                    const display = displayFn(arr);
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setFilters((prev) => ({ ...prev, [k]: [] }))}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold transition-colors"
+                        style={{ fontFamily: "var(--font-poppins)" }}
+                        title="Eliminar filtro"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-[#E5A017]" />
+                        <span className="truncate max-w-[200px]">
+                          {label}: {typeof display === "string" && display.length > 24 ? `${display.substring(0, 24)}...` : display}
+                          {arr.length > 1 && ` (${arr.length})`}
+                        </span>
+                        <span className="text-gray-400 hover:text-gray-600">✕</span>
+                      </button>
+                    );
+                  })}
+                {filters.mes.length === 0 && filters.producto.length === 0 && filters.canal.length === 0 && filters.clasificacion.length === 0 && filters.linea.length === 0 && (
                   <span className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
                     Sin filtros (mostrando total)
                   </span>
@@ -428,11 +479,27 @@ export default function ReporteGeneral1MarketingPage() {
                       style={{ colorScheme: "light", fontFamily: "var(--font-poppins)" }}
                     />
                   </div>
+
+                  {/* Botón para limpiar filtros de fecha */}
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setFilters((prev) => ({ ...prev, inicio: "", fin: "" }))}
+                      className="px-4 py-2.5 rounded-xl border-2 border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-gray-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all flex items-center gap-2"
+                      style={{ fontFamily: "var(--font-poppins)" }}
+                      title="Limpiar filtros de fecha"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Limpiar
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2 text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
-                  <div className={`w-2 h-2 rounded-full ${filters.inicio !== "2025-01-01" || filters.fin !== today ? "bg-blue-500" : "bg-gray-300"}`} />
-                  {filters.inicio !== "2025-01-01" || filters.fin !== today ? "Filtrando por rango seleccionado" : "Mostrando todo el histórico"}
+                  <div className={`w-2 h-2 rounded-full ${filters.inicio && filters.fin ? "bg-blue-500" : "bg-gray-300"}`} />
+                  {filters.inicio && filters.fin ? "Filtrando por rango seleccionado" : "Selecciona un rango de fechas"}
                 </div>
               </div>
 
@@ -541,10 +608,7 @@ export default function ReporteGeneral1MarketingPage() {
                             onClick={(data) => {
                               const name = data?.name;
                               if (name) {
-                                setFilters((prev) => ({
-                                  ...prev,
-                                  canal: prev.canal === name ? null : name,
-                                }));
+                                toggleSingleFilter("canal", name);
                               }
                             }}
                           >
@@ -560,8 +624,8 @@ export default function ReporteGeneral1MarketingPage() {
                                 return colors[idx % colors.length];
                               };
                               const color = getCanalColor(c.name);
-                              const isSelected = filters.canal === c.name;
-                              const opacity = isSelected ? 1 : (filters.canal ? 0.35 : 1);
+                              const isSelected = isFilterSelected("canal", c.name);
+                              const opacity = isSelected ? 1 : (filters.canal.length > 0 ? 0.35 : 1);
                               return <Cell key={`canal-${idx}-${c.name}`} fill={hexToRgba(color, opacity)} stroke="none" cursor="pointer" />;
                             })}
                             <LabelList
@@ -727,17 +791,14 @@ export default function ReporteGeneral1MarketingPage() {
                               const docenas = rawD >= 1000 ? Math.round(rawD / 1000) : Math.round(rawD);
                               // Calculo de pares: (docenas * 12) + unidades
                               const pares = (docenas * 12) + unidades;
-                              const isSelected = filters.producto === producto;
+                              const isSelected = isFilterSelected("producto", producto);
 
                               return (
                                 <tr
                                   key={`${producto}-${idx}`}
-                                  className={`transition-all cursor-pointer ${isSelected ? "bg-amber-50 border-l-4 border-l-[#E5A017]" : "hover:bg-slate-100"} ${filters.producto && !isSelected ? "opacity-50" : ""}`}
+                                  className={`transition-all cursor-pointer ${isSelected ? "bg-amber-50 border-l-4 border-l-[#E5A017]" : "hover:bg-slate-100"}`}
                                   onClick={() => {
-                                    setFilters((prev) => ({
-                                      ...prev,
-                                      producto: prev.producto === producto ? null : producto,
-                                    }));
+                                    toggleFilter("producto", producto);
                                   }}
                                   title="Click para filtrar"
                                 >
@@ -837,10 +898,7 @@ export default function ReporteGeneral1MarketingPage() {
                               onClick={(_, idx) => {
                                 const it = clasificaciones?.[idx];
                                 if (it?.name) {
-                                  setFilters((prev) => ({
-                                    ...prev,
-                                    clasificacion: prev.clasificacion === it.name ? null : it.name,
-                                  }));
+                                  toggleSingleFilter("clasificacion", it.name);
                                 }
                               }}
                               label={({ percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
@@ -868,8 +926,8 @@ export default function ReporteGeneral1MarketingPage() {
                               {clasificaciones.map((c, i) => {
                                 const colors = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
                                 const color = colors[i % colors.length];
-                                const isSelected = filters.clasificacion === c.name;
-                                const opacity = isSelected ? 1 : (filters.clasificacion ? 0.35 : 1);
+                                const isSelected = isFilterSelected("clasificacion", c.name);
+                                const opacity = isSelected ? 1 : (filters.clasificacion.length > 0 ? 0.35 : 1);
                                 return <Cell key={i} fill={hexToRgba(color, opacity)} />;
                               })}
                             </Pie>
@@ -889,17 +947,14 @@ export default function ReporteGeneral1MarketingPage() {
                               role="button"
                               tabIndex={0}
                               onClick={() => {
-                                setFilters((prev) => ({
-                                  ...prev,
-                                  clasificacion: prev.clasificacion === c.name ? null : c.name,
-                                }));
+                                toggleSingleFilter("clasificacion", c.name);
                               }}
-                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, clasificacion: prev.clasificacion === c.name ? null : c.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.clasificacion === c.name
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSingleFilter("clasificacion", c.name); } }}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${isFilterSelected("clasificacion", c.name)
                                 ? "border-[#E5A017] bg-amber-50"
                                 : "border-gray-100 bg-gray-50 hover:bg-gray-100"
                                 }`}
-                              style={{ opacity: filters.clasificacion && filters.clasificacion !== c.name ? 0.5 : 1 }}
+                              style={{ opacity: isFilterSelected("clasificacion", c.name) ? 1 : (filters.clasificacion.length > 0 ? 0.5 : 1) }}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[idx % colors.length] }} />
@@ -956,10 +1011,7 @@ export default function ReporteGeneral1MarketingPage() {
                               onClick={(_, idx) => {
                                 const it = lineas?.[idx];
                                 if (it?.name) {
-                                  setFilters((prev) => ({
-                                    ...prev,
-                                    linea: prev.linea === it.name ? null : it.name,
-                                  }));
+                                  toggleSingleFilter("linea", it.name);
                                 }
                               }}
                               label={({ percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
@@ -987,8 +1039,8 @@ export default function ReporteGeneral1MarketingPage() {
                               {lineas.map((l, i) => {
                                 const colors = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
                                 const color = colors[i % colors.length];
-                                const isSelected = filters.linea === l.name;
-                                const opacity = isSelected ? 1 : (filters.linea ? 0.35 : 1);
+                                const isSelected = isFilterSelected("linea", l.name);
+                                const opacity = isSelected ? 1 : (filters.linea.length > 0 ? 0.35 : 1);
                                 return <Cell key={i} fill={hexToRgba(color, opacity)} />;
                               })}
                             </Pie>
@@ -1008,17 +1060,14 @@ export default function ReporteGeneral1MarketingPage() {
                               role="button"
                               tabIndex={0}
                               onClick={() => {
-                                setFilters((prev) => ({
-                                  ...prev,
-                                  linea: prev.linea === l.name ? null : l.name,
-                                }));
+                                toggleSingleFilter("linea", l.name);
                               }}
-                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFilters((prev) => ({ ...prev, linea: prev.linea === l.name ? null : l.name })); } }}
-                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${filters.linea === l.name
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSingleFilter("linea", l.name); } }}
+                              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer focus:outline-none focus:ring-0 focus:ring-offset-0 ${isFilterSelected("linea", l.name)
                                 ? "border-[#E5A017] bg-amber-50"
                                 : "border-gray-100 bg-gray-50 hover:bg-gray-100"
                                 }`}
-                              style={{ opacity: filters.linea && filters.linea !== l.name ? 0.5 : 1 }}
+                              style={{ opacity: isFilterSelected("linea", l.name) ? 1 : (filters.linea.length > 0 ? 0.5 : 1) }}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[idx % colors.length] }} />
@@ -1095,10 +1144,7 @@ export default function ReporteGeneral1MarketingPage() {
                               onClick={(data) => {
                                 const mes = data?.mes;
                                 if (mes && mes !== "—") {
-                                  setFilters((prev) => ({
-                                    ...prev,
-                                    mes: prev.mes === mes ? null : mes,
-                                  }));
+                                  toggleSingleFilter("mes", mes);
                                 }
                               }}
                             >
@@ -1109,8 +1155,8 @@ export default function ReporteGeneral1MarketingPage() {
                                   "#F59E0B", "#D97706"
                                 ];
                                 const color = colors[idx % colors.length];
-                                const isSelected = filters.mes === m.mes;
-                                const opacity = isSelected ? 1 : (filters.mes ? 0.35 : 1);
+                                const isSelected = isFilterSelected("mes", m.mes);
+                                const opacity = isSelected ? 1 : (filters.mes.length > 0 ? 0.35 : 1);
                                 return <Cell key={`mes-${idx}-${m.mes}`} fill={hexToRgba(color, opacity)} stroke="none" cursor="pointer" />;
                               })}
                               <LabelList
