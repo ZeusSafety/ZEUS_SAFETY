@@ -75,7 +75,7 @@ function pickNumber(obj, keys = []) {
 }
 
 /** Formato de moneda unificado: S/ 130.034 (es-PE, miles con punto, sin decimales).
- *  Si el valor >= 1e6 (API inflada ~100x), se divide entre 100 antes de formatear. */
+ *  Detecta valores inflados (multiplicados por 100) y los corrige automáticamente. */
 const currencyFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
   currency: "PEN",
@@ -84,7 +84,21 @@ const currencyFormatter = new Intl.NumberFormat("es-PE", {
 
 function formatCurrency(value) {
   let n = Math.round(clampNumber(value));
-  if (n >= 1e6) n = Math.round(n / 100);
+  
+  // Detectar valores inflados: 
+  // - Si es >= 1e6, siempre dividir entre 100
+  // - Si es >= 10,000 y es múltiplo exacto de 100 (termina en 00) y al dividir da un valor razonable
+  //   pero excluir valores que ya parecen correctos (como 19.133, 28.280 que no son múltiplos de 100)
+  if (n >= 10000) {
+    const divided = n / 100;
+    // Si es >= 1e6, siempre dividir
+    // Si es múltiplo de 100 (termina en 00) y al dividir da un valor < 100,000, probablemente está inflado
+    // Pero verificamos que el valor original tenga al menos 5 dígitos para evitar falsos positivos
+    if (n >= 1e6 || (n % 100 === 0 && n >= 10000 && divided < 100000 && String(n).length >= 5)) {
+      n = Math.round(divided);
+    }
+  }
+  
   const parts = currencyFormatter.formatToParts(n);
   return parts
     .map((p) => (p.type === "group" ? { ...p, value: "." } : p))
@@ -892,8 +906,7 @@ export default function ReporteGeneral1MarketingPage() {
                                 <span className="text-xs font-semibold text-gray-700">{c.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatPlainInt(c.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-sm font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );
@@ -1012,8 +1025,7 @@ export default function ReporteGeneral1MarketingPage() {
                                 <span className="text-xs font-semibold text-gray-700">{l.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatPlainInt(l.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-sm font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );

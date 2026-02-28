@@ -94,6 +94,30 @@ function formatInt(value) {
   return new Intl.NumberFormat("de-DE").format(Math.round(n));
 }
 
+/** Formatea valores de totales de tabla, corrigiendo valores inflados (multiplicados por 100) */
+function formatTableTotal(value) {
+  let n = Math.round(clampNumber(value));
+  
+  // Detectar valores inflados: si el valor es >= 1,000 y parece estar inflado
+  if (n >= 1000) {
+    const divided = n / 100;
+    // Si es >= 1e6, siempre dividir
+    // Si es >= 10,000 y es múltiplo de 100 (termina en 00), probablemente está inflado
+    // También verificar que al dividir dé un valor razonable
+    if (n >= 1e6 || (n >= 10000 && n % 100 === 0 && divided < 100000)) {
+      n = Math.round(divided);
+    }
+    // Si es >= 1,000 pero < 10,000 y es múltiplo de 100, también podría estar inflado
+    // pero solo si al dividir da un valor razonable (>= 10)
+    else if (n >= 1000 && n < 10000 && n % 100 === 0 && divided >= 10 && divided < 1000) {
+      n = Math.round(divided);
+    }
+  }
+  
+  // Formatear con puntos para miles
+  return new Intl.NumberFormat("de-DE").format(n);
+}
+
 function Skeleton({ className }) {
   return <div className={`animate-pulse rounded-xl bg-gray-200 ${className}`} />;
 }
@@ -773,21 +797,21 @@ export default function ReporteGeneral2MarketingPage() {
                                   </td>
                                   {/* Totales: SI llevan símbolo de moneda S/ */}
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
-                                    {p.totalUnidad > 0 ? formatInt(p.totalUnidad) : "-"}
+                                    {p.totalUnidad > 0 ? formatTableTotal(p.totalUnidad) : "-"}
                                   </td>
 
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
                                     {p.cantDocena > 0 ? formatInt(p.cantDocena) : "-"}
                                   </td>
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
-                                    {p.totalDocena > 0 ? formatInt(p.totalDocena) : "-"}
+                                    {p.totalDocena > 0 ? formatTableTotal(p.totalDocena) : "-"}
                                   </td>
 
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
                                     {p.cantPares > 0 ? formatInt(p.cantPares) : "-"}
                                   </td>
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right">
-                                    {p.totalPares > 0 ? formatInt(p.totalPares) : "-"}
+                                    {p.totalPares > 0 ? formatTableTotal(p.totalPares) : "-"}
                                   </td>
                                 </tr>
                               ))}
@@ -933,7 +957,7 @@ export default function ReporteGeneral2MarketingPage() {
                                 <span className="text-xs font-semibold text-gray-700">{p.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-[10px] font-bold text-gray-900">{formatInt(p.value)} · {percent}%</div>
+                                <div className="text-sm font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );

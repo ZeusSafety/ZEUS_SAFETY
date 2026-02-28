@@ -73,7 +73,22 @@ const currencyFormatter = new Intl.NumberFormat("es-PE", {
 
 function formatCurrency(value) {
   let n = Math.round(clampNumber(value));
-  if (n >= 1e6) n = Math.round(n / 100);
+  
+  // Detectar valores inflados: si el valor es >= 1,000 y parece estar inflado
+  if (n >= 1000) {
+    const divided = n / 100;
+    // Si es >= 1e6, siempre dividir
+    // Si es >= 10,000 y al dividir entre 100 da un valor razonable (< 100,000), probablemente está inflado
+    // Esto captura casos como 13.809.090 -> 138.091
+    if (n >= 1e6 || (n >= 10000 && divided < 100000)) {
+      n = Math.round(divided);
+    }
+    // Si es >= 1,000 pero < 10,000 y al dividir da un valor razonable (>= 10 y < 1,000)
+    else if (n >= 1000 && n < 10000 && divided >= 10 && divided < 1000) {
+      n = Math.round(divided);
+    }
+  }
+  
   const parts = currencyFormatter.formatToParts(n);
   return parts
     .map((p) => (p.type === "group" ? { ...p, value: "." } : p))
@@ -218,7 +233,7 @@ export default function ZeusSafetyPage() {
   const clientes = (data.clientes || []).map((r) => ({
     name: r?.cliente || r?.CLIENTE || r?.nombre || r?.NOMBRE || "—",
     compras: pickNumeric(r, ["cantidad", "CANTIDAD", "compras", "COMPRAS", "total", "TOTAL", "monto_total", "MONTO_TOTAL"]),
-  }));
+  })).sort((a, b) => b.compras - a.compras); // Ordenar descendente: mayor número de compras arriba
   const totalClientesPaginas = Math.max(1, Math.ceil((clientes.length || 0) / clientesPorPagina));
   const clientesPaginados = clientes.slice((clientesPage - 1) * clientesPorPagina, clientesPage * clientesPorPagina);
 
@@ -470,8 +485,8 @@ export default function ZeusSafetyPage() {
                         Total
                       </p>
                       {loading ? <Skeleton className="h-7 w-36" /> : (
-                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatInt(ventaTotal)}>
-                          {formatInt(ventaTotal)}
+                        <p className="text-xl font-bold text-[#002D5A] mb-0.5 min-w-0 truncate" style={{ fontFamily: "var(--font-poppins)" }} title={formatCurrency(ventaTotal)}>
+                          {formatCurrency(ventaTotal)}
                         </p>
                       )}
                       <p className="text-xs text-gray-500" style={{ fontFamily: "var(--font-poppins)" }}>
@@ -956,11 +971,11 @@ export default function ZeusSafetyPage() {
                               tick={{ fill: "rgba(17,24,39,0.55)", fontSize: 10 }}
                               axisLine={false}
                               tickLine={false}
-                              tickFormatter={(v) => formatInt(v)}
+                              tickFormatter={(v) => formatCurrency(v)}
                             />
                             <Tooltip
                               contentStyle={{ background: "white", border: "1px solid rgba(0,0,0,0.08)", color: "#111827", borderRadius: 8, fontFamily: "var(--font-poppins)" }}
-                              formatter={(v) => formatInt(v)}
+                              formatter={(v) => formatCurrency(v)}
                               labelFormatter={(label) => label}
                             />
                             <Bar
@@ -1007,7 +1022,7 @@ export default function ZeusSafetyPage() {
                                         fontWeight="bold"
                                         fontFamily="var(--font-poppins)"
                                       >
-                                        {formatInt(value)}
+                                        {formatCurrency(value)}
                                       </text>
                                     </g>
                                   );

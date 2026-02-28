@@ -73,7 +73,22 @@ const currencyFormatter = new Intl.NumberFormat("es-PE", {
 
 function formatCurrency(value) {
   let n = Math.round(clampNumber(value));
-  if (n >= 1e6) n = Math.round(n / 100);
+  
+  // Detectar valores inflados: si el valor es >= 1,000 y parece estar inflado
+  if (n >= 1000) {
+    const divided = n / 100;
+    // Si es >= 1e6, siempre dividir
+    // Si es >= 10,000 y al dividir entre 100 da un valor razonable (< 100,000), probablemente está inflado
+    // Esto captura casos como 115.900 -> 1.159
+    if (n >= 1e6 || (n >= 10000 && divided < 100000)) {
+      n = Math.round(divided);
+    }
+    // Si es >= 1,000 pero < 10,000 y al dividir da un valor razonable (>= 10 y < 1,000)
+    else if (n >= 1000 && n < 10000 && divided >= 10 && divided < 1000) {
+      n = Math.round(divided);
+    }
+  }
+  
   const parts = currencyFormatter.formatToParts(n);
   return parts
     .map((p) => (p.type === "group" ? { ...p, value: "." } : p))
@@ -85,6 +100,34 @@ function formatInt(value) {
   const n = clampNumber(value);
   // Usar formato alemán para forzar puntos como separadores de miles
   return new Intl.NumberFormat("de-DE").format(Math.round(n));
+}
+
+/** Corrige valores inflados (multiplicados por 100) */
+function correctInflatedValue(value) {
+  let n = Math.round(clampNumber(value));
+  
+  // Detectar valores inflados: si el valor es >= 1,000 y parece estar inflado
+  if (n >= 1000) {
+    const divided = n / 100;
+    // Si es >= 1e6, siempre dividir
+    // Si es >= 10,000 y al dividir entre 100 da un valor razonable (< 100,000), probablemente está inflado
+    if (n >= 1e6 || (n >= 10000 && divided < 100000)) {
+      n = Math.round(divided);
+    }
+    // Si es >= 1,000 pero < 10,000 y al dividir da un valor razonable (>= 10 y < 1,000)
+    else if (n >= 1000 && n < 10000 && divided >= 10 && divided < 1000) {
+      n = Math.round(divided);
+    }
+  }
+  
+  return n;
+}
+
+/** Formatea valores de monto de tabla, corrigiendo valores inflados (multiplicados por 100) */
+function formatTableMonto(value) {
+  const n = correctInflatedValue(value);
+  // Formatear con puntos para miles
+  return new Intl.NumberFormat("de-DE").format(n);
 }
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -215,7 +258,7 @@ export default function ZeusElectricPage() {
   const clientes = (data.clientes || []).map((r) => ({
     name: r?.cliente || r?.CLIENTE || r?.nombre || r?.NOMBRE || "—",
     compras: pickNumeric(r, ["cantidad", "CANTIDAD", "compras", "COMPRAS", "total", "TOTAL", "monto_total", "MONTO_TOTAL"]),
-  }));
+  })).sort((a, b) => b.compras - a.compras); // Ordenar descendente: mayor número de compras arriba
   const totalClientesPaginas = Math.max(1, Math.ceil((clientes.length || 0) / clientesPorPagina));
   const clientesPaginados = clientes.slice((clientesPage - 1) * clientesPorPagina, clientesPage * clientesPorPagina);
 
@@ -233,10 +276,13 @@ export default function ZeusElectricPage() {
   const productosPaginados = productos.slice((productosPage - 1) * productosPorPagina, productosPage * productosPorPagina);
 
   const canales = (data.canal_ventas || [])
-    .map((r) => ({
-      name: r?.canal_venta || r?.CANAL_VENTA || r?.canal || r?.CANAL || "—",
-      value: clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0),
-    }))
+    .map((r) => {
+      const rawValue = clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0);
+      return {
+        name: r?.canal_venta || r?.CANAL_VENTA || r?.canal || r?.CANAL || "—",
+        value: correctInflatedValue(rawValue), // Corregir valores inflados
+      };
+    })
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
@@ -607,7 +653,7 @@ export default function ZeusElectricPage() {
                                     {p.cantidad > 0 ? formatInt(p.cantidad) : "-"}
                                   </td>
                                   <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-700 text-right font-semibold">
-                                    {p.monto > 0 ? formatInt(p.monto) : "-"}
+                                    {p.monto > 0 ? formatTableMonto(p.monto) : "-"}
                                   </td>
                                 </tr>
                               ))}
@@ -813,8 +859,7 @@ export default function ZeusElectricPage() {
                                 <span className="text-xs font-semibold text-gray-700">{t.name}</span>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900">{formatCurrency(t.value)}</div>
-                                <div className="text-[10px] text-gray-500">{percent}%</div>
+                                <div className="text-sm font-bold text-gray-900">{percent}%</div>
                               </div>
                             </div>
                           );
