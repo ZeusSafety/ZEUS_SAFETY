@@ -182,6 +182,7 @@ export default function ReporteGeneral2MarketingPage() {
   const [filters, setFilters] = useState({
     cliente: null,
     region: null,
+    regionAuto: false, // true si la región fue inferida por click en distrito (drill-down)
     pago: null,
     comprobante: null,
     almacen: null,
@@ -294,35 +295,60 @@ export default function ReporteGeneral2MarketingPage() {
         return { comprobante: k, ...o };
       })
       : [];
-  const geografiaRaw = Array.isArray(dashboardData?.geografia)
-    ? dashboardData.geografia
-    : Array.isArray(dashboardData?.geografia?.regiones)
-      ? dashboardData.geografia.regiones // Fallback porsi el backend antiguo estructura asi
+  // Backend moderno: { geografia: { regiones: [...], distritos: [...] } }
+  // Backend legacy: { geografia: [...] } o { geografia: { regiones: [...] } }
+  const geografiaObj = dashboardData?.geografia;
+  const geografiaArray = Array.isArray(geografiaObj)
+    ? geografiaObj
+    : Array.isArray(geografiaObj?.regiones)
+      ? geografiaObj.regiones
       : [];
 
-  // El SP nuevo devuelve un solo array con region y distrito mezclados. Usamos ese mismo array para ambos.
-  const regionesRaw = geografiaRaw;
-  const distritosRaw = geografiaRaw;
+  const regionesRaw = Array.isArray(geografiaObj?.regiones) ? geografiaObj.regiones : geografiaArray;
+  const distritosRaw = Array.isArray(geografiaObj?.distritos) ? geografiaObj.distritos : geografiaArray;
 
   /** Normaliza string para comparación (region/distrito). */
   const norm = (s) => (s ?? "").toString().trim().toUpperCase().replace(/\s+/g, " ");
-  /** Al filtrar por region/distrito: solo filas que coincidan; excluir las que no tengan el campo. */
+  const getRowRegion = (r) => (r?.region ?? r?.REGION ?? "").toString().trim();
+  const getRowDistrito = (r) =>
+    (
+      r?.distrito ??
+      r?.DISTRITO ??
+      r?.distrito_nombre ??
+      r?.DISTRITO_NOMBRE ??
+      r?.nombre_distrito ??
+      r?.NOMBRE_DISTRITO ??
+      r?.nombre ??
+      r?.NOMBRE ??
+      ""
+    )
+      .toString()
+      .trim();
+  const getRowCliente = (r) => (r?.cliente ?? r?.CLIENTE ?? r?.nombre ?? r?.NOMBRE ?? "").toString().trim();
+
+  /**
+   * Filtros "suaves":
+   * - Si el filtro está activo pero el row NO trae esa dimensión, no lo excluimos (evita "Sin datos" artificial).
+   * - Si el row sí trae esa dimensión, exigimos match exacto.
+   */
   const matchRegion = (r) => {
     if (!filters.region) return true;
-    const rowReg = (r?.region ?? r?.REGION ?? "").toString().trim();
-    if (!rowReg) return false;
+    const rowReg = getRowRegion(r);
+    if (!rowReg) return true;
     return norm(rowReg) === norm(filters.region);
   };
   const matchDistrito = (r) => {
     if (!filters.distrito) return true;
-    const rowDist = (
-      r?.distrito ?? r?.DISTRITO ?? r?.distrito_nombre ?? r?.DISTRITO_NOMBRE ?? r?.nombre_distrito ?? ""
-    ).toString().trim();
-    if (!rowDist) return false;
+    const rowDist = getRowDistrito(r);
+    if (!rowDist) return true;
     return norm(rowDist) === norm(filters.distrito);
   };
-  const matchCliente = (r) =>
-    !filters.cliente || norm(r?.cliente ?? r?.CLIENTE ?? r?.nombre ?? r?.NOMBRE ?? "") === norm(filters.cliente);
+  const matchCliente = (r) => {
+    if (!filters.cliente) return true;
+    const rowCli = getRowCliente(r);
+    if (!rowCli) return true;
+    return norm(rowCli) === norm(filters.cliente);
+  };
   const matchPago = (r) => {
     if (!filters.pago) return true;
     const name = (r?.pago ?? r?.PAGO ?? r?.metodo ?? r?.METODO ?? r?.forma_pago ?? r?.FORMA_DE_PAGO ?? r?.canal ?? "").toString().trim();
@@ -349,12 +375,20 @@ export default function ReporteGeneral2MarketingPage() {
     return n.includes(a) || a.includes(n);
   };
 
+  const matchAll = (r) =>
+    matchRegion(r) &&
+    matchDistrito(r) &&
+    matchCliente(r) &&
+    matchPago(r) &&
+    matchComprobante(r) &&
+    matchAlmacen(r);
+
   const rankingFiltered = rankingRaw.filter(
     (r) => matchRegion(r) && matchDistrito(r) && matchCliente(r) && matchPago(r) && matchComprobante(r) && matchAlmacen(r)
   );
 
   /** Productos: usar siempre API (refetch con filtros); sin filtrar en cliente para no vaciar por falta de region/distrito en filas. */
-  const productosParaTabla = productosRaw;
+  const productosParaTabla = productosRaw.filter(matchAll);
   const clientes = rankingFiltered.map((r) => ({
     name: r?.cliente ?? r?.CLIENTE ?? r?.nombre ?? r?.NOMBRE ?? "—",
     compras: pickNumeric(r, [
@@ -403,7 +437,8 @@ export default function ReporteGeneral2MarketingPage() {
 
   // Pagos: usar siempre API (refetch con filtros); agregar por canal. Sin filtrar en cliente.
   const pagosByCanal = new Map();
-  pagosRaw.forEach((r) => {
+  const pagosRows = pagosRaw.filter(matchAll);
+  pagosRows.forEach((r) => {
     const name = (r?.pago ?? r?.PAGO ?? r?.metodo ?? r?.METODO ?? r?.forma_pago ?? r?.FORMA_DE_PAGO ?? r?.canal ?? "—").toString().trim() || "—";
     const val = pickNumeric(r, ["monto", "MONTO", "total", "TOTAL", "valor", "VALOR", "importe", "IMPORTE", "cantidad", "CANTIDAD"]);
     pagosByCanal.set(name, (pagosByCanal.get(name) ?? 0) + val);
@@ -422,41 +457,60 @@ export default function ReporteGeneral2MarketingPage() {
     value: pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]),
   }));
 
-  const TOP_10_DISTRITOS_ORDER = [
-    "CERCADO DE LIMA", "HUANCAYO", "TRUJILLO", "CHUPACA", "ABANCAY",
-    "HUAMANGA", "CHINCHA", "INDEPENDENCIA", "OXAPAMPA", "JAEN",
-  ];
-  const distritosByKey = new Map();
-  distritosRaw.forEach((r) => {
-    const n = (r?.distrito ?? r?.DISTRITO ?? r?.nombre ?? r?.NOMBRE ?? "").toString().toUpperCase().trim();
-    if (!n) return;
-    const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
-    distritosByKey.set(n, v);
-  });
-
-  const distritos = filters.region
-    ? (() => {
-      const byName = new Map();
-      distritosRaw.forEach((r) => {
-        const name = (r?.distrito ?? r?.DISTRITO ?? r?.nombre ?? r?.NOMBRE ?? "—").toString().trim() || "—";
-        if (name === "—") return;
-        const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
-        byName.set(name, (byName.get(name) || 0) + v);
-      });
-      return [...byName.entries()]
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 20);
-    })()
-    : TOP_10_DISTRITOS_ORDER.map((d) => {
-      let value = distritosByKey.get(d) ?? 0;
-      if (value === 0) {
-        for (const [k, v] of distritosByKey) {
-          if (k.includes(d) || d.includes(k)) { value = v; break; }
-        }
+  const inferRegionFromDistrito = (distritoName) => {
+    const target = norm(distritoName);
+    for (const r of distritosRaw) {
+      const dist = getRowDistrito(r);
+      if (!dist) continue;
+      if (norm(dist) === target) {
+        const reg = getRowRegion(r);
+        return reg ? reg.toString().trim() : null;
       }
-      return { name: d, value };
-    });
+    }
+    return null;
+  };
+
+  // Para el gráfico queremos que al seleccionar un distrito NO se expanda ni cambie el Top 10;
+  // el filtro distrito se usa para "conectar" el resto de cards, pero el gráfico mantiene Top 10.
+  const matchAllExceptDistrito = (r) =>
+    matchRegion(r) &&
+    /* ignorar distrito aquí */ true &&
+    matchCliente(r) &&
+    matchPago(r) &&
+    matchComprobante(r) &&
+    matchAlmacen(r);
+
+  const distritos = (() => {
+    const byName = new Map();
+
+    if (filters.region) {
+      // Top 10 distritos SOLO dentro de la región seleccionada
+      distritosRaw.forEach((r) => {
+        const rowReg = getRowRegion(r);
+        const rowDist = getRowDistrito(r);
+        if (!rowReg || !rowDist) return;
+        if (norm(rowReg) !== norm(filters.region)) return;
+        if (!matchAllExceptDistrito(r)) return;
+        const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
+        byName.set(rowDist, (byName.get(rowDist) || 0) + v);
+      });
+    } else {
+      // Top 10 distritos a nivel general (respetando filtros como cliente/pago/etc)
+      distritosRaw.forEach((r) => {
+        const rowDist = getRowDistrito(r);
+        if (!rowDist) return;
+        if (!matchAllExceptDistrito(r)) return;
+        const v = pickNumeric(r, ["cantidad", "CANTIDAD", "total", "TOTAL"]);
+        byName.set(rowDist, (byName.get(rowDist) || 0) + v);
+      });
+    }
+
+    return [...byName.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+  })();
 
   /** Normaliza nombre de comprobante a Factura / Boleta / Proforma para mostrar siempre. */
   const comprobanteLabel = (raw) => {
@@ -473,12 +527,13 @@ export default function ReporteGeneral2MarketingPage() {
     : typeof comprobantesRaw === "object" && comprobantesRaw !== null
       ? Object.entries(comprobantesRaw).map(([k, v]) => ({ comprobante: k, total: v, monto: v, TOTAL: v, MONTO: v }))
       : [];
+  const comprobantesItemsFiltered = comprobantesItems.filter(matchAll);
   const comprobantesBase = [
     { name: "Factura", nameRaw: "FACTURA", value: 0 },
     { name: "Boleta", nameRaw: "BOLETA", value: 0 },
     { name: "Proforma", nameRaw: "PROFORMA", value: 0 },
   ];
-  comprobantesItems.forEach((r) => {
+  comprobantesItemsFiltered.forEach((r) => {
     const raw = (r?.comprobante ?? r?.COMPROBANTE ?? r?.tipo ?? r?.TIPO ?? r?.tipo_comprobante ?? r?.TIPO_COMPROBANTE ?? "").toString().trim();
     const label = comprobanteLabel(raw);
     const val = pickNumeric(r, COMPROBANTE_VAL_KEYS);
@@ -496,7 +551,8 @@ export default function ReporteGeneral2MarketingPage() {
       return { ...c, valueDisplay: c.value, percent: pct };
     });
 
-  const almacenesArr = almacenesRaw.map((r) => {
+  const almacenesRows = almacenesRaw.filter(matchAll);
+  const almacenesArr = almacenesRows.map((r) => {
     // El SP devuelve 'almacen' y 'total'. Aseguramos que 'total' sea capturado.
     const name = (r?.almacen ?? r?.ALMACEN ?? r?.salida ?? r?.SALIDA_DE_PEDIDO ?? r?.nombre ?? r?.nombre_almacen ?? "").toString().trim().toUpperCase();
     const value = pickNumeric(r, ALMACEN_KEYS);
@@ -1175,7 +1231,12 @@ export default function ReporteGeneral2MarketingPage() {
                     regiones={regiones}
                     loading={loading}
                     selectedRegion={filters.region}
-                    onSelectRegion={(name) => setFilters((prev) => ({ ...prev, region: name }))}
+                    onSelectRegion={(name) =>
+                      setFilters((prev) => {
+                        const same = norm(prev.region) === norm(name);
+                        return { ...prev, region: same ? null : name, regionAuto: false, distrito: null };
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -1217,7 +1278,27 @@ export default function ReporteGeneral2MarketingPage() {
                             onClick={(data) => {
                               const name = data?.name;
                               if (!name) return;
-                              setFilters((prev) => ({ ...prev, distrito: prev.distrito === name ? null : name }));
+                              setFilters((prev) => {
+                                const isTogglingOff = prev.distrito === name;
+                                const nextDistrito = isTogglingOff ? null : name;
+
+                                // Si seleccionan un distrito, inferimos su región para sombrear el mapa y conectar filtros.
+                                const inferred = nextDistrito ? inferRegionFromDistrito(nextDistrito) : null;
+                                const shouldAutoSetRegion = !!inferred && !prev.region; // solo si no había región antes
+
+                                // Si el usuario vuelve a clickear el mismo distrito para quitar el filtro:
+                                // - si la región fue auto-inferida por ese drill-down, volvemos al Top 10 global (limpiando región)
+                                const nextRegion = isTogglingOff
+                                  ? (prev.regionAuto ? null : prev.region)
+                                  : (shouldAutoSetRegion ? inferred : (inferred || prev.region));
+
+                                return {
+                                  ...prev,
+                                  distrito: nextDistrito,
+                                  region: nextRegion,
+                                  regionAuto: isTogglingOff ? false : (shouldAutoSetRegion ? true : prev.regionAuto),
+                                };
+                              });
                             }}
                           >
                             {distritos.map((d, idx) => {

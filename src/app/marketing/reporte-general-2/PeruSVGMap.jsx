@@ -21,6 +21,12 @@ function getValueByRegion(regiones, name) {
   return r ? Number(r.value) || 0 : 0;
 }
 
+function getPercentByRegion(regiones, name) {
+  const n = norm(name);
+  const r = regiones.find((x) => norm(x.name) === n);
+  return r && r.percent !== undefined ? Number(r.percent) || 0 : null;
+}
+
 function lerp(a, b, t) {
   return Math.round(a + (b - a) * t);
 }
@@ -167,13 +173,14 @@ export default function PeruSVGMap({ regiones = [], loading, selectedRegion, onS
       <svg viewBox={viewBox} className="w-full h-full" preserveAspectRatio="xMidYMid meet" style={{ cursor: "pointer" }}>
         {svgPaths.map((region, idx) => {
           const val = getValueByRegion(regiones, region.name);
+          const percent = getPercentByRegion(regiones, region.name);
           const isSelected = selectedRegion && norm(selectedRegion) === norm(region.name);
           const fillColor = getRegionColor(region.name, val);
 
           return (
             <g
               key={`${region.name}-${idx}`}
-              onMouseEnter={() => setHovered({ name: region.name, value: val })}
+              onMouseEnter={() => setHovered({ name: region.name, value: val, percent })}
               onMouseLeave={() => setHovered(null)}
             >
               <path
@@ -200,7 +207,11 @@ export default function PeruSVGMap({ regiones = [], loading, selectedRegion, onS
         >
           <div className="text-sm font-bold text-[#002D5A]">{hovered.name}</div>
           <div className="text-xs text-gray-600 mt-0.5">
-            {hovered.value > 0 ? `Cantidad: ${hovered.value}` : "Sin datos"}
+            {hovered.percent !== null && hovered.percent !== undefined
+              ? `${hovered.percent}%`
+              : hovered.value > 0
+              ? `Cantidad: ${hovered.value}`
+              : "Sin datos"}
           </div>
         </div>
       )}

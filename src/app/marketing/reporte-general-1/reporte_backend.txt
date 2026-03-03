@@ -78,8 +78,10 @@ def obtener_metricas_dashboard(request, headers):
                 p_linea = p_linea_list[0] if p_linea_list else None
 
                 # 2. Ejecución del SP (usa primer valor para compatibilidad)
-                # Si hay múltiples productos, necesitamos recalcular KPIs y ventas por mes con filtros múltiples
-                usar_sp_directo = len(p_prod_list) <= 1 and len(p_mes_list) <= 1 and len(p_canal_list) <= 1 and len(p_clasi_list) <= 1 and len(p_linea_list) <= 1
+                # Si hay cualquier filtro activo, usar consultas SQL directas para asegurar que todos los datos se filtren correctamente
+                # Solo usar SP directamente cuando NO hay ningún filtro activo
+                tiene_filtros = len(p_prod_list) > 0 or len(p_mes_list) > 0 or len(p_canal_list) > 0 or len(p_clasi_list) > 0 or len(p_linea_list) > 0
+                usar_sp_directo = not tiene_filtros
                 
                 if usar_sp_directo:
                     cursor.callproc('sp_Dashboard_General1', (
@@ -152,9 +154,10 @@ def obtener_metricas_dashboard(request, headers):
                     
                     # Calcular KPIs con filtros múltiples
                     sql_kpi = f"""SELECT 
-                                    COALESCE(SUM(vo.TOTAL), 0) as total_generado,
+                                    COALESCE(SUM(dv.TOTAL), 0) as total_generado,
                                     COUNT(DISTINCT vo.ID_VENTA) as cantidad_ventas
                                   FROM ventas_online vo
+                                  INNER JOIN detalle_ventas dv ON dv.ID_VENTA = vo.ID_VENTA
                                   WHERE {' AND '.join(where_kpi)}"""
                     cursor.execute(sql_kpi, params_kpi)
                     kpi_row = cursor.fetchone()
@@ -168,10 +171,11 @@ def obtener_metricas_dashboard(request, headers):
                                            CONCAT(YEAR(vo.FECHA), '-', LPAD(MONTH(vo.FECHA), 2, '0')) as mes,
                                            YEAR(vo.FECHA) as anio,
                                            MONTH(vo.FECHA) as mes_num,
-                                           COALESCE(SUM(vo.TOTAL), 0) as total
+                                           COALESCE(SUM(dv.TOTAL), 0) as total
                                          FROM ventas_online vo
+                                         INNER JOIN detalle_ventas dv ON dv.ID_VENTA = vo.ID_VENTA
                                          WHERE {' AND '.join(where_kpi)}
-                                         GROUP BY YEAR(vo.FECHA), MONTH(vo.FECHA)
+                                         GROUP BY YEAR(vo.FECHA), MONTH(vo.FECHA), CONCAT(YEAR(vo.FECHA), '-', LPAD(MONTH(vo.FECHA), 2, '0'))
                                          ORDER BY YEAR(vo.FECHA), MONTH(vo.FECHA)"""
                     cursor.execute(sql_ventas_mes, params_kpi)
                     ventas_mes_raw = cursor.fetchall()
@@ -186,7 +190,7 @@ def obtener_metricas_dashboard(request, headers):
                             "total": float(row.get('total', 0))
                         })
                     
-                    # Ejecutar SP solo para obtener productos_top, canales, clasificaciones y lineas (sin filtros múltiples en estos)
+                    # Ejecutar SP solo para obtener productos_top y canales (clasificaciones y líneas se recalculan desde cero)
                     cursor.callproc('sp_Dashboard_General1', (
                         n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), f_inicio, f_fin
                     ))
@@ -196,6 +200,74 @@ def obtener_metricas_dashboard(request, headers):
                 
                 # --- CORRECCIÓN CLAVE PARA PRODUCTOS TOP ---
                 prod_raw = fetch_all_safe(cursor) if cursor.nextset() else []
+                
+                # Si hay múltiples filtros, recalcular productos_top con consulta SQL directa
+                if not usar_sp_directo:
+                    # Construir WHERE para productos_top con TODOS los filtros (excepto producto)
+                    where_prod_top = ["vo.FECHA BETWEEN %s AND %s"]
+                    params_prod_top = [f_inicio, f_fin]
+                    
+                    if p_mes_list:
+                        if len(p_mes_list) == 1:
+                            where_prod_top.append("MONTH(vo.FECHA) = %s AND YEAR(vo.FECHA) = %s")
+                            mes_parts = p_mes_list[0].split('-')
+                            if len(mes_parts) == 2:
+                                params_prod_top.extend([mes_parts[1], mes_parts[0]])
+                        else:
+                            mes_conditions = []
+                            for mes_val in p_mes_list:
+                                mes_parts = mes_val.split('-')
+                                if len(mes_parts) == 2:
+                                    mes_conditions.append("(MONTH(vo.FECHA) = %s AND YEAR(vo.FECHA) = %s)")
+                                    params_prod_top.extend([mes_parts[1], mes_parts[0]])
+                            if mes_conditions:
+                                where_prod_top.append(f"({' OR '.join(mes_conditions)})")
+                    
+                    if p_canal_list:
+                        if len(p_canal_list) == 1:
+                            where_prod_top.append("vo.CANAL_VENTA = %s")
+                            params_prod_top.append(p_canal_list[0])
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_canal_list))
+                            where_prod_top.append(f"vo.CANAL_VENTA IN ({placeholders})")
+                            params_prod_top.extend(p_canal_list)
+                    
+                    if p_clasi_list:
+                        if len(p_clasi_list) == 1:
+                            where_prod_top.append("vo.CLASIFICACION = %s")
+                            params_prod_top.append(p_clasi_list[0])
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_clasi_list))
+                            where_prod_top.append(f"vo.CLASIFICACION IN ({placeholders})")
+                            params_prod_top.extend(p_clasi_list)
+                    
+                    if p_linea_list:
+                        if len(p_linea_list) == 1:
+                            where_prod_top.append("vo.LINEA = %s")
+                            params_prod_top.append(p_linea_list[0])
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_linea_list))
+                            where_prod_top.append(f"vo.LINEA IN ({placeholders})")
+                            params_prod_top.extend(p_linea_list)
+                    
+                    # Consulta SQL para productos_top con TODOS los filtros
+                    # Usar CASE WHEN con UNIDAD_MEDIDA para calcular unidades, docenas y pares (igual que en los SPs)
+                    # Nota: usar %% para escapar % en f-strings de Python
+                    sql_prod_top = f"""SELECT 
+                                        dv.PRODUCTO,
+                                        SUM(CASE WHEN UPPER(IFNULL(dv.UNIDAD_MEDIDA, '')) LIKE '%%UNIDAD%%' THEN dv.CANTIDAD ELSE 0 END) as unidades_test,
+                                        SUM(CASE WHEN UPPER(IFNULL(dv.UNIDAD_MEDIDA, '')) LIKE '%%DOCENA%%' THEN dv.CANTIDAD ELSE 0 END) as DOCENAS,
+                                        SUM(CASE WHEN UPPER(IFNULL(dv.UNIDAD_MEDIDA, '')) LIKE '%%PAR%%' THEN dv.CANTIDAD ELSE 0 END) as PARES
+                                      FROM ventas_online vo
+                                      INNER JOIN detalle_ventas dv ON dv.ID_VENTA = vo.ID_VENTA
+                                      WHERE {' AND '.join(where_prod_top)}
+                                      GROUP BY dv.PRODUCTO
+                                      HAVING unidades_test > 0 OR DOCENAS > 0 OR PARES > 0
+                                      ORDER BY unidades_test DESC
+                                      LIMIT 20"""
+                    cursor.execute(sql_prod_top, params_prod_top)
+                    prod_raw = cursor.fetchall()
+                
                 prod_top = []
                 for p in prod_raw:
                     prod_top.append({
@@ -206,9 +278,87 @@ def obtener_metricas_dashboard(request, headers):
                         "PARES": p.get("PARES") or 0
                     })
 
-                canales = fetch_all_safe(cursor) if cursor.nextset() else []
-                clasificaciones = fetch_all_safe(cursor) if cursor.nextset() else []
-                lineas = fetch_all_safe(cursor) if cursor.nextset() else []
+                canales_raw = fetch_all_safe(cursor) if cursor.nextset() else []
+                
+                # Si hay múltiples filtros, recalcular canales con consulta SQL directa
+                if not usar_sp_directo:
+                    # Construir WHERE para canales con TODOS los filtros (excepto canal)
+                    where_canales = ["vo.FECHA BETWEEN %s AND %s"]
+                    params_canales = [f_inicio, f_fin]
+                    
+                    if p_prod_list:
+                        if len(p_prod_list) == 1:
+                            where_canales.append("EXISTS (SELECT 1 FROM detalle_ventas dv WHERE dv.ID_VENTA = vo.ID_VENTA AND dv.PRODUCTO LIKE %s)")
+                            params_canales.append(f"%{p_prod_list[0]}%")
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_prod_list))
+                            where_canales.append(f"EXISTS (SELECT 1 FROM detalle_ventas dv WHERE dv.ID_VENTA = vo.ID_VENTA AND dv.PRODUCTO IN ({placeholders}))")
+                            params_canales.extend([f"%{p}%" for p in p_prod_list])
+                    
+                    if p_mes_list:
+                        if len(p_mes_list) == 1:
+                            where_canales.append("MONTH(vo.FECHA) = %s AND YEAR(vo.FECHA) = %s")
+                            mes_parts = p_mes_list[0].split('-')
+                            if len(mes_parts) == 2:
+                                params_canales.extend([mes_parts[1], mes_parts[0]])
+                        else:
+                            mes_conditions = []
+                            for mes_val in p_mes_list:
+                                mes_parts = mes_val.split('-')
+                                if len(mes_parts) == 2:
+                                    mes_conditions.append("(MONTH(vo.FECHA) = %s AND YEAR(vo.FECHA) = %s)")
+                                    params_canales.extend([mes_parts[1], mes_parts[0]])
+                            if mes_conditions:
+                                where_canales.append(f"({' OR '.join(mes_conditions)})")
+                    
+                    if p_clasi_list:
+                        if len(p_clasi_list) == 1:
+                            where_canales.append("vo.CLASIFICACION = %s")
+                            params_canales.append(p_clasi_list[0])
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_clasi_list))
+                            where_canales.append(f"vo.CLASIFICACION IN ({placeholders})")
+                            params_canales.extend(p_clasi_list)
+                    
+                    if p_linea_list:
+                        if len(p_linea_list) == 1:
+                            where_canales.append("vo.LINEA = %s")
+                            params_canales.append(p_linea_list[0])
+                        else:
+                            placeholders = ','.join(['%s'] * len(p_linea_list))
+                            where_canales.append(f"vo.LINEA IN ({placeholders})")
+                            params_canales.extend(p_linea_list)
+                    
+                    # Consulta SQL para canales con TODOS los filtros
+                    # IMPORTANTE: Mostrar cantidad de pedidos (COUNT), no montos (SUM)
+                    sql_canales = f"""SELECT 
+                                        vo.CANAL_VENTA as canal_venta,
+                                        COUNT(DISTINCT vo.ID_VENTA) as total
+                                      FROM ventas_online vo
+                                      WHERE {' AND '.join(where_canales)}
+                                      GROUP BY vo.CANAL_VENTA
+                                      ORDER BY total DESC"""
+                    cursor.execute(sql_canales, params_canales)
+                    canales_raw = cursor.fetchall()
+                
+                canales = []
+                for c in canales_raw:
+                    canales.append({
+                        "canal_venta": c.get("canal_venta") or c.get("CANAL_VENTA") or c.get("canal") or c.get("CANAL") or "—",
+                        "total": int(c.get("total") or c.get("TOTAL") or 0)  # Convertir a int porque es COUNT
+                    })
+                
+                # Si hay filtros activos, clasificaciones y líneas se recalculan desde cero más abajo
+                # Si no hay filtros, obtenerlas del SP
+                if usar_sp_directo:
+                    clasificaciones = fetch_all_safe(cursor) if cursor.nextset() else []
+                    lineas = fetch_all_safe(cursor) if cursor.nextset() else []
+                else:
+                    # Saltar clasificaciones y líneas del SP (se recalculan desde cero)
+                    _ = fetch_all_safe(cursor) if cursor.nextset() else []  # clasificaciones (ignorar)
+                    _ = fetch_all_safe(cursor) if cursor.nextset() else []  # líneas (ignorar)
+                    clasificaciones = []
+                    lineas = []
 
                 # Procesar líneas: agregar conteo de registros (COUNT) además del total
                 # Construir WHERE con los mismos filtros que el SP (excepto linea)
@@ -274,14 +424,50 @@ def obtener_metricas_dashboard(request, headers):
                     if linea_key:
                         counts_map_lineas[linea_key] = row.get('total_registros', 0)
 
-                # Agregar total_registros a cada línea
+                # Si hay filtros activos, recalcular completamente las líneas desde cero
+                if not usar_sp_directo:
+                    # Crear líneas desde cero usando counts_map_lineas
+                    lineas = []
+                    for linea_name, total_registros in counts_map_lineas.items():
+                        if total_registros > 0:  # Solo incluir las que tienen datos
+                            lineas.append({
+                                'LINEA': linea_name,
+                                'linea': linea_name,
+                                'nombre': linea_name,
+                                'NOMBRE': linea_name,
+                                'descripcion': linea_name,
+                                'DESCRIPCION': linea_name,
+                                'total_registros': total_registros,
+                                'TOTAL_REGISTROS': total_registros,
+                                'total': total_registros,
+                                'TOTAL': total_registros,
+                                'cantidad': total_registros,
+                                'CANTIDAD': total_registros
+                            })
+                else:
+                    # Sin filtros: usar las del SP y agregar total_registros
+                    for linea in lineas:
+                        linea_name = linea.get('LINEA') or linea.get('linea') or linea.get('nombre') or linea.get('NOMBRE') or linea.get('descripcion') or linea.get('DESCRIPCION')
+                        total_registros = counts_map_lineas.get(linea_name, 0) if linea_name else 0
+                        linea['total_registros'] = total_registros
+                        linea['TOTAL_REGISTROS'] = total_registros
+                        linea['total'] = total_registros
+                        linea['TOTAL'] = total_registros
+                        linea['cantidad'] = total_registros
+                        linea['CANTIDAD'] = total_registros
+                
+                # Procesar líneas finales
                 lineas_procesadas = []
                 for linea in lineas:
                     linea_name = linea.get('LINEA') or linea.get('linea') or linea.get('nombre') or linea.get('NOMBRE') or linea.get('descripcion') or linea.get('DESCRIPCION')
-                    # Siempre agregar total_registros, usar 0 si no está en el mapa (no hay registros para este filtro)
-                    linea['total_registros'] = counts_map_lineas.get(linea_name, 0) if linea_name else 0
-                    linea['TOTAL_REGISTROS'] = counts_map_lineas.get(linea_name, 0) if linea_name else 0
-                    lineas_procesadas.append(linea)
+                    total_registros = linea.get('total_registros', 0)
+                    
+                    # Si hay filtros activos, solo incluir líneas con total_registros > 0
+                    if not usar_sp_directo:
+                        if total_registros > 0:
+                            lineas_procesadas.append(linea)
+                    else:
+                        lineas_procesadas.append(linea)
 
                 # Procesar clasificaciones: agregar conteo de registros (COUNT) además del total
                 # Hacer consulta única para obtener todos los conteos agrupados
@@ -344,14 +530,50 @@ def obtener_metricas_dashboard(request, headers):
                     if clasi_key:
                         counts_map[clasi_key] = row.get('total_registros', 0)
 
-                # Agregar total_registros a cada clasificación
+                # Si hay filtros activos, recalcular completamente las clasificaciones desde cero
+                if not usar_sp_directo:
+                    # Crear clasificaciones desde cero usando counts_map
+                    clasificaciones = []
+                    for clasi_name, total_registros in counts_map.items():
+                        if total_registros > 0:  # Solo incluir las que tienen datos
+                            clasificaciones.append({
+                                'clasificacion_pedido': clasi_name,
+                                'CLASIFICACION_PEDIDO': clasi_name,
+                                'clasificacion': clasi_name,
+                                'CLASIFICACION': clasi_name,
+                                'nombre': clasi_name,
+                                'NOMBRE': clasi_name,
+                                'total_registros': total_registros,
+                                'TOTAL_REGISTROS': total_registros,
+                                'total': total_registros,
+                                'TOTAL': total_registros,
+                                'cantidad': total_registros,
+                                'CANTIDAD': total_registros
+                            })
+                else:
+                    # Sin filtros: usar las del SP y agregar total_registros
+                    for clasi in clasificaciones:
+                        clasi_name = clasi.get('clasificacion_pedido') or clasi.get('CLASIFICACION_PEDIDO') or clasi.get('clasificacion') or clasi.get('CLASIFICACION') or clasi.get('nombre') or clasi.get('NOMBRE')
+                        total_registros = counts_map.get(clasi_name, 0) if clasi_name else 0
+                        clasi['total_registros'] = total_registros
+                        clasi['TOTAL_REGISTROS'] = total_registros
+                        clasi['total'] = total_registros
+                        clasi['TOTAL'] = total_registros
+                        clasi['cantidad'] = total_registros
+                        clasi['CANTIDAD'] = total_registros
+                
+                # Procesar clasificaciones finales
                 clasificaciones_procesadas = []
                 for clasi in clasificaciones:
                     clasi_name = clasi.get('clasificacion_pedido') or clasi.get('CLASIFICACION_PEDIDO') or clasi.get('clasificacion') or clasi.get('CLASIFICACION') or clasi.get('nombre') or clasi.get('NOMBRE')
-                    # Siempre agregar total_registros, usar 0 si no está en el mapa (no hay registros para este filtro)
-                    clasi['total_registros'] = counts_map.get(clasi_name, 0) if clasi_name else 0
-                    clasi['TOTAL_REGISTROS'] = counts_map.get(clasi_name, 0) if clasi_name else 0
-                    clasificaciones_procesadas.append(clasi)
+                    total_registros = clasi.get('total_registros', 0)
+                    
+                    # Si hay filtros activos, solo incluir clasificaciones con total_registros > 0
+                    if not usar_sp_directo:
+                        if total_registros > 0:
+                            clasificaciones_procesadas.append(clasi)
+                    else:
+                        clasificaciones_procesadas.append(clasi)
 
                 result = {
                     "kpis": kpi_data,
@@ -365,13 +587,20 @@ def obtener_metricas_dashboard(request, headers):
             elif tipo == "full_reporte_2":
                 c = request.args.get("cliente")
                 r = request.args.get("region")
+                d = request.args.get("distrito")
                 p = request.args.get("pago")
                 comp = request.args.get("comprobante")
                 alm = request.args.get("almacen")
 
-                cursor.callproc('sp_Dashboard_ReporteGeneral2_Filtrado', (
-                    n(c), n(r), n(p), n(comp), n(alm), f_inicio, f_fin
-                ))
+                # Intentar versión nueva del SP con distrito (si existe); si no, fallback al SP antiguo.
+                try:
+                    cursor.callproc('sp_Dashboard_ReporteGeneral2_Filtrado', (
+                        n(c), n(r), n(d), n(p), n(comp), n(alm), f_inicio, f_fin
+                    ))
+                except Exception:
+                    cursor.callproc('sp_Dashboard_ReporteGeneral2_Filtrado', (
+                        n(c), n(r), n(p), n(comp), n(alm), f_inicio, f_fin
+                    ))
 
                 ranking = fetch_all_safe(cursor)
                 
@@ -409,11 +638,21 @@ def obtener_metricas_dashboard(request, headers):
                 p_canal = request.args.get("canal")
                 p_clasi = request.args.get("clasificacion")
                 p_linea = request.args.get("linea")
+                p_cliente = request.args.get("cliente")
+                p_pago = request.args.get("pago")
+                p_region = request.args.get("region")
 
-                # Llamamos al procedimiento que acabas de crear
-                cursor.callproc('sp_Dashboard_ZeusElectric', (
-                    n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), f_inicio, f_fin
-                ))
+                # Llamada al nuevo Stored Procedure con todos los filtros
+                # Intentar versión nueva del SP con cliente, pago, region (9 params); si no, fallback al SP antiguo (7 params)
+                try:
+                    cursor.callproc('sp_Dashboard_ZeusElectric', (
+                        n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), n(p_cliente), n(p_pago), n(p_region), f_inicio, f_fin
+                    ))
+                except Exception:
+                    # Fallback al SP antiguo (sin cliente, pago, region)
+                    cursor.callproc('sp_Dashboard_ZeusElectric', (
+                        n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), f_inicio, f_fin
+                    ))
 
                 # 1. KPIs (Total y Cantidad)
                 resumen = fetch_all_safe(cursor)
@@ -446,9 +685,12 @@ def obtener_metricas_dashboard(request, headers):
                 if cursor.nextset(): ventas_mes = fetch_all_safe(cursor)
 
                 # Procesar canales: agregar cantidad_pedidos (COUNT de pedidos) además del monto_total
-                # Esto se hace DESPUÉS de obtener todos los resultados del stored procedure
-                # Construir WHERE con los mismos filtros que el SP
-                where_conditions_canales_electric = ["v.FECHA BETWEEN %s AND %s"]
+                # Construir WHERE con TODOS los filtros (incluyendo cliente, pago, region)
+                # FILTRO AUTOMÁTICO: Solo productos de Zeus Electric (LINEA = 'ZEUS-ELECTRIC' o 'ZEUS ELECTRIC')
+                where_conditions_canales_electric = [
+                    "v.FECHA BETWEEN %s AND %s",
+                    "(v.LINEA = 'ZEUS-ELECTRIC' OR v.LINEA = 'ZEUS ELECTRIC')"
+                ]
                 params_canales_electric = [f_inicio, f_fin]
                 
                 if p_prod:
@@ -468,6 +710,21 @@ def obtener_metricas_dashboard(request, headers):
                 if p_linea:
                     where_conditions_canales_electric.append("v.LINEA = %s")
                     params_canales_electric.append(p_linea)
+                
+                if p_cliente:
+                    where_conditions_canales_electric.append("v.CLIENTE = %s")
+                    params_canales_electric.append(p_cliente)
+                
+                if p_pago:
+                    where_conditions_canales_electric.append("v.FORMA_DE_PAGO = %s")
+                    params_canales_electric.append(p_pago)
+                
+                if p_region:
+                    where_conditions_canales_electric.append("v.REGION = %s")
+                    params_canales_electric.append(p_region)
+                
+                # Nota: No filtramos por p_canal aquí porque queremos el COUNT de todos los canales
+                # El filtro de canal se aplica en el stored procedure para otros datos
                 
                 # Calcular cantidad_pedidos (COUNT de pedidos) por canal
                 sql_canales_count_electric = f"""SELECT 
@@ -509,11 +766,21 @@ def obtener_metricas_dashboard(request, headers):
                 p_canal = request.args.get("canal")
                 p_clasi = request.args.get("clasificacion")
                 p_linea = request.args.get("linea")
+                p_cliente = request.args.get("cliente")
+                p_pago = request.args.get("pago")
+                p_region = request.args.get("region")
 
-                # Llamada al nuevo Stored Procedure corregido
-                cursor.callproc('sp_Dashboard_ZeusSafety', (
-                    n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), f_inicio, f_fin
-                ))
+                # Llamada al nuevo Stored Procedure con todos los filtros
+                # Intentar versión nueva del SP con cliente, pago, region (9 params); si no, fallback al SP antiguo (7 params)
+                try:
+                    cursor.callproc('sp_Dashboard_ZeusSafety', (
+                        n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), n(p_cliente), n(p_pago), n(p_region), f_inicio, f_fin
+                    ))
+                except Exception:
+                    # Fallback al SP antiguo (sin cliente, pago, region)
+                    cursor.callproc('sp_Dashboard_ZeusSafety', (
+                        n(p_prod), n(p_mes), n(p_canal), n(p_clasi), n(p_linea), f_inicio, f_fin
+                    ))
 
                 # 1. KPIs (Total y Cantidad)
                 resumen = fetch_all_safe(cursor)
@@ -530,8 +797,12 @@ def obtener_metricas_dashboard(request, headers):
                 ventas_mes = fetch_all_safe(cursor) if cursor.nextset() else []
 
                 # Procesar canales: agregar numero_de_pedidos (COUNT de pedidos) además del monto_total
-                # Construir WHERE con los mismos filtros que el SP
-                where_conditions_canales = ["v.FECHA BETWEEN %s AND %s"]
+                # Construir WHERE con TODOS los filtros (incluyendo cliente, pago, region)
+                # FILTRO AUTOMÁTICO: Solo productos de Zeus Safety (LINEA = 'ZEUS-SAFETY' o 'ZEUS SAFETY')
+                where_conditions_canales = [
+                    "v.FECHA BETWEEN %s AND %s",
+                    "(v.LINEA = 'ZEUS-SAFETY' OR v.LINEA = 'ZEUS SAFETY')"
+                ]
                 params_canales = [f_inicio, f_fin]
                 
                 if p_prod:
@@ -551,6 +822,18 @@ def obtener_metricas_dashboard(request, headers):
                 if p_linea:
                     where_conditions_canales.append("v.LINEA = %s")
                     params_canales.append(p_linea)
+                
+                if p_cliente:
+                    where_conditions_canales.append("v.CLIENTE = %s")
+                    params_canales.append(p_cliente)
+                
+                if p_pago:
+                    where_conditions_canales.append("v.FORMA_DE_PAGO = %s")
+                    params_canales.append(p_pago)
+                
+                if p_region:
+                    where_conditions_canales.append("v.REGION = %s")
+                    params_canales.append(p_region)
                 
                 # Nota: No filtramos por p_canal aquí porque queremos el COUNT de todos los canales
                 # El filtro de canal se aplica en el stored procedure para otros datos

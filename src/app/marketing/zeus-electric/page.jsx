@@ -293,13 +293,20 @@ export default function ZeusElectricPage() {
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  const regiones = (data.ventas_region || [])
+  const regionesRaw = (data.ventas_region || [])
     .map((r) => ({
       name: r?.region || r?.REGION || r?.distrito || r?.DISTRITO || r?.ciudad || r?.CIUDAD || r?.nombre || r?.NOMBRE || "—",
       value: clampNumber(r?.total || r?.TOTAL || r?.cantidad || r?.CANTIDAD || 0),
     }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
+  
+  // Calcular porcentajes para el mapa
+  const totalRegiones = regionesRaw.reduce((sum, r) => sum + r.value, 0);
+  const regiones = regionesRaw.map((r) => ({
+    ...r,
+    percent: totalRegiones > 0 ? Number(((r.value / totalRegiones) * 100).toFixed(1)) : 0,
+  }));
 
   const tiposPago = (data.tipos_pago || [])
     .map((r) => ({

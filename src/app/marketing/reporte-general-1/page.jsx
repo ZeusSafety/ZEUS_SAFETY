@@ -296,7 +296,7 @@ export default function ReporteGeneral1MarketingPage() {
 
   // Mapear clasificación de pedidos (solo con datos)
   // Priorizar conteo de registros sobre montos totales
-  const clasificaciones = (data.clasificacion_pedidos || [])
+  const clasificacionesRaw = (data.clasificacion_pedidos || [])
     .map((r) => ({
       name: r?.clasificacion_pedido || r?.CLASIFICACION_PEDIDO || r?.clasificacion || r?.CLASIFICACION || r?.tipo || r?.TIPO || r?.nombre || r?.NOMBRE || "—",
       // Buscar primero campos de conteo (COUNT), luego cantidad, y finalmente total como fallback
@@ -307,12 +307,34 @@ export default function ReporteGeneral1MarketingPage() {
         r?.total || r?.TOTAL || 0
       ),
     }))
-    .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
+
+  // Filtrar elementos con 0% cuando hay filtros activos
+  const tieneFiltrosActivos = filters.mes.length > 0 || filters.producto.length > 0 || filters.canal.length > 0 || filters.clasificacion.length > 0 || filters.linea.length > 0;
+  const clasificaciones = useMemo(() => {
+    // Siempre filtrar elementos con value = 0
+    const conValor = clasificacionesRaw.filter((x) => x.value > 0);
+    
+    if (!tieneFiltrosActivos) {
+      return conValor;
+    }
+    
+    // Cuando hay filtros activos, calcular porcentajes y filtrar los que tienen 0% o value = 0
+    const total = conValor.reduce((sum, x) => sum + x.value, 0);
+    if (total === 0) return [];
+    
+    return conValor.filter((c) => {
+      // Verificar que tenga valor > 0
+      if (c.value <= 0) return false;
+      // Calcular porcentaje y verificar que sea > 0 (con un pequeño margen para evitar problemas de redondeo)
+      const percent = (c.value / total) * 100;
+      return percent > 0.01; // Usar 0.01% como umbral mínimo
+    });
+  }, [clasificacionesRaw, tieneFiltrosActivos]);
 
   // Mapear líneas (solo con datos)
   // Priorizar conteo de registros sobre montos totales
-  const lineas = (data.lineas || [])
+  const lineasRaw = (data.lineas || [])
     .map((r) => ({
       name: r?.LINEA || r?.linea || r?.nombre || r?.NOMBRE || r?.descripcion || r?.DESCRIPCION || "—",
       // Buscar primero campos de conteo (COUNT), luego cantidad, y finalmente total como fallback
@@ -323,8 +345,29 @@ export default function ReporteGeneral1MarketingPage() {
         r?.total || r?.TOTAL || 0
       ),
     }))
-    .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
+
+  // Filtrar elementos con 0% cuando hay filtros activos
+  const lineas = useMemo(() => {
+    // Siempre filtrar elementos con value = 0
+    const conValor = lineasRaw.filter((x) => x.value > 0);
+    
+    if (!tieneFiltrosActivos) {
+      return conValor;
+    }
+    
+    // Cuando hay filtros activos, calcular porcentajes y filtrar los que tienen 0% o value = 0
+    const total = conValor.reduce((sum, x) => sum + x.value, 0);
+    if (total === 0) return [];
+    
+    return conValor.filter((l) => {
+      // Verificar que tenga valor > 0
+      if (l.value <= 0) return false;
+      // Calcular porcentaje y verificar que sea > 0 (con un pequeño margen para evitar problemas de redondeo)
+      const percent = (l.value / total) * 100;
+      return percent > 0.01; // Usar 0.01% como umbral mínimo
+    });
+  }, [lineasRaw, tieneFiltrosActivos]);
 
   // Mapear productos top (varias posibles claves para unidades/docenas)
   const productosBase = data.productos_top || [];
@@ -937,11 +980,19 @@ export default function ReporteGeneral1MarketingPage() {
 
                       {/* Leyenda derecha */}
                       <div className="flex-1 space-y-2">
-                        {clasificaciones.map((c, idx) => {
-                          const total = clasificaciones.reduce((sum, x) => sum + x.value, 0);
-                          const percent = total > 0 ? ((c.value / total) * 100).toFixed(1) : 0;
-                          const colors = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
-                          return (
+                        {clasificaciones
+                          .filter((c) => {
+                            // Filtrar elementos con value = 0 o percent = 0%
+                            if (c.value <= 0) return false;
+                            const total = clasificaciones.reduce((sum, x) => sum + x.value, 0);
+                            const percent = total > 0 ? ((c.value / total) * 100) : 0;
+                            return percent > 0;
+                          })
+                          .map((c, idx) => {
+                            const total = clasificaciones.reduce((sum, x) => sum + x.value, 0);
+                            const percent = total > 0 ? ((c.value / total) * 100).toFixed(1) : 0;
+                            const colors = ["#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#FB7185", "#FACC15"];
+                            return (
                             <div
                               key={c.name}
                               role="button"
@@ -1050,11 +1101,19 @@ export default function ReporteGeneral1MarketingPage() {
 
                       {/* Leyenda derecha */}
                       <div className="flex-1 space-y-2">
-                        {lineas.map((l, idx) => {
-                          const total = lineas.reduce((sum, x) => sum + x.value, 0);
-                          const percent = total > 0 ? ((l.value / total) * 100).toFixed(1) : 0;
-                          const colors = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
-                          return (
+                        {lineas
+                          .filter((l) => {
+                            // Filtrar elementos con value = 0 o percent = 0%
+                            if (l.value <= 0) return false;
+                            const total = lineas.reduce((sum, x) => sum + x.value, 0);
+                            const percent = total > 0 ? ((l.value / total) * 100) : 0;
+                            return percent > 0;
+                          })
+                          .map((l, idx) => {
+                            const total = lineas.reduce((sum, x) => sum + x.value, 0);
+                            const percent = total > 0 ? ((l.value / total) * 100).toFixed(1) : 0;
+                            const colors = ["#FACC15", "#60A5FA", "#A78BFA", "#34D399", "#FB7185"];
+                            return (
                             <div
                               key={l.name}
                               role="button"
