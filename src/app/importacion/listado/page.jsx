@@ -396,16 +396,25 @@ export default function ListadoImportacionesPage() {
         return [];
       }
 
-      const productosMapeados = detalles.map((detalle, index) => ({
-        id: Date.now() + index,
-        producto: detalle.PRODUCTO || detalle.producto || detalle.NOMBRE || detalle.nombre || "",
-        codigo: detalle.CODIGO || detalle.codigo || detalle.CODIGO_PRODUCTO || "",
-        unidadMedida: detalle.UNIDAD_MEDIDA || detalle.unidadMedida || detalle.UNIDAD || detalle.unidad || "",
-        cantidad: String(detalle.CANTIDAD || detalle.cantidad || detalle.CANTIDAD_INICIAL || "0"),
-        cantidadCaja: String(detalle.CANTIDAD_CAJA || detalle.cantidadCaja || detalle.CANTIDAD_EN_CAJA || detalle.cantidadEnCaja || ""),
-      }));
-
-      console.log('✅ Productos mapeados:', productosMapeados.length);
+      // Mapear y tratar 0 correctamente usando nullish coalescing
+      const productosMapeados = detalles.map((detalle, index) => {
+        // para debug, mostrar objeto completo si falta la caja
+        if (detalle.CANTIDAD_EN_CAJA === undefined && detalle.cantidadCaja === undefined && detalle.cantidad_en_caja === undefined) {
+          // sólo log si no hay ninguna variante
+          console.debug('🔍 detalle sin campo caja detectado:', detalle);
+        }
+        const cantidadCajaVal = detalle.CANTIDAD_CAJA ?? detalle.cantidadCaja ?? detalle.CANTIDAD_EN_CAJA ?? detalle.cantidadEnCaja ?? detalle.cantidad_en_caja ?? "";
+        return {
+          id: Date.now() + index,
+          producto: detalle.PRODUCTO || detalle.producto || detalle.NOMBRE || detalle.nombre || "",
+          codigo: detalle.CODIGO || detalle.codigo || detalle.CODIGO_PRODUCTO || "",
+          unidadMedida: detalle.UNIDAD_MEDIDA || detalle.unidadMedida || detalle.UNIDAD || detalle.unidad || "",
+          cantidad: String(detalle.CANTIDAD ?? detalle.cantidad ?? detalle.CANTIDAD_INICIAL ?? "0"),
+          cantidadCaja: String(cantidadCajaVal),
+        };
+      });
+        console.log('✅ Productos mapeados:', productosMapeados.length);
+        console.debug('🔎 productosMapeados detalle completo:', JSON.stringify(productosMapeados, null, 2));
       return productosMapeados;
     } catch (error) {
       console.error("❌ Error al obtener detalles de productos:", error);
@@ -415,6 +424,7 @@ export default function ListadoImportacionesPage() {
 
   // Función para generar el HTML de la plantilla con los datos
   const generarHTMLPlantilla = (listaProductos, formData, logoBase64 = null) => {
+    console.debug('🖨️ generarHTMLPlantilla - listaProductos recibida:', JSON.stringify(listaProductos, null, 2));
     const fechaRegistro = formData.fechaRegistro
       ? formatearFecha(formData.fechaRegistro)
       : formatearFecha(new Date().toISOString().split('T')[0]);
@@ -425,8 +435,8 @@ export default function ListadoImportacionesPage() {
 
     // Generar filas de la tabla de productos
     let filasProductos = "";
-    // Siempre generar 22 filas, pero solo numerar las que tienen productos
-    const totalFilas = 22;
+    // Siempre generar 25 filas, pero solo numerar las que tienen productos
+    const totalFilas = 25;
     let totalCantidad = 0;
     let contadorProductos = 0; // Contador para numerar solo los productos reales
 
@@ -445,7 +455,7 @@ export default function ListadoImportacionesPage() {
             <td><input type="text" value="${producto.codigo || ""}" readonly></td>
             <td><input type="text" value="${producto.unidadMedida || ""}" readonly></td>
             <td><input type="text" value="${producto.cantidad || ""}" readonly></td>
-            <td><input type="text" value="${producto.cantidadCaja || ""}" readonly></td>
+            <td><input type="text" value="${producto.cantidadCaja ?? ""}" readonly></td>
             <td><input type="text" value="" readonly></td>
             <td><input type="text" value="" readonly></td>
           </tr>
@@ -944,6 +954,8 @@ export default function ListadoImportacionesPage() {
       setMensajeProgreso("Iniciando actualización...");
 
       let pdfBlob = null;
+      // mantenemos la lista de detalles fuera del bloque para poder reenviarla
+      let detallesProductos = [];
       
       // Si cambió la fecha de llegada de productos, generar nuevo PDF
       if (cambioFechaLLegada) {
@@ -954,7 +966,7 @@ export default function ListadoImportacionesPage() {
           
           // Obtener detalles de productos desde la API
           const numeroDespacho = selectedImportacion.numeroDespacho || updateForm.numeroDespacho;
-          const detallesProductos = await obtenerDetallesProductos(numeroDespacho);
+          detallesProductos = await obtenerDetallesProductos(numeroDespacho);
           
           if (detallesProductos.length === 0) {
             console.warn('⚠️ No se encontraron detalles de productos. Se generará PDF sin productos.');
@@ -1013,7 +1025,19 @@ export default function ListadoImportacionesPage() {
         formDataToSend.append('estado_importacion', estadoParaAPI || '');
         formDataToSend.append('canal', canal || '');
         formDataToSend.append('responsable', selectedImportacion.redactadoPor || updateForm.redactadoPor || 'Admin');
-
+        // Enviar detalles también para que el backend pueda insertar la información completa
+        if (detallesProductos && detallesProductos.length > 0) {
+          // convertir a la misma estructura que el registro inicial
+          const detallesToSend = detallesProductos.map((prod, idx) => ({
+            item: idx + 1,
+            producto: prod.producto,
+            codigo: prod.codigo,
+            unidad_medida: prod.unidadMedida,
+            cantidad: parseInt(prod.cantidad) || 0,
+            cantidad_en_caja: parseInt(prod.cantidadCaja) || 0,
+          }));
+          formDataToSend.append('detalles', JSON.stringify(detallesToSend));
+        }
         console.log('📤 Enviando FormData con PDF');
         setMensajeProgreso("Enviando datos al servidor...");
         setProgresoActualizacion(40);
