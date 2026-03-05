@@ -541,8 +541,8 @@ export default function RegistroImportacionesPage() {
 
     // Generar filas de la tabla de productos
     let filasProductos = "";
-    // Siempre generar 22 filas, pero solo numerar las que tienen productos
-    const totalFilas = 22;
+    // Siempre generar 25 filas, pero solo numerar las que tienen productos
+    const totalFilas = 25;
     let totalCantidad = 0;
     let contadorProductos = 0; // Contador para numerar solo los productos reales
 
@@ -561,7 +561,7 @@ export default function RegistroImportacionesPage() {
             <td><input type="text" value="${producto.codigo || ""}" readonly></td>
             <td><input type="text" value="${producto.unidadMedida || ""}" readonly></td>
             <td><input type="text" value="${producto.cantidad || ""}" readonly></td>
-            <td><input type="text" value="${producto.cantidadCaja || ""}" readonly></td>
+            <td><input type="text" value="${producto.cantidadCaja ?? ""}" readonly></td>
             <td><input type="text" value="" readonly></td>
             <td><input type="text" value="" readonly></td>
           </tr>
@@ -1092,7 +1092,9 @@ export default function RegistroImportacionesPage() {
         producto: prod.producto,
         codigo: prod.codigo,
         unidad_medida: prod.unidadMedida,
-        cantidad: parseInt(prod.cantidad)
+        cantidad: parseInt(prod.cantidad),
+        // nuevo campo para el backend (snake_case)
+        cantidad_en_caja: parseInt(prod.cantidadCaja) || 0
       }));
       formDataToSend.append('detalles', JSON.stringify(detalles));
 
