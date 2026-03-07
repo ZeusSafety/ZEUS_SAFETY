@@ -1004,31 +1004,61 @@ export default function ListadoImportacionesPage() {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       if (pdfBlob) {
-        // Si hay PDF, usar FormData para enviar el archivo
-        setMensajeProgreso("Preparando archivo PDF...");
+        // Subida directa a GCS con URL firmada (evita límite 413 en producción)
+        const numeroDespachoStr = selectedImportacion.numeroDespacho || updateForm.numeroDespacho;
+        const nombreArchivo = `Ficha_Importacion_${numeroDespachoStr}_${Date.now()}.pdf`;
+
+        setMensajeProgreso("Obteniendo URL de subida...");
         setProgresoActualizacion(20);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        const uploadUrlRes = await fetch(
+          `/api/importaciones2026/upload-url?numero_despacho=${encodeURIComponent(numeroDespachoStr)}&filename=${encodeURIComponent(nombreArchivo)}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!uploadUrlRes.ok) {
+          const errText = await uploadUrlRes.text();
+          let errData = {};
+          try {
+            errData = JSON.parse(errText);
+          } catch (_) {}
+          setMostrarProgreso(false);
+          throw new Error(errData.error || errText || "Error al obtener URL de subida");
+        }
+        const { upload_url: signedUploadUrl, final_url: archivoPdfUrlFinal } = await uploadUrlRes.json();
+        if (!signedUploadUrl || !archivoPdfUrlFinal) {
+          setMostrarProgreso(false);
+          throw new Error("El servidor no devolvió URL de subida válida");
+        }
 
-        const formDataToSend = new FormData();
-        
-        // Agregar el archivo PDF
-        const nombreArchivo = `Ficha_Importacion_${selectedImportacion.numeroDespacho || updateForm.numeroDespacho}_${Date.now()}.pdf`;
-        const archivoPDF = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
-        formDataToSend.append('archivo_pdf', archivoPDF);
+        setMensajeProgreso("Subiendo PDF a almacenamiento...");
+        setProgresoActualizacion(40);
+        const uploadToGcsRes = await fetch(signedUploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/pdf" },
+          body: pdfBlob,
+        });
+        if (!uploadToGcsRes.ok) {
+          setMostrarProgreso(false);
+          throw new Error("Error al subir el PDF al almacenamiento. Intente de nuevo.");
+        }
 
-        // Agregar los demás campos como texto
-        formDataToSend.append('id', idNumerico.toString());
-        formDataToSend.append('productos', productos);
-        formDataToSend.append('fecha_llegada_productos', fechaLlegadaNueva || '');
-        formDataToSend.append('fecha_almacen', fechaAlmacen || '');
-        formDataToSend.append('tipo_carga', tipoCarga || '');
-        formDataToSend.append('estado_importacion', estadoParaAPI || '');
-        formDataToSend.append('canal', canal || '');
-        formDataToSend.append('responsable', selectedImportacion.redactadoPor || updateForm.redactadoPor || 'Admin');
-        // Enviar detalles también para que el backend pueda insertar la información completa
+        setMensajeProgreso("Guardando cambios en la base de datos...");
+        setProgresoActualizacion(60);
+        const payload = {
+          id: idNumerico,
+          productos,
+          fecha_llegada_productos: fechaLlegadaNueva || "",
+          fecha_almacen: fechaAlmacen || "",
+          tipo_carga: tipoCarga || "",
+          estado_importacion: estadoParaAPI || "",
+          canal: canal || "",
+          responsable: selectedImportacion.redactadoPor || updateForm.redactadoPor || "Admin",
+          archivo_pdf_url: archivoPdfUrlFinal,
+        };
         if (detallesProductos && detallesProductos.length > 0) {
-          // convertir a la misma estructura que el registro inicial
-          const detallesToSend = detallesProductos.map((prod, idx) => ({
+          payload.detalles = detallesProductos.map((prod, idx) => ({
             item: idx + 1,
             producto: prod.producto,
             codigo: prod.codigo,
@@ -1036,24 +1066,21 @@ export default function ListadoImportacionesPage() {
             cantidad: parseInt(prod.cantidad) || 0,
             cantidad_en_caja: parseInt(prod.cantidadCaja) || 0,
           }));
-          formDataToSend.append('detalles', JSON.stringify(detallesToSend));
         }
-        console.log('📤 Enviando FormData con PDF');
-        setMensajeProgreso("Enviando datos al servidor...");
-        setProgresoActualizacion(40);
 
         const response = await fetch("/api/importaciones2026?area=importacion", {
           method: "PUT",
           headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
             "Authorization": `Bearer ${token}`,
-            // NO incluir 'Content-Type': el navegador lo establecerá automáticamente con el boundary para FormData
           },
-          body: formDataToSend,
+          body: JSON.stringify(payload),
         });
 
         setMensajeProgreso("Procesando respuesta del servidor...");
-        setProgresoActualizacion(70);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        setProgresoActualizacion(85);
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         if (!response.ok) {
           if (response.status === 401) {
@@ -1062,15 +1089,27 @@ export default function ListadoImportacionesPage() {
             setMostrarProgreso(false);
             return;
           }
-          const errorData = await response.json();
-          console.error('❌ Error de respuesta:', errorData);
+          let errorText = "";
+          let errorData = null;
+          try {
+            errorText = await response.text();
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText };
+            }
+          } catch {
+            errorData = { error: `Error ${response.status}` };
+          }
+          console.error("❌ Error de respuesta:", errorData);
           setMostrarProgreso(false);
-          throw new Error(errorData.error || errorData.ERROR || `Error ${response.status}`);
+          throw new Error(
+            errorData.error || errorData.ERROR || `Error ${response.status}`
+          );
         }
 
-        setMensajeProgreso("Guardando cambios en la base de datos...");
         setProgresoActualizacion(90);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       } else {
         // Si no hay PDF, usar JSON como antes
         setMensajeProgreso("Preparando datos para actualizar...");
@@ -1112,10 +1151,24 @@ export default function ListadoImportacionesPage() {
             setMostrarProgreso(false);
             return;
           }
-          const errorData = await response.json();
+          let errorText = "";
+          let errorData = null;
+          try {
+            errorText = await response.text();
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              // No es JSON, probablemente un HTML tipo "Request Entity Too Large"
+              errorData = { error: errorText };
+            }
+          } catch {
+            errorData = { error: `Error ${response.status}` };
+          }
           console.error('❌ Error de respuesta:', errorData);
           setMostrarProgreso(false);
-          throw new Error(errorData.error || errorData.ERROR || `Error ${response.status}`);
+          throw new Error(
+            errorData.error || errorData.ERROR || `Error ${response.status}`
+          );
         }
 
         setMensajeProgreso("Guardando cambios en la base de datos...");
