@@ -16,6 +16,7 @@ export default function LogisticaPage() {
     "descuento-cajas-malvinas": false,
     "solicitudes-incidencias": false,
     "Gestion-inventario": false,
+    "abastecimiento": false,
     "gestion-movilidad": false,
     "gestion-permisos": false,
   });
@@ -261,6 +262,35 @@ export default function LogisticaPage() {
       ],
     },
     {
+      id: "abastecimiento",
+      title: "Abastecimiento",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      ),
+      cards: [
+        {
+          id: "gestionar-abastecimiento",
+          icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          ),
+          title: "Gestionar Abastecimiento",
+          description: "Gestionar el abastecimiento de productos y materiales",
+          buttonText: "Acceder",
+          url: "https://abastecimiento-five.vercel.app",
+          buttonIcon: (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ),
+        },        
+      ],
+    },
+    {
       id: "gestion-movilidad",
       title: "Gestión de Movilidad",
       icon: (
@@ -460,6 +490,8 @@ export default function LogisticaPage() {
                                       } else if (card.id === "historial-cajas-malvinas") {
                                         router.push("/logistica/historial-cajas-malvinas");
                                       } else if (card.id === "inventario-callao") {
+                                        window.location.href = card.url;
+                                      } else if (card.id === "gestionar-abastecimiento") {
                                         window.location.href = card.url;
                                       } else if (card.id === "registro-movilidad") {
                                         router.push("/logistica/registro-movilidad");
