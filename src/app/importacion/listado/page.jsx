@@ -1038,11 +1038,15 @@ export default function ListadoImportacionesPage() {
           }));
           formDataToSend.append('detalles', JSON.stringify(detallesToSend));
         }
+        // En producción (Vercel) el body tiene límite ~4.5 MB; enviar el PDF directo a Cloud Run evita 413
+        const putUrlWithPdf = process.env.NEXT_PUBLIC_IMPORTACIONES_DIRECT_URL
+          ? `${process.env.NEXT_PUBLIC_IMPORTACIONES_DIRECT_URL}?area=importacion`
+          : "/api/importaciones2026?area=importacion";
         console.log('📤 Enviando FormData con PDF');
         setMensajeProgreso("Enviando datos al servidor...");
         setProgresoActualizacion(40);
 
-        const response = await fetch("/api/importaciones2026?area=importacion", {
+        const response = await fetch(putUrlWithPdf, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -1062,10 +1066,20 @@ export default function ListadoImportacionesPage() {
             setMostrarProgreso(false);
             return;
           }
-          const errorData = await response.json();
+          const responseText = await response.text();
+          let errorData = null;
+          try {
+            errorData = JSON.parse(responseText);
+          } catch (_) {
+            if (response.status === 413) {
+              errorData = { error: "El PDF es demasiado grande para enviar por este servidor. Configure NEXT_PUBLIC_IMPORTACIONES_DIRECT_URL en Vercel para enviar el archivo directamente al backend." };
+            } else {
+              errorData = { error: responseText || `Error ${response.status}` };
+            }
+          }
           console.error('❌ Error de respuesta:', errorData);
           setMostrarProgreso(false);
-          throw new Error(errorData.error || errorData.ERROR || `Error ${response.status}`);
+          throw new Error(errorData?.error || errorData?.ERROR || `Error ${response.status}`);
         }
 
         setMensajeProgreso("Guardando cambios en la base de datos...");
@@ -1112,10 +1126,18 @@ export default function ListadoImportacionesPage() {
             setMostrarProgreso(false);
             return;
           }
-          const errorData = await response.json();
+          const responseText = await response.text();
+          let errorData = null;
+          try {
+            errorData = JSON.parse(responseText);
+          } catch (_) {
+            errorData = response.status === 413
+              ? { error: "Contenido demasiado grande (límite del servidor)." }
+              : { error: responseText || `Error ${response.status}` };
+          }
           console.error('❌ Error de respuesta:', errorData);
           setMostrarProgreso(false);
-          throw new Error(errorData.error || errorData.ERROR || `Error ${response.status}`);
+          throw new Error(errorData?.error || errorData?.ERROR || `Error ${response.status}`);
         }
 
         setMensajeProgreso("Guardando cambios en la base de datos...");
