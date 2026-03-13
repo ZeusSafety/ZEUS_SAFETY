@@ -1,0 +1,1067 @@
+import functions_framework
+import pymysql
+import json
+import requests
+import logging
+import re
+import io
+import base64
+from datetime import datetime, date
+from decimal import Decimal
+from google.cloud import storage
+
+# Intento de importar pdfplumber (disponible en el entorno GCP)
+try:
+    import pdfplumber
+    PDF_ENGINE = "pdfplumber"
+except ImportError:
+    PDF_ENGINE = None
+
+# ==========================================================
+# CONFIGURACIÓN GLOBAL
+# ==========================================================
+API_TOKEN = "https://api-verificacion-token-2946605267.us-central1.run.app"
+BUCKET_NAME = "archivos_sistema"
+BASE_URL_STORAGE = f"https://storage.googleapis.com/{BUCKET_NAME}/"
+CARPETA_BOLETAS_ORIGINALES = "boletas/originales"
+CARPETA_BOLETAS_EMPRESA    = "boletas/generadas"
+
+# ==========================================================
+# HELPERS DE SERIALIZACIÓN JSON
+# ==========================================================
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+ 
+def jdumps(obj):
+    return json.dumps(obj, cls=JSONEncoder, ensure_ascii=False)
+ 
+# ==========================================================
+# BASE DE DATOS
+# ==========================================================
+def get_connection():
+    """Establece conexión con Cloud SQL"""
+    return pymysql.connect(
+        user="zeussafety-2024",
+        password="ZeusSafety2025",
+        db="Zeus_Safety_Data_Integration",
+        unix_socket="/cloudsql/stable-smithy-435414-m6:us-central1:zeussafety-2024",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+# ==========================================================
+# GCP CLOUD STORAGE
+# ==========================================================
+def subir_a_gcs(contenido_bytes: bytes, nombre_archivo: str, content_type: str, folder: str) -> str | None:
+    """Sube bytes directamente a GCS y retorna la URL pública."""
+    try:
+        client  = storage.Client()
+        bucket  = client.bucket(BUCKET_NAME)
+        timestamp   = int(datetime.now().timestamp())
+        nombre_limpio = re.sub(r'[^a-zA-Z0-9._-]', '_', nombre_archivo)
+        blob_path   = f"{folder}/{timestamp}_{nombre_limpio}"
+        blob = bucket.blob(blob_path)
+        blob.upload_from_string(contenido_bytes, content_type=content_type)
+        blob.make_public()
+        return blob.public_url
+    except Exception as e:
+        logging.error(f"Error subiendo a GCS: {e}")
+        return None
+
+# ==========================================================
+# EXTRACTOR DE PDF (CONTADORA)
+# ==========================================================
+# Patrones para extraer campos del PDF de la contadora.
+# Ajusta las expresiones regulares según el layout real del PDF.
+PATRONES = {
+    "tipo_documento":        r"Tipo\s+de\s+Documento[:\s]+([A-Z]+)",
+    "numero_documento":      r"(?:N[°º]?\s*Documento|DNI|Número\s+de\s+Documento)[:\s]*([\d]{8,12})",
+    "nombre":                r"(?:Nombres?\s+y\s+Apellidos?|Apellidos?\s+y\s+Nombres?)[:\s]+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ ,]+)",
+    "situacion":             r"Situaci[oó]n[:\s]+([A-Za-záéíóúñÁÉÍÓÚÑ ]+)",
+    "fecha_ingreso":         r"Fecha\s+de\s+Ingreso[:\s]+([\d]{1,2}[/\-][\d]{1,2}[/\-][\d]{2,4})",
+    "regimen_pensionario":   r"R[eé]gimen\s+Pensionario[:\s]+([A-Za-z ]+)",
+    "cuspp":                 r"CUSPP?[:\s]+([A-Z0-9\-]+)",
+    "dias_laborados":        r"D[ií]as\s+Laborados[:\s]+(\d+)",
+    "dias_no_laborados":     r"D[ií]as\s+No\s+Laborados[:\s]+(\d+)",
+    "dias_subsidiados":      r"D[ií]as\s+Subsidiados[:\s]+(\d+)",
+    "condicion":             r"Condici[oó]n[:\s]+([A-Za-záéíóúñ ]+)",
+    "jornada_horas":         r"Jornada\s+Ordinaria.*?Total\s+Horas[:\s]+(\d+)",
+    "jornada_minutos":       r"Jornada\s+Ordinaria.*?Minutos[:\s]+(\d+)",
+    "sobretiempo_horas":     r"Sobre\s*[Tt]iempo.*?Total\s+Horas[:\s]+(\d+)",
+    "sobretiempo_minutos":   r"Sobre\s*[Tt]iempo.*?Minutos[:\s]+(\d+)",
+    "remuneracion_basica":   r"Remuneraci[oó]n\s+(?:o\s+Jornal\s+)?B[aá]sico[:\s]+([\d,\.]+)",
+    "comision_afp_pct":      r"Comisi[oó]n\s+AFP\s+Porcentual[:\s]+([\d,\.]+)",
+    "renta_quinta_ret":      r"Renta\s+Quinta\s+Categor[ií]a\s+Retenciones[:\s]+([\d,\.]+)",
+    "prima_seguros_afp":     r"Prima\s+de\s+Seguros\s+AFP[:\s]+([\d,\.]+)",
+    "spp_aportacion_obl":    r"SPP\s*[–\-]\s*Aportaci[oó]n\s+Obligatoria[:\s]+([\d,\.]+)",
+    "essalud":               r"ESSALUD[:\s]+([\d,\.]+)",
+    "poliza_seguros_688":    r"P[oó]liza\s+de\s+Seguros\s+D\.\s*LEG\s*688[:\s]+([\d,\.]+)",
+    "otros_empleadores":     r"Otros\s+empleadores[:\s]+(S[ÍI]|NO|Si|No)",
+    "tipo_suspension":       r"Tipo\s+(?:de\s+Suspensi[oó]n)?[:\s]+([A-Za-záéíóúñ ]+)",
+    "motivo_suspension":     r"Motivo[:\s]+([A-Za-záéíóúñ ]+)",
+    "dias_suspension":       r"N[úu]mero\s+de\s+[Dd][ií]as[:\s]+(\d+)",
+}
+
+def _to_decimal(valor: str) -> Decimal:
+    """Convierte string numérico (puede tener comas) a Decimal."""
+    if not valor:
+        return Decimal("0")
+    return Decimal(valor.replace(",", ".").strip())
+ 
+def _to_int(valor: str) -> int:
+    try:
+        return int(valor.strip())
+    except Exception:
+        return 0
+ 
+def _parse_fecha(valor: str) -> str | None:
+    """Intenta parsear fecha en formato DD/MM/YYYY o DD-MM-YYYY → YYYY-MM-DD."""
+    if not valor:
+        return None
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y"):
+        try:
+            return datetime.strptime(valor.strip(), fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return None
+ 
+def extraer_datos_pdf(pdf_bytes: bytes) -> dict:
+    """
+    Extrae todos los campos del PDF de la contadora usando pdfplumber.
+    Devuelve un dict con los datos extraídos y un campo 'errores' con advertencias.
+    """
+    datos = {campo: None for campo in PATRONES}
+    errores = []
+ 
+    if not PDF_ENGINE:
+        errores.append("pdfplumber no está instalado en el entorno. Instala con: pip install pdfplumber")
+        return {"datos": datos, "errores": errores, "texto_raw": ""}
+ 
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            texto = "\n".join(page.extract_text() or "" for page in pdf.pages)
+    except Exception as e:
+        errores.append(f"Error abriendo PDF: {str(e)}")
+        return {"datos": datos, "errores": errores, "texto_raw": ""}
+ 
+    for campo, patron in PATRONES.items():
+        match = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
+        if match:
+            datos[campo] = match.group(1).strip()
+        else:
+            errores.append(f"No se encontró: {campo}")
+ 
+    # Normalizar tipos
+    for campo_decimal in ["remuneracion_basica", "comision_afp_pct", "renta_quinta_ret",
+                           "prima_seguros_afp", "spp_aportacion_obl", "essalud", "poliza_seguros_688"]:
+        if datos[campo_decimal]:
+            datos[campo_decimal] = str(_to_decimal(datos[campo_decimal]))
+ 
+    for campo_int in ["dias_laborados", "dias_no_laborados", "dias_subsidiados",
+                      "jornada_horas", "jornada_minutos", "sobretiempo_horas",
+                      "sobretiempo_minutos", "dias_suspension"]:
+        if datos[campo_int]:
+            datos[campo_int] = _to_int(datos[campo_int])
+ 
+    if datos["fecha_ingreso"]:
+        datos["fecha_ingreso"] = _parse_fecha(datos["fecha_ingreso"])
+ 
+    if datos["otros_empleadores"]:
+        datos["otros_empleadores"] = 1 if datos["otros_empleadores"].upper() in ("SÍ", "SI", "S") else 0
+ 
+    return {"datos": datos, "errores": errores, "texto_raw": texto[:2000]}
+ 
+ 
+# ==========================================================
+# HELPERS DE BD
+# ==========================================================
+def buscar_colaborador_por_documento(conn, numero_documento: str) -> dict | None:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM colaboradores WHERE NUMERO_DOCUMENTO = %s AND ESTADO = 'A' LIMIT 1",
+            (numero_documento,)
+        )
+        return cur.fetchone()
+ 
+def _insertar_o_actualizar_sub(conn, tabla: str, id_col: str, id_boleta: int, datos: dict):
+    """Inserta o actualiza una fila 1:1 relacionada con ID_BOLETA."""
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT {id_col} FROM {tabla} WHERE ID_BOLETA = %s", (id_boleta,))
+        row = cur.fetchone()
+        if row:
+            sets   = ", ".join(f"{k} = %s" for k in datos)
+            values = list(datos.values()) + [id_boleta]
+            cur.execute(f"UPDATE {tabla} SET {sets} WHERE ID_BOLETA = %s", values)
+        else:
+            datos["ID_BOLETA"] = id_boleta
+            cols   = ", ".join(datos.keys())
+            placeholders = ", ".join(["%s"] * len(datos))
+            cur.execute(f"INSERT INTO {tabla} ({cols}) VALUES ({placeholders})", list(datos.values()))
+ 
+ 
+# ==========================================================
+# LÓGICA DE NEGOCIO — PERIODOS
+# ==========================================================
+def handle_periodos(request, conn, headers):
+    method = request.method
+    path_parts = request.path.rstrip("/").split("/")
+ 
+    if method == "GET":
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM periodos_pago ORDER BY ANIO DESC, MES DESC")
+            rows = cur.fetchall()
+        return (jdumps(rows), 200, headers)
+ 
+    if method == "POST":
+        body = request.get_json(silent=True) or {}
+        anio        = body.get("anio")
+        mes         = body.get("mes")
+        descripcion = body.get("descripcion", f"Período {mes}/{anio}")
+        fecha_cierre= body.get("fecha_cierre")
+        estado      = body.get("estado", "ABIERTO")
+ 
+        if not anio or not mes:
+            return (jdumps({"error": "anio y mes son requeridos"}), 400, headers)
+ 
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT ID_PERIODO FROM periodos_pago WHERE ANIO = %s AND MES = %s",
+                (anio, mes)
+            )
+            if cur.fetchone():
+                return (jdumps({"error": "Ya existe un período para ese mes/año"}), 409, headers)
+ 
+            cur.execute(
+                "INSERT INTO periodos_pago (ANIO, MES, DESCRIPCION, FECHA_CIERRE, ESTADO) VALUES (%s,%s,%s,%s,%s)",
+                (anio, mes, descripcion, fecha_cierre, estado)
+            )
+            id_nuevo = cur.lastrowid
+        conn.commit()
+        return (jdumps({"id_periodo": id_nuevo, "mensaje": "Período creado"}), 201, headers)
+ 
+    return (jdumps({"error": "Método no permitido"}), 405, headers)
+ 
+ 
+# ==========================================================
+# LÓGICA DE NEGOCIO — EXTRACCIÓN PDF
+# ==========================================================
+def handle_extraer_pdf(request, conn, headers):
+    """
+    POST /boletas/extraer-pdf
+    Recibe un archivo PDF (multipart), lo sube a GCS (carpeta originales)
+    y devuelve los datos extraídos + datos del colaborador si se encuentra.
+    """
+    if request.method != "POST":
+        return (jdumps({"error": "Método no permitido"}), 405, headers)
+ 
+    archivo = request.files.get("pdf")
+    if not archivo:
+        return (jdumps({"error": "Se requiere el archivo PDF en el campo 'pdf'"}), 400, headers)
+ 
+    pdf_bytes = archivo.read()
+ 
+    # 1. Subir PDF original a GCS
+    nombre_original = archivo.filename or f"boleta_{int(datetime.now().timestamp())}.pdf"
+    url_original = subir_a_gcs(pdf_bytes, nombre_original, "application/pdf", CARPETA_BOLETAS_ORIGINALES)
+ 
+    # 2. Extraer datos
+    resultado = extraer_datos_pdf(pdf_bytes)
+    datos_pdf = resultado["datos"]
+ 
+    # 3. Buscar colaborador por número de documento
+    colaborador = None
+    numero_doc = datos_pdf.get("numero_documento")
+    if numero_doc:
+        colaborador = buscar_colaborador_por_documento(conn, str(numero_doc))
+ 
+    return (jdumps({
+        "datos_pdf":    datos_pdf,
+        "colaborador":  colaborador,
+        "errores_extraccion": resultado["errores"],
+        "url_pdf_original":   url_original,
+    }), 200, headers)
+ 
+ 
+def handle_extraer_pdf_masivo(request, conn, headers):
+    """
+    POST /boletas/extraer-pdf-masivo
+    Recibe múltiples PDFs, los procesa uno a uno y devuelve array de resultados.
+    """
+    if request.method != "POST":
+        return (jdumps({"error": "Método no permitido"}), 405, headers)
+ 
+    archivos = request.files.getlist("pdfs")
+    if not archivos:
+        return (jdumps({"error": "Se requiere al menos un archivo en 'pdfs'"}), 400, headers)
+ 
+    resultados = []
+    for archivo in archivos:
+        pdf_bytes = archivo.read()
+        nombre_original = archivo.filename or f"boleta_{int(datetime.now().timestamp())}.pdf"
+        url_original = subir_a_gcs(pdf_bytes, nombre_original, "application/pdf", CARPETA_BOLETAS_ORIGINALES)
+        resultado = extraer_datos_pdf(pdf_bytes)
+        datos_pdf = resultado["datos"]
+ 
+        colaborador = None
+        numero_doc = datos_pdf.get("numero_documento")
+        if numero_doc:
+            colaborador = buscar_colaborador_por_documento(conn, str(numero_doc))
+ 
+        resultados.append({
+            "archivo":          nombre_original,
+            "datos_pdf":        datos_pdf,
+            "colaborador":      colaborador,
+            "errores_extraccion": resultado["errores"],
+            "url_pdf_original": url_original,
+        })
+ 
+    return (jdumps({"total": len(resultados), "resultados": resultados}), 200, headers)
+ 
+ 
+# ==========================================================
+# LÓGICA DE NEGOCIO — BOLETAS CRUD
+# ==========================================================
+def handle_boletas(request, conn, headers):
+    method = request.method
+    path_parts = request.path.rstrip("/").split("/")
+ 
+    # ── GET /boletas  →  listado/historial (usa vista v_resumen_boletas)
+    if method == "GET" and len(path_parts) <= 2:
+        id_periodo = request.args.get("id_periodo")
+        id_persona = request.args.get("id_persona")
+        estado     = request.args.get("estado")
+ 
+        sql    = "SELECT * FROM v_resumen_boletas WHERE 1=1"
+        params = []
+        if id_periodo:
+            sql += " AND ANIO IS NOT NULL AND DESCRIPCION IN (SELECT DESCRIPCION FROM periodos_pago WHERE ID_PERIODO = %s)"
+            params.append(id_periodo)
+        # Filtramos directamente en boletas_pago cuando hay filtros adicionales
+        with conn.cursor() as cur:
+            # Mejor hacer join directo con filtros
+            sql2 = """
+                SELECT vr.*, bp.ID_BOLETA, bp.ID_PERIODO, bp.ID_PERSONA
+                FROM v_resumen_boletas vr
+                INNER JOIN boletas_pago bp ON bp.URL_PDF_EMPRESA = vr.URL_PDF_EMPRESA OR (
+                    bp.CREATED_AT = vr.FECHA_GENERACION
+                )
+            """
+            # Query simplificada directamente sobre boletas_pago + vista
+            cur.execute("""
+                SELECT bp.ID_BOLETA, bp.ID_PERIODO, bp.ID_PERSONA,
+                       pp.ANIO, pp.MES, pp.DESCRIPCION AS PERIODO,
+                       CONCAT(c.NOMBRE,' ',c.APELLIDO) AS TRABAJADOR,
+                       c.NUMERO_DOCUMENTO, c.AREA, c.CARGO,
+                       bi.REMUNERACION_BASICA,
+                       bp.TOTAL_INGRESOS, bp.TOTAL_DESCUENTOS, bp.NETO_PAGAR,
+                       bp.ESTADO_BOLETA, bp.URL_PDF_EMPRESA, bp.URL_PDF_CONTADORA,
+                       bp.CREATED_AT AS FECHA_GENERACION
+                FROM boletas_pago bp
+                INNER JOIN periodos_pago pp ON bp.ID_PERIODO = pp.ID_PERIODO
+                INNER JOIN colaboradores c  ON bp.ID_PERSONA = c.ID_PERSONA
+                LEFT JOIN  boleta_ingresos bi ON bp.ID_BOLETA = bi.ID_BOLETA
+                WHERE (%s IS NULL OR bp.ID_PERIODO = %s)
+                  AND (%s IS NULL OR bp.ID_PERSONA = %s)
+                  AND (%s IS NULL OR bp.ESTADO_BOLETA = %s)
+                ORDER BY pp.ANIO DESC, pp.MES DESC, c.APELLIDO ASC
+            """, (id_periodo, id_periodo, id_persona, id_persona, estado, estado))
+            rows = cur.fetchall()
+        return (jdumps(rows), 200, headers)
+ 
+    # ── GET /boletas/{id}  →  detalle completo (usa SP)
+    if method == "GET" and len(path_parts) >= 3:
+        id_boleta = path_parts[2]
+        with conn.cursor() as cur:
+            cur.callproc("sp_obtener_boleta_completa", [id_boleta])
+            row = cur.fetchone()
+            # Obtener también suspensiones y asistencia detalle
+            cur.execute("SELECT * FROM boleta_suspension WHERE ID_BOLETA = %s", (id_boleta,))
+            suspensiones = cur.fetchall()
+            cur.execute("SELECT * FROM boleta_asistencia_detalle WHERE ID_BOLETA = %s ORDER BY FECHA", (id_boleta,))
+            asistencia = cur.fetchall()
+ 
+        if not row:
+            return (jdumps({"error": "Boleta no encontrada"}), 404, headers)
+ 
+        row["suspensiones"]       = suspensiones
+        row["asistencia_detalle"] = asistencia
+        return (jdumps(row), 200, headers)
+ 
+    # ── POST /boletas  →  crear nueva boleta
+    if method == "POST":
+        return _crear_boleta(request, conn, headers)
+ 
+    # ── PUT /boletas/{id}  →  actualizar boleta
+    if method == "PUT" and len(path_parts) >= 3:
+        id_boleta = int(path_parts[2])
+        return _actualizar_boleta(request, conn, headers, id_boleta)
+ 
+    return (jdumps({"error": "Ruta no encontrada"}), 404, headers)
+ 
+ 
+def _crear_boleta(request, conn, headers):
+    """
+    POST /boletas
+    Body JSON con todos los datos de la boleta (datos_pdf + correcciones del usuario).
+    """
+    body = request.get_json(silent=True) or {}
+ 
+    # Campos requeridos
+    id_periodo = body.get("id_periodo")
+    id_persona = body.get("id_persona")
+    if not id_periodo or not id_persona:
+        return (jdumps({"error": "id_periodo e id_persona son requeridos"}), 400, headers)
+ 
+    # Verificar que no existe ya una boleta para ese trabajador en ese período
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT ID_BOLETA FROM boletas_pago WHERE ID_PERIODO = %s AND ID_PERSONA = %s",
+            (id_periodo, id_persona)
+        )
+        if cur.fetchone():
+            return (jdumps({"error": "Ya existe una boleta para este trabajador en este período"}), 409, headers)
+ 
+    # Calcular totales antes de insertar
+    ingresos_data = {
+        "REMUNERACION_BASICA": Decimal(str(body.get("remuneracion_basica", 0) or 0)),
+        "COMBUSTIBLE":         Decimal(str(body.get("combustible", 0) or 0)),
+        "BONO":                Decimal(str(body.get("bono_ingreso", 0) or 0)),
+        "OTROS":               Decimal(str(body.get("otros_ingresos", 0) or 0)),
+    }
+    descuentos_data = {
+        "DESC_TARDANZA": Decimal(str(body.get("desc_tardanza", 0) or 0)),
+        "DESC_PERMISOS": Decimal(str(body.get("desc_permisos", 0) or 0)),
+        "DESC_FALTAS":   Decimal(str(body.get("desc_faltas", 0) or 0)),
+        "DESC_BONO":     Decimal(str(body.get("desc_bono", 0) or 0)),
+        "DESC_OTROS":    Decimal(str(body.get("desc_otros", 0) or 0)),
+    }
+    aportes_trab_data = {
+        "COMISION_AFP_PCT":   Decimal(str(body.get("comision_afp_pct", 0) or 0)),
+        "RENTA_QUINTA_RET":   Decimal(str(body.get("renta_quinta_ret", 0) or 0)),
+        "PRIMA_SEGUROS_AFP":  Decimal(str(body.get("prima_seguros_afp", 0) or 0)),
+        "SPP_APORTACION_OBL": Decimal(str(body.get("spp_aportacion_obl", 0) or 0)),
+    }
+    aportes_empl_data = {
+        "ESSALUD":           Decimal(str(body.get("essalud", 0) or 0)),
+        "POLIZA_SEGUROS_688":Decimal(str(body.get("poliza_seguros_688", 0) or 0)),
+        "SEGURO_VIDA_LEY":   Decimal(str(body.get("seguro_vida_ley", 0) or 0)),
+    }
+ 
+    total_ingresos  = sum(ingresos_data.values())
+    total_descuentos= sum(descuentos_data.values())
+    total_ap_trab   = sum(aportes_trab_data.values())
+    total_ap_empl   = sum(aportes_empl_data.values())
+    neto_pagar      = total_ingresos - total_descuentos - total_ap_trab
+ 
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO boletas_pago (
+                ID_PERIODO, ID_PERSONA, SITUACION, REGIMEN_PENSIONARIO, CUSPP,
+                DIAS_LABORADOS, DIAS_NO_LABORADOS, DIAS_SUBSIDIADOS, CONDICION,
+                JORNADA_HORAS, JORNADA_MINUTOS, SOBRETIEMPO_HORAS, SOBRETIEMPO_MINUTOS,
+                TARDANZA_HORAS, TARDANZA_MINUTOS,
+                VAC_FECHA_SALIDA, VAC_FECHA_RETORNO, OTROS_EMPLEADORES,
+                TOTAL_INGRESOS, TOTAL_DESCUENTOS, TOTAL_APORTES_TRAB, TOTAL_APORTES_EMPL,
+                NETO_PAGAR, OBSERVACIONES, URL_PDF_CONTADORA, ESTADO_BOLETA, PROCESADO_POR
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            id_periodo, id_persona,
+            body.get("situacion"), body.get("regimen_pensionario"), body.get("cuspp"),
+            body.get("dias_laborados", 0), body.get("dias_no_laborados", 0), body.get("dias_subsidiados", 0),
+            body.get("condicion"),
+            body.get("jornada_horas", 0), body.get("jornada_minutos", 0),
+            body.get("sobretiempo_horas", 0), body.get("sobretiempo_minutos", 0),
+            body.get("tardanza_horas", 0), body.get("tardanza_minutos", 0),
+            body.get("vac_fecha_salida"), body.get("vac_fecha_retorno"),
+            body.get("otros_empleadores", 0),
+            float(total_ingresos), float(total_descuentos), float(total_ap_trab), float(total_ap_empl),
+            float(neto_pagar),
+            body.get("observaciones"),
+            body.get("url_pdf_contadora"),
+            body.get("estado_boleta", "BORRADOR"),
+            body.get("procesado_por"),
+        ))
+        id_boleta = cur.lastrowid
+ 
+        # Insertar tablas relacionadas
+        _insertar_o_actualizar_sub(conn, "boleta_ingresos",          "ID_INGRESO",    id_boleta, ingresos_data)
+        _insertar_o_actualizar_sub(conn, "boleta_descuentos",        "ID_DESCUENTO",  id_boleta, descuentos_data)
+        _insertar_o_actualizar_sub(conn, "boleta_aportes_trabajador","ID_APORTE_TRAB",id_boleta, aportes_trab_data)
+        _insertar_o_actualizar_sub(conn, "boleta_aportes_empleador", "ID_APORTE_EMPL",id_boleta, aportes_empl_data)
+ 
+        # Suspensiones
+        for susp in body.get("suspensiones", []):
+            cur.execute(
+                "INSERT INTO boleta_suspension (ID_BOLETA, TIPO, MOTIVO, NUMERO_DIAS) VALUES (%s,%s,%s,%s)",
+                (id_boleta, susp.get("tipo"), susp.get("motivo"), susp.get("numero_dias", 0))
+            )
+ 
+        # Asistencia detalle (tardanzas, faltas, permisos por día)
+        for det in body.get("asistencia_detalle", []):
+            cur.execute(
+                "INSERT INTO boleta_asistencia_detalle (ID_BOLETA, FECHA, TIPO, HORAS, MINUTOS, DESCRIPCION) VALUES (%s,%s,%s,%s,%s,%s)",
+                (id_boleta, det.get("fecha"), det.get("tipo"), det.get("horas", 0), det.get("minutos", 0), det.get("descripcion"))
+            )
+ 
+    conn.commit()
+    return (jdumps({"id_boleta": id_boleta, "neto_pagar": float(neto_pagar), "mensaje": "Boleta creada correctamente"}), 201, headers)
+ 
+ 
+def _actualizar_boleta(request, conn, headers, id_boleta: int):
+    """PUT /boletas/{id} — actualiza datos + recalcula neto."""
+    body = request.get_json(silent=True) or {}
+ 
+    # Verificar que existe
+    with conn.cursor() as cur:
+        cur.execute("SELECT ID_BOLETA FROM boletas_pago WHERE ID_BOLETA = %s", (id_boleta,))
+        if not cur.fetchone():
+            return (jdumps({"error": "Boleta no encontrada"}), 404, headers)
+ 
+    # Recalcular si hay datos financieros
+    ingresos_data = {
+        "REMUNERACION_BASICA": Decimal(str(body.get("remuneracion_basica", 0) or 0)),
+        "COMBUSTIBLE":         Decimal(str(body.get("combustible", 0) or 0)),
+        "BONO":                Decimal(str(body.get("bono_ingreso", 0) or 0)),
+        "OTROS":               Decimal(str(body.get("otros_ingresos", 0) or 0)),
+    }
+    descuentos_data = {
+        "DESC_TARDANZA": Decimal(str(body.get("desc_tardanza", 0) or 0)),
+        "DESC_PERMISOS": Decimal(str(body.get("desc_permisos", 0) or 0)),
+        "DESC_FALTAS":   Decimal(str(body.get("desc_faltas", 0) or 0)),
+        "DESC_BONO":     Decimal(str(body.get("desc_bono", 0) or 0)),
+        "DESC_OTROS":    Decimal(str(body.get("desc_otros", 0) or 0)),
+    }
+    aportes_trab_data = {
+        "COMISION_AFP_PCT":   Decimal(str(body.get("comision_afp_pct", 0) or 0)),
+        "RENTA_QUINTA_RET":   Decimal(str(body.get("renta_quinta_ret", 0) or 0)),
+        "PRIMA_SEGUROS_AFP":  Decimal(str(body.get("prima_seguros_afp", 0) or 0)),
+        "SPP_APORTACION_OBL": Decimal(str(body.get("spp_aportacion_obl", 0) or 0)),
+    }
+    aportes_empl_data = {
+        "ESSALUD":            Decimal(str(body.get("essalud", 0) or 0)),
+        "POLIZA_SEGUROS_688": Decimal(str(body.get("poliza_seguros_688", 0) or 0)),
+        "SEGURO_VIDA_LEY":    Decimal(str(body.get("seguro_vida_ley", 0) or 0)),
+    }
+ 
+    total_ingresos  = sum(ingresos_data.values())
+    total_descuentos= sum(descuentos_data.values())
+    total_ap_trab   = sum(aportes_trab_data.values())
+    total_ap_empl   = sum(aportes_empl_data.values())
+    neto_pagar      = total_ingresos - total_descuentos - total_ap_trab
+ 
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE boletas_pago SET
+                SITUACION=%s, REGIMEN_PENSIONARIO=%s, CUSPP=%s,
+                DIAS_LABORADOS=%s, DIAS_NO_LABORADOS=%s, DIAS_SUBSIDIADOS=%s,
+                CONDICION=%s, JORNADA_HORAS=%s, JORNADA_MINUTOS=%s,
+                SOBRETIEMPO_HORAS=%s, SOBRETIEMPO_MINUTOS=%s,
+                TARDANZA_HORAS=%s, TARDANZA_MINUTOS=%s,
+                VAC_FECHA_SALIDA=%s, VAC_FECHA_RETORNO=%s, OTROS_EMPLEADORES=%s,
+                TOTAL_INGRESOS=%s, TOTAL_DESCUENTOS=%s, TOTAL_APORTES_TRAB=%s,
+                TOTAL_APORTES_EMPL=%s, NETO_PAGAR=%s,
+                OBSERVACIONES=%s, ESTADO_BOLETA=%s,
+                URL_PDF_CONTADORA=COALESCE(%s, URL_PDF_CONTADORA)
+            WHERE ID_BOLETA = %s
+        """, (
+            body.get("situacion"), body.get("regimen_pensionario"), body.get("cuspp"),
+            body.get("dias_laborados", 0), body.get("dias_no_laborados", 0), body.get("dias_subsidiados", 0),
+            body.get("condicion"), body.get("jornada_horas", 0), body.get("jornada_minutos", 0),
+            body.get("sobretiempo_horas", 0), body.get("sobretiempo_minutos", 0),
+            body.get("tardanza_horas", 0), body.get("tardanza_minutos", 0),
+            body.get("vac_fecha_salida"), body.get("vac_fecha_retorno"),
+            body.get("otros_empleadores", 0),
+            float(total_ingresos), float(total_descuentos), float(total_ap_trab), float(total_ap_empl),
+            float(neto_pagar),
+            body.get("observaciones"),
+            body.get("estado_boleta", "REVISADO"),
+            body.get("url_pdf_contadora"),
+            id_boleta,
+        ))
+ 
+        _insertar_o_actualizar_sub(conn, "boleta_ingresos",          "ID_INGRESO",    id_boleta, ingresos_data)
+        _insertar_o_actualizar_sub(conn, "boleta_descuentos",        "ID_DESCUENTO",  id_boleta, descuentos_data)
+        _insertar_o_actualizar_sub(conn, "boleta_aportes_trabajador","ID_APORTE_TRAB",id_boleta, aportes_trab_data)
+        _insertar_o_actualizar_sub(conn, "boleta_aportes_empleador", "ID_APORTE_EMPL",id_boleta, aportes_empl_data)
+ 
+        # Re-insertar suspensiones (borrar y volver a insertar)
+        if "suspensiones" in body:
+            cur.execute("DELETE FROM boleta_suspension WHERE ID_BOLETA = %s", (id_boleta,))
+            for susp in body["suspensiones"]:
+                cur.execute(
+                    "INSERT INTO boleta_suspension (ID_BOLETA, TIPO, MOTIVO, NUMERO_DIAS) VALUES (%s,%s,%s,%s)",
+                    (id_boleta, susp.get("tipo"), susp.get("motivo"), susp.get("numero_dias", 0))
+                )
+ 
+        # Re-insertar asistencia detalle
+        if "asistencia_detalle" in body:
+            cur.execute("DELETE FROM boleta_asistencia_detalle WHERE ID_BOLETA = %s", (id_boleta,))
+            for det in body["asistencia_detalle"]:
+                cur.execute(
+                    "INSERT INTO boleta_asistencia_detalle (ID_BOLETA, FECHA, TIPO, HORAS, MINUTOS, DESCRIPCION) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (id_boleta, det.get("fecha"), det.get("tipo"), det.get("horas", 0), det.get("minutos", 0), det.get("descripcion"))
+                )
+ 
+    conn.commit()
+    return (jdumps({"id_boleta": id_boleta, "neto_pagar": float(neto_pagar), "mensaje": "Boleta actualizada"}), 200, headers)
+
+# ==========================================================
+# LÓGICA DE NEGOCIO — GENERACIÓN DE PDF EMPRESA
+# ==========================================================
+def handle_generar_pdf(request, conn, headers, id_boleta: int):
+    """
+    POST /boletas/{id}/generar-pdf
+    Genera el PDF de la empresa con todos los datos de la boleta,
+    lo sube a GCS y guarda la URL en la BD.
+    """
+    if request.method != "POST":
+        return (jdumps({"error": "Método no permitido"}), 405, headers)
+ 
+    # Obtener todos los datos de la boleta
+    with conn.cursor() as cur:
+        cur.callproc("sp_obtener_boleta_completa", [id_boleta])
+        boleta = cur.fetchone()
+        cur.execute("SELECT * FROM boleta_suspension WHERE ID_BOLETA = %s", (id_boleta,))
+        suspensiones = cur.fetchall()
+        cur.execute("SELECT * FROM boleta_asistencia_detalle WHERE ID_BOLETA = %s ORDER BY FECHA", (id_boleta,))
+        asistencia = cur.fetchall()
+ 
+    if not boleta:
+        return (jdumps({"error": "Boleta no encontrada"}), 404, headers)
+ 
+    boleta["suspensiones"]       = suspensiones
+    boleta["asistencia_detalle"] = asistencia
+ 
+    # Generar HTML de la boleta
+    html_boleta = _generar_html_boleta(boleta)
+ 
+    # Intentar generar PDF con WeasyPrint
+    pdf_bytes = _html_a_pdf(html_boleta)
+    if pdf_bytes is None:
+        # Fallback: devolver HTML como respuesta si WeasyPrint no está disponible
+        return (jdumps({
+            "error": "WeasyPrint no disponible en este entorno. Instala con: pip install weasyprint",
+            "html_preview": html_boleta[:500] + "..."
+        }), 503, headers)
+ 
+    # Subir PDF a GCS
+    nombre_pdf = f"boleta_{boleta.get('NUMERO_DOCUMENTO', id_boleta)}_{boleta.get('ANIO','')}{str(boleta.get('MES','')).zfill(2)}.pdf"
+    url_pdf = subir_a_gcs(pdf_bytes, nombre_pdf, "application/pdf", CARPETA_BOLETAS_EMPRESA)
+ 
+    if not url_pdf:
+        return (jdumps({"error": "Error al subir el PDF a GCS"}), 500, headers)
+ 
+    # Guardar URL en la BD y marcar como EMITIDO
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE boletas_pago SET URL_PDF_EMPRESA = %s, ESTADO_BOLETA = 'EMITIDO' WHERE ID_BOLETA = %s",
+            (url_pdf, id_boleta)
+        )
+    conn.commit()
+ 
+    return (jdumps({
+        "id_boleta":    id_boleta,
+        "url_pdf":      url_pdf,
+        "mensaje":      "PDF generado y almacenado correctamente",
+        "estado_boleta":"EMITIDO"
+    }), 200, headers)
+ 
+ 
+def _html_a_pdf(html: str) -> bytes | None:
+    """Convierte HTML a bytes PDF usando WeasyPrint."""
+    try:
+        from weasyprint import HTML
+        return HTML(string=html).write_pdf()
+    except ImportError:
+        return None
+    except Exception as e:
+        logging.error(f"Error WeasyPrint: {e}")
+        return None
+ 
+ 
+def _fmt_fecha(valor) -> str:
+    if not valor:
+        return "—"
+    if isinstance(valor, (datetime, date)):
+        return valor.strftime("%d/%m/%Y")
+    return str(valor)
+ 
+def _fmt_monto(valor) -> str:
+    if valor is None:
+        return "0.00"
+    return f"{float(valor):,.2f}"
+
+def _generar_html_boleta(b: dict) -> str:
+    """Genera el HTML basado en la nueva plantilla de Zeus Safety."""
+    
+    nombre_completo = " ".join(filter(None, [
+        b.get("NOMBRE"), b.get("SEGUNDO_NOMBRE"),
+        b.get("APELLIDO"), b.get("SEGUNDO_APELLIDO")
+    ]))
+
+    # Generar filas de suspensiones
+    suspensiones_html = ""
+    for s in b.get("suspensiones", []):
+        suspensiones_html += f"""
+        <tr>
+            <td style="text-align: center;">{s.get('TIPO','—')}</td>
+            <td style="width: 40%; text-align: center;">{s.get('MOTIVO','—')}</td>
+            <td style="text-align: center;">{s.get('NUMERO_DIAS',0)}</td>
+        </tr>"""
+    if not suspensiones_html:
+        suspensiones_html = "<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>"
+
+    # Notas de pie (Asistencia)
+    # Aquí puedes filtrar u organizar las observaciones de tardanzas/faltas
+    notas_asistencia = ""
+    for a in b.get("asistencia_detalle", []):
+        notas_asistencia += f"{_fmt_fecha(a.get('FECHA'))}: {a.get('TIPO')} ({a.get('HORAS')}h {a.get('MINUTOS')}m) - {a.get('DESCRIPCION','--')}<br>"
+
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {{ --gray-bg: #d9e1f2; --border-color: #000; }}
+        body {{ font-family: Arial, sans-serif; font-size: 10px; margin: 20px; color: #333; }}
+        .boleta-container {{ width: 800px; margin: 0 auto; border: 1px solid var(--border-color); padding: 10px; }}
+        .header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }}
+        .logo-section img {{ width: 200px; }}
+        .empresa-info {{ background-color: var(--gray-bg); border: 1px solid var(--border-color); padding: 5px; width: 350px; font-size: 9px; }}
+        .title-banner {{ text-align: center; border: 1px solid var(--border-color); margin-bottom: 5px; }}
+        .title-banner h1 {{ margin: 0; font-size: 22px; text-transform: uppercase; }}
+        .month-banner {{ text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-bottom: 5px; }}
+        th, td {{ border: 1px solid var(--border-color); padding: 4px; text-align: left; }}
+        .bg-gray {{ background-color: var(--gray-bg); font-weight: bold; text-align: center; }}
+        .financial-table td {{ text-align: center; }}
+        .signature-section {{ margin-top: 50px; display: flex; justify-content: space-around; text-align: center; }}
+        .signature-box {{ width: 250px; border-top: 1px solid #000; padding-top: 5px; font-size: 12px; }}
+        .signature-img {{ height: 60px; margin-bottom: -10px; }}
+        .text-left {{ text-align: left !important; }}
+    </style>
+</head>
+<body>
+    <div class="boleta-container">
+        <div class="header">
+            <div class="logo-section">
+                <img src="https://cibertecedgar.github.io/img-archivo/logo.png" alt="Logo Zeus Safety">
+            </div>
+            <div class="empresa-info">
+                <div><strong>Razon Social:</strong> BUSINESS OF IMPORT & ZEUS SAC</div>
+                <div><strong>RUC:</strong> 20600101596</div>
+                <div><strong>Direccion:</strong> Calle 1 Mz A Lote 28 Los Portales de Monterrey Primera Etapa - SMP</div>
+                <div><strong>Periodo:</strong> {b.get('PERIODO','—')}</div>
+            </div>
+        </div>
+
+        <div class="title-banner"><h1>Recibo de Pago</h1></div>
+        <div class="month-banner">{str(b.get('MES_NOMBRE', b.get('MES', ''))).upper()} {b.get('ANIO','')}</div>
+
+        <table>
+            <tr class="bg-gray">
+                <td colspan="2">Documento de identidad</td>
+                <td rowspan="2" style="width: 40%;">Nombres y Apellidos</td>
+                <td rowspan="2">Situacion</td>
+            </tr>
+            <tr class="bg-gray">
+                <td style="width: 10%;">Tipo</td>
+                <td style="width: 15%;">Numero</td>
+            </tr>
+            <tr>
+                <td class="bg-white">{b.get('TIPO_DOCUMENTO','—')}</td>
+                <td class="bg-white">{b.get('NUMERO_DOCUMENTO','—')}</td>
+                <td class="bg-white">{nombre_completo}</td>
+                <td class="bg-white">{b.get('SITUACION','—')}</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr class="bg-gray">
+                <td>Fecha de Nacimiento</td>
+                <td style="width: 40%;">Direccion</td>
+                <td>Hijos</td>
+                <td>Cta de Deposito</td>
+            </tr>
+            <tr>
+                <td>{_fmt_fecha(b.get('FECHA_NACIMIENTO'))}</td>
+                <td>{b.get('DIRECCION','—')}</td>
+                <td style="text-align:center;">{b.get('CANT_HIJOS','0')}</td>
+                <td>{b.get('CUENTA_DEPOSITO','—')}</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr class="bg-gray">
+                <td>Fecha de Ingreso</td>
+                <td>Fecha de Culminacion</td>
+                <td>Regimen Pensionario</td>
+                <td>CUSPP</td>
+            </tr>
+            <tr>
+                <td>{_fmt_fecha(b.get('FECHA_INGRESO'))}</td>
+                <td>{_fmt_fecha(b.get('CULMINACION')) if b.get('CULMINACION') else '—'}</td>
+                <td>{b.get('REGIMEN_PENSIONARIO','—')}</td>
+                <td>{b.get('CUSPP','—')}</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr class="bg-gray">
+                <td rowspan="2">Dias Laborados</td>
+                <td rowspan="2">Dias No Laborados</td>
+                <td rowspan="2">Dias Subsidiados</td>
+                <td rowspan="2">Condicion</td>
+                <td colspan="2">Jornada Ordinaria</td>
+                <td colspan="2">Vacaciones</td>
+            </tr>
+            <tr class="bg-gray">
+                <td>Total Horas</td>
+                <td>Minutos</td>
+                <td>Fecha de Salida</td>
+                <td>Fecha de Retorno</td>
+            </tr>
+            <tr style="text-align:center;">
+                <td>{b.get('DIAS_LABORADOS',0)}</td>
+                <td>{b.get('DIAS_NO_LABORADOS',0)}</td>
+                <td>{b.get('DIAS_SUBSIDIADOS',0)}</td>
+                <td>{b.get('CONDICION','—')}</td>
+                <td>{b.get('JORNADA_HORAS',0)}</td>
+                <td>{b.get('JORNADA_MINUTOS',0)}</td>
+                <td>{_fmt_fecha(b.get('VAC_FECHA_SALIDA')) if b.get('VAC_FECHA_SALIDA') else '—'}</td>
+                <td>{_fmt_fecha(b.get('VAC_FECHA_RETORNO')) if b.get('VAC_FECHA_RETORNO') else '—'}</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr class="bg-gray">
+                <td colspan="2">Tardanza</td>
+                <td colspan="2">Sobretiempo</td>
+                <td rowspan="2" style="width: 10%;">Area</td>
+                <td rowspan="2" style="width: 10%;">Cargo</td>
+                <td rowspan="2">Otros empleadores (5ta)</td>
+            </tr>
+            <tr class="bg-gray">
+                <td>Total Horas</td>
+                <td>Minutos</td>
+                <td>Total Horas</td>
+                <td>Minutos</td>
+            </tr>
+            <tr style="text-align:center;">
+                <td>{b.get('TARDANZA_HORAS',0)}</td>
+                <td>{b.get('TARDANZA_MINUTOS',0)}</td>
+                <td>{b.get('SOBRETIEMPO_HORAS',0)}</td>
+                <td>{b.get('SOBRETIEMPO_MINUTOS',0)}</td>
+                <td>{b.get('AREA','—')}</td>
+                <td>{b.get('CARGO','—')}</td>
+                <td>{'SÍ' if b.get('OTROS_EMPLEADORES') else 'NO'}</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr class="bg-gray"><td colspan="3">Motivo de Suspensión de Labores</td></tr>
+            <tr class="bg-gray"><td>Tipo</td><td style="width: 40%;">Motivo</td><td>N° Dias</td></tr>
+            {suspensiones_html}
+        </table>
+
+        <table> 
+            <tr class="bg-gray"><td>Aportes del Empleador</td><td>Total S/.</td></tr>
+            <tr><td>ESSALUD</td><td style="text-align:center;">{_fmt_monto(b.get('ESSALUD'))}</td></tr>
+            <tr><td>Seguro Vida Ley / Otros</td><td style="text-align:center;">{_fmt_monto(float(b.get('SEGURO_VIDA_LEY',0)) + float(b.get('POLIZA_SEGUROS_688',0)))}</td></tr>
+        </table>
+
+        <table class="financial-table">
+            <tr class="bg-gray">
+                <td style="width: 40%;">Conceptos</td>
+                <td>Ingresos S/.</td>
+                <td>Descuentos S/.</td>
+                <td>Neto a Pagar S/.</td>
+            </tr>
+            <tr>
+                <td class="bg-gray text-left">Ingresos</td>
+                <td>{_fmt_monto(b.get('TOTAL_INGRESOS'))}</td>
+                <td style="background-color: #eee;"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="text-left">Remuneracion Básica</td>
+                <td>{_fmt_monto(b.get('REMUNERACION_BASICA'))}</td>
+                <td style="background-color: #eee;"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="text-left">Combustible / Bonos</td>
+                <td>{_fmt_monto(float(b.get('COMBUSTIBLE',0)) + float(b.get('BONO',0)))}</td>
+                <td style="background-color: #eee;"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="bg-gray text-left">Descuentos</td>
+                <td style="background-color: #eee;"></td>
+                <td>{_fmt_monto(b.get('TOTAL_DESCUENTOS'))}</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="text-left">Tardanzas / Faltas / Permisos</td>
+                <td style="background-color: #eee;"></td>
+                <td>{_fmt_monto(float(b.get('DESC_TARDANZA',0)) + float(b.get('DESC_FALTAS',0)) + float(b.get('DESC_PERMISOS',0)))}</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="bg-gray text-left">Aportes del Trabajador</td>
+                <td style="background-color: #eee;"></td>
+                <td>{_fmt_monto(b.get('TOTAL_APORTES_TRAB'))}</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="text-left">AFP / Seguros / Comisión</td>
+                <td style="background-color: #eee;"></td>
+                <td>{_fmt_monto(float(b.get('PRIMA_SEGUROS_AFP',0)) + float(b.get('SPP_APORTACION_OBL',0)) + float(b.get('COMISION_AFP_PCT',0)))}</td>
+                <td></td>
+            </tr>
+            <tr class="bg-gray">
+                <td style="text-align: right;">Neto a Pagar</td>
+                <td colspan="2"></td>
+                <td style="font-size: 14px;">S/ {_fmt_monto(b.get('NETO_PAGAR'))}</td>
+            </tr>
+        </table>
+
+        <div class="footer-notes">
+            <p><strong>Detalle Asistencia:</strong> {notas_asistencia if notas_asistencia else 'Sin incidencias'}</p>
+            <p><strong>Obs:</strong> {b.get('OBSERVACIONES','None')}</p>
+        </div>
+
+        <div class="signature-section">
+            <div>
+                <img src="https://cibertecedgar.github.io/img-archivo/firma.jpg" alt="Firma Empleador" class="signature-img"><br><br>
+                <div class="signature-box">Empleador</div>
+            </div>
+            <div style="margin-top: 63px;">
+                <div class="signature-box">Trabajador</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+
+
+ 
+# ==========================================================
+# LÓGICA DE NEGOCIO — COLABORADORES (búsqueda para el módulo)
+# ==========================================================
+def handle_colaboradores_boletas(request, conn, headers):
+    """GET /boletas/colaboradores?documento=12345678"""
+    if request.method != "GET":
+        return (jdumps({"error": "Método no permitido"}), 405, headers)
+ 
+    documento = request.args.get("documento")
+    nombre    = request.args.get("nombre")
+ 
+    with conn.cursor() as cur:
+        if documento:
+            cur.execute(
+                "SELECT ID_PERSONA, NOMBRE, SEGUNDO_NOMBRE, APELLIDO, SEGUNDO_APELLIDO, "
+                "TIPO_DOCUMENTO, NUMERO_DOCUMENTO, FECHA_NACIMIENTO, AREA, CARGO, OCUPACION, "
+                "FECHA_INGRESO, CULMINACION, CANT_HIJOS, HIJOS_BOOLEAN, ESTADO_CIVIL, "
+                "CORREO, DIRECCION FROM colaboradores WHERE NUMERO_DOCUMENTO = %s AND ESTADO = 'A'",
+                (documento,)
+            )
+        elif nombre:
+            like = f"%{nombre}%"
+            cur.execute(
+                "SELECT ID_PERSONA, NOMBRE, SEGUNDO_NOMBRE, APELLIDO, SEGUNDO_APELLIDO, "
+                "TIPO_DOCUMENTO, NUMERO_DOCUMENTO, FECHA_NACIMIENTO, AREA, CARGO, OCUPACION, "
+                "FECHA_INGRESO, CULMINACION, CANT_HIJOS, HIJOS_BOOLEAN, ESTADO_CIVIL, "
+                "CORREO, DIRECCION FROM colaboradores WHERE (NOMBRE LIKE %s OR APELLIDO LIKE %s) AND ESTADO = 'A'",
+                (like, like)
+            )
+        else:
+            cur.execute(
+                "SELECT ID_PERSONA, NOMBRE, SEGUNDO_NOMBRE, APELLIDO, SEGUNDO_APELLIDO, "
+                "TIPO_DOCUMENTO, NUMERO_DOCUMENTO, FECHA_NACIMIENTO, AREA, CARGO, OCUPACION, "
+                "FECHA_INGRESO, CULMINACION, CANT_HIJOS, CORREO FROM colaboradores WHERE ESTADO = 'A' "
+                "ORDER BY APELLIDO LIMIT 100"
+            )
+        rows = cur.fetchall()
+ 
+    return (jdumps(rows), 200, headers)
+ 
+ 
+# ==========================================================
+# FUNCIÓN PRINCIPAL (ROUTER)
+# ==========================================================
+@functions_framework.http
+def boletas_zeus(request):
+    headers = {
+        "Access-Control-Allow-Origin":  "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Content-Type": "application/json; charset=utf-8",
+    }
+ 
+    if request.method == "OPTIONS":
+        return ("", 204, headers)
+ 
+    # ── Verificación de Token
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return (jdumps({"error": "No token"}), 401, headers)
+ 
+    try:
+        val_resp = requests.post(API_TOKEN, headers={"Authorization": auth_header}, timeout=10)
+        if val_resp.status_code != 200:
+            return (jdumps({"error": "Token inválido"}), 401, headers)
+    except Exception as e:
+        return (jdumps({"error": f"Error de autenticación: {str(e)}"}), 503, headers)
+ 
+    # ── Parsear path
+    path = request.path.rstrip("/")
+    # Normalizar: /boletas-zeus/... → extraer parte útil
+    # Espera rutas del tipo: /periodos, /boletas, /boletas/{id}, etc.
+    parts = [p for p in path.split("/") if p]
+ 
+    try:
+        conn = get_connection()
+ 
+        # ── ROUTER ──────────────────────────────────────────
+ 
+        # /periodos
+        if parts and parts[0] == "periodos":
+            return handle_periodos(request, conn, headers)
+ 
+        # /boletas/extraer-pdf
+        if len(parts) >= 2 and parts[0] == "boletas" and parts[1] == "extraer-pdf":
+            return handle_extraer_pdf(request, conn, headers)
+ 
+        # /boletas/extraer-pdf-masivo
+        if len(parts) >= 2 and parts[0] == "boletas" and parts[1] == "extraer-pdf-masivo":
+            return handle_extraer_pdf_masivo(request, conn, headers)
+ 
+        # /boletas/colaboradores
+        if len(parts) >= 2 and parts[0] == "boletas" and parts[1] == "colaboradores":
+            return handle_colaboradores_boletas(request, conn, headers)
+ 
+        # /boletas/{id}/generar-pdf
+        if len(parts) >= 3 and parts[0] == "boletas" and parts[2] == "generar-pdf":
+            id_boleta = int(parts[1])
+            return handle_generar_pdf(request, conn, headers, id_boleta)
+ 
+        # /boletas  o  /boletas/{id}
+        if parts and parts[0] == "boletas":
+            return handle_boletas(request, conn, headers)
+ 
+        return (jdumps({"error": "Ruta no encontrada"}), 404, headers)
+ 
+    except Exception as e:
+        logging.error(f"Error interno: {str(e)}", exc_info=True)
+        return (jdumps({"error": f"Error interno del servidor: {str(e)}"}), 500, headers)
+ 
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
