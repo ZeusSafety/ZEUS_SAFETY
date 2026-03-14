@@ -78,32 +78,60 @@ def subir_a_gcs(contenido_bytes: bytes, nombre_archivo: str, content_type: str, 
 # Patrones para extraer campos del PDF de la contadora.
 # Ajusta las expresiones regulares según el layout real del PDF.
 PATRONES = {
-    "tipo_documento":        r"Tipo\s+de\s+Documento[:\s]+([A-Z]+)",
-    "numero_documento":      r"(?:N[°º]?\s*Documento|DNI|Número\s+de\s+Documento)[:\s]*([\d]{8,12})",
-    "nombre":                r"(?:Nombres?\s+y\s+Apellidos?|Apellidos?\s+y\s+Nombres?)[:\s]+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ ,]+)",
-    "situacion":             r"Situaci[oó]n[:\s]+([A-Za-záéíóúñÁÉÍÓÚÑ ]+)",
+    # Documento de identidad - más específico
+    "tipo_documento":        r"(?:Tipo\s+de\s+Documento|Tipo)[:\s]+(DNI|PASAPORTE|CE|R\.?U\.?C\.?)",
+    "numero_documento":      r"(?:N[°º]?\s*Documento|DNI|Número\s+de\s+Documento|N[°º]?\s*Documento\s+de\s+Identidad|Número)[:\s]*([\d]{7,12})",
+    # Nombre - más específico, evitar capturar "Situación"
+    "nombre":                r"(?:Nombres?\s+y\s+Apellidos?|Apellidos?\s+y\s+Nombres?)[:\s]+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\s,\.]+?)(?=\s*Situaci[oó]n|\s*Fecha\s+de\s+Ingreso|\s*R[eé]gimen|\s*CUSPP|\s*D[ií]as|\n\n|$)",
+    
+    # Situación - capturar "ACTIVO O SUBSIDIADO" completo, más flexible
+    "situacion":             r"Situaci[oó]n[:\s]+(ACTIVO\s+O\s+SUBSIDIADO|ACTIVO\s+Y\s+SUBSIDIADO|ACTIVO|SUBSIDIADO|INACTIVO|CESANTE)",
+    
+    # Fecha de ingreso
     "fecha_ingreso":         r"Fecha\s+de\s+Ingreso[:\s]+([\d]{1,2}[/\-][\d]{1,2}[/\-][\d]{2,4})",
-    "regimen_pensionario":   r"R[eé]gimen\s+Pensionario[:\s]+([A-Za-z ]+)",
-    "cuspp":                 r"CUSPP?[:\s]+([A-Z0-9\-]+)",
-    "dias_laborados":        r"D[ií]as\s+Laborados[:\s]+(\d+)",
-    "dias_no_laborados":     r"D[ií]as\s+No\s+Laborados[:\s]+(\d+)",
-    "dias_subsidiados":      r"D[ií]as\s+Subsidiados[:\s]+(\d+)",
-    "condicion":             r"Condici[oó]n[:\s]+([A-Za-záéíóúñ ]+)",
-    "jornada_horas":         r"Jornada\s+Ordinaria.*?Total\s+Horas[:\s]+(\d+)",
-    "jornada_minutos":       r"Jornada\s+Ordinaria.*?Minutos[:\s]+(\d+)",
-    "sobretiempo_horas":     r"Sobre\s*[Tt]iempo.*?Total\s+Horas[:\s]+(\d+)",
-    "sobretiempo_minutos":   r"Sobre\s*[Tt]iempo.*?Minutos[:\s]+(\d+)",
-    "remuneracion_basica":   r"Remuneraci[oó]n\s+(?:o\s+Jornal\s+)?B[aá]sico[:\s]+([\d,\.]+)",
-    "comision_afp_pct":      r"Comisi[oó]n\s+AFP\s+Porcentual[:\s]+([\d,\.]+)",
-    "renta_quinta_ret":      r"Renta\s+Quinta\s+Categor[ií]a\s+Retenciones[:\s]+([\d,\.]+)",
-    "prima_seguros_afp":     r"Prima\s+de\s+Seguros\s+AFP[:\s]+([\d,\.]+)",
-    "spp_aportacion_obl":    r"SPP\s*[–\-]\s*Aportaci[oó]n\s+Obligatoria[:\s]+([\d,\.]+)",
-    "essalud":               r"ESSALUD[:\s]+([\d,\.]+)",
-    "poliza_seguros_688":    r"P[oó]liza\s+de\s+Seguros\s+D\.\s*LEG\s*688[:\s]+([\d,\.]+)",
-    "otros_empleadores":     r"Otros\s+empleadores[:\s]+(S[ÍI]|NO|Si|No)",
-    "tipo_suspension":       r"Tipo\s+(?:de\s+Suspensi[oó]n)?[:\s]+([A-Za-záéíóúñ ]+)",
-    "motivo_suspension":     r"Motivo[:\s]+([A-Za-záéíóúñ ]+)",
-    "dias_suspension":       r"N[úu]mero\s+de\s+[Dd][ií]as[:\s]+(\d+)",
+    
+    # Régimen Pensionario - capturar hasta encontrar CUSPP o siguiente campo
+    "regimen_pensionario":   r"R[eé]gimen\s+Pensionario[:\s]+([A-Z\s]+?)(?=\s*CUSPP|\s*D[ií]as|\s*Condici[oó]n|$)",
+    
+    # CUSPP - código alfanumérico, más flexible
+    "cuspp":                 r"CUSPP[:\s]+([A-Z0-9]{6,20})",
+    
+    # Días - más flexibles, pueden estar en diferentes formatos
+    "dias_laborados":        r"D[ií]as\s+Laborados[^\d]*?(\d+)",
+    "dias_no_laborados":     r"D[ií]as\s+No\s+Laborados[^\d]*?(\d+)",
+    "dias_subsidiados":      r"D[ií]as\s+Subsidiados[^\d]*?(\d+)",
+    
+    # Condición - más flexible
+    "condicion":             r"Condici[oó]n[:\s]+(Domiciliado|No\s+Domiciliado|N[oó]mada|No\s+N[oó]mada|DOMICILIADO)",
+    
+    # Jornada Ordinaria
+    "jornada_horas":         r"Jornada\s+Ordinaria[^\n]*?Total\s+Horas[:\s]+(\d+)",
+    "jornada_minutos":       r"Jornada\s+Ordinaria[^\n]*?Minutos[:\s]+(\d+)",
+    
+    # Sobretiempo - puede estar vacío, no agregar a errores si no se encuentra
+    "sobretiempo_horas":     r"Sobre\s*[Tt]iempo[^\n]*?Total\s+Horas[:\s]+(\d+)",
+    "sobretiempo_minutos":   r"Sobre\s*[Tt]iempo[^\n]*?Minutos[:\s]+(\d+)",
+    
+    # Remuneración
+    "remuneracion_basica":   r"(?:Remuneraci[oó]n\s+(?:o\s+Jornal\s+)?B[aá]sico|REMUNERACI[OÓ]N\s+O\s+JORNAL\s+B[AÁ]SICO)[:\s]+([\d,\.]+)",
+    
+    # Aportes del Trabajador - buscar en tabla con códigos
+    "comision_afp_pct":      r"(?:Comisi[oó]n\s+AFP\s+Porcentual|COMISI[OÓ]N\s+AFP\s+PORCENTUAL|0601)[^\d]*?([\d,\.]+)",
+    "renta_quinta_ret":      r"(?:Renta\s+Quinta\s+Categor[ií]a\s+Retenciones|RENTA\s+QUINTA\s+CATEGOR[IÍ]A\s+RETENCIONES|0605)[^\d]*?([\d,\.]+)",
+    "prima_seguros_afp":     r"(?:Prima\s+de\s+Seguros\s+AFP|PRIMA\s+DE\s+SEGURO\s+AFP|0606)[^\d]*?([\d,\.]+)",
+    "spp_aportacion_obl":    r"(?:SPP\s*[–\-]\s*Aportaci[oó]n\s+Obligatoria|SPP\s*[–\-]\s*APORTACI[OÓ]N\s+OBLIGATORIA|0608)[^\d]*?([\d,\.]+)",
+    
+    # Aportes del Empleador
+    "essalud":               r"(?:ESSALUD|essalud|0804)[^\d]*?([\d,\.]+)",
+    "poliza_seguros_688":    r"(?:P[oó]liza\s+de\s+Seguros\s+D\.\s*LEG\s*688|P[OÓ]LIZA\s+DE\s+SEGUROS\s+D\.\s*LEG\s*688)[^\d]*?([\d,\.]+)",
+    
+    # Otros empleadores - más flexible, capturar texto completo
+    "otros_empleadores":     r"Otros\s+empleadores[^\n]*?(?:por\s+Rentas\s+de\s+5ta\s+categor[ií]a|5ta\s+categor[ií]a|Rentas\s+de\s+5ta)[:\s]+(S[ÍI]|NO|Si|No|Tiene|No\s+tiene|No\s+Tiene|No\s+[Tt]iene|Tiene)",
+    
+    # Suspensiones - pueden estar vacías, no agregar a errores si no se encuentran
+    "tipo_suspension":       r"Motivo\s+de\s+Suspensi[oó]n\s+de\s+Labores[^\n]*?Tipo[:\s]+([A-Za-záéíóúñ\s]+?)(?=\s*Motivo|\s*N[°º]?\s*D[ií]as|\n|$)",
+    "motivo_suspension":     r"Motivo\s+de\s+Suspensi[oó]n\s+de\s+Labores[^\n]*?Motivo[:\s]+([A-Za-záéíóúñ\s]+?)(?=\s*N[°º]?\s*D[ií]as|\n|$)",
+    "dias_suspension":       r"Motivo\s+de\s+Suspensi[oó]n\s+de\s+Labores[^\n]*?N[°º]?\s*D[ií]as[:\s]+(\d+)",
 }
 
 def _to_decimal(valor: str) -> Decimal:
@@ -136,44 +164,337 @@ def extraer_datos_pdf(pdf_bytes: bytes) -> dict:
     """
     datos = {campo: None for campo in PATRONES}
     errores = []
- 
+
     if not PDF_ENGINE:
         errores.append("pdfplumber no está instalado en el entorno. Instala con: pip install pdfplumber")
         return {"datos": datos, "errores": errores, "texto_raw": ""}
- 
+
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            # Extraer texto de todas las páginas
             texto = "\n".join(page.extract_text() or "" for page in pdf.pages)
+            
+            # Guardar texto raw para debug (primeros 5000 caracteres)
+            texto_raw_debug = texto[:5000]
+            
+            # Log del texto extraído para debug
+            logging.info(f"Texto extraído del PDF (primeros 2000 chars): {texto[:2000]}")
+            
+            # También intentar extraer tablas si existen
+            tablas = []
+            for page in pdf.pages:
+                tablas.extend(page.extract_tables() or [])
+            logging.info(f"Tablas extraídas: {len(tablas)}")
     except Exception as e:
         errores.append(f"Error abriendo PDF: {str(e)}")
         return {"datos": datos, "errores": errores, "texto_raw": ""}
- 
+
+    # Estrategia 1: Búsqueda por patrones regex en el texto completo
     for campo, patron in PATRONES.items():
-        match = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
+        match = None
+        # Primera búsqueda con el patrón original
+        match = re.search(patron, texto, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        
+        # Si no encuentra, intentar variaciones más flexibles para algunos campos críticos
+        if not match:
+            if campo == "situacion":
+                # Buscar "ACTIVO O SUBSIDIADO" o variaciones - más flexible
+                match = re.search(r"Situaci[oó]n[:\s]+(ACTIVO\s+O\s+SUBSIDIADO|ACTIVO\s+Y\s+SUBSIDIADO|ACTIVO|SUBSIDIADO)", texto, re.IGNORECASE | re.DOTALL)
+                # Si no encuentra, buscar cualquier texto después de "Situación" que contenga ACTIVO o SUBSIDIADO
+                if not match:
+                    match = re.search(r"Situaci[oó]n[:\s]+([A-ZÁÉÍÓÚÑ\s]+?(?:ACTIVO|SUBSIDIADO)[A-ZÁÉÍÓÚÑ\s]*?)(?=\s*Fecha|\s*Tipo|\s*R[eé]gimen|\n|$)", texto, re.IGNORECASE)
+                # Si aún no encuentra, buscar cualquier texto después de "Situación"
+                if not match:
+                    match = re.search(r"Situaci[oó]n[:\s]+([A-ZÁÉÍÓÚÑ\s]+?)(?=\s*Fecha|\s*Tipo|\s*R[eé]gimen|\n|$)", texto, re.IGNORECASE)
+            elif campo == "regimen_pensionario":
+                # Buscar "SPP INTEGRA" específicamente, evitar capturar "CUSPP"
+                match = re.search(r"R[eé]gimen\s+Pensionario[:\s]+(SPP\s+INTEGRA|SPP\s+INTEGRA|ONP|AFP\s+[A-Z]+|SNP\s+[A-Z]+)(?=\s*CUSPP|\s*D[ií]as|\s*Condici[oó]n|$)", texto, re.IGNORECASE)
+                # Si no encuentra, buscar cualquier texto después de "Régimen Pensionario" hasta CUSPP
+                if not match:
+                    match = re.search(r"R[eé]gimen\s+Pensionario[:\s]+([A-Z\s]+?)(?=\s*CUSPP|\s*D[ií]as|\s*Condici[oó]n|$)", texto, re.IGNORECASE)
+            elif campo == "cuspp":
+                # Buscar código CUSPP - más flexible, puede tener diferentes longitudes
+                match = re.search(r"CUSPP[:\s]+([A-Z0-9]{8,20})", texto, re.IGNORECASE)
+                # Si no encuentra, buscar cualquier código alfanumérico después de CUSPP (mínimo 6 caracteres)
+                if not match:
+                    match = re.search(r"CUSPP[:\s]+([A-Z0-9]{6,})", texto, re.IGNORECASE)
+            elif campo == "condicion":
+                # Buscar "Domiciliado" específicamente - más flexible
+                match = re.search(r"Condici[oó]n[:\s]+(Domiciliado|No\s+Domiciliado|N[oó]mada|DOMICILIADO)", texto, re.IGNORECASE)
+                # Si no encuentra, buscar cualquier texto después de "Condición"
+                if not match:
+                    match = re.search(r"Condici[oó]n[:\s]+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+?)(?=\s*Jornada|\s*Sobre|\s*Tardanza|\n|$)", texto, re.IGNORECASE)
+            elif campo == "dias_laborados":
+                # Buscar días laborados - más flexible, buscar número en la misma línea o siguiente
+                match = re.search(r"D[ií]as\s+Laborados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                # Si no encuentra, buscar en tabla
+                if not match and tablas:
+                    for tabla in tablas:
+                        for fila in tabla:
+                            if fila:
+                                fila_texto = " ".join(str(c) for c in fila if c)
+                                if "días" in fila_texto.lower() and "laborados" in fila_texto.lower():
+                                    for celda in fila:
+                                        if celda and re.search(r'^\d+$', str(celda).strip()):
+                                            datos[campo] = str(celda).strip()
+                                            match = type('Match', (), {'group': lambda self, n: str(celda).strip()})()
+                                            break
+                                    if match:
+                                        break
+                        if match:
+                            break
+            elif campo == "dias_no_laborados":
+                # Buscar días no laborados - más flexible
+                match = re.search(r"D[ií]as\s+No\s+Laborados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                # Si no encuentra, buscar en tabla
+                if not match and tablas:
+                    for tabla in tablas:
+                        for fila in tabla:
+                            if fila:
+                                fila_texto = " ".join(str(c) for c in fila if c)
+                                if "días" in fila_texto.lower() and "no" in fila_texto.lower() and "laborados" in fila_texto.lower():
+                                    for celda in fila:
+                                        if celda and re.search(r'^\d+$', str(celda).strip()):
+                                            datos[campo] = str(celda).strip()
+                                            match = type('Match', (), {'group': lambda self, n: str(celda).strip()})()
+                                            break
+                                    if match:
+                                        break
+                        if match:
+                            break
+            elif campo == "dias_subsidiados":
+                # Buscar días subsidiados - más flexible
+                match = re.search(r"D[ií]as\s+Subsidiados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                # Si no encuentra, buscar en tabla
+                if not match and tablas:
+                    for tabla in tablas:
+                        for fila in tabla:
+                            if fila:
+                                fila_texto = " ".join(str(c) for c in fila if c)
+                                if "días" in fila_texto.lower() and "subsidiados" in fila_texto.lower():
+                                    for celda in fila:
+                                        if celda and re.search(r'^\d+$', str(celda).strip()):
+                                            datos[campo] = str(celda).strip()
+                                            match = type('Match', (), {'group': lambda self, n: str(celda).strip()})()
+                                            break
+                                    if match:
+                                        break
+                        if match:
+                            break
+            elif campo == "otros_empleadores":
+                # Buscar otros empleadores - más flexible
+                match = re.search(r"Otros\s+empleadores[^\n]*?(?:por\s+Rentas\s+de\s+5ta|5ta)[^\n]*?[:\s]+(S[ÍI]|NO|Si|No|Tiene|No\s+tiene|No\s+Tiene)", texto, re.IGNORECASE | re.DOTALL)
+                # Si no encuentra, buscar "No tiene" o "Tiene" después de "Otros empleadores"
+                if not match:
+                    match = re.search(r"Otros\s+empleadores[^\n]*?[:\s]+(No\s+tiene|Tiene|No\s+Tiene|S[ÍI]|NO)", texto, re.IGNORECASE)
+            elif campo == "tipo_documento":
+                # Buscar DNI o PASAPORTE en la sección de documento
+                match = re.search(r"(?:Tipo\s+de\s+Documento|Tipo)[:\s]+(DNI|PASAPORTE|CE)", texto, re.IGNORECASE)
+            elif campo == "nombre":
+                # Buscar nombre completo, evitar capturar "Situación"
+                # Buscar después de "Nombres y Apellidos" hasta encontrar "Situación" o siguiente campo
+                match = re.search(r"(?:Nombres?\s+y\s+Apellidos?|Apellidos?\s+y\s+Nombres?)[:\s]+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\s,\.]+?)(?=\s*Situaci[oó]n|\s*Fecha\s+de\s+Ingreso|\s*R[eé]gimen|\n\n|$)", texto, re.IGNORECASE)
+                # Si no encuentra, intentar buscar en tabla
+                if not match and tablas:
+                    for tabla in tablas:
+                        for fila in tabla:
+                            if fila:
+                                fila_texto = " ".join(str(c) for c in fila if c)
+                                if "nombre" in fila_texto.lower() and "apellido" in fila_texto.lower():
+                                    # Buscar el valor en la misma fila o siguiente
+                                    for i, celda in enumerate(fila):
+                                        if celda and len(str(celda).strip()) > 5 and not any(x in str(celda).upper() for x in ["SITUACIÓN", "FECHA", "RÉGIMEN"]):
+                                            match = type('Match', (), {'group': lambda self, n: str(celda).strip()})()
+                                            break
+                                    if match:
+                                        break
+                        if match:
+                            break
+            elif campo in ["comision_afp_pct", "renta_quinta_ret", "prima_seguros_afp", "spp_aportacion_obl"]:
+                # Buscar en tabla por código
+                codigos = {"comision_afp_pct": "0601", "renta_quinta_ret": "0605", "prima_seguros_afp": "0606", "spp_aportacion_obl": "0608"}
+                codigo = codigos.get(campo)
+                if codigo:
+                    # Buscar el código seguido del concepto y luego el valor
+                    match = re.search(rf"{codigo}[^\d]*?[\d,\.]+\s+([\d,\.]+)", texto, re.IGNORECASE)
+        
         if match:
-            datos[campo] = match.group(1).strip()
+            valor = match.group(1).strip()
+            # Limpiar valores que puedan tener caracteres extra
+            valor = re.sub(r'\s+', ' ', valor)  # Normalizar espacios
+            # Remover espacios al inicio y final
+            valor = valor.strip()
+            datos[campo] = valor
+            logging.info(f"✓ Campo '{campo}' extraído: {valor}")
         else:
-            errores.append(f"No se encontró: {campo}")
- 
+            logging.warning(f"✗ Campo '{campo}' no encontrado con patrón principal")
+            # Estrategia 2: Buscar en tablas si el patrón no funcionó
+            if tablas and campo in ["remuneracion_basica", "comision_afp_pct", "renta_quinta_ret",
+                                     "prima_seguros_afp", "spp_aportacion_obl", "essalud", "poliza_seguros_688"]:
+                for tabla in tablas:
+                    for fila in tabla:
+                        if fila:
+                            fila_texto = " ".join(str(c) for c in fila if c)
+                            # Buscar el concepto y el valor
+                            if campo == "remuneracion_basica" and "remuneraci" in fila_texto.lower() and "básico" in fila_texto.lower():
+                                # Buscar número en la misma fila
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "comision_afp_pct" and "comisión" in fila_texto.lower() and "afp" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "renta_quinta_ret" and "renta" in fila_texto.lower() and "quinta" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "prima_seguros_afp" and "prima" in fila_texto.lower() and "afp" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "spp_aportacion_obl" and "spp" in fila_texto.lower() and "aportaci" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "essalud" and "essalud" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+                            elif campo == "poliza_seguros_688" and "póliza" in fila_texto.lower() and "688" in fila_texto.lower():
+                                for celda in fila:
+                                    if celda and re.search(r'[\d,\.]+', str(celda)):
+                                        datos[campo] = re.search(r'([\d,\.]+)', str(celda)).group(1)
+                                        break
+            
+            # Si aún no se encontró, intentar búsquedas adicionales más flexibles
+            if not datos[campo]:
+                # Búsquedas adicionales más flexibles para campos críticos
+                if campo == "tipo_documento":
+                    # Buscar DNI en la línea del número de documento
+                    match = re.search(r"(DNI|PASAPORTE|CE)[:\s]*[\d]{7,12}", texto, re.IGNORECASE)
+                    if match:
+                        datos[campo] = match.group(1).upper()
+                elif campo == "situacion":
+                    # Buscar "ACTIVO O SUBSIDIADO" específicamente
+                    match = re.search(r"Situaci[oó]n[:\s]+(ACTIVO\s+O\s+SUBSIDIADO|ACTIVO\s+Y\s+SUBSIDIADO)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        datos[campo] = match.group(1).strip()
+                    else:
+                        # Buscar cualquier texto después de "Situación" que contenga ACTIVO o SUBSIDIADO
+                        match = re.search(r"Situaci[oó]n[:\s]+([A-ZÁÉÍÓÚÑ\s]+?(?:ACTIVO|SUBSIDIADO)[A-ZÁÉÍÓÚÑ\s]*?)(?=\s*Fecha|\s*Tipo|\s*R[eé]gimen|\n|$)", texto, re.IGNORECASE | re.DOTALL)
+                        if match:
+                            valor = match.group(1).strip()
+                            # Normalizar espacios
+                            valor = re.sub(r'\s+', ' ', valor)
+                            datos[campo] = valor
+                        else:
+                            # Buscar cualquier texto después de "Situación"
+                            match = re.search(r"Situaci[oó]n[:\s]+([A-ZÁÉÍÓÚÑ\s]+?)(?=\s*Fecha|\s*Tipo|\s*R[eé]gimen|\n|$)", texto, re.IGNORECASE | re.DOTALL)
+                            if match:
+                                valor = match.group(1).strip()
+                                valor = re.sub(r'\s+', ' ', valor)
+                                datos[campo] = valor
+                elif campo == "cuspp":
+                    # Buscar cualquier código alfanumérico después de CUSPP
+                    match = re.search(r"CUSPP[:\s]+([A-Z0-9]+)", texto, re.IGNORECASE)
+                    if match:
+                        datos[campo] = match.group(1).strip()
+                elif campo == "dias_laborados":
+                    # Buscar número después de "Días Laborados"
+                    match = re.search(r"D[ií]as\s+Laborados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        datos[campo] = match.group(1)
+                elif campo == "dias_no_laborados":
+                    # Buscar número después de "Días No Laborados"
+                    match = re.search(r"D[ií]as\s+No\s+Laborados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        datos[campo] = match.group(1)
+                elif campo == "dias_subsidiados":
+                    # Buscar número después de "Días Subsidiados"
+                    match = re.search(r"D[ií]as\s+Subsidiados[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        datos[campo] = match.group(1)
+                elif campo == "condicion":
+                    # Buscar cualquier texto después de "Condición"
+                    match = re.search(r"Condici[oó]n[:\s]+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+?)(?=\s*Jornada|\s*Sobre|\s*Tardanza|\s*Vacaciones|\n|$)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        valor = match.group(1).strip()
+                        valor = re.sub(r'\s+', ' ', valor)
+                        datos[campo] = valor
+                elif campo == "otros_empleadores":
+                    # Buscar "No tiene" o "Tiene" después de "Otros empleadores"
+                    match = re.search(r"Otros\s+empleadores[^\n]*?(?:por\s+Rentas\s+de\s+5ta|5ta)[^\n]*?[:\s]+(No\s+tiene|Tiene|No\s+Tiene|S[ÍI]|NO|Si|No)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        valor = match.group(1).strip()
+                        datos[campo] = valor
+                    else:
+                        # Buscar directamente después de "Otros empleadores"
+                        match = re.search(r"Otros\s+empleadores[^\n]*?[:\s]+(No\s+tiene|Tiene|No\s+Tiene|S[ÍI]|NO|Si|No)", texto, re.IGNORECASE | re.DOTALL)
+                        if match:
+                            valor = match.group(1).strip()
+                            datos[campo] = valor
+                elif campo == "fecha_ingreso":
+                    # Buscar cualquier fecha después de "Fecha de Ingreso"
+                    match = re.search(r"Fecha\s+de\s+Ingreso[^\d]*?([\d]{1,2}[/\-][\d]{1,2}[/\-][\d]{2,4})", texto, re.IGNORECASE)
+                    if match:
+                        datos[campo] = match.group(1)
+                elif campo == "jornada_horas":
+                    # Buscar "72" o cualquier número después de "Total Horas" en jornada
+                    match = re.search(r"Jornada[^\d]*?Total\s+Horas[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                    if match:
+                        datos[campo] = match.group(1)
+                elif campo == "jornada_minutos":
+                    # Si hay horas pero no minutos, convertir horas a minutos
+                    if datos["jornada_horas"]:
+                        datos[campo] = int(datos["jornada_horas"]) * 60
+                    else:
+                        match = re.search(r"Jornada[^\d]*?Minutos[^\d]*?(\d+)", texto, re.IGNORECASE | re.DOTALL)
+                        if match:
+                            datos[campo] = match.group(1)
+            
+            # Si aún no se encontró, agregar a errores (excepto campos opcionales)
+            campos_opcionales = ["sobretiempo_horas", "sobretiempo_minutos", "tipo_suspension", "motivo_suspension", "dias_suspension", "poliza_seguros_688", "jornada_minutos"]
+            if not datos[campo] and campo not in campos_opcionales:
+                errores.append(f"No se encontró: {campo}")
+
     # Normalizar tipos
     for campo_decimal in ["remuneracion_basica", "comision_afp_pct", "renta_quinta_ret",
                            "prima_seguros_afp", "spp_aportacion_obl", "essalud", "poliza_seguros_688"]:
         if datos[campo_decimal]:
             datos[campo_decimal] = str(_to_decimal(datos[campo_decimal]))
- 
+
     for campo_int in ["dias_laborados", "dias_no_laborados", "dias_subsidiados",
                       "jornada_horas", "jornada_minutos", "sobretiempo_horas",
                       "sobretiempo_minutos", "dias_suspension"]:
         if datos[campo_int]:
             datos[campo_int] = _to_int(datos[campo_int])
- 
+
     if datos["fecha_ingreso"]:
         datos["fecha_ingreso"] = _parse_fecha(datos["fecha_ingreso"])
- 
+
+    # otros_empleadores se mantiene como texto, no se convierte a número
     if datos["otros_empleadores"]:
-        datos["otros_empleadores"] = 1 if datos["otros_empleadores"].upper() in ("SÍ", "SI", "S") else 0
- 
-    return {"datos": datos, "errores": errores, "texto_raw": texto[:2000]}
+        otros_val = datos["otros_empleadores"].strip()
+        # Normalizar valores comunes
+        if otros_val.upper() in ("SÍ", "SI", "S", "TIENE"):
+            datos["otros_empleadores"] = "Sí"
+        elif otros_val.upper() in ("NO", "N", "NO TIENE", "NO TIENE"):
+            datos["otros_empleadores"] = "No tiene"
+        else:
+            datos["otros_empleadores"] = otros_val
+
+    # Log de debug para ver qué se extrajo
+    logging.info(f"Campos extraídos: {sum(1 for v in datos.values() if v)} de {len(datos)}")
+    logging.info(f"Errores: {len(errores)}")
+    
+    return {"datos": datos, "errores": errores, "texto_raw": texto_raw_debug if 'texto_raw_debug' in locals() else texto[:2000]}
  
  
 # ==========================================================

@@ -24,6 +24,7 @@ export default function GestionBoletasPagoPage() {
   const [currentEditData, setCurrentEditData] = useState(null);
   const [extractedQueue, setExtractedQueue] = useState([]);
   const [queueIndex, setQueueIndex] = useState(0);
+  const [filters, setFilters] = useState({ nombre: '', estado: '' });
 
   const { periodos, loading: loadingPeriodos, createPeriodo } = usePeriodos();
   const { boletas, loading: loadingBoletas, fetchBoletas, getBoleta, createBoleta, updateBoleta, emitirBoleta } = useBoletas();
@@ -179,30 +180,16 @@ export default function GestionBoletasPagoPage() {
 
               {/* Header */}
               <div className="mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>GESTIÓN DE BOLETAS DE PAGO</h1>
-                      <p className="text-sm text-gray-600 font-medium mt-0.5">Emisión masiva y control de planillas Zeus Safety</p>
-                    </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-
-                  {view === 'editing' && (
-                    <button 
-                      onClick={() => setView('dashboard')}
-                      className="flex items-center space-x-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-xs transition-all border border-gray-200"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                      </svg>
-                      <span>Volver al Dashboard</span>
-                    </button>
-                  )}
+                  <div>
+                    <h1 className="text-2xl font-medium text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-poppins)' }}>GESTIÓN DE BOLETAS DE PAGO</h1>
+                    <p className="text-sm text-gray-600 font-medium mt-0.5">Emisión masiva y control de planillas Zeus Safety</p>
+                  </div>
                 </div>
               </div>
 
@@ -217,6 +204,52 @@ export default function GestionBoletasPagoPage() {
 
                   <BoletaUploader onProcesar={handleProcesarArchivos} />
 
+                  {/* Header y Filtros - Fuera del contenedor de la tabla */}
+                  <div className="mb-4">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-base font-bold text-gray-900">Historial de Boletas</h2>
+                          <p className="text-[10px] text-gray-500 font-medium">Listado de boletas generadas</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input 
+                          placeholder="Buscar por DNI o nombre..." 
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:border-blue-500 outline-none w-[220px] transition-colors"
+                          value={filters.nombre}
+                          onChange={(e) => setFilters({ ...filters, nombre: e.target.value })}
+                        />
+                        <select 
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:border-blue-500 cursor-pointer outline-none transition-colors"
+                          value={filters.estado}
+                          onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
+                        >
+                          <option value="">Todos</option>
+                          <option value="BORRADOR">Borrador</option>
+                          <option value="REVISADO">Revisado</option>
+                          <option value="EMITIDO">Emitido</option>
+                        </select>
+                        <button 
+                          onClick={handleExportExcel}
+                          className="inline-flex items-center space-x-1 px-2.5 py-1.5 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all shadow-sm"
+                          title="Exportar a Excel"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>Excel</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <BoletaTabla 
                      boletas={boletas} 
                      loading={loadingBoletas}
@@ -224,6 +257,8 @@ export default function GestionBoletasPagoPage() {
                      onEditar={handleEditBoleta}
                      onGenerarPDF={handleEmitirPDF}
                      onExportExcel={handleExportExcel}
+                     filters={filters}
+                     onFiltersChange={setFilters}
                   />
                 </div>
               ) : (
@@ -231,6 +266,7 @@ export default function GestionBoletasPagoPage() {
                    initialData={currentEditData} 
                    onSave={handleSaveBoleta}
                    onEmit={handleEmitirPDF}
+                   onBack={() => setView('dashboard')}
                    isEditing={!!currentEditData?.id_boleta}
                    periodos={periodos}
                 />

@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
-const BoletaTabla = ({ boletas = [], loading, onVer, onEditar, onGenerarPDF, onExportExcel }) => {
-  const [filters, setFilters] = useState({ nombre: '', estado: '' });
+const BoletaTabla = ({ boletas = [], loading, onVer, onEditar, onGenerarPDF, onExportExcel, filters: externalFilters, onFiltersChange }) => {
+  const [internalFilters, setInternalFilters] = useState({ nombre: '', estado: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Usar filtros externos si se proporcionan, sino usar internos
+  const filters = externalFilters || internalFilters;
+  const setFilters = onFiltersChange || setInternalFilters;
 
   const getStatusBadge = (estado) => {
     const map = {
@@ -20,62 +26,34 @@ const BoletaTabla = ({ boletas = [], loading, onVer, onEditar, onGenerarPDF, onE
     );
   };
 
-  const filteredBoletas = boletas.filter(b => {
-    const matchNombre = !filters.nombre || 
-      b.TRABAJADOR?.toLowerCase().includes(filters.nombre.toLowerCase()) || 
-      b.NUMERO_DOCUMENTO?.toString().includes(filters.nombre);
-    const matchEstado = !filters.estado || b.ESTADO_BOLETA === filters.estado;
-    return matchNombre && matchEstado;
-  });
+  const filteredBoletas = useMemo(() => {
+    return boletas.filter(b => {
+      const matchNombre = !filters.nombre || 
+        b.TRABAJADOR?.toLowerCase().includes(filters.nombre.toLowerCase()) || 
+        b.NUMERO_DOCUMENTO?.toString().includes(filters.nombre);
+      const matchEstado = !filters.estado || b.ESTADO_BOLETA === filters.estado;
+      return matchNombre && matchEstado;
+    });
+  }, [boletas, filters]);
+
+  // Calcular paginación
+  const totalPages = Math.max(1, Math.ceil(filteredBoletas.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBoletas = filteredBoletas.slice(startIndex, endIndex);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.nombre, filters.estado]);
+
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPrevPage = () => setCurrentPage(prev => Math.max(1, prev - 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  const goToLastPage = () => setCurrentPage(totalPages);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ fontFamily: 'var(--font-poppins)' }}>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Historial de Boletas</h2>
-              <p className="text-[10px] text-gray-500 font-medium">Listado de boletas generadas</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            <input 
-              placeholder="Buscar por DNI o nombre..." 
-              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:border-blue-500 outline-none w-[220px] transition-colors"
-              value={filters.nombre}
-              onChange={(e) => setFilters({ ...filters, nombre: e.target.value })}
-            />
-            <select 
-              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:border-blue-500 cursor-pointer outline-none transition-colors"
-              value={filters.estado}
-              onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
-            >
-              <option value="">Todos</option>
-              <option value="BORRADOR">Borrador</option>
-              <option value="REVISADO">Revisado</option>
-              <option value="EMITIDO">Emitido</option>
-            </select>
-            <button 
-              onClick={onExportExcel}
-              className="inline-flex items-center space-x-1 px-2.5 py-1.5 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg text-[10px] font-semibold hover:opacity-90 transition-all shadow-sm"
-              title="Exportar a Excel"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Excel</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -115,7 +93,7 @@ const BoletaTabla = ({ boletas = [], loading, onVer, onEditar, onGenerarPDF, onE
                 </td>
               </tr>
             ) : (
-              filteredBoletas.map((b) => (
+              paginatedBoletas.map((b) => (
                 <tr key={b.ID_BOLETA} className="hover:bg-slate-50 transition-colors">
                   <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium text-gray-500">{b.PERIODO || b.MES + '/' + b.ANIO}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -191,9 +169,43 @@ const BoletaTabla = ({ boletas = [], loading, onVer, onEditar, onGenerarPDF, onE
         </table>
       </div>
 
-      {/* Footer */}
+      {/* Paginación */}
       <div className="bg-slate-200 px-3 py-2 flex items-center justify-between border-t-2 border-slate-300">
-        <span className="text-[10px] text-gray-700 font-medium">Mostrando {filteredBoletas.length} de {boletas.length} boletas</span>
+        <button 
+          onClick={goToFirstPage}
+          disabled={currentPage === 1} 
+          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
+          aria-label="Primera página"
+        >
+          «
+        </button>
+        <button 
+          onClick={goToPrevPage}
+          disabled={currentPage === 1} 
+          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
+          aria-label="Página anterior"
+        >
+          &lt;
+        </button>
+        <span className="text-[10px] text-gray-700 font-medium">
+          Página {currentPage} de {totalPages}
+        </span>
+        <button 
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages} 
+          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
+          aria-label="Página siguiente"
+        >
+          &gt;
+        </button>
+        <button 
+          onClick={goToLastPage}
+          disabled={currentPage === totalPages} 
+          className="px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
+          aria-label="Última página"
+        >
+          »
+        </button>
       </div>
     </div>
   );

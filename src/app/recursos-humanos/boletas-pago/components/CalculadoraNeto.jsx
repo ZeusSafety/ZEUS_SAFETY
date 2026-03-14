@@ -46,45 +46,75 @@ const CalculadoraNeto = ({ ingresos = {}, descuentos = {}, aportesTrabajador = {
     .minus(totalAportesTrab)
     .toNumber();
 
+  // Calcular valores individuales de aportes del trabajador
+  const comisionAfp = parseFloat(aportesTrabajador.comision_afp_pct) || 0;
+  const rentaQuinta = parseFloat(aportesTrabajador.renta_quinta_ret) || 0;
+  const primaSeguros = parseFloat(aportesTrabajador.prima_seguros_afp) || 0;
+  const sppAportacion = parseFloat(aportesTrabajador.spp_aportacion_obl) || 0;
+
   return (
-    <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white rounded-3xl p-8 shadow-2xl sticky top-6 font-poppins border-x-4 border-white/10 overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
-      <div className="absolute top-0 right-0 p-4 opacity-10">
-         <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sticky top-4" style={{ fontFamily: 'var(--font-poppins)' }}>
+      <div className="flex items-center space-x-2 mb-6">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center text-white shadow-sm">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Resumen en Tiempo Real</h3>
       </div>
       
-      <div className="relative z-10">
-        <div className="flex items-center space-x-2 mb-6">
-           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-           </div>
-           <h3 className="text-sm font-bold uppercase tracking-widest text-blue-200">Resumen en Tiempo Real</h3>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+          <span className="text-sm font-semibold text-gray-700">Total Ingresos:</span>
+          <span className="text-lg font-bold text-gray-900">{formatCurrency(totalIngresos)}</span>
+        </div>
+        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+          <span className="text-sm font-semibold text-gray-700">Total Descuentos:</span>
+          <span className="text-lg font-bold text-red-600">-{formatCurrency(totalDescuentos)}</span>
         </div>
         
-        <div className="space-y-4">
-          <div className="flex justify-between items-center group cursor-default">
-            <span className="text-sm font-bold text-blue-300 group-hover:text-blue-100 transition-colors">Total Ingresos:</span>
-            <span className="text-xl font-black">{formatCurrency(totalIngresos)}</span>
+        {/* Desglose de Aportes del Trabajador */}
+        <div className="pb-3 border-b border-gray-100">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-semibold text-gray-700">Aportes del Trabajador:</span>
+            <span className="text-lg font-bold text-orange-600">-{formatCurrency(totalAportesTrab)}</span>
           </div>
-          <div className="flex justify-between items-center group cursor-default">
-            <span className="text-sm font-bold text-red-300 group-hover:text-red-100 transition-colors">Total Descuentos:</span>
-            <span className="text-xl font-black text-red-300">-{formatCurrency(totalDescuentos)}</span>
-          </div>
-          <div className="flex justify-between items-center group cursor-default">
-            <span className="text-sm font-bold text-orange-300 group-hover:text-orange-100 transition-colors">Ap. Trabajador:</span>
-            <span className="text-xl font-black text-orange-300">-{formatCurrency(totalAportesTrab)}</span>
-          </div>
-          
-          <div className="pt-6 mt-6 border-t border-white/20 flex flex-col items-center">
-            <span className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1.5 opacity-80">Neto a Pagar</span>
-            <span className="text-5xl font-black text-white hover:scale-110 transition-transform duration-300 cursor-default select-none shadow-blue-900 drop-shadow-xl">
-              {formatCurrency(netoPagar)}
-            </span>
+          <div className="pl-4 space-y-1.5 mt-2">
+            {comisionAfp > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-medium text-gray-600">Comisión AFP Porcentual:</span>
+                <span className="text-xs font-semibold text-orange-600">-{formatCurrency(comisionAfp)}</span>
+              </div>
+            )}
+            {rentaQuinta > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-medium text-gray-600">Renta Quinta Categoría:</span>
+                <span className="text-xs font-semibold text-orange-600">-{formatCurrency(rentaQuinta)}</span>
+              </div>
+            )}
+            {primaSeguros > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-medium text-gray-600">Prima de Seguros AFP:</span>
+                <span className="text-xs font-semibold text-orange-600">-{formatCurrency(primaSeguros)}</span>
+              </div>
+            )}
+            {sppAportacion > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-medium text-gray-600">SPP - Aportación Obligatoria:</span>
+                <span className="text-xs font-semibold text-orange-600">-{formatCurrency(sppAportacion)}</span>
+              </div>
+            )}
+            {totalAportesTrab === 0 && (
+              <div className="text-[10px] text-gray-400 italic">Sin aportes registrados</div>
+            )}
           </div>
         </div>
+        
+        <div className="pt-4 mt-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+          <span className="text-xs font-bold text-blue-700 uppercase tracking-wide block mb-2 text-center">Neto a Pagar</span>
+          <span className="text-3xl font-black text-blue-900 block text-center">
+            {formatCurrency(netoPagar)}
+          </span>
+        </div>
       </div>
-      
-      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
     </div>
   );
 };

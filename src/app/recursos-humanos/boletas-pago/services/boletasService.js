@@ -7,12 +7,72 @@ const getAuthHeader = () => {
 };
 
 const handleResponse = async (response) => {
-  const data = await response.json().catch(() => ({}));
+  // Para la búsqueda de colaboradores, manejamos la respuesta manualmente
+  // porque puede venir como texto JSON directo
+  const text = await response.text();
   if (!response.ok) {
-    const errorMsg = data.error || data.message || `Error del servidor (${response.status})`;
+    let errorMsg = `Error del servidor (${response.status})`;
+    try {
+      const errorData = JSON.parse(text);
+      errorMsg = errorData.error || errorData.message || errorMsg;
+    } catch (e) {
+      errorMsg = text || errorMsg;
+    }
     throw new Error(errorMsg);
   }
-  return data;
+  
+  // Intentar parsear como JSON
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('Error parseando respuesta como JSON:', e);
+    console.error('Texto recibido:', text);
+    return [];
+  }
+};
+
+// Función auxiliar para buscar desde la API de colaboradores (definida antes del objeto)
+const buscarColaboradoresDesdeAPI = async (query = '', getAuthHeader) => {
+  try {
+    const trimmedQuery = query.trim();
+    const response = await fetch('/api/colaboradores', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      return [];
+    }
+    
+    // Si hay query, filtrar los resultados
+    if (trimmedQuery) {
+      const filtered = data.filter(colab => {
+        const nombre = (colab.NOMBRE || colab.nombre || '').toLowerCase();
+        const apellido = (colab.APELLIDO || colab.apellido || '').toLowerCase();
+        const documento = String(colab.NUMERO_DOCUMENTO || colab.numero_documento || '');
+        const queryLower = trimmedQuery.toLowerCase();
+        
+        // Si es numérico, buscar solo por documento
+        if (/^\d+$/.test(trimmedQuery)) {
+          return documento.includes(trimmedQuery);
+        }
+        
+        return nombre.includes(queryLower) || apellido.includes(queryLower);
+      });
+      return filtered.slice(0, 100);
+    }
+    
+    return data.slice(0, 100);
+  } catch (error) {
+    console.error('❌ Error en buscarColaboradoresDesdeAPI:', error);
+    return [];
+  }
 };
 
 const boletasService = {
@@ -102,21 +162,134 @@ const boletasService = {
     return handleResponse(response);
   },
 
-  // Búsqueda de colaboradores
+  // Búsqueda de colaboradores - Usa la misma API que el módulo de gestión de colaboradores
+  buscarColaboradores: async (query = '') => {
+    try {
+      const trimmedQuery = query.trim();
+      
+      // Usar la API de colaboradores que funciona en el módulo de gestión
+      // Primero intentar con la API de boletas, si falla usar la de colaboradores
+      let url;
+      let useBoletasAPI = true;
+      
+      if (trimmedQuery) {
+        // Si es numérico, buscar por documento
+        if (/^\d+$/.test(trimmedQuery)) {
+          url = `${API_BASE_URL}/boletas/colaboradores?documento=${encodeURIComponent(trimmedQuery)}`;
+        } else {
+          // Buscar por nombre
+          url = `${API_BASE_URL}/boletas/colaboradores?nombre=${encodeURIComponent(trimmedQuery)}`;
+        }
+      } else {
+        // Si no hay query, obtener todos los colaboradores desde la API de colaboradores
+        url = '/api/colaboradores';
+        useBoletasAPI = false;
+      }
+      
+      console.log('🔍 Buscando colaboradores en:', url);
+      console.log('🔍 Usando API de boletas:', useBoletasAPI);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
+      });
+      
+      console.log('📡 Respuesta status:', response.status);
+      console.log('📡 Respuesta ok:', response.ok);
+      
+      if (!response.ok) {
+        // Si falla la API de boletas y hay query, intentar con la API de colaboradores
+        if (useBoletasAPI && trimmedQuery) {
+          console.log('⚠️ API de boletas falló, intentando con API de colaboradores...');
+          return await buscarColaboradoresDesdeAPI(query);
+        }
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', errorText);
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Datos recibidos:', data);
+      console.log('✅ Es array?', Array.isArray(data));
+      console.log('✅ Cantidad:', Array.isArray(data) ? data.length : 'N/A');
+      
+      if (Array.isArray(data)) {
+        // Filtrar por query si es necesario (para la API de colaboradores)
+        if (!useBoletasAPI && trimmedQuery) {
+          const filtered = data.filter(colab => {
+            const nombre = (colab.NOMBRE || colab.nombre || '').toLowerCase();
+            const apellido = (colab.APELLIDO || colab.apellido || '').toLowerCase();
+            const documento = String(colab.NUMERO_DOCUMENTO || colab.numero_documento || '');
+            const queryLower = trimmedQuery.toLowerCase();
+            
+            return nombre.includes(queryLower) || 
+                   apellido.includes(queryLower) || 
+                   documento.includes(trimmedQuery);
+          });
+          console.log('✅ Resultados filtrados:', filtered.length);
+          return filtered.slice(0, 100); // Limitar a 100 resultados
+        }
+        return data.slice(0, 100); // Limitar a 100 resultados
+      } else if (data && typeof data === 'object') {
+        // Si viene envuelto en un objeto
+        const wrapped = data.data || data.colaboradores || data.results || [];
+        return Array.isArray(wrapped) ? wrapped.slice(0, 100) : [];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Error en buscarColaboradores:', error);
+      // Si falla, intentar con la API de colaboradores
+      if (query.trim()) {
+        console.log('⚠️ Intentando búsqueda alternativa...');
+        return await buscarColaboradoresDesdeAPI(query, getAuthHeader);
+      }
+      return [];
+    }
+  },
+
   buscarColaboradorPorDocumento: async (documento) => {
-    const response = await fetch(`${API_BASE_URL}/boletas/colaboradores?documento=${documento}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
-    });
-    return handleResponse(response);
+    try {
+      // Intentar primero con la API de boletas
+      const response = await fetch(`${API_BASE_URL}/boletas/colaboradores?documento=${encodeURIComponent(documento)}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
+      });
+      
+      if (response.ok) {
+        const data = await handleResponse(response);
+        return Array.isArray(data) ? data : (data?.data || data?.colaboradores || []);
+      }
+      
+      // Si falla, usar la API de colaboradores y filtrar
+      return await buscarColaboradoresDesdeAPI(documento, getAuthHeader);
+    } catch (error) {
+      console.error('Error en buscarColaboradorPorDocumento:', error);
+      // Fallback a API de colaboradores
+      return await buscarColaboradoresDesdeAPI(documento, getAuthHeader);
+    }
   },
 
   buscarColaboradorPorNombre: async (nombre) => {
-    const response = await fetch(`${API_BASE_URL}/boletas/colaboradores?nombre=${nombre}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
-    });
-    return handleResponse(response);
+    try {
+      // Intentar primero con la API de boletas
+      const response = await fetch(`${API_BASE_URL}/boletas/colaboradores?nombre=${encodeURIComponent(nombre)}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
+      });
+      
+      if (response.ok) {
+        const data = await handleResponse(response);
+        return Array.isArray(data) ? data : (data?.data || data?.colaboradores || []);
+      }
+      
+      // Si falla, usar la API de colaboradores y filtrar
+      return await buscarColaboradoresDesdeAPI(nombre, getAuthHeader);
+    } catch (error) {
+      console.error('Error en buscarColaboradorPorNombre:', error);
+      // Fallback a API de colaboradores
+      return await buscarColaboradoresDesdeAPI(nombre, getAuthHeader);
+    }
   }
 };
 
